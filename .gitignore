@@ -1,0 +1,7 @@
+*.pyc
+*.swp
+*.swo
+*.sqlite3
+*.sql
+*.egg-info
+__pycache__
