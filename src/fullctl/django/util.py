@@ -1,7 +1,7 @@
 from django.conf import settings
 import django_peeringdb.models.concrete as pdb_models
-from django_fullctl.auth import permissions
-from django_fullctl.models import (
+from fullctl.django.auth import permissions
+from fullctl.django.models import (
     Instance,
     Organization,
     OrganizationUser,

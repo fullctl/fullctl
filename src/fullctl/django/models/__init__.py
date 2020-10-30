@@ -1,1 +1,1 @@
-from fullctl.django.models.concreate.account import *
+from fullctl.django.models.concrete.account import *

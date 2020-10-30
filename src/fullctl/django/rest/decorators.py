@@ -8,7 +8,7 @@ import reversion
 
 from django_grainy.decorators import grainy_rest_viewset, grainy_rest_viewset_response
 
-from fullctl.django.rest import HANDLEREF_FIELDS
+from fullctl.django.rest.core import HANDLEREF_FIELDS
 from fullctl.django.models import Organization, APIKey
 
 

@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 
 version = open('Ctl/VERSION').read().strip()
-requirements = open('Ctl/requirements.txt').read().split("\n")
+#requirements = open('Ctl/requirements.txt').read().split("\n")
 #test_requirements = open('Ctl/requirements-test.txt').read().split("\n")
 
 
@@ -26,7 +26,7 @@ setup(
     #TODO
     url=None,
     download_url=None,
-    install_requires=requirements,
+    #install_requires=requirements,
     #test_requires=test_requirements,
     zip_safe=True
 )

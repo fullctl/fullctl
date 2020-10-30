@@ -33,7 +33,7 @@ import reversion
 from django_peeringdb.models.concrete import NetworkIXLan, Network
 from fullctl.django.inet.util import pdb_lookup
 from fullctl.django.auth import permissions
-from fullctl.django.models.base import HandleRefModel, PdbRefModel
+from fullctl.django.models.abstract import HandleRefModel, PdbRefModel
 
 
 

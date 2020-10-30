@@ -2,7 +2,7 @@ from django.apps import AppConfig
 
 
 class DjangoFullctlConfig(AppConfig):
-    name = "django_fullctl"
+    name = "fullctl.django"
     label = "django_fullctl"
 
     def ready(self):
