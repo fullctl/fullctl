@@ -11,8 +11,7 @@ class Permissions(django_grainy.util.Permissions):
 class RemotePermissions(django_grainy.remote.Permissions):
 
     """
-    When MANAGED_BY_OAUTH is True, permissions are provided
-    from the oauth instance.
+    Permissions are provided from the oauth instance.
 
     We use grainy remote permissions to facilitate this
     """
@@ -31,10 +30,7 @@ class RemotePermissions(django_grainy.remote.Permissions):
 def permissions(user, refresh=False):
     if hasattr(user, "_fullctl_permissions") and not refresh:
         return user._fullctl_permissions
-    if settings.MANAGED_BY_OAUTH:
-        perms = RemotePermissions(user)
-    else:
-        perms = Permissions(user)
+    perms = RemotePermissions(user)
     user._fullctl_permissions = perms
     return perms
 

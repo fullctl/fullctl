@@ -1,6 +1,6 @@
 {% load i18n %}
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
-  <a class="navbar-brand" href="#">fullctl / ix</a>
+  <a class="navbar-brand" href="#">fullctl</a>
 
   <div>
     <ul class="navbar-nav">
@@ -12,15 +12,6 @@
           {% endfor %}
           </select>
         </form>
-        <form class="form-inline" style="display:inline-block">
-          <select id="ix-list" name="ix-list" class="form-control"></select></form>
-        <div class="dropdown" style="display: inline-block">
-        <a class="nav-link dropdown-toggle" href="#" id="add-ix-dropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">+</a>
-        <div class="dropdown-menu" aria-labelledby="add-ix-dropdown">
-          <a class="dropdown-item" href="#" id="btn-add-ix">{% trans "Import PeeringDB Exchange" %}</a>
-          <a class="dropdown-item" href="#" id="btn-import-org">{% trans "Import from PeeringDB Organization" %}</a>
-        </div>
-      </div>
       </li>
 
 

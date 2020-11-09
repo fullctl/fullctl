@@ -24,31 +24,3 @@ def verified_asns(perms):
         })
 
     return verified_asns
-
-
-def create_personal_org(user):
-
-    if not settings.MANAGED_BY_OAUTH:
-
-        # organizations are not managed by oauth
-        # so for now we just ensure that each user
-        # has a personal org
-
-        if user.is_authenticated:
-
-            org, _ = Organization.objects.get_or_create(
-                name=f"{user.username} personal org",
-                slug=user.username,
-                personal=True,
-            )
-
-            instance = Instance.get_or_create(org)
-
-            OrganizationUser.objects.create(
-                org=org, user=user,
-            )
-
-            user.grainy_permissions.add_permission(f"*.{org.id}", "crud")
-            return org
-    return
-

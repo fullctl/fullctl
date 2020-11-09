@@ -25,19 +25,18 @@ urlpatterns = [
     ),
     path(
         "login/",
-        auth_views.LoginView.as_view(template_name="fullctl/auth/login.html"),
+        auth_views.LoginView.as_view(template_name="common/auth/login.html"),
         name="login",
     ),
     path("logout/", auth_views.LogoutView.as_view(next_page="/login"), name="logout"),
     path(
         "apidocs/swagger",
-        TemplateView.as_view(template_name="fullctl/apidocs/swagger.html",),
+        TemplateView.as_view(template_name="common/apidocs/swagger.html",),
         name="swagger",
     ),
     path(
         "apidocs/redoc",
-        TemplateView.as_view(template_name="fullctl/apidocs/redoc.html",),
+        TemplateView.as_view(template_name="common/apidocs/redoc.html",),
         name="redoc",
     ),
-    path("", views.org_redirect),
 ]

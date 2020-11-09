@@ -7,16 +7,16 @@ def account_service(request):
 
     # TODO abstract so other auth services can be
     # defined
-    if settings.MANAGED_BY_OAUTH:
-        context.update(
-            account_service={
-                "urls": {
-                    "create_org": f"{settings.OAUTH_TWENTYC_HOST}/account/org/create/",
-                    "manage_org": f"{settings.OAUTH_TWENTYC_HOST}/account/?org={request.org.slug}",
-                },
+    context.update(
+        account_service={
+            "urls": {
+                "create_org": f"{settings.OAUTH_TWENTYC_HOST}/account/org/create/",
+                "manage_org": f"{settings.OAUTH_TWENTYC_HOST}/account/?org={request.org.slug}",
             },
-            oauth_manages_org=settings.MANAGED_BY_OAUTH,
-        )
+        },
+        #TODO: deprecated
+        oauth_manages_org=True,
+    )
 
 
     return context

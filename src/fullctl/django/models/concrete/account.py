@@ -135,10 +135,7 @@ class Organization(HandleRefModel):
                 continue
 
             try:
-                if settings.MANAGED_BY_OAUTH:
-                    org = cls.objects.get(remote_id=ns[1])
-                else:
-                    org = cls.objects.get(id=ns[1])
+                org = cls.objects.get(remote_id=ns[1])
                 if org not in related_orgs:
                     permissioned_orgs.append(org)
             except cls.DoesNotExist:

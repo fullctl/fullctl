@@ -69,10 +69,7 @@ class grainy_endpoint:
     def __call__(self, fn):
         decorator = self
 
-        if settings.MANAGED_BY_OAUTH:
-            permissions_cls = RemotePermissions
-        else:
-            permissions_cls = Permissions
+        permissions_cls = RemotePermissions
 
         @grainy_rest_viewset_response(
             namespace=decorator.namespace,
