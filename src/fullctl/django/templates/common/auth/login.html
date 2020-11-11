@@ -5,15 +5,15 @@
 
     {% block "css" %}
     {{ block.super }}
-    <link rel="stylesheet" type="text/css" href="{% static "devicectl/devicectl.css" %}" />
+    <link rel="stylesheet" type="text/css" href="{% static "{{ sertvice_tag }}/{{ sertvice_tag }}.css" %}" />
     {% endblock %}
 
     {% block "header_middle" %}
     <div class="container-fluid header-outer">
-        <div class="top-border devicectl app_bg"></div>
+        <div class="top-border {{ sertvice_tag }} app_bg"></div>
         <div class="row header">
             <div class="col-12 col-sm-6 header-left mt-3 mb-2 ml-3 app-switcher">
-                <img class="app-logo" src="{% static "common/icons/devicectl-logo-darkbg.svg" %}" alt="devicectl">
+                <img class="app-logo" src="{% static service_logo %}" alt="{{ sertvice_tag }}">
             </div>
         </div>
     </div>
@@ -66,7 +66,7 @@
                 {% blocktrans %}
                 The authentication service(s) to the right
                 are in control of the users and organizations for this
-                devicectl instance.
+                {{ sertvice_tag }} instance.
                 {% endblocktrans %}
                 </div>
                 {% endif %}
@@ -74,7 +74,7 @@
                     {% if backends.backends %}
                     <h3>{% trans "Authenticate" %}</h3>
                     <!-- OAUTH -->
-                    {% include "devicectl/auth/oauth.html" %}
+                    {% include "common/auth/oauth.html" %}
                     {% endif %}
                 </div>
 
