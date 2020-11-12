@@ -1,6 +1,6 @@
 {% extends "common/base.html" %}
 {% load static i18n %}
-{% block "title" %}fullctl / ix{% endblock %}
+{% block "title" %}fullctl / {{ service_name }}{% endblock %}
 
 {% block "js" %}
 {{ block.super }}
@@ -50,7 +50,7 @@ fullctl.permissions = {{ permissions|safe }}
     <div class="col-12 col-sm-6  header-left">
       <div class="app-switcher" data-element="app_switcher">
         <div class="selected {{ request.app_id }}">
-          <img class="app-logo" src="{% static "common/icons/ixctl-logo-darkbg.svg" %}" alt="ixctl">
+          <img class="app-logo" src="{% static service_logo_dark %}" alt="{{ service_tag }}">
         <span class="icon {{ request.app_id }} icon-caret-down"></span>
         <div class="others" style="display:none">
         </div>

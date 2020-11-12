@@ -16,8 +16,10 @@ def account_service(request):
         },
         #TODO: deprecated
         oauth_manages_org=True,
-        service_logo=f"common/icons/{settings.SERVICE_TAG}-logo-darkbg.svg",
+        service_logo_dark=f"{settings.SERVICE_TAG}/logo-darkbg.svg",
+        service_logo_light=f"{settings.SERVICE_TAG}/logo-lightbg.svg",
         service_tag=settings.SERVICE_TAG,
+        service_name=settings.SERVICE_TAG.replace("ctl",""),
     )
 
 
