@@ -21,7 +21,7 @@ class APIKeyAuthentication(authentication.BaseAuthentication):
             if key:
                 api_key = APIKey.objects.get(key=key)
                 request.api_key = api_key
-                perms = permissions(apu_key.user)
+                perms = permissions(api_key.user)
                 return (api_key.user, None)
             else:
                 return None
