@@ -11,7 +11,7 @@ class CaseInsensitiveOrderingFilter(OrderingFilter):
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)
 
-        if len(ordering) > 0:
+        if ordering and len(ordering) > 0:
             # Only supports single field ordering
             ordering = ordering[0]
 
