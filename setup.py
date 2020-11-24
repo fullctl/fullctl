@@ -7,6 +7,14 @@ version = open("Ctl/VERSION").read().strip()
 
 
 setup(
+    extras_require={
+        "dev": [
+            "pytest>=6.0.1",
+            "pytest-django>=3.8.0",
+            "pytest-cov",
+            "black==20.8b1",
+        ]
+    },
     dependency_links=[
         "https://github.com/peeringdb/peeringdb-py/archive/july_updates.zip"
     ],
@@ -19,11 +27,11 @@ setup(
         "django-inet",
         "django-autocomplete-light<=4,>=3",
         "social-auth-app-django<4",
-        "grainy<2,>=1.6.0",
-        "django-grainy<2,>=1.9.0",
+        "grainy>=1.6.0,<2",
+        "django-grainy>=1.9.0,<2",
         "pyyaml",
         "pip",
-        "celery>=5,<6",
+        "celery<6,>=5",
     ],
     name="fullctl",
     version=version,
