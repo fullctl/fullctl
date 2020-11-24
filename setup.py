@@ -7,6 +7,24 @@ version = open("Ctl/VERSION").read().strip()
 
 
 setup(
+    dependency_links=[
+        "https://github.com/peeringdb/peeringdb-py/archive/july_updates.zip"
+    ],
+    install_requires=[
+        "django-handleref>=0.5",
+        "djangorestframework<4,>=3.11",
+        "django>=2.2,<3",
+        "django-peeringdb",
+        "django-reversion<4",
+        "django-inet",
+        "django-autocomplete-light<=4,>=3",
+        "social-auth-app-django<4",
+        "grainy<2,>=1.6.0",
+        "django-grainy<2,>=1.9.0",
+        "pyyaml",
+        "pip",
+        "celery>=5,<6",
+    ],
     name="fullctl",
     version=version,
     author="20C",
