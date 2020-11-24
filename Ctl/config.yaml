@@ -3,6 +3,10 @@ ctl:
   plugins:
     - type: changelog
       name: changelog
+    - type: venv
+      name: venv
+      config:
+        python_version: "3.7"
 
   permissions:
     - namespace: "ctl"
