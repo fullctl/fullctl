@@ -2,6 +2,7 @@ import subprocess
 
 from fullctl.django.models.base import HandleRefModel
 
+
 class Task(HandleRefModel):
 
     """
@@ -134,7 +135,11 @@ class TaskContainer(HandleRefModel):
         return task
 
     def start_task(self, op, *args, **kwargs):
-        task = self.task_class(status="pending", op=op, owner=self,)
+        task = self.task_class(
+            status="pending",
+            op=op,
+            owner=self,
+        )
         task.param = {"args": args, "kwargs": kwargs}
         task = self.task_validate(task)
         task.save()

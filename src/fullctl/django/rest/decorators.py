@@ -51,13 +51,18 @@ class load_object:
             except decorator.model.DoesNotExist:
                 return Response(status=404)
             return fn(self, request, *args, **kwargs)
+
         wrapped.__name__ = fn.__name__
         return wrapped
 
 
 class grainy_endpoint:
     def __init__(
-        self, namespace=None, require_auth=True, explicit=True, instance_class=None,
+        self,
+        namespace=None,
+        require_auth=True,
+        explicit=True,
+        instance_class=None,
         **kwargs
     ):
         self.namespace = namespace or ["org", "{request.org.permission_id}"]

@@ -7,6 +7,7 @@ from django.conf import settings
 
 from fullctl.django.models import Instance, Organization
 
+
 class require_auth:
 
     """

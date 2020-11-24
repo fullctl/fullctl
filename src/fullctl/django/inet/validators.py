@@ -37,6 +37,7 @@ IRR_SOURCE = (
     "TC",
 )
 
+
 def validate_ip4(value):
     try:
         ipaddress.IPv4Address(value)
@@ -61,6 +62,7 @@ def validate_prefix(value):
 def validate_masklength_range(value):
     if not re.match(r"^([0-9]+\.\.[0-9]+|exact)$", value):
         raise ValidationError("Needs to be [0-9]+..[0-9]+ or 'exact'")
+
 
 def validate_as_set(value):
     """

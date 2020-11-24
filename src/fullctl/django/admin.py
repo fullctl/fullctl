@@ -18,10 +18,12 @@ class BaseTabularAdmin(admin.TabularInline):
 class APIKeyAdmin(BaseAdmin):
     list_display = ("id", "user", "key")
 
+
 class OrganizationUserInline(admin.TabularInline):
     model = OrganizationUser
     extra = 0
     fields = ("status", "user")
+
 
 class OrganizationAdmin(BaseAdmin):
     list_display = ("id", "name", "slug")

@@ -140,5 +140,3 @@ class PeeringDBImportSchema(AutoSchema):
                 "description": "",
             }
         }
-
-

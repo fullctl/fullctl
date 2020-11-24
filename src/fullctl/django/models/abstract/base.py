@@ -5,6 +5,7 @@ from django_handleref.models import HandleRefModel as SoftDeleteHandleRefModel
 
 from fullctl.django.inet.util import pdb_lookup
 
+
 class HandleRefModel(SoftDeleteHandleRefModel):
     """
     Like handle ref, but with hard delete
@@ -77,5 +78,3 @@ class PdbRefModel(HandleRefModel):
                 filters[k] = v
             self._pdb = pdb_lookup(self.PdbRef.model, **filters)
         return self._pdb
-
-

@@ -31,12 +31,16 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(next_page="/login"), name="logout"),
     path(
         "apidocs/swagger",
-        TemplateView.as_view(template_name="common/apidocs/swagger.html",),
+        TemplateView.as_view(
+            template_name="common/apidocs/swagger.html",
+        ),
         name="swagger",
     ),
     path(
         "apidocs/redoc",
-        TemplateView.as_view(template_name="common/apidocs/redoc.html",),
+        TemplateView.as_view(
+            template_name="common/apidocs/redoc.html",
+        ),
         name="redoc",
     ),
 ]

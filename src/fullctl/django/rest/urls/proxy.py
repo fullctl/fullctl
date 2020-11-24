@@ -6,6 +6,7 @@ from django.urls import path, include
 
 PROXIED = {}
 
+
 def proxy_api(service, host, endpoints):
 
     """
@@ -13,16 +14,12 @@ def proxy_api(service, host, endpoints):
     exposed to the local service's api 1:1
     """
 
-    paths = [
-        proxy_api_endpoint(service, host, endpoint)
-        for endpoint in endpoints
-    ]
+    paths = [proxy_api_endpoint(service, host, endpoint) for endpoint in endpoints]
 
     return include(paths)
 
 
 def proxy_api_endpoint(service, host, tag):
-
     def view_proxy(request, org_tag, *args, **kwargs):
         api_key = request.user.key_set.first()
         method = request.method.lower()
@@ -30,10 +27,12 @@ def proxy_api_endpoint(service, host, tag):
 
         _kwargs = {}
 
-        if method in ["post","put","patch"]:
+        if method in ["post", "put", "patch"]:
             _kwargs.update(data=request.data)
 
-        response = request_fn(f"{host}/api/{org_tag}/{tag}", params = {"key":api_key.key})
+        response = request_fn(
+            f"{host}/api/{org_tag}/{tag}", params={"key": api_key.key}
+        )
         print("proxied response in", response.elapsed.total_seconds())
         return JsonResponse(response.json(), status=response.status_code)
 
@@ -47,6 +46,7 @@ def setup(service, patterns):
 
     PROXIED[service] = patterns
 
+
 def urlpatterns(supported_services):
     urlpatterns = []
 
@@ -54,13 +54,6 @@ def urlpatterns(supported_services):
         import_module(f"django_{service}.rest.urls.proxy")
 
     for service, patterns in PROXIED.items():
-        urlpatterns.append(
-            path(
-                "api/<str:org_tag>/",
-                patterns
-            )
-        )
+        urlpatterns.append(path("api/<str:org_tag>/", patterns))
 
     return urlpatterns
-
-

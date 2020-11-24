@@ -36,16 +36,12 @@ from fullctl.django.auth import permissions
 from fullctl.django.models.abstract import HandleRefModel, PdbRefModel
 
 
-
 def generate_secret():
     return token_urlsafe()
 
 
-
 @reversion.register()
-@grainy_model(
-    namespace="org", namespace_instance="org.{instance.permission_id}"
-)
+@grainy_model(namespace="org", namespace_instance="org.{instance.permission_id}")
 class Organization(HandleRefModel):
 
     """
@@ -142,7 +138,6 @@ class Organization(HandleRefModel):
                 pass
 
         return list(set(related_orgs + permissioned_orgs))
-
 
     @classmethod
     def sync(cls, orgs, user, backend):
@@ -291,6 +286,3 @@ class APIKey(HandleRefModel):
 
     class HandleRef:
         tag = "key"
-
-
-

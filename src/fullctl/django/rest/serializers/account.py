@@ -35,6 +35,7 @@ class Organization(ModelSerializer):
             return "Personal"
         return obj.name
 
+
 @register
 class ASN(serializers.Serializer):
 
@@ -46,11 +47,7 @@ class ASN(serializers.Serializer):
     class Meta:
         fields = ["asn", "name"]
 
-
     def get_name(self, obj):
         if obj["pdb_net"]:
             return obj["pdb_net"].name
         return ""
-
-
-

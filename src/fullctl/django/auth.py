@@ -33,4 +33,3 @@ def permissions(user, refresh=False):
     perms = RemotePermissions(user)
     user._fullctl_permissions = perms
     return perms
-

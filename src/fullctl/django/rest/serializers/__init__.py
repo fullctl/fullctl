@@ -2,6 +2,7 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+
 class SoftRequiredValidator:
     """
     A validator that allows us to require that at least
@@ -36,6 +37,7 @@ class ModelSerializer(serializers.ModelSerializer):
         if hasattr(obj, "Grainy"):
             return obj.Grainy.namespace(obj)
         return None
+
 
 class RequireContext:
 

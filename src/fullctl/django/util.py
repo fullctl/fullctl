@@ -18,9 +18,6 @@ def verified_asns(perms):
         except (ValueError, pdb_models.Network.DoesNotExist):
             pdb_net = None
 
-        verified_asns.append({
-            "asn": asn,
-            "pdb_net": pdb_net
-        })
+        verified_asns.append({"asn": asn, "pdb_net": pdb_net})
 
     return verified_asns

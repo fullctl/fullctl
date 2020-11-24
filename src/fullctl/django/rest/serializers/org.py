@@ -16,6 +16,7 @@ from fullctl.django.rest.serializers import RequireContext, ModelSerializer
 
 Serializers, register = serializer_registry()
 
+
 @register
 class OrganizationUser(ModelSerializer):
     ref_tag = "orguser"

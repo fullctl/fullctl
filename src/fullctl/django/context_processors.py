@@ -1,6 +1,7 @@
 from django.conf import settings
 from django_peeringdb.models.concrete import Network
 
+
 def account_service(request):
 
     context = {}
@@ -14,14 +15,13 @@ def account_service(request):
                 "manage_org": f"{settings.OAUTH_TWENTYC_HOST}/account/?org={request.org.slug}",
             },
         },
-        #TODO: deprecated
+        # TODO: deprecated
         oauth_manages_org=True,
         service_logo_dark=f"{settings.SERVICE_TAG}/logo-darkbg.svg",
         service_logo_light=f"{settings.SERVICE_TAG}/logo-lightbg.svg",
         service_tag=settings.SERVICE_TAG,
-        service_name=settings.SERVICE_TAG.replace("ctl",""),
+        service_name=settings.SERVICE_TAG.replace("ctl", ""),
     )
-
 
     return context
 

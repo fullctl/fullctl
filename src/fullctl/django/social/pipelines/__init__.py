@@ -30,7 +30,10 @@ def sync_api_keys(backend, details, response, uid, user, *args, **kwargs):
         # create new keys
 
         for new_key, permissions in api_keys.items():
-            api_key, created = APIKey.objects.get_or_create(user=user, key=new_key,)
+            api_key, created = APIKey.objects.get_or_create(
+                user=user,
+                key=new_key,
+            )
 
 
 def sync_organizations(backend, details, response, uid, user, *args, **kwargs):
