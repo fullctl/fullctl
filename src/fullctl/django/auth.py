@@ -30,6 +30,10 @@ class RemotePermissions(django_grainy.remote.Permissions):
 def permissions(user, refresh=False):
     if hasattr(user, "_fullctl_permissions") and not refresh:
         return user._fullctl_permissions
-    perms = RemotePermissions(user)
+
+    if getattr(settings, "USE_LOCAL_PERMISSIONS", False):
+        perms = Permissions(user)
+    else:
+        perms = RemotePermissions(user)
     user._fullctl_permissions = perms
     return perms
