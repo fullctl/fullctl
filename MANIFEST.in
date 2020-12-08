@@ -1,4 +1,5 @@
 include LICENSE
 include Ctl/VERSION
 recursive-include Ctl *.txt
-recursive-include src/django_fullctl *.py
+recursive-include src/django_fullctl *.py *.html
+recursive-include src/django_fullctl/static *
