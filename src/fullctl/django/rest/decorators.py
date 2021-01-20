@@ -74,7 +74,11 @@ class grainy_endpoint:
     def __call__(self, fn):
         decorator = self
 
-        permissions_cls = RemotePermissions
+        if getattr(settings, "USE_LOCAL_PERMISSIONS", False):
+            permissions_cls = Permissions
+        else:
+            permissions_cls = RemotePermissions
+
 
         @grainy_rest_viewset_response(
             namespace=decorator.namespace,
