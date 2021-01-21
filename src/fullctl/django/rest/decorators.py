@@ -2,14 +2,13 @@ from django.conf import settings
 
 from rest_framework import exceptions
 from rest_framework.response import Response
-from rest_framework import serializers
 
 import reversion
 
-from django_grainy.decorators import grainy_rest_viewset, grainy_rest_viewset_response
+from django_grainy.decorators import grainy_rest_viewset_response
 
 from fullctl.django.rest.core import HANDLEREF_FIELDS
-from fullctl.django.models import Organization, APIKey
+from fullctl.django.models import Organization
 
 
 from fullctl.django.auth import Permissions, RemotePermissions
