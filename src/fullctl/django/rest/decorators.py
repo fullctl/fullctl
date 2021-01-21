@@ -79,7 +79,6 @@ class grainy_endpoint:
         else:
             permissions_cls = RemotePermissions
 
-
         @grainy_rest_viewset_response(
             namespace=decorator.namespace,
             namespace_instance=decorator.namespace,
@@ -89,8 +88,6 @@ class grainy_endpoint:
             **decorator.kwargs,
         )
         def wrapped(self, request, *args, **kwargs):
-
-            request.org = Organization.objects.get(slug=request.nsparam["org_tag"])
 
             if decorator.require_auth and not request.user.is_authenticated:
                 return Response(status=401)
