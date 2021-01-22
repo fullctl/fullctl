@@ -2,14 +2,13 @@ from django.conf import settings
 
 from rest_framework import exceptions
 from rest_framework.response import Response
-from rest_framework import serializers
 
 import reversion
 
-from django_grainy.decorators import grainy_rest_viewset, grainy_rest_viewset_response
+from django_grainy.decorators import grainy_rest_viewset_response
 
 from fullctl.django.rest.core import HANDLEREF_FIELDS
-from fullctl.django.models import Organization, APIKey
+from fullctl.django.models import Organization
 
 
 from fullctl.django.auth import Permissions, RemotePermissions
@@ -74,7 +73,10 @@ class grainy_endpoint:
     def __call__(self, fn):
         decorator = self
 
-        permissions_cls = RemotePermissions
+        if getattr(settings, "USE_LOCAL_PERMISSIONS", False):
+            permissions_cls = Permissions
+        else:
+            permissions_cls = RemotePermissions
 
         @grainy_rest_viewset_response(
             namespace=decorator.namespace,
@@ -85,8 +87,6 @@ class grainy_endpoint:
             **decorator.kwargs,
         )
         def wrapped(self, request, *args, **kwargs):
-
-            request.org = Organization.objects.get(slug=request.nsparam["org_tag"])
 
             if decorator.require_auth and not request.user.is_authenticated:
                 return Response(status=401)

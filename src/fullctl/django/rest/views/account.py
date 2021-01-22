@@ -38,7 +38,8 @@ class Organization(viewsets.GenericViewSet):
 class User(viewsets.GenericViewSet):
 
     ref_tag = "user"
-
+    serializer_class = Serializers.asn
+    
     @action(detail=False, methods=["GET"])
     @grainy_endpoint()
     def asns(self, request, org, *args, **kwargs):
