@@ -14,12 +14,13 @@ def proxy_api(service, host, endpoints):
     exposed to the local service's api 1:1
     """
 
-    paths = [proxy_api_endpoint(service, host, endpoint) for endpoint in endpoints]
+    paths = [proxy_api_endpoint(service, host, {"remote":remote, "local":local}) for remote, local in endpoints]
 
     return include(paths)
 
 
-def proxy_api_endpoint(service, host, tag):
+def proxy_api_endpoint(service, host, endpoint):
+
     def view_proxy(request, org_tag, *args, **kwargs):
         api_key = request.user.key_set.first()
         method = request.method.lower()
@@ -30,13 +31,21 @@ def proxy_api_endpoint(service, host, tag):
         if method in ["post", "put", "patch"]:
             _kwargs.update(data=request.data)
 
-        response = request_fn(
-            f"{host}/api/{org_tag}/{tag}", params={"key": api_key.key}
-        )
-        print("proxied response in", response.elapsed.total_seconds())
-        return JsonResponse(response.json(), status=response.status_code)
+        endpoint_remote = endpoint["remote"].format(org_tag=org_tag, **kwargs)
 
-    return path(f"{tag}/", view_proxy, name=f"proxies-api-{service}-{tag}")
+        url =f"{host}/api/{endpoint_remote}"
+
+        response = request_fn(url, params={"key": api_key.key})
+        print("proxied response in", response.elapsed.total_seconds())
+
+        json_dumps_params = {}
+
+        if "pretty" in request.GET:
+            json_dumps_params.update(indent=2)
+
+        return JsonResponse(response.json(), status=response.status_code, json_dumps_params=json_dumps_params)
+
+    return path(endpoint["local"], view_proxy, name=f"proxies-api-{service}-{endpoint['local']}")
 
 
 def setup(service, patterns):
@@ -50,10 +59,10 @@ def setup(service, patterns):
 def urlpatterns(supported_services):
     urlpatterns = []
 
-    for service in supported_services:
-        import_module(f"django_{service}.rest.urls.proxy")
+    #for service in supported_services:
+    #    import_module(f"django_{service}.rest.urls.proxy")
 
     for service, patterns in PROXIED.items():
-        urlpatterns.append(path("api/<str:org_tag>/", patterns))
+        urlpatterns.append(path("api/", patterns))
 
     return urlpatterns
