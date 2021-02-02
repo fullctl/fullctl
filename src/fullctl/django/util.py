@@ -1,8 +1,4 @@
 import django_peeringdb.models.concrete as pdb_models
-from django.conf import settings
-
-from fullctl.django.auth import permissions
-from fullctl.django.models import APIKey, Instance, Organization, OrganizationUser
 
 
 def verified_asns(perms):

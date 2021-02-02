@@ -1,9 +1,7 @@
-from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.http import Http404
 
 from fullctl.django.auth import permissions
-from fullctl.django.models import Organization, OrganizationUser
+from fullctl.django.models import Organization
 
 
 class RequestAugmentation:

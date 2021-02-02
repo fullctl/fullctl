@@ -1,7 +1,4 @@
 import django.http
-import rest_framework
-import reversion
-from django.conf import settings
 from django.shortcuts import redirect
 from django.urls import reverse
 

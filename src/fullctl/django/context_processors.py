@@ -1,5 +1,4 @@
 from django.conf import settings
-from django_peeringdb.models.concrete import Network
 
 
 def account_service(request):
@@ -29,7 +28,6 @@ def account_service(request):
 def permissions(request):
     context = {}
 
-    instances = [request.org]
     ops = [("c", "create"), ("r", "read"), ("u", "update"), ("d", "delete")]
 
     is_accessible = request.org in request.org.accessible(request.user)

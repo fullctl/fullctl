@@ -6,4 +6,4 @@ class DjangoFullctlConfig(AppConfig):
     label = "django_fullctl"
 
     def ready(self):
-        import fullctl.django.signals
+        import fullctl.django.signals  # noqa: F401
