@@ -1,11 +1,3 @@
-import ipaddress
-import json
-import os
-
-import django_peeringdb.models.concrete as pdb_models
-import pytest
-from django.urls import reverse
-
 import fullctl.django.models as models
 
 
@@ -39,11 +31,10 @@ def test_org_sync_single_change(db, dj_account_objects):
     org.refresh_from_db()
     assert org.name == "changed name"
     assert org.slug == "changed slug"
-    assert org.personal == False
+    assert org.personal is False
 
 
 def test_org_sync_single_new(db, dj_account_objects):
-    org = dj_account_objects.org
     data = {"id": 3, "name": "org3-test", "slug": "org3", "personal": False}
     new_org = models.Organization.sync_single(data, dj_account_objects.user, None)
     assert new_org.name == "org3-test"
@@ -58,7 +49,7 @@ def test_org_sync_multiple(db, dj_account_objects):
         {"id": 3, "name": "org3-test", "slug": "org3", "personal": False},
         {"id": 4, "name": "org4-test", "slug": "org4", "personal": False},
     ]
-    synced = models.Organization.sync(orgs, dj_account_objects.user, None)
+    models.Organization.sync(orgs, dj_account_objects.user, None)
     assert models.Organization.objects.filter(name="org3-test").exists()
     assert models.Organization.objects.filter(name="org4-test").exists()
     # Assert the synced orgs are the only orgs that the user belongs to now
