@@ -1,8 +1,4 @@
-import django_peeringdb.models.concrete as pdb_models
-from django.conf import settings
-from django_grainy.helpers import int_flags
-
-from fullctl.django.models import APIKey, Network, Organization, OrganizationUser
+from fullctl.django.models import APIKey, Organization
 
 
 def sync_api_keys(backend, details, response, uid, user, *args, **kwargs):

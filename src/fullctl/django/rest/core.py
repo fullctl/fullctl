@@ -1,11 +1,7 @@
-import datetime
-import json
-
-import django_countries
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import IntegrityError, connection
+from django.db import IntegrityError
 from django.http import Http404
-from rest_framework import renderers, status
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
 

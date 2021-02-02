@@ -1,4 +1,4 @@
-from importlib import import_module
+# from importlib import import_module
 
 import requests
 from django.http import JsonResponse

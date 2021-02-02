@@ -1,16 +1,8 @@
-try:
-    from yaml import CDumper as Dumper
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader, Dumper
-
-import yaml
-from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 
 import fullctl.django.models as models
 from fullctl.django.rest.decorators import serializer_registry
-from fullctl.django.rest.serializers import ModelSerializer, RequireContext
+from fullctl.django.rest.serializers import ModelSerializer
 
 Serializers, register = serializer_registry()
 

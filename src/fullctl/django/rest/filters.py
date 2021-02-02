@@ -1,4 +1,3 @@
-from django.core.exceptions import FieldDoesNotExist
 from django.db.models import CharField
 from django.db.models.functions import Lower
 from rest_framework.filters import OrderingFilter

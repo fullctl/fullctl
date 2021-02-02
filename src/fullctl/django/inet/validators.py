@@ -114,7 +114,6 @@ def validate_as_set(value):
         as_parts = as_set.split(":")
 
         set_found = False
-        typ = None
         types = []
 
         for part in as_parts:
