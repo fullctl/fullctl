@@ -4,8 +4,7 @@ from rest_framework.response import Response
 
 import fullctl.django.models as models
 from fullctl.django.rest.core import BadRequest
-from fullctl.django.rest.decorators import (disable_api_key, grainy_endpoint,
-                                            set_org)
+from fullctl.django.rest.decorators import disable_api_key, grainy_endpoint, set_org
 from fullctl.django.rest.route.account import route
 from fullctl.django.rest.serializers.account import Serializers
 
@@ -40,7 +39,7 @@ class User(viewsets.GenericViewSet):
 
     ref_tag = "user"
     serializer_class = Serializers.asn
-    
+
     @action(detail=False, methods=["GET"])
     @grainy_endpoint()
     def asns(self, request, org, *args, **kwargs):
