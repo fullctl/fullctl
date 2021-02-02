@@ -1,7 +1,6 @@
-from django.conf import settings
-
-import django_grainy.util
 import django_grainy.remote
+import django_grainy.util
+from django.conf import settings
 
 
 class Permissions(django_grainy.util.Permissions):

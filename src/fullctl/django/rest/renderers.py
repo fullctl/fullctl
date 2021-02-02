@@ -1,7 +1,8 @@
 import json
-from django.db import connection, IntegrityError
+
+from django.db import IntegrityError, connection
 from django.utils.encoding import smart_text
-from rest_framework import status, renderers
+from rest_framework import renderers, status
 from rest_framework.utils import encoders
 
 

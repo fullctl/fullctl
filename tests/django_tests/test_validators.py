@@ -1,9 +1,10 @@
-import pytest
 from collections import namedtuple
 
+import pytest
 from django.core.exceptions import ValidationError
 
 from fullctl.django.inet import validators
+
 
 def test_validate_ip4(ipaddrs):
     validators.validate_ip4(ipaddrs.IPADDRESS4)

@@ -1,6 +1,5 @@
 from setuptools import find_packages, setup
 
-
 version = open("Ctl/VERSION").read().strip()
 # requirements = open('Ctl/requirements.txt').read().split("\n")
 # test_requirements = open('Ctl/requirements-test.txt').read().split("\n")

@@ -1,8 +1,6 @@
 from django.db import models
-from django_inet.models import (
-    IPAddressField as IPAddressFieldOld,
-    IPPrefixField as IPPrefixFieldOld,
-)
+from django_inet.models import IPAddressField as IPAddressFieldOld
+from django_inet.models import IPPrefixField as IPPrefixFieldOld
 
 
 class IPPrefixField(IPPrefixFieldOld):

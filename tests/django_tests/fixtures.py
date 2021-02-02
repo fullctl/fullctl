@@ -1,6 +1,7 @@
-import os.path
-import pytest
 import json
+import os.path
+
+import pytest
 from django.conf import settings
 from django.test import Client
 
@@ -12,6 +13,7 @@ class AccountObjects:
     def __init__(self, handle):
         from django.contrib.auth import get_user_model
         from rest_framework.test import APIClient
+
         from fullctl.django.auth import permissions
         from fullctl.django.models import Organization, OrganizationUser
 

@@ -1,8 +1,8 @@
 from importlib import import_module
-import requests
 
+import requests
 from django.http import JsonResponse
-from django.urls import path, include
+from django.urls import include, path
 
 PROXIED = {}
 

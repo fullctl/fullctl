@@ -1,9 +1,7 @@
-from six.moves.urllib_parse import urlencode, unquote
-
+from django.conf import settings
+from six.moves.urllib_parse import unquote, urlencode
 from social_core.backends.oauth import BaseOAuth2
 from social_core.exceptions import AuthFailed
-
-from django.conf import settings
 
 
 class PeeringDBOAuth2(BaseOAuth2):
