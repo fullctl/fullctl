@@ -138,7 +138,7 @@ class billable:
 
             if aaactl.requires_billing(product):
                 return Response(
-                    {"non_field_errors": f"Billing setup required at {settings.AAACTL_HOST}/billing/setup?org={request.org.slug}"}, status=403)
+                    {"non_field_errors": [f"Billing setup required to continue using {product}. Please set up billing for your organization at {settings.AAACTL_HOST}/billing/setup?org={request.org.slug}"]}, status=403)
             return fn(viewset, request, *args, **kwargs)
 
         return wrapped

@@ -39,9 +39,12 @@ span.icon.prefixctl {
 
 
 div.validation-error {
-  color: #ea0000;
-  background-color: #480000;
-  border-color: #770505;
+  color: #d2a5a5;
+  background-color: #1d1b1b;
+  border-color: #503838;
+}
+
+div.validation-error.non-field-errors {
 }
 
 .validation-error-indicator {

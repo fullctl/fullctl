@@ -22,12 +22,36 @@ $ctl.service_bridge.Base = $tc.extend(
   $rest.Client
 );
 
+$ctl.application.BillingSetup = $tc.define(
+  "BillingSetup",
+  {
+    BillingSetup : function(product) {
+      this.product = product;
+      this.aaactl = new $ctl.service_bridge.aaactl();
+      this.element = $ctl.template("billing-setup");
+      this.scanner = ()=> {
+        this.aaactl.require_billing_setup(this.product, (b)=> {
+          if(!b)
+            this.element.detach();
+          else
+            this.attach_scanner();
+        });
+      }
+      this.attach_scanner();
+    },
+    attach_scanner : function() {
+      $(document).one("visibilitychange", this.scanner);
+    }
+
+  }
+);
+
 $ctl.application.BillingSetupModal = $tc.extend(
   "BillingSetupModal",
   {
     BillingSetupModal : function(aaactl, product) {
       this.Modal(
-        "continue", "Billing setup required", $ctl.template("billing-setup")
+        "no_button", "Billing setup required", $ctl.template("billing-setup")
       )
 
       this.scanner = ()=> {
@@ -41,13 +65,6 @@ $ctl.application.BillingSetupModal = $tc.extend(
         });
 
       }
-
-
-      this.$e.button_submit.click(()=>{
-        var url =  $ctl.aaactl_urls.billing_setup
-        var redirect = encodeURIComponent(window.location.href)
-        window.open(url);//&redirect=${redirect}`);
-      })
 
       this.attach_scanner();
     },
@@ -157,6 +174,19 @@ $ctl.service_bridge.aaactl = $tc.extend(
   },
   $ctl.service_bridge.Base
 );
+
+
+/** misc events **/
+
+$(twentyc.rest).on("non-field-error", (ev, error, errors, i, node, widget) => {
+  var m = error.match(/^Billing setup required to continue using (.+). Please/)
+  if(m) {
+    errors[i] = null;
+    node.prepend(
+      new $ctl.application.BillingSetup(m[1]).element
+    );
+  }
+});
 
 
 })(jQuery, twentyc.cls, fullctl, twentyc.rest);
