@@ -1,8 +1,12 @@
 from importlib import import_module
+import json
 import requests
 
 from django.http import JsonResponse
 from django.urls import path, include
+
+from rest_framework.request import Request
+from rest_framework.parsers import JSONParser
 
 PROXIED = {}
 
@@ -25,17 +29,20 @@ def proxy_api_endpoint(service, host, endpoint):
         api_key = request.user.key_set.first()
         method = request.method.lower()
         request_fn = getattr(requests, method)
+        drf_request = Request(request, parsers=[JSONParser])
 
         _kwargs = {}
 
         if method in ["post", "put", "patch"]:
-            _kwargs.update(data=request.data)
+            _kwargs.update(json=json.loads(request.body))
+
+        print(_kwargs)
 
         endpoint_remote = endpoint["remote"].format(org_tag=org_tag, **kwargs)
 
         url =f"{host}/api/{endpoint_remote}"
 
-        response = request_fn(url, params={"key": api_key.key})
+        response = request_fn(url, params={"key": api_key.key}, **_kwargs)
         print("proxied response in", response.elapsed.total_seconds())
 
         json_dumps_params = {}

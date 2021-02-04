@@ -11,6 +11,7 @@
 <script src="{% static "autocomplete_light/select2.js" %}" type="text/javascript"></script>
 <script src="{% static "autocomplete_light/jquery.post-setup.js" %}" type="text/javascript"></script>
 <script src="{% static "common/app.js" %}" type="text/javascript"></script>
+<script src="{% static "common/service_bridge.js" %}" type="text/javascript"></script>
 {% endblock %}
 
 {% block "css" %}
@@ -37,6 +38,8 @@ fullctl.org = {
   slug : "{{ request.org.slug }}",
   name : "{{ request.org.name }}"
 }
+
+fullctl.aaactl_urls = {{ account_service.urls|safe }}
 
 var True = true, False = false;
 
@@ -174,6 +177,7 @@ You do not have the permissions to view the {{ app_id }} workspace for the {{ or
 {% endblock %}
 
 <div id="templates">
+{% include "common/app/templates.html" %}
 {% block "templates" %}
 {% endblock %}
 </div>
