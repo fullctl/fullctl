@@ -7,11 +7,14 @@ import reversion
 
 from django_grainy.decorators import grainy_rest_viewset_response
 
+from fullctl.service_bridge.client import AaaCtl
+
 from fullctl.django.rest.core import HANDLEREF_FIELDS
 from fullctl.django.models import Organization
 
 
 from fullctl.django.auth import Permissions, RemotePermissions
+
 
 
 class load_object:
@@ -105,6 +108,42 @@ class grainy_endpoint:
 
         return wrapped
 
+class billable:
+
+    """
+    Will use the aaactl service bridge to determine
+    if the specified product/service has accumulated
+    costs during the current subscription cycle and
+    return an error response if the there are costs
+    but the organization has not yet set up billing
+    """
+
+    def __init__(self, product):
+        self.product = product
+
+
+    def __call__(self, fn):
+
+        product = self.product
+
+        def wrapped(viewset, request, *args, **kwargs):
+
+            #TODO: use org keys once they are in
+            #for now grab the first api key of the requesting
+            #user
+            api_key = request.user.key_set.first().key
+            aaactl = AaaCtl(
+                settings.AAACTL_HOST, api_key, request.org.slug
+            )
+
+            if aaactl.requires_billing(product):
+                return Response(
+                    {"non_field_errors": f"Billing setup required at {settings.AAACTL_HOST}/billing/setup?org={request.org.slug}"}, status=403)
+            return fn(viewset, request, *args, **kwargs)
+
+        return wrapped
+
+
 
 def serializer_registry():
     class Serializers:
@@ -143,3 +182,5 @@ def disable_api_key(fn):
 
     wrapped.__name__ = fn.__name__
     return wrapped
+
+
