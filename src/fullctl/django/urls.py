@@ -14,6 +14,14 @@ urlpatterns = [
         ),
     ),
     path(
+        "api/",
+        include(
+            ("fullctl.django.rest.urls.usage", "fullctl_usage_api"),
+            namespace="fullctl_usage_api",
+        ),
+    ),
+
+    path(
         "autocomplete/pdb/ix",
         fullctl.django.autocomplete.views.peeringdb_ix.as_view(),
         name="pdb ix autocomplete",
