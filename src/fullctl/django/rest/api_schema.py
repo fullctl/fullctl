@@ -1,5 +1,7 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from fullctl.django.rest.serializers import ModelSerializer
+
 
 class BaseSchema(AutoSchema):
 
@@ -125,7 +127,7 @@ class PeeringDBImportSchema(AutoSchema):
 
     def _get_responses(self, path, method):
         self.response_media_types = self.map_renderers(path, method)
-        serializer = Serializers.ix()
+        serializer = ModelSerializer()
         response_schema = self._map_serializer(serializer)
         status_code = "200"
 
