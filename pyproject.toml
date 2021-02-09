@@ -14,9 +14,6 @@ classifiers = [
 ]
 
 
-[tool.poetry.scripts]
-ixctl = "fullctl.cli:main"
-
 [tool.poetry.dependencies]
 python = "^3.7"
 django-handleref = ">=0.5"
