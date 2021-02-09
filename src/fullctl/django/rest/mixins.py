@@ -18,6 +18,7 @@ class OrgQuerysetMixin:
     the resulting queryset by matching the instance org to the
     provided slug.
     """
+
     def get_queryset(self):
         org_tag = self.kwargs["org_tag"]
         return self.queryset.filter(instance__org__slug=org_tag)
