@@ -1,9 +1,8 @@
+import ipaddress
 import re
 
-import ipaddress
-
-from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
+from django.utils.translation import ugettext_lazy as _
 
 # valid IRR source identifiers
 
@@ -115,7 +114,6 @@ def validate_as_set(value):
         as_parts = as_set.split(":")
 
         set_found = False
-        typ = None
         types = []
 
         for part in as_parts:

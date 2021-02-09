@@ -1,8 +1,7 @@
-from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-
+from django.core.management.base import BaseCommand
+from peeringdb import get_backend, initialize_backend, resource
 from peeringdb.client import Client
-from peeringdb import resource, initialize_backend, get_backend
 
 
 class Command(BaseCommand):
@@ -37,7 +36,7 @@ class Command(BaseCommand):
         }
 
         initialize_backend("django_peeringdb", **config["orm"])
-        b = get_backend()
+        get_backend()
 
         client = Client(config, **config)
         print("Syncing from", config["sync"]["url"])

@@ -1,6 +1,18 @@
+import datetime
+import json
 import subprocess
+import traceback
+
+import pytz
+from django.core.exceptions import ValidationError
+from django.db import models
 
 from fullctl.django.models.base import HandleRefModel
+from fullctl.django.tasks import launch_task
+
+
+class TaskLimitError(IOError):
+    pass
 
 
 class Task(HandleRefModel):
@@ -75,7 +87,7 @@ class Task(HandleRefModel):
 
         try:
             if self.param_json:
-                param = json.loads(self.param_json)
+                json.loads(self.param_json)
         except Exception as exc:
             raise ValidationError(f"Parameters could not be JSON encoded: {exc}")
 
@@ -97,7 +109,7 @@ class Task(HandleRefModel):
             param = self.param
             output = op(*param["args"], **param["kwargs"])
             self._complete(output)
-        except Exception as exc:
+        except Exception:
             self._fail(traceback.format_exc())
 
     def run_command(self, command):

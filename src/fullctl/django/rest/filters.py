@@ -1,7 +1,6 @@
-from django.db.models.functions import Lower
 from django.db.models import CharField
+from django.db.models.functions import Lower
 from rest_framework.filters import OrderingFilter
-from django.core.exceptions import FieldDoesNotExist
 
 
 class CaseInsensitiveOrderingFilter(OrderingFilter):
