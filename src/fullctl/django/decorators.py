@@ -1,9 +1,6 @@
-import reversion
 import django.http
-import rest_framework
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.conf import settings
 
 from fullctl.django.models import Instance, Organization
 

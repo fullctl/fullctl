@@ -3,6 +3,7 @@ from fullctl.django.rest.decorators import serializer_registry
 
 Serializers, register = serializer_registry()
 
+
 @register
 class Usage(serializers.Serializer):
 
@@ -15,5 +16,3 @@ class Usage(serializers.Serializer):
 
     class Meta:
         fields = ["name", "units", "start", "end"]
-
-

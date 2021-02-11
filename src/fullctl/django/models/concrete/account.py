@@ -1,39 +1,13 @@
-import time
-import os.path
-import tempfile
-import subprocess
-
 from secrets import token_urlsafe
 
-try:
-    from yaml import CLoader as Loader, CDumper as Dumper
-except ImportError:
-    from yaml import Loader, Dumper
-
-import yaml
-
+import reversion
 from django.contrib.auth import get_user_model
-from django.core import validators
 from django.db import models
-from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
-from django.urls import reverse
-from django.conf import settings
-
 from django_grainy.decorators import grainy_model
 
-from django_inet.models import (
-    IPAddressField,
-    MacAddressField,
-    ASNField,
-)
-
-import reversion
-
-from django_peeringdb.models.concrete import NetworkIXLan, Network
-from fullctl.django.inet.util import pdb_lookup
 from fullctl.django.auth import permissions
-from fullctl.django.models.abstract import HandleRefModel, PdbRefModel
+from fullctl.django.models.abstract import HandleRefModel
 
 
 def generate_secret():

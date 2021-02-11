@@ -14,4 +14,3 @@ def route(viewset):
     prefix = f"{ref_tag}/(?P<org_tag>[^/]+)"
     router.register(prefix, viewset, basename=ref_tag)
     return viewset
-

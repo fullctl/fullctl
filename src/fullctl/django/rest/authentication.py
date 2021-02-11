@@ -1,9 +1,7 @@
-from rest_framework import authentication
-from rest_framework import exceptions
-from rest_framework import permissions
+from rest_framework import authentication, exceptions
 
-from fullctl.django.models import APIKey
 from fullctl.django.auth import permissions
+from fullctl.django.models import APIKey
 
 
 class APIKeyAuthentication(authentication.BaseAuthentication):
@@ -21,7 +19,7 @@ class APIKeyAuthentication(authentication.BaseAuthentication):
             if key:
                 api_key = APIKey.objects.get(key=key)
                 request.api_key = api_key
-                perms = permissions(api_key.user)
+                permissions(api_key.user)
                 return (api_key.user, None)
             else:
                 return None

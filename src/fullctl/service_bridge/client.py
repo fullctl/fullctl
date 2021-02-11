@@ -3,13 +3,14 @@ import requests
 
 class ServiceBridgeError(IOError):
     def __init__(self, bridge, status):
-       super().__init__(f"Service bridge error: {bridge} [{status}]")
+        super().__init__(f"Service bridge error: {bridge} [{status}]")
+
 
 class AuthError(ServiceBridgeError):
     pass
 
-class Bridge:
 
+class Bridge:
     class Meta:
         service = "base"
 
@@ -17,7 +18,6 @@ class Bridge:
         self.url = f"{host}/api"
         self.org = org_slug
         self.key = key
-
 
     def _data(self, response):
         status = response.status_code
@@ -66,7 +66,11 @@ class AaaCtl(Bridge):
         for row in data:
             pay = row.get("pay")
             for item in row.get("items"):
-                if not pay and item["name"].lower() == product_name and item["cost"]>0:
+                if (
+                    not pay
+                    and item["name"].lower() == product_name
+                    and item["cost"] > 0
+                ):
                     return True
 
         return False
@@ -83,6 +87,3 @@ class AaaCtl(Bridge):
         payload = { "product" : product_name }
         data = self.post(f"billing/org/{self.org}/subscribe/", data=payload)
         return data[0]
-
-
-

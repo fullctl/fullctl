@@ -1,7 +1,6 @@
-from django.urls import path, include
 from django.contrib.auth import views as auth_views
+from django.urls import include, path
 from django.views.generic import TemplateView
-from django.conf import settings
 
 import fullctl.django.autocomplete.views
 
@@ -20,7 +19,6 @@ urlpatterns = [
             namespace="fullctl_usage_api",
         ),
     ),
-
     path(
         "autocomplete/pdb/ix",
         fullctl.django.autocomplete.views.peeringdb_ix.as_view(),
