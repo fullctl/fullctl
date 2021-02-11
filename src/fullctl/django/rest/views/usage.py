@@ -3,9 +3,7 @@ import datetime
 from rest_framework import viewsets
 from rest_framework.response import Response
 
-
 import fullctl.django.models as models
-from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.serializers.usage import Serializers
 from fullctl.django.rest.route.usage import route
 from fullctl.django.rest.decorators import grainy_endpoint

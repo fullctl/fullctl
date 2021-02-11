@@ -3,9 +3,6 @@ import requests
 from django.http import JsonResponse
 from django.urls import include, path
 
-from rest_framework.request import Request
-from rest_framework.parsers import JSONParser
-
 PROXIED = {}
 
 
@@ -29,8 +26,8 @@ def proxy_api_endpoint(service, host, endpoint):
         api_key = request.user.key_set.first()
         method = request.method.lower()
         request_fn = getattr(requests, method)
-        drf_request = Request(request, parsers=[JSONParser])
 
+        # drf_request = Request(request, parsers=[JSONParser])
         _kwargs = {}
 
         if method in ["post", "put", "patch"]:

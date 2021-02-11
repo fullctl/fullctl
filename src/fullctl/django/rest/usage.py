@@ -1,9 +1,6 @@
 """
 functions to calculate api usage per org for a metered service
 """
-import pydoc
-from django.conf import settings
-
 REGISTERED = {}
 
 
