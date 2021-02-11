@@ -19,7 +19,6 @@ urlpatterns = [
             namespace="fullctl_usage_api",
         ),
     ),
-
     path(
         "autocomplete/pdb/ix",
         fullctl.django.autocomplete.views.peeringdb_ix.as_view(),

@@ -12,6 +12,7 @@ from fullctl.django.rest.decorators import grainy_endpoint
 from fullctl.django.rest.mixins import OrgQuerysetMixin, CachedObjectMixin
 from fullctl.django.rest.usage import REGISTERED
 
+
 @route
 class Usage(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericViewSet):
 
@@ -34,19 +35,20 @@ class Usage(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericViewSet):
 
         data = []
 
-
         # TODO: support ranges eventually
         start = datetime.datetime.now()
         end = datetime.datetime.now()
 
         for metric_cls in REGISTERED.values():
             metric = metric_cls(org)
-            data.append({
-                "name": metric.Meta.name,
-                "units": metric.calc(start, end),
-                "start": start,
-                "end": end,
-            })
+            data.append(
+                {
+                    "name": metric.Meta.name,
+                    "units": metric.calc(start, end),
+                    "start": start,
+                    "end": end,
+                }
+            )
 
         serializer = self.serializer_class(data, many=True)
 

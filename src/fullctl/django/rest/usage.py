@@ -6,8 +6,10 @@ from django.conf import settings
 
 REGISTERED = {}
 
+
 def register(cls):
     REGISTERED[cls.Meta.name] = cls
+
 
 class UsageMetric:
 
@@ -22,7 +24,5 @@ class UsageMetric:
     def __init__(self, org):
         self.org = org
 
-
     def calc(self, start, end):
         raise NotImplementedError()
-

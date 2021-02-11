@@ -8,6 +8,7 @@ from fullctl.django.rest.route.account import route
 from fullctl.django.rest.serializers.account import Serializers
 from fullctl.django.util import verified_asns
 
+
 @route
 class Organization(viewsets.GenericViewSet):
 
@@ -31,7 +32,6 @@ class Organization(viewsets.GenericViewSet):
             context={"user": request.user},
         )
         return Response(serializer.data)
-
 
 
 @route
