@@ -53,24 +53,7 @@ class AaaCtl(Bridge):
 
         if not sub["pay"]:
             for item in sub.get("items"):
-                if item["name"].lower() == product_name and item["cost"]>0:
-                    return True
-
-        return False
-
-        ## EXITED
-
-
-        data = self.get(f"billing/org/{self.org}/services/")
-
-        for row in data:
-            pay = row.get("pay")
-            for item in row.get("items"):
-                if (
-                    not pay
-                    and item["name"].lower() == product_name
-                    and item["cost"] > 0
-                ):
+                if item["name"].lower() == product_name and item["cost"] > 0:
                     return True
 
         return False
@@ -79,11 +62,10 @@ class AaaCtl(Bridge):
         data = self.get(f"billing/org/{self.org}/services/")
 
         for row in data:
-            pay = row.get("pay")
             for item in row.get("items"):
                 if item["name"].lower() == product_name:
                     return row
 
-        payload = { "product" : product_name }
+        payload = {"product": product_name}
         data = self.post(f"billing/org/{self.org}/subscribe/", data=payload)
         return data[0]
