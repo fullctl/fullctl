@@ -32,6 +32,10 @@ class Bridge:
         url = f"{self.url}/{endpoint}?key={self.key}"
         return self._data(requests.get(url, **kwargs))
 
+    def post(self, endpoint, **kwargs):
+        url = f"{self.url}/{endpoint}?key={self.key}"
+        return self._data(requests.post(url, **kwargs))
+
 
 class AaaCtl(Bridge):
 
@@ -44,6 +48,19 @@ class AaaCtl(Bridge):
     """
 
     def requires_billing(self, product_name):
+
+        sub = self.require_subscription(product_name)
+
+        if not sub["pay"]:
+            for item in sub.get("items"):
+                if item["name"].lower() == product_name and item["cost"]>0:
+                    return True
+
+        return False
+
+        ## EXITED
+
+
         data = self.get(f"billing/org/{self.org}/services/")
 
         for row in data:
@@ -53,4 +70,19 @@ class AaaCtl(Bridge):
                     return True
 
         return False
+
+    def require_subscription(self, product_name):
+        data = self.get(f"billing/org/{self.org}/services/")
+
+        for row in data:
+            pay = row.get("pay")
+            for item in row.get("items"):
+                if item["name"].lower() == product_name:
+                    return row
+
+        payload = { "product" : product_name }
+        data = self.post(f"billing/org/{self.org}/subscribe/", data=payload)
+        return data[0]
+
+
 
