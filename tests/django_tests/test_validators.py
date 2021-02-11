@@ -1,9 +1,10 @@
-import pytest
 from collections import namedtuple
 
+import pytest
 from django.core.exceptions import ValidationError
 
 from fullctl.django.inet import validators
+
 
 def test_validate_ip4(ipaddrs):
     validators.validate_ip4(ipaddrs.IPADDRESS4)
@@ -24,6 +25,7 @@ def test_validate_ip6(ipaddrs):
     with pytest.raises(ValidationError):
         validators.validate_ip6(ipaddrs.INVALID_IPADDRESS6)
 
+
 def test_validate_prefix(ipaddrs):
 
     validators.validate_prefix(ipaddrs.PREFIX)
@@ -34,10 +36,13 @@ def test_validate_prefix(ipaddrs):
 
     assert "Invalid prefix" in str(execinfo.value)
 
+
 @pytest.fixture
 def ipaddrs():
-    Ipaddresses = namedtuple("Ipaddresses",
-        'IPADDRESS4 IPADDRESS6 INVALID_IPADDRESS4 INVALID_IPADDRESS6 PREFIX NETMASK INVALID_PREFIX INVALID_NETMASK')
+    Ipaddresses = namedtuple(
+        "Ipaddresses",
+        "IPADDRESS4 IPADDRESS6 INVALID_IPADDRESS4 INVALID_IPADDRESS6 PREFIX NETMASK INVALID_PREFIX INVALID_NETMASK",
+    )
     return Ipaddresses(
         "192.168.0.1",
         "2001:db8::1000",

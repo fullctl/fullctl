@@ -1,6 +1,5 @@
-from dal import autocomplete
-
 import django_peeringdb.models.concrete as pdb_models
+from dal import autocomplete
 
 
 class peeringdb_ix(autocomplete.Select2QuerySetView):
