@@ -12,6 +12,7 @@ def test_account_service(db, dj_account_objects, settings):
         "urls": {
             "create_org": "localhost/account/org/create/",
             "manage_org": "localhost/account/?org=test",
+            "billing_setup": "localhost/billing/setup?org=test",
         }
     }
 

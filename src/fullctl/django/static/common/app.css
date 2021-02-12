@@ -64,6 +64,12 @@ div.validation-error {
   border: 1px transparent solid;
 }
 
+div.validation-error.non-field-errors {
+  position: relative;
+  top: 0px;
+  right: 0px;
+}
+
 div.input-group div.validation-error {
   top: 30px;
   z-index: 10;
@@ -78,6 +84,15 @@ div.validation-error p {
 
 .marg-top-lg {
   margin-top: 30px;
+}
+
+.marg-bot-sm {
+  margin-bottom: 5px;
+}
+
+.marg-sm {
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 
 /**

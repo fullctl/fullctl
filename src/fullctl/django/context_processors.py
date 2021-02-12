@@ -10,6 +10,7 @@ def account_service(request):
     context.update(
         account_service={
             "urls": {
+                "billing_setup": f"{settings.OAUTH_TWENTYC_HOST}/billing/setup?org={request.org.slug}",
                 "create_org": f"{settings.OAUTH_TWENTYC_HOST}/account/org/create/",
                 "manage_org": f"{settings.OAUTH_TWENTYC_HOST}/account/?org={request.org.slug}",
             },

@@ -320,9 +320,11 @@ twentyc.rest.Widget = twentyc.cls.extend(
     },
 
     render_non_field_errors : function(errors) {
-      var error_node = $('<div>').addClass("alert alert-danger validation-error");
+      var error_node = $('<div>').addClass("alert alert-danger validation-error non-field-errors");
       for(i = 0; i < errors.length; i++) {
-        error_node.append($('<div>').text(errors[i]))
+        $(twentyc.rest).trigger("non-field-error", [errors[i], errors, i, error_node, this]);
+        if(errors[i])
+          error_node.append($('<div>').addClass("non-field-error").text(errors[i]))
       }
       this.element.prepend(error_node)
     },

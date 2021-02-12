@@ -115,7 +115,6 @@ fullctl.application.Modal = $tc.extend(
   fullctl.application.Component
 );
 
-
 fullctl.application.Tool = $tc.extend(
   "Tool",
   {

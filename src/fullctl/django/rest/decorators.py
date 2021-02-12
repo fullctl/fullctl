@@ -4,6 +4,7 @@ from django_grainy.decorators import grainy_rest_viewset_response
 from rest_framework import exceptions
 from rest_framework.response import Response
 
+from fullctl.service_bridge.client import AaaCtl
 from fullctl.django.auth import Permissions, RemotePermissions
 from fullctl.django.models import Organization
 from fullctl.django.rest.core import HANDLEREF_FIELDS
@@ -57,7 +58,7 @@ class grainy_endpoint:
         require_auth=True,
         explicit=True,
         instance_class=None,
-        **kwargs
+        **kwargs,
     ):
         self.namespace = namespace or ["org", "{request.org.permission_id}"]
         self.require_auth = require_auth
@@ -97,6 +98,45 @@ class grainy_endpoint:
                 return fn(self, request, org=request.org, *args, **kwargs)
 
         wrapped.__name__ = fn.__name__
+
+        return wrapped
+
+
+class billable:
+
+    """
+    Will use the aaactl service bridge to determine
+    if the specified product/service has accumulated
+    costs during the current subscription cycle and
+    return an error response if the there are costs
+    but the organization has not yet set up billing
+    """
+
+    def __init__(self, product):
+        self.product = product
+
+    def __call__(self, fn):
+
+        product = self.product
+
+        def wrapped(viewset, request, *args, **kwargs):
+
+            # TODO: use org keys once they are in
+            # for now grab the first api key of the requesting
+            # user
+            api_key = request.user.key_set.first().key
+            aaactl = AaaCtl(settings.AAACTL_HOST, api_key, request.org.slug)
+
+            if aaactl.requires_billing(product):
+                return Response(
+                    {
+                        "non_field_errors": [
+                            f"Billing setup required to continue using {product}. Please set up billing for your organization at {settings.AAACTL_HOST}/billing/setup?org={request.org.slug}"
+                        ]
+                    },
+                    status=403,
+                )
+            return fn(viewset, request, *args, **kwargs)
 
         return wrapped
 
