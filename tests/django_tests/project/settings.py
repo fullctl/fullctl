@@ -170,3 +170,6 @@ LOGGING = {
         "": {"handlers": ["stderr"], "level": "DEBUG", "propagate": False},
     },
 }
+
+OAUTH_TWENTYC_HOST = "localhost"
+SERVICE_TAG = "fullctl"
