@@ -6,7 +6,7 @@
 [![Codecov](https://img.shields.io/codecov/c/github/fullctl/fullctl/master.svg?maxAge=60)](https://codecov.io/github/fullctl/fullctl)
 
 
-Core classes and functions for fullctl service applications
+Core classes and functions for service applications
 
 ## Documentation
 
