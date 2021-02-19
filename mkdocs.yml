@@ -1,0 +1,13 @@
+site_name: fullctl
+site_url: https://github.com/fullctl/fullctl
+
+theme: readthedocs
+
+nav:
+  - Home: index.md
+  - API Documenation:
+
+markdown_extensions:
+  - markdown_include.include
+  - admonition
+  - pymdgen
