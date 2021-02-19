@@ -8,10 +8,6 @@
 
 Core classes and functions for service applications
 
-## Documentation
-
-- latest: https://ctl.readthedocs.io/en/latest
-
 ## License
 
 Copyright 2020-2021 20C, LLC
