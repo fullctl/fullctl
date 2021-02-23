@@ -7,7 +7,7 @@ import pytz
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from fullctl.django.models.base import HandleRefModel
+from fullctl.django.models.abstract.base import HandleRefModel
 from fullctl.django.tasks import launch_task
 
 
