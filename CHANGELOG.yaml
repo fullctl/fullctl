@@ -4,6 +4,9 @@
 0.1.1:
   fixed:
   - import error in task_interface.py
+0.2.0:
+  fixed:
+  - import errors from splitting out fullctl core
 Unreleased:
   added: []
   changed: []
