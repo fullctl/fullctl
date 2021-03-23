@@ -1,11 +1,13 @@
 0.1.0:
   added:
   - initial release
+0.1.1:
+  fixed:
+  - import error in task_interface.py
 Unreleased:
   added: []
   changed: []
   deprecated: []
-  fixed:
-  - import error in task_interface.py
+  fixed: []
   removed: []
   security: []

@@ -2,6 +2,9 @@
 
 
 ## Unreleased
+
+
+## 0.1.1
 ### Fixed
 - import error in task_interface.py
 
