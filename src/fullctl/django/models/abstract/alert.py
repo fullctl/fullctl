@@ -5,6 +5,9 @@ from django.utils.translation import gettext_lazy as _
 from fullctl.django.models.abstract.base import HandleRefModel
 from fullctl.django.models.abstract.task_interface import TaskContainer
 
+
+ALERT_RECIPIENT_TYPE = (("email", _("Email")),)
+
 class AlertGroup(TaskContainer):
 
     """
