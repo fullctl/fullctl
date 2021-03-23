@@ -1,3 +1,4 @@
+from django.db import models
 
 from fullctl.django.models.abstract.base import HandleRefModel
 from fullctl.django.models.abstract.task_interface import TaskContainer
