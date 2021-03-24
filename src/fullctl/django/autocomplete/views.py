@@ -37,7 +37,6 @@ class peeringdb_asn(autocomplete.Select2QuerySetView):
         return item.asn
 
 
-
 class peeringdb_org(autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = pdb_models.Organization.objects.filter(status="ok")

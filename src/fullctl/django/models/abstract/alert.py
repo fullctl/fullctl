@@ -1,12 +1,13 @@
+from django.conf import settings
 from django.db import models
-
 from django.utils.translation import gettext_lazy as _
 
+from fullctl.django.mail import send_plain
 from fullctl.django.models.abstract.base import HandleRefModel
 from fullctl.django.models.abstract.task_interface import TaskContainer
 
-
 ALERT_RECIPIENT_TYPE = (("email", _("Email")),)
+
 
 class AlertGroup(TaskContainer):
 
@@ -54,7 +55,8 @@ class AlertGroup(TaskContainer):
             recipient.notify(subject, message)
             log.alertlogrcp_set.add(
                 self.log_recipient_class(
-                    typ=recipient.typ, recipient=recipient.recipient,
+                    typ=recipient.typ,
+                    recipient=recipient.recipient,
                 ),
                 bulk=False,
             )
@@ -123,4 +125,3 @@ class AlertLog(HandleRefModel):
     @property
     def recipients(self):
         raise NotImplementedError("Should return recipient set")
-
