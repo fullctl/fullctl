@@ -25,6 +25,11 @@ urlpatterns = [
         name="pdb ix autocomplete",
     ),
     path(
+        "autocomplete/pdb/asn",
+        fullctl.django.autocomplete.views.peeringdb_asn.as_view(),
+        name="pdb asn autocomplete",
+    ),
+    path(
         "autocomplete/pdb/org",
         fullctl.django.autocomplete.views.peeringdb_org.as_view(),
         name="pdb org autocomplete",
