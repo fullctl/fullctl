@@ -4,6 +4,11 @@
 ## Unreleased
 
 
+## 0.3.0
+### Added
+- asn autocomplete lookup from peering db data
+
+
 ## 0.2.0
 ### Fixed
 - import errors from splitting out fullctl core

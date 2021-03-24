@@ -7,6 +7,9 @@
 0.2.0:
   fixed:
   - import errors from splitting out fullctl core
+0.3.0:
+  added:
+  - asn autocomplete lookup from peering db data
 Unreleased:
   added: []
   changed: []
