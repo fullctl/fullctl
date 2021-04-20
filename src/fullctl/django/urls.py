@@ -6,10 +6,7 @@ import fullctl.django.autocomplete.views
 import fullctl.django.views
 
 urlpatterns = [
-    path(
-        "_diag",
-        fullctl.django.views.diag
-    ),
+    path("_diag", fullctl.django.views.diag),
     path(
         "api/account/",
         include(
