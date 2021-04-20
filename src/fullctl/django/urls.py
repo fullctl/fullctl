@@ -3,8 +3,13 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 
 import fullctl.django.autocomplete.views
+import fullctl.django.views
 
 urlpatterns = [
+    path(
+        "_diag",
+        fullctl.django.views.diag
+    ),
     path(
         "api/account/",
         include(
