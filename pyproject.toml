@@ -31,6 +31,7 @@ pyyaml = "*"
 pip = "*"
 celery = "<6,>=5"
 peeringdb = "<2"
+whitenoise = "^5.2.0"
 
 [tool.poetry.dev-dependencies]
 pytest = ">=6.0.1"
