@@ -17,6 +17,17 @@ github.com/fullctl/
 
 This uses a common database server between fullctl services, each service still has it's own database.
 
+#### Backups
+
+Backup dev database
+```sh
+poetry run Ctl/dev/exec.sh postgres bash -c 'pg_dumpall -c -U ${POSTGRES_USER}' | xz > fulldb-$(date +%Y%m%d"-"%H%M%S).sql.xz
+```
+
+Restore:
+```sh
+cat $FILE | poetry run Ctl/dev/exec.sh postgres bash -c 'psql -U ${POSTGRES_USER}'
+```
 #### Snippets
 
 ```sh

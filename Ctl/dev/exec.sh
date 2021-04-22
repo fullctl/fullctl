@@ -16,4 +16,4 @@ if [[ -z "${service_id}" ]]; then
   exit 1
 fi
 
-docker exec -it $service_id $@
+docker exec -it $service_id "$@"
