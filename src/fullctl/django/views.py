@@ -1,3 +1,5 @@
+import re
+
 # from django.conf import settings
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
@@ -15,4 +17,12 @@ def diag(request):
     if not request.user.is_superuser:
         raise Http404()
 
-    return HttpResponse(mark_safe(f"<div>{request.META}</div>"))
+    txt = "HTTP Headers:\n"
+    redact = ("KEY", "PASSWORD", "SECRET")
+    for k, v in request.META.items():
+        if any(re.findall(r"|".join(redact), k, re.IGNORECASE)):
+            continue
+    # if k.startswith("HTTP"):
+        txt += f"{k}: {v}\n"
+
+    return HttpResponse(mark_safe(f"<div><pre>{txt}</pre></div>"))

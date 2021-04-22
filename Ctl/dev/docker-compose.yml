@@ -60,6 +60,7 @@ services:
       # this needs to be set in the shell, compose env vars aren't read yet
       - "${IXCTL_PORT:-8001}:8001"
     volumes:
+      - ../../src/fullctl:/srv/service/main/fullctl
       - ../../../ixctl/src:/srv/service/main
 
 volumes:
