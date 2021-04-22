@@ -15,7 +15,7 @@ github.com/fullctl/
 
 ### Database
 
-This uses a common database between fullctl services.
+This uses a common database server between fullctl services, each service still has it's own database.
 
 #### Snippets
 
