@@ -1,7 +1,21 @@
 
+## fullctl services development instance
+
+### Services
+
+fullctl expects all used services to be cloned in it's parent dir. For example:
+
+```
+github.com/fullctl/
+  fullctl/
+  aaactl/
+  ixctl/
+  prefixctl/
+```
+
 ### Database
 
-This uses a common database between fullctl services
+This uses a common database between fullctl services.
 
 #### Snippets
 
