@@ -78,7 +78,3 @@ class PdbRefModel(HandleRefModel):
             self._pdb = pdb_lookup(self.PdbRef.model, **filters)
         return self._pdb
 
-
-class APIKeyBase(HandleRefModel):
-    key = models.CharField(max_length=255, unique=True)
-
