@@ -1,6 +1,7 @@
 import django_grainy.remote
 import django_grainy.util
 from django.conf import settings
+from django.contrib.auth import get_user_model
 
 
 class Permissions(django_grainy.util.Permissions):
@@ -20,19 +21,25 @@ class RemotePermissions(django_grainy.remote.Permissions):
 
     def prepare_request(self, params, headers):
         try:
-            key = self.obj.key_set.first().key
+            if isinstance(self.obj, get_user_model()):
+                key = settings.SERVICE_KEY
+                headers.update(Grainy=self.obj.social_auth.first().uid)
+            else:
+                key = self.obj.key
+
             headers.update(Authorization=f"Bearer {key}")
         except AttributeError:
             pass
 
 
-def permissions(user, refresh=False):
-    if hasattr(user, "_fullctl_permissions") and not refresh:
-        return user._fullctl_permissions
+def permissions(permission_holder, refresh=False):
+    if hasattr(permission_holder, "_fullctl_permissions") and not refresh:
+        return permission_holder._fullctl_permissions
 
     if getattr(settings, "USE_LOCAL_PERMISSIONS", False):
-        perms = Permissions(user)
+        perms = Permissions(permission_holder)
     else:
-        perms = RemotePermissions(user)
-    user._fullctl_permissions = perms
+        perms = RemotePermissions(permission_holder)
+        print("PERMS", perms.pset.permissions)
+    permission_holder._fullctl_permissions = perms
     return perms

@@ -1,5 +1,6 @@
 import reversion
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django_grainy.decorators import grainy_rest_viewset_response
 from rest_framework import exceptions
 from rest_framework.response import Response
@@ -56,7 +57,7 @@ class grainy_endpoint:
         self,
         namespace=None,
         require_auth=True,
-        explicit=True,
+        explicit=False,
         instance_class=None,
         **kwargs,
     ):
@@ -94,7 +95,11 @@ class grainy_endpoint:
                 kwargs.update(instance=instance)
 
             with reversion.create_revision():
-                reversion.set_user(request.user)
+                if isinstance(request.user, get_user_model()):
+                    reversion.set_user(request.user)
+                else:
+                    reversion.set_comment(f"{request.user}")
+
                 return fn(self, request, org=request.org, *args, **kwargs)
 
         wrapped.__name__ = fn.__name__
@@ -122,9 +127,7 @@ class billable:
         def wrapped(viewset, request, *args, **kwargs):
 
             # TODO: use org keys once they are in
-            # for now grab the first api key of the requesting
-            # user
-            api_key = request.user.key_set.first().key
+            api_key = settings.SERVICE_KEY
             aaactl = AaaCtl(settings.AAACTL_HOST, api_key, request.org.slug)
 
             if aaactl.requires_billing(product):
