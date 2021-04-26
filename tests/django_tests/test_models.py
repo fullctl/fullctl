@@ -64,10 +64,3 @@ def test_orguser(db, dj_account_objects):
         org=dj_account_objects.org, user=dj_account_objects.user
     ).first()
     assert orguser.__str__() == "user_test <test@localhost>"
-
-
-def test_apikey(db, dj_account_objects):
-    user = dj_account_objects.user
-    models.APIKey.objects.create(key="abcdefgh", user=user)
-    user.refresh_from_db()
-    assert type(user.key_set.first()) == models.APIKey

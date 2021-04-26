@@ -106,8 +106,16 @@ class grainy_endpoint:
 
         return wrapped
 
+class _aaactl:
 
-class billable:
+    @property
+    def connected(self):
+        return (getattr(settings, "AAACTL_HOST", None) is not None)
+
+    def bridge(self, org_slug):
+        return AaaCtl(settings.AAACTL_HOST, settings.SERVICE_KEY, org_slug)
+
+class billable(_aaactl):
 
     """
     Will use the aaactl service bridge to determine
@@ -126,9 +134,10 @@ class billable:
 
         def wrapped(viewset, request, *args, **kwargs):
 
-            # TODO: use org keys once they are in
-            api_key = settings.SERVICE_KEY
-            aaactl = AaaCtl(settings.AAACTL_HOST, api_key, request.org.slug)
+            if not self.connected:
+                return fn(viewset, request, *args, **kwargs)
+
+            aaactl = self.bridge(request.org.slug)
 
             if aaactl.requires_billing(product):
                 return Response(
