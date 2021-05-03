@@ -26,8 +26,8 @@ services:
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: postgres
       # defaults
-      DATABASE_USER: ixctl
-      DATABASE_NAME: ixctl
+      DATABASE_USER: account_service
+      DATABASE_NAME: account_service
       # DATABASE_PORT: 5432
     logging:
       options:
@@ -37,6 +37,7 @@ services:
       # this needs to be set in the shell, compose env vars aren't read yet
       - "${AAACTL_PORT:-8000}:8000"
     volumes:
+      - ../../src/fullctl:/srv/service/main/fullctl
       - ../../../aaactl/src:/srv/service/main
 
   ixctl_web:
