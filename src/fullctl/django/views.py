@@ -25,4 +25,4 @@ def diag(request):
     # if k.startswith("HTTP"):
         txt += f"{k}: {v}\n"
 
-    return HttpResponse(mark_safe(f"<div><pre>{txt}</pre></div>"))
+    return HttpResponse(mark_safe(f"<div><pre>Meta:\n{txt}</pre></div>"))
