@@ -21,7 +21,9 @@ services:
       context: ../../../aaactl
       dockerfile: Dockerfile
     command: runserver 0.0.0.0:8000
-    env_file: .env
+    env_file:
+      - .env
+      - ../../../aaactl/Ctl/dev/.env
     environment:
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: postgres
@@ -45,7 +47,9 @@ services:
       context: ../../../ixctl
       dockerfile: Dockerfile
     command: runserver 0.0.0.0:8001
-    env_file: ../../../ixctl/Ctl/dev/.env
+    env_file:
+      - .env
+      - ../../../ixctl/Ctl/dev/.env
     environment:
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: postgres
