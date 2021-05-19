@@ -9,7 +9,7 @@ _settings = dict(
     [
         (k, v)
         for k, v in tests.django_tests.project.settings.__dict__.items()
-        if not k.startswith("_")
+        if (not k.startswith("_") and k.isupper())
     ]
 )
 
