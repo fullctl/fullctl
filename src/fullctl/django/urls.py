@@ -7,7 +7,6 @@ import fullctl.django.views
 
 urlpatterns = []
 
-
 if "django_peeringdb" in settings.INSTALLED_APPS:
 
     import fullctl.django.autocomplete.pdb
@@ -31,7 +30,7 @@ if "django_peeringdb" in settings.INSTALLED_APPS:
     ]
 
 
-urlpatterns = [
+urlpatterns += [
     path("_diag", fullctl.django.views.diag),
     path(
         "api/account/",
