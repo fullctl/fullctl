@@ -2,6 +2,12 @@ from django.conf import settings
 
 from fullctl.django.auth import RemotePermissionsError
 
+def conf(request):
+
+    return {
+        "google_analytics_id" : getattr(settings, "GOOGLE_ANALYTICS_ID", None),
+    }
+
 def account_service(request):
 
     context = {}
