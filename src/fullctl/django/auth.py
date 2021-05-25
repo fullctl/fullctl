@@ -36,7 +36,7 @@ class RemotePermissions(django_grainy.remote.Permissions):
     def fetch(self, *args, **kwargs):
         try:
             return super().fetch(*args, **kwargs)
-        except json.decoder.JSONDecodeError as exc:
+        except json.decoder.JSONDecodeError:
             raise RemotePermissionsError()
 
     def prepare_request(self, params, headers):

@@ -5,7 +5,6 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_grainy.decorators import grainy_model
-from django_grainy.models import Permission, PermissionManager
 
 from fullctl.django.auth import permissions
 from fullctl.django.models.abstract import HandleRefModel
