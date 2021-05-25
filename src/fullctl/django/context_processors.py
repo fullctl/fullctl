@@ -2,11 +2,13 @@ from django.conf import settings
 
 from fullctl.django.auth import RemotePermissionsError
 
+
 def conf(request):
 
     return {
-        "google_analytics_id" : getattr(settings, "GOOGLE_ANALYTICS_ID", None),
+        "google_analytics_id": getattr(settings, "GOOGLE_ANALYTICS_ID", None),
     }
+
 
 def account_service(request):
 
@@ -16,7 +18,6 @@ def account_service(request):
         org_slug = request.org.slug
     else:
         org_slug = ""
-
 
     # TODO abstract so other auth services can be
     # defined
@@ -49,14 +50,14 @@ def permissions(request):
 
     error_response = getattr(request, "error_response", False)
     if isinstance(error_response, RemotePermissionsError):
-        return {"permissions":{}}
+        return {"permissions": {}}
 
     context = {}
 
     ops = [("c", "create"), ("r", "read"), ("u", "update"), ("d", "delete")]
 
     if not hasattr(request, "org"):
-        return {"permissions":{}}
+        return {"permissions": {}}
 
     is_accessible = request.org in request.org.accessible(request.user)
 

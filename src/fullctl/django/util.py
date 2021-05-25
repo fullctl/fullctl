@@ -9,7 +9,9 @@ else:
 def verified_asns(perms):
 
     if not pdb_models:
-        raise ImportError("Peeringdb module not loaded, is `django_peeringdb` in INSTALLED_APPS?")
+        raise ImportError(
+            "Peeringdb module not loaded, is `django_peeringdb` in INSTALLED_APPS?"
+        )
 
     verified_asns = []
     for verified_asn in perms.pset.expand("verified.asn.?", explicit=True, exact=True):
