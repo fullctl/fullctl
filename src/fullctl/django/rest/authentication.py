@@ -27,6 +27,7 @@ class APIKeyAuthentication(authentication.BaseAuthentication):
                     key = auth[1]
 
         if key:
+            request.api_key = key
             return (APIKey(key), None)
         else:
             return None
