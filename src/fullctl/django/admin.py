@@ -24,4 +24,4 @@ class OrganizationAdmin(BaseAdmin):
 
 @admin.register(AuditLog)
 class AuditLogAdmin(admin.ModelAdmin):
-    list_display = ("id", "action", "log_object", "user", "user_key", "org_key", "info", "created")
+    list_display = ("id", "action", "log_object", "org", "user", "user_key", "org_key", "info", "created")

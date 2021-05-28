@@ -16,8 +16,8 @@ User = get_user_model()
 
 CTX_VARS = {
     "user": contextvars.ContextVar("auditlog_user"),
-    "user_key": contextvars.ContextVar("auditlog_user_key"),
-    "org_key": contextvars.ContextVar("auditlog_org_key"),
+    "org": contextvars.ContextVar("auditlog_org"),
+    "key": contextvars.ContextVar("auditlog_key"),
 }
 
 
@@ -28,8 +28,8 @@ class Context:
 
     def __enter__(self):
         self._init_variable("user")
-        self._init_variable("user_key")
-        self._init_variable("org_key")
+        self._init_variable("key")
+        self._init_variable("org")
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
@@ -102,8 +102,13 @@ class auditlog:
             if request and not user:
                 user = request.user
 
+            if request and hasattr(request, "api_key"):
+                api_key = request.api_key[:8]
+
             with Context() as ctx:
                 if user:
                     ctx.set("user", user)
+                if api_key:
+                    ctx.set("key", api_key)
                 return fn(*args, auditlog=ctx, **kwargs)
         return wrapped
