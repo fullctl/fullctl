@@ -106,14 +106,15 @@ class grainy_endpoint:
 
         return wrapped
 
-class _aaactl:
 
+class _aaactl:
     @property
     def connected(self):
-        return (getattr(settings, "AAACTL_HOST", None) is not None)
+        return getattr(settings, "AAACTL_HOST", None) is not None
 
     def bridge(self, org_slug):
         return AaaCtl(settings.AAACTL_HOST, settings.SERVICE_KEY, org_slug)
+
 
 class billable(_aaactl):
 

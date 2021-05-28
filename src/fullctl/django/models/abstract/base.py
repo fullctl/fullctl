@@ -77,4 +77,3 @@ class PdbRefModel(HandleRefModel):
                 filters[k] = v
             self._pdb = pdb_lookup(self.PdbRef.model, **filters)
         return self._pdb
-

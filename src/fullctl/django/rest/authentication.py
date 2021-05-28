@@ -3,9 +3,7 @@ from rest_framework import authentication, exceptions
 from fullctl.django.auth import permissions
 
 
-
 class APIKey:
-
     def __init__(self, key):
         self.key = key
 

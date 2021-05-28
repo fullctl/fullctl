@@ -17,6 +17,7 @@ class RemotePermissionsError(IOError):
             )
         super().__init__(msg)
 
+
 class Permissions(django_grainy.util.Permissions):
     pass
 

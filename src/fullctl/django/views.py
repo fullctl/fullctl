@@ -27,7 +27,7 @@ def diag(request):
     for k, v in request.META.items():
         if any(re.findall(r"|".join(redact), k, re.IGNORECASE)):
             continue
-    # if k.startswith("HTTP"):
+        # if k.startswith("HTTP"):
         txt += f"{k}: {v}\n"
 
     return HttpResponse(mark_safe(f"<div><pre>Meta:\n{txt}</pre></div>"))
@@ -44,13 +44,13 @@ def handle_error(request, exception, status):
 
     context = {
         "error": {
-            "status" : status,
-            "type_description" : f"{exc_type}",
-            "description" : f"{exception}",
+            "status": status,
+            "type_description": f"{exc_type}",
+            "description": f"{exception}",
             "path": request.path,
-            "ip_address" : request.META.get("HTTP_X_FORWARDED_FOR"),
-            "referer" : request.META.get("HTTP_REFERER"),
-            "timestamp": datetime.datetime.utcnow()
+            "ip_address": request.META.get("HTTP_X_FORWARDED_FOR"),
+            "referer": request.META.get("HTTP_REFERER"),
+            "timestamp": datetime.datetime.utcnow(),
         }
     }
 
@@ -58,19 +58,22 @@ def handle_error(request, exception, status):
     response.status_code = status
     return response
 
+
 def handle_error_500(request, exception=None):
     return handle_error(request, exception, 500)
+
 
 def handle_error_404(request, exception=None):
     return handle_error(request, exception, 404)
 
+
 def handle_error_401(request, exception=None):
     return handle_error(request, exception, 401)
+
 
 def handle_error_400(request, exception=None):
     return handle_error(request, exception, 400)
 
+
 def handle_error_403(request, exception=None):
     return handle_error(request, exception, 403)
-
-

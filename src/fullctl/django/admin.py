@@ -3,6 +3,7 @@ from django_handleref.admin import VersionAdmin
 
 from fullctl.django.models.concrete import OrganizationUser, AuditLog
 
+
 class BaseAdmin(VersionAdmin):
     readonly_fields = ("version",)
 
@@ -24,4 +25,13 @@ class OrganizationAdmin(BaseAdmin):
 
 @admin.register(AuditLog)
 class AuditLogAdmin(admin.ModelAdmin):
-    list_display = ("id", "action", "log_object", "org", "user", "user_key", "org_key", "info", "created")
+    list_display = (
+        "id",
+        "action",
+        "log_object",
+        "org",
+        "user",
+        "key",
+        "info",
+        "created",
+    )

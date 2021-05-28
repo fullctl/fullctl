@@ -7,23 +7,33 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('django_fullctl', '0003_auditlog'),
+        ("django_fullctl", "0003_auditlog"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='auditlog',
-            name='org',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='django_fullctl.Organization'),
+            model_name="auditlog",
+            name="org",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                to="django_fullctl.Organization",
+            ),
         ),
         migrations.AlterField(
-            model_name='auditlog',
-            name='object_id',
+            model_name="auditlog",
+            name="object_id",
             field=models.PositiveIntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='auditlog',
-            name='object_type',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='contenttypes.ContentType'),
+            model_name="auditlog",
+            name="object_type",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                to="contenttypes.ContentType",
+            ),
         ),
     ]
