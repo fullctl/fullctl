@@ -1,5 +1,6 @@
 from rest_framework import authentication
 
+
 class APIKey:
     def __init__(self, key):
         self.key = key
