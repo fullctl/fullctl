@@ -10,7 +10,7 @@ from django.http import HttpRequest
 from django.contrib.auth import get_user_model
 from rest_framework.request import Request
 
-from fullctl.django.models import AuditLog
+from fullctl.django.models import AuditLog, Organization
 
 User = get_user_model()
 
@@ -22,8 +22,18 @@ CTX_VARS = {
 
 
 class Context:
+
+    """
+    Auditlog context manager
+    """
+
     def __init__(self):
+
+        # context variable fields
         self.fields = {}
+
+        # auditlog entries to be persisted in the active
+        # context
         self.entries = []
 
     def __enter__(self):
@@ -41,10 +51,9 @@ class Context:
             if field["token"]:
                 field["ctxvar"].reset(field["token"])
 
-
     def _init_variable(self, name, default=None):
         ctxvar = CTX_VARS.get(name)
-        self.fields[name] = {"ctxvar":ctxvar, "value":default, "token":None}
+        self.fields[name] = {"ctxvar": ctxvar, "value": default, "token": None}
         try:
             self.fields[name].update(value=ctxvar.get())
         except LookupError:
@@ -58,19 +67,17 @@ class Context:
     def get(self, name):
         return self.fields[name].get("value")
 
-
     def log(self, action, info="", log_object=None, **data):
         entry = AuditLog(
-            user = self.get("user"),
-            user_key = self.get("user_key"),
-            org_key = self.get("org_key"),
-            data = json.dumps(data),
-            action = action,
-            info = info,
-            log_object = log_object
+            user=self.get("user"),
+            key=self.get("key"),
+            org=self.get("org"),
+            data=json.dumps(data),
+            action=action,
+            info=info,
+            log_object=log_object,
         )
         self.entries.append(entry)
-
 
 
 class auditlog:
@@ -88,15 +95,18 @@ class auditlog:
             params = inspect.getcallargs(fn, *args, **kwargs)
             request = None
             user = None
-
+            org = None
+            api_key = None
 
             for arg in list(params["args"]) + list(params["kwargs"].values()):
                 if isinstance(arg, (HttpRequest, Request)):
                     request = arg
                 elif isinstance(arg, User):
                     user = arg
+                elif isinstance(arg, Organization):
+                    arg = org
 
-                if user and request:
+                if user and request and org:
                     break
 
             if request and not user:
@@ -105,10 +115,16 @@ class auditlog:
             if request and hasattr(request, "api_key"):
                 api_key = request.api_key[:8]
 
+            if request and not org and hasattr(request, "org"):
+                org = request.org
+
             with Context() as ctx:
                 if user:
                     ctx.set("user", user)
                 if api_key:
                     ctx.set("key", api_key)
+                if org:
+                    ctx.set("org", org)
                 return fn(*args, auditlog=ctx, **kwargs)
+
         return wrapped
