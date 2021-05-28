@@ -6,37 +6,43 @@ import json
 import inspect
 import contextvars
 
+from django.http import HttpRequest
+from django.contrib.auth import get_user_model
+from rest_framework.request import Request
+
 from fullctl.django.models import AuditLog
 
+User = get_user_model()
+
 CTX_VARS = {
-    "info": contextvars.ContextVar("auditlog_info"),
     "user": contextvars.ContextVar("auditlog_user"),
     "user_key": contextvars.ContextVar("auditlog_user_key"),
     "org_key": contextvars.ContextVar("auditlog_org_key"),
-    "revision": contextvars.ContextVar("auditlog_revision"),
-    "action": contextvars.ContextVar("auditlog_action"),
-    "data": contextvars.ContextVar("auditlog_data"),
 }
 
 
 class Context:
     def __init__(self):
         self.fields = {}
-        self.entires = []
+        self.entries = []
 
     def __enter__(self):
-        self._init_variable("info", default="")
+        self._init_variable("user")
+        self._init_variable("user_key")
+        self._init_variable("org_key")
+        return self
 
-    def __exit__(self):
-        for entry in self.entries:
-            entry.save()
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        if not exc_type:
+            for entry in self.entries:
+                entry.save()
 
         for name, field in self.fields.items():
             if field["token"]:
                 field["ctxvar"].reset(field["token"])
 
 
-    def _init_variable(self, name, default=None)
+    def _init_variable(self, name, default=None):
         ctxvar = CTX_VARS.get(name)
         self.fields[name] = {"ctxvar":ctxvar, "value":default, "token":None}
         try:
@@ -53,7 +59,7 @@ class Context:
         return self.fields[name].get("value")
 
 
-    def log(self, action, info=None, log_object=None, **data):
+    def log(self, action, info="", log_object=None, **data):
         entry = AuditLog(
             user = self.get("user"),
             user_key = self.get("user_key"),
@@ -79,16 +85,25 @@ class auditlog:
     def __call__(self, fn):
         def wrapped(*args, **kwargs):
 
-            param = inspect.getcallargs(fn, *args, **kwargs)
+            params = inspect.getcallargs(fn, *args, **kwargs)
+            request = None
+            user = None
 
-            request = param.get("request")
-            user = param.get("user")
+
+            for arg in list(params["args"]) + list(params["kwargs"].values()):
+                if isinstance(arg, (HttpRequest, Request)):
+                    request = arg
+                elif isinstance(arg, User):
+                    user = arg
+
+                if user and request:
+                    break
+
+            if request and not user:
+                user = request.user
 
             with Context() as ctx:
-
                 if user:
                     ctx.set("user", user)
-                elif request:
-                    ctx.set("user", request.user)
-
                 return fn(*args, auditlog=ctx, **kwargs)
+        return wrapped
