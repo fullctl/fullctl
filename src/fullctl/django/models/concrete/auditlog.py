@@ -9,6 +9,9 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
 
+from fullctl.django.models.concrete.account import Organization
+
+
 class AuditLog(models.Model):
 
     """
@@ -16,6 +19,7 @@ class AuditLog(models.Model):
     """
 
     created = models.DateTimeField(auto_now=True)
+    org = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.PROTECT)
     user = models.ForeignKey(get_user_model(), null=True, blank=True, on_delete=models.PROTECT)
     user_key = models.CharField(max_length=8, null=True, blank=True)
     org_key = models.CharField(max_length=8, null=True, blank=True)
@@ -24,7 +28,7 @@ class AuditLog(models.Model):
     data = models.TextField(null=False, default="{}", help_text=_("Any extra data for the log entry"))
 
     # generic foreign key to related object
-    object_type = models.ForeignKey(ContentType, on_delete=models.PROTECT)
-    object_id = models.PositiveIntegerField()
+    object_type = models.ForeignKey(ContentType, on_delete=models.PROTECT, null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
     log_object = GenericForeignKey("object_type", "object_id")
 
