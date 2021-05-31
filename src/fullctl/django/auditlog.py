@@ -127,4 +127,5 @@ class auditlog:
                     ctx.set("org", org)
                 return fn(*args, auditlog=ctx, **kwargs)
 
+        wrapped.__name__ = fn.__name__
         return wrapped
