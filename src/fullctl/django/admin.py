@@ -28,6 +28,8 @@ class AuditLogAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "action",
+        "object_type",
+        "object_id",
         "log_object",
         "org",
         "user",
@@ -35,3 +37,16 @@ class AuditLogAdmin(admin.ModelAdmin):
         "info",
         "created",
     )
+
+    readonly_fields = ("log_object",)
+
+    search_fields = ("info", "org__name", "key", "user__username", "user__email", "object_id")
+    list_filter = ("action", "object_type")
+
+
+    def log_object(self, obj=None):
+        if obj and obj.log_object:
+            return f"{obj.log_object}"
+        elif obj:
+            return "<deleted>"
+        return ""
