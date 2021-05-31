@@ -40,9 +40,15 @@ class AuditLogAdmin(admin.ModelAdmin):
 
     readonly_fields = ("log_object",)
 
-    search_fields = ("info", "org__name", "key", "user__username", "user__email", "object_id")
+    search_fields = (
+        "info",
+        "org__name",
+        "key",
+        "user__username",
+        "user__email",
+        "object_id",
+    )
     list_filter = ("action", "object_type")
-
 
     def log_object(self, obj=None):
         if obj and obj.log_object:

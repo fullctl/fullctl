@@ -4,7 +4,7 @@ import requests
 class ServiceBridgeError(IOError):
     def __init__(self, bridge, status, data=None):
         super().__init__(f"Service bridge error: {bridge} [{status}]")
-        self.data= data
+        self.data = data
 
     @property
     def errors(self):
@@ -14,8 +14,8 @@ class ServiceBridgeError(IOError):
         return self.data["errors"]
 
     def has_error(self, key, text):
-        errors =  ";".join(self.errors.get(key, []))
-        return (text.lower() in errors.lower())
+        errors = ";".join(self.errors.get(key, []))
+        return text.lower() in errors.lower()
 
 
 class AuthError(ServiceBridgeError):
