@@ -15,5 +15,6 @@ Unreleased:
   changed: []
   deprecated: []
   fixed: []
-  removed: []
+  removed:
+    - support for python 3.6
   security: []
