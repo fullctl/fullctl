@@ -1,11 +1,26 @@
 from django.contrib import admin
+import reversion
 from django_handleref.admin import VersionAdmin
-
 from fullctl.django.models.concrete import OrganizationUser, AuditLog
+import fullctl.django.auditlog as auditlog
 
 
 class BaseAdmin(VersionAdmin):
     readonly_fields = ("version",)
+
+    def save_model(self, request, obj, form, change):
+        with auditlog.Context() as ctx:
+            ctx.set("user", request.user)
+            ctx.set("info", "django-admin")
+            with reversion.create_revision():
+                return super().save_model(request, obj, form, change)
+
+    def save_formset(self, request, form, formset, change):
+        with auditlog.Context() as ctx:
+            ctx.set("user", request.user)
+            ctx.set("info", "django-admin")
+            with reversion.create_revision():
+                return super().save_formset(request, form, formset, change)
 
 
 class BaseTabularAdmin(admin.TabularInline):

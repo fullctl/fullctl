@@ -126,6 +126,12 @@ class Context:
         if info is not None:
             self.set("info", info)
 
+        if not self.get("org") and log_object:
+            if hasattr(log_object, "org"):
+                self.set("org", log_object.org)
+            elif isinstance(log_object, Organization):
+                self.set("org", log_object)
+
         entry = AuditLog(
             user=self.get("user"),
             key=self.get("key"),
