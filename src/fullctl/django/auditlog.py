@@ -18,7 +18,56 @@ CTX_VARS = {
     "user": contextvars.ContextVar("auditlog_user"),
     "org": contextvars.ContextVar("auditlog_org"),
     "key": contextvars.ContextVar("auditlog_key"),
+    "info": contextvars.ContextVar("auditlog_info"),
+    "data": contextvars.ContextVar("auditlog_data"),
 }
+
+
+def model_tag(model):
+
+    """
+    Return the model identifier tag used for auditlog actions
+
+    Will prefer a handlerf tag if it exists, otherwise a lowercase
+    version of the model name will be returned.
+    """
+
+    try:
+        return model.HandleRef.tag
+    except AttributeError:
+        return model.__name__.lower()
+
+
+def get_config(model):
+
+    """
+    Returns the AuditLog meta class for the model if it
+    exists.
+
+    Will raise AttributeError if it does not exist
+    """
+
+    return model.AuditLog
+
+
+def is_enabled(model):
+
+    """
+    Returns whether the specified model is enabled for audit
+    log.
+
+    By default all reversioned models are enabled.
+
+    To disable a model set `enabled=False` on the AuditLog
+    meta class for the model
+    """
+
+    try:
+        al_config = get_config(model)
+    except AttributeError:
+        return True
+
+    return getattr(al_config, "enabled", True)
 
 
 class Context:
@@ -40,6 +89,8 @@ class Context:
         self._init_variable("user")
         self._init_variable("key")
         self._init_variable("org")
+        self._init_variable("info", default="")
+        self._init_variable("data", default={})
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
@@ -67,14 +118,21 @@ class Context:
     def get(self, name):
         return self.fields[name].get("value")
 
-    def log(self, action, info="", log_object=None, **data):
+    def log(self, action, log_object=None, info=None, **data):
+
+        if data:
+            self.set("data", data)
+
+        if info is not None:
+            self.set("info", info)
+
         entry = AuditLog(
             user=self.get("user"),
             key=self.get("key"),
             org=self.get("org"),
-            data=json.dumps(data),
+            data=json.dumps(self.get("data")),
             action=action,
-            info=info,
+            info=self.get("info"),
             log_object=log_object,
         )
         self.entries.append(entry)
