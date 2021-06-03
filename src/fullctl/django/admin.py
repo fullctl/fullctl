@@ -68,6 +68,6 @@ class AuditLogAdmin(admin.ModelAdmin):
     def log_object(self, obj=None):
         if obj and obj.log_object:
             return f"{obj.log_object}"
-        elif obj:
+        elif obj and obj.object_id:
             return "<deleted>"
         return ""

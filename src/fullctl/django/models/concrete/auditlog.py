@@ -19,9 +19,6 @@ class AuditLog(models.Model):
     """
 
     created = models.DateTimeField(auto_now=True)
-    org = models.ForeignKey(
-        Organization, null=True, blank=True, on_delete=models.PROTECT
-    )
     user = models.ForeignKey(
         get_user_model(), null=True, blank=True, on_delete=models.PROTECT
     )
@@ -36,7 +33,15 @@ class AuditLog(models.Model):
 
     # generic foreign key to related object
     object_type = models.ForeignKey(
-        ContentType, on_delete=models.PROTECT, null=True, blank=True
+        ContentType, on_delete=models.PROTECT, null=True, blank=True,
+        related_name = "auditlog_object_type_set"
     )
     object_id = models.PositiveIntegerField(null=True, blank=True)
     log_object = GenericForeignKey("object_type", "object_id")
+
+    org_object_type = models.ForeignKey(
+        ContentType, on_delete=models.PROTECT, null=True, blank=True,
+        related_name = "auditlog_org_object_type_set"
+    )
+    org_id = models.PositiveIntegerField(null=True, blank=True)
+    org = GenericForeignKey("org_object_type", "org_id")

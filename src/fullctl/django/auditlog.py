@@ -8,6 +8,12 @@ import contextvars
 
 from django.http import HttpRequest
 from django.contrib.auth import get_user_model
+from django.db.models import (
+    OneToOneField,
+    ManyToManyField,
+    ForeignKey
+)
+
 from rest_framework.request import Request
 
 from fullctl.django.models import AuditLog, Organization
@@ -22,6 +28,42 @@ CTX_VARS = {
     "data": contextvars.ContextVar("auditlog_data"),
 }
 
+SENSITIVE_KEYS = [
+    "password",
+    "key",
+    "secret",
+    "token",
+]
+
+UNWANTED_KEYS = [
+    "created",
+    "updated",
+    "version",
+    "data",
+    "extra",
+    "csrfmiddlewaretoken",
+]
+
+UNWANTED_FIELD_TYPES = (
+    OneToOneField,
+    ManyToManyField,
+    ForeignKey,
+)
+
+def cleaned_value(key, value):
+
+    for skey in SENSITIVE_KEYS:
+        if skey in key.lower():
+            value = "[redacted]"
+            break
+
+    if isinstance(value, dict):
+        cleaned_dict = {}
+        for _key, _value in value.items():
+            cleaned_dict[_key] = cleaned_value(_key, _value)
+        return cleaned_dict
+
+    return value
 
 def model_tag(model):
 
@@ -48,6 +90,24 @@ def get_config(model):
     """
 
     return model.AuditLog
+
+def get_fields(model):
+    fields = []
+    for field in model._meta.get_fields():
+        if field.is_relation:
+            continue
+        if field.name in UNWANTED_KEYS:
+            continue
+        if not isinstance(field, UNWANTED_FIELD_TYPES):
+            fields.append(field.name)
+
+    try:
+        conf = get_config(model)
+    except AttributeError:
+        return fields
+
+    fields += getattr(conf, "fields", [])
+    return list(set(fields))
 
 
 def is_enabled(model):
@@ -115,6 +175,14 @@ class Context:
         fld["token"] = fld["ctxvar"].set(value)
         fld["value"] = value
 
+    def append_data(self, clean=False, **kwargs):
+        data = self.get("data") or {}
+        for key, value in kwargs.items():
+            if clean:
+                value = cleaned_value(key, value)
+            data[key] = value
+        self.set("data", data)
+
     def get(self, name):
         return self.fields[name].get("value")
 
@@ -132,11 +200,19 @@ class Context:
             elif isinstance(log_object, Organization):
                 self.set("org", log_object)
 
+        data = self.get("data") or {}
+
+        if log_object:
+            snapshot = {}
+            for field in get_fields(log_object):
+                snapshot[field] = "{}".format(cleaned_value(field, getattr(log_object, field)))
+            data.update(snapshot=snapshot)
+
         entry = AuditLog(
             user=self.get("user"),
             key=self.get("key"),
             org=self.get("org"),
-            data=json.dumps(self.get("data")),
+            data=json.dumps(data),
             action=action,
             info=self.get("info"),
             log_object=log_object,
@@ -162,7 +238,9 @@ class auditlog:
             org = None
             api_key = None
 
-            for arg in list(params["args"]) + list(params["kwargs"].values()):
+            arg_candidates = list(params["args"]) + list(params["kwargs"].values()) + list(params.values())
+
+            for arg in arg_candidates:
                 if isinstance(arg, (HttpRequest, Request)):
                     request = arg
                 elif isinstance(arg, User):
@@ -189,6 +267,9 @@ class auditlog:
                     ctx.set("key", api_key)
                 if org:
                     ctx.set("org", org)
+                if request:
+                    if hasattr(request, "data"):
+                        ctx.append_data(request=request.data, clean=True)
                 return fn(*args, auditlog=ctx, **kwargs)
 
         wrapped.__name__ = fn.__name__
