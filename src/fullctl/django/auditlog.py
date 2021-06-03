@@ -8,11 +8,7 @@ import contextvars
 
 from django.http import HttpRequest
 from django.contrib.auth import get_user_model
-from django.db.models import (
-    OneToOneField,
-    ManyToManyField,
-    ForeignKey
-)
+from django.db.models import OneToOneField, ManyToManyField, ForeignKey
 
 from rest_framework.request import Request
 
@@ -50,6 +46,7 @@ UNWANTED_FIELD_TYPES = (
     ForeignKey,
 )
 
+
 def cleaned_value(key, value):
 
     for skey in SENSITIVE_KEYS:
@@ -64,6 +61,7 @@ def cleaned_value(key, value):
         return cleaned_dict
 
     return value
+
 
 def model_tag(model):
 
@@ -90,6 +88,7 @@ def get_config(model):
     """
 
     return model.AuditLog
+
 
 def get_fields(model):
     fields = []
@@ -205,7 +204,9 @@ class Context:
         if log_object:
             snapshot = {}
             for field in get_fields(log_object):
-                snapshot[field] = "{}".format(cleaned_value(field, getattr(log_object, field)))
+                snapshot[field] = "{}".format(
+                    cleaned_value(field, getattr(log_object, field))
+                )
             data.update(snapshot=snapshot)
 
         entry = AuditLog(
@@ -238,7 +239,11 @@ class auditlog:
             org = None
             api_key = None
 
-            arg_candidates = list(params["args"]) + list(params["kwargs"].values()) + list(params.values())
+            arg_candidates = (
+                list(params["args"])
+                + list(params["kwargs"].values())
+                + list(params.values())
+            )
 
             for arg in arg_candidates:
                 if isinstance(arg, (HttpRequest, Request)):
