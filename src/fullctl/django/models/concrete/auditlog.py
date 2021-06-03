@@ -8,6 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
+from django_inet.models import IPAddressField
 
 from fullctl.django.models.concrete.account import Organization
 
@@ -30,6 +31,7 @@ class AuditLog(models.Model):
     data = models.TextField(
         null=False, default="{}", help_text=_("Any extra data for the log entry")
     )
+    ip_address = IPAddressField(blank=True, null=True)
 
     # generic foreign key to related object
     object_type = models.ForeignKey(

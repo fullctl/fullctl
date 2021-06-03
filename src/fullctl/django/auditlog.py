@@ -12,6 +12,7 @@ from django.db.models import OneToOneField, ManyToManyField, ForeignKey
 
 from rest_framework.request import Request
 
+from fullctl.django.inet.util import get_client_ip
 from fullctl.django.models import AuditLog, Organization
 
 User = get_user_model()
@@ -22,6 +23,7 @@ CTX_VARS = {
     "key": contextvars.ContextVar("auditlog_key"),
     "info": contextvars.ContextVar("auditlog_info"),
     "data": contextvars.ContextVar("auditlog_data"),
+    "ip_address": contextvars.ContextVar("auditlog_ip_address"),
 }
 
 SENSITIVE_KEYS = [
@@ -150,6 +152,7 @@ class Context:
         self._init_variable("org")
         self._init_variable("info", default="")
         self._init_variable("data", default={})
+        self._init_variable("ip_address")
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
@@ -216,6 +219,7 @@ class Context:
             data=json.dumps(data),
             action=action,
             info=self.get("info"),
+            ip_address=self.get("ip_address"),
             log_object=log_object,
         )
         self.entries.append(entry)
@@ -275,6 +279,7 @@ class auditlog:
                 if request:
                     if hasattr(request, "data"):
                         ctx.append_data(request=request.data, clean=True)
+                    ctx.set("ip_address", get_client_ip(request))
                 return fn(*args, auditlog=ctx, **kwargs)
 
         wrapped.__name__ = fn.__name__
