@@ -31,7 +31,8 @@ jobs:
         run: poetry install
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       - name: Run linters
-        run: poetry run pre-commit run --all-files
+        run: |
+            poetry run pre-commit run --all-files
 
   test:
     needs: linting
