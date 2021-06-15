@@ -1,9 +1,10 @@
-# FULLCTL 
+# fullctl
 
 [![PyPI](https://img.shields.io/pypi/v/fullctl.svg?maxAge=60)](https://pypi.python.org/pypi/fullctl)
 [![PyPI](https://img.shields.io/pypi/pyversions/fullctl.svg?maxAge=600)](https://pypi.python.org/pypi/fullctl)
 [![Tests](https://github.com/fullctl/fullctl/workflows/tests/badge.svg)](https://github.com/fullctl/fullctl)
 [![Codecov](https://img.shields.io/codecov/c/github/fullctl/fullctl/master.svg?maxAge=60)](https://codecov.io/github/fullctl/fullctl)
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/fullctl/fullctl.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/fullctl/fullctl/alerts/)
 
 
 Core classes and functions for service applications
