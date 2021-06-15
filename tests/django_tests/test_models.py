@@ -53,10 +53,8 @@ def test_org_sync_multiple(db, dj_account_objects):
     assert models.Organization.objects.filter(name="org3-test").exists()
     assert models.Organization.objects.filter(name="org4-test").exists()
     # Assert the synced orgs are the only orgs that the user belongs to now
-    org_names = set(
-        [orguser.org.name for orguser in dj_account_objects.user.org_set.all()]
-    )
-    assert org_names == set(["org3-test", "org4-test"])
+    org_names = {orguser.org.name for orguser in dj_account_objects.user.org_set.all()}
+    assert org_names == {"org3-test", "org4-test"}
 
 
 def test_orguser(db, dj_account_objects):

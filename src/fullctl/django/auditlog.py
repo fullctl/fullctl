@@ -2,14 +2,13 @@
 Auditlogging functionality
 """
 
-import json
-import inspect
 import contextvars
+import inspect
+import json
 
-from django.http import HttpRequest
 from django.contrib.auth import get_user_model
-from django.db.models import OneToOneField, ManyToManyField, ForeignKey
-
+from django.db.models import ForeignKey, ManyToManyField, OneToOneField
+from django.http import HttpRequest
 from rest_framework.request import Request
 
 from fullctl.django.inet.util import get_client_ip

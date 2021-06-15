@@ -1,9 +1,8 @@
 # from django.contrib.auth.signals import user_logged_in
 
+import reversion
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
-
-import reversion
 from reversion.signals import post_revision_commit
 
 import fullctl.django.auditlog as auditlog

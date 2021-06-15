@@ -1,6 +1,6 @@
-import sys
-import re
 import datetime
+import re
+import sys
 
 # from django.conf import settings
 from django.http import Http404, HttpResponse

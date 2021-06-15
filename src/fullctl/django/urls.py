@@ -1,7 +1,7 @@
+from django.conf import settings
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
 from django.views.generic import TemplateView
-from django.conf import settings
 
 import fullctl.django.views
 

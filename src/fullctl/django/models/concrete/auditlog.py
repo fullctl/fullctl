@@ -3,14 +3,11 @@ Models to facilitate auditlogging of actions
 """
 
 from django.contrib.auth import get_user_model
-from django.db import models
-from django.utils.translation import gettext_lazy as _
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-
+from django.db import models
+from django.utils.translation import gettext_lazy as _
 from django_inet.models import IPAddressField
-
-from fullctl.django.models.concrete.account import Organization
 
 
 class AuditLog(models.Model):

@@ -1,8 +1,9 @@
-from django.contrib import admin
 import reversion
+from django.contrib import admin
 from django_handleref.admin import VersionAdmin
-from fullctl.django.models.concrete import OrganizationUser, AuditLog
+
 import fullctl.django.auditlog as auditlog
+from fullctl.django.models.concrete import AuditLog, OrganizationUser
 
 
 class BaseAdmin(VersionAdmin):
