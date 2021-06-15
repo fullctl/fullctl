@@ -13,6 +13,16 @@ Or manually run with
 poetry run pre-commit run --all-files
 ```
 
+## Poetry
+
+To update package deps, use
+
+```sh
+poetry lock
+poetry install
+poetry run pre-commit clean
+```
+
 ### Services
 
 fullctl expects all used services to be cloned in it's parent dir. For example:
