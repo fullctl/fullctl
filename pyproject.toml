@@ -67,5 +67,10 @@ markdown = "*"
 markdown-include = ">=0.5,<1"
 mkdocs = ">=1.0.0,<2.0.0"
 
+# ctl
+ctl = "^1.0.0"
+jinja2 = "^2.11.2"
+tmpl = "^0.3.0"
+
 [tool.poetry.plugins."markdown.extensions"]
 pymdgen = "pymdgen.md:Extension"
