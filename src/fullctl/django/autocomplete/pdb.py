@@ -31,7 +31,7 @@ class peeringdb_asn(autocomplete.Select2QuerySetView):
         return qs
 
     def get_result_label(self, item):
-        return "AS{} {}".format(item.asn, item.name)
+        return f"AS{item.asn} {item.name}"
 
     def get_result_value(self, item):
         return item.asn
