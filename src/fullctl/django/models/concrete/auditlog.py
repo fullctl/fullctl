@@ -50,3 +50,6 @@ class AuditLog(models.Model):
     )
     org_id = models.PositiveIntegerField(null=True, blank=True)
     org = GenericForeignKey("org_object_type", "org_id")
+
+
+__all__ = [AuditLog]

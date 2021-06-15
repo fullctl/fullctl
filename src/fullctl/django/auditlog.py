@@ -254,7 +254,7 @@ class auditlog:
                 elif isinstance(arg, User):
                     user = arg
                 elif isinstance(arg, Organization):
-                    arg = org
+                    org = arg
 
                 if user and request and org:
                     break
