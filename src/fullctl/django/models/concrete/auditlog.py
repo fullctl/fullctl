@@ -9,6 +9,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_inet.models import IPAddressField
 
+__all__ = ["AuditLog"]
+
 
 class AuditLog(models.Model):
 
@@ -50,6 +52,3 @@ class AuditLog(models.Model):
     )
     org_id = models.PositiveIntegerField(null=True, blank=True)
     org = GenericForeignKey("org_object_type", "org_id")
-
-
-__all__ = [AuditLog]
