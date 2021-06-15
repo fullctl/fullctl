@@ -1,6 +1,18 @@
 
 ## fullctl services development instance
 
+## Code Quality
+
+Install pre-commit with
+```sh
+poetry run pre-commit install
+```
+
+Or manually run with
+```sh
+poetry run pre-commit run --all-files
+```
+
 ### Services
 
 fullctl expects all used services to be cloned in it's parent dir. For example:
