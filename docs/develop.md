@@ -3,9 +3,9 @@
 
 ## Code Quality
 
-Install pre-commit with
+Install pre-commit with (for running before push)
 ```sh
-poetry run pre-commit install
+poetry run pre-commit install -t pre-push
 ```
 
 Or manually run with
