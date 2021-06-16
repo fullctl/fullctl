@@ -10,6 +10,7 @@ from fullctl.django.models import Organization, Instance
 from fullctl.django.rest.core import HANDLEREF_FIELDS
 from fullctl.service_bridge.client import AaaCtl
 
+
 class base:
     def load_org_instance(self, request, data):
         data.update(org=request.org)
@@ -17,9 +18,7 @@ class base:
         if isinstance(data.get("instance"), self.instance_class):
             return
 
-        instance, _ = self.instance_class.objects.get_or_create(
-            org=request.org
-        )
+        instance, _ = self.instance_class.objects.get_or_create(org=request.org)
         data.update(instance=instance, org=request.org)
 
 
