@@ -6,12 +6,23 @@ from rest_framework import exceptions
 from rest_framework.response import Response
 
 from fullctl.django.auth import Permissions, RemotePermissions
-from fullctl.django.models import Organization
+from fullctl.django.models import Instance, Organization
 from fullctl.django.rest.core import HANDLEREF_FIELDS
 from fullctl.service_bridge.client import AaaCtl
 
 
-class load_object:
+class base:
+    def load_org_instance(self, request, data):
+        data.update(org=request.org)
+
+        if isinstance(data.get("instance"), self.instance_class):
+            return
+
+        instance, _ = self.instance_class.objects.get_or_create(org=request.org)
+        data.update(instance=instance, org=request.org)
+
+
+class load_object(base):
 
     """
     Will load an object and pass it to the view handler
@@ -28,10 +39,11 @@ class load_object:
     `get` query
     """
 
-    def __init__(self, argname, model, **filters):
+    def __init__(self, argname, model, instance_class=Instance, **filters):
         self.argname = argname
         self.model = model
         self.filters = filters
+        self.instance_class = instance_class
 
     def __call__(self, fn):
 
@@ -39,6 +51,9 @@ class load_object:
 
         def wrapped(self, request, *args, **kwargs):
             filters = {}
+
+            decorator.load_org_instance(request, kwargs)
+
             for field, key in decorator.filters.items():
                 filters[field] = kwargs.get(key)
 
@@ -46,13 +61,14 @@ class load_object:
                 kwargs[decorator.argname] = decorator.model.objects.get(**filters)
             except decorator.model.DoesNotExist:
                 return Response(status=404)
+
             return fn(self, request, *args, **kwargs)
 
         wrapped.__name__ = fn.__name__
         return wrapped
 
 
-class grainy_endpoint:
+class grainy_endpoint(base):
     def __init__(
         self,
         namespace=None,
@@ -88,11 +104,7 @@ class grainy_endpoint:
             if decorator.require_auth and not request.user.is_authenticated:
                 return Response(status=401)
 
-            if decorator.instance_class:
-                instance, _ = decorator.instance_class.objects.get_or_create(
-                    org=request.org
-                )
-                kwargs.update(instance=instance)
+            decorator.load_org_instance(request, kwargs)
 
             with reversion.create_revision():
                 if isinstance(request.user, get_user_model()):
@@ -100,7 +112,7 @@ class grainy_endpoint:
                 else:
                     reversion.set_comment(f"{request.user}")
 
-                return fn(self, request, org=request.org, *args, **kwargs)
+                return fn(self, request, *args, **kwargs)
 
         wrapped.__name__ = fn.__name__
 
