@@ -263,7 +263,7 @@ class auditlog:
                 user = request.user
 
             if request and hasattr(request, "api_key"):
-                api_key = request.api_key[:8]
+                api_key = f"{api_key}"[:8]
 
             if request and not org and hasattr(request, "org"):
                 org = request.org
