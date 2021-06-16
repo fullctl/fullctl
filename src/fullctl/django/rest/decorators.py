@@ -6,7 +6,7 @@ from rest_framework import exceptions
 from rest_framework.response import Response
 
 from fullctl.django.auth import Permissions, RemotePermissions
-from fullctl.django.models import Organization, Instance
+from fullctl.django.models import Instance, Organization
 from fullctl.django.rest.core import HANDLEREF_FIELDS
 from fullctl.service_bridge.client import AaaCtl
 
