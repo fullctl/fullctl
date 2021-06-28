@@ -7,28 +7,31 @@ class CaseInsensitiveOrderingFilter(OrderingFilter):
     def __init__(self, ordering_fields):
         self.ordering_fields = ordering_fields
 
-    def filter_queryset(self, request, queryset, view):
-        ordering = self.get_ordering(request, queryset, view)
 
-        if ordering and len(ordering) > 0:
-            # Only supports single field ordering
-            ordering = ordering[0]
+    def _handle_field(self, name, queryset):
+        # Since we got name from self.get_ordering() we are
+        # assuming the field name is valid
 
-            # Since we got ordering from self.get_ordering() we are
-            # assuming the ordering is valid
-            field = queryset.model._meta.get_field(ordering.replace("-", ""))
+        field = queryset.model._meta.get_field(name.replace("-", ""))
 
-            # For CharacterFields, use case insensitive ordering
-            if type(field) == CharField:
-                if ordering.startswith("-"):
-                    queryset = queryset.order_by(
-                        Lower(ordering.replace("-", "")).desc()
-                    )
-                else:
-                    queryset = queryset.order_by(Lower(ordering))
-                return queryset
-
+        # For CharacterFields, use case insensitive ordering
+        if type(field) == CharField:
+            if name.startswith("-"):
+                return Lower(field.name).desc()
             else:
-                return queryset.order_by(ordering)
+                return Lower(field.name)
+        return name
 
-        return queryset
+
+
+
+    def filter_queryset(self, request, queryset, view):
+        _ordering = self.get_ordering(request, queryset, view)
+
+        ordering = []
+
+        if _ordering:
+            for name in _ordering:
+                ordering.append(self._handle_field(name, queryset))
+
+        return queryset.order_by(*ordering)
