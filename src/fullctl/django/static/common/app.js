@@ -377,6 +377,7 @@ fullctl.application.Application = $tc.define(
         main : new fullctl.application.Component("main")
       }
       this.tools = this.$t = {}
+      $(fullctl.application).trigger("initialized", [this, id]);
     },
 
     tool : function(name, fn) {
