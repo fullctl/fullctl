@@ -225,6 +225,10 @@ twentyc.rest.Client = twentyc.cls.define(
       return this.read(endpoint, params, "get");
     },
 
+    options : function(endpoint, params) {
+      return this.read(endpoint, params, "options");
+    },
+
     post : function(endpoint, data) {
       return this.write(endpoint, data, "post");
     },
@@ -439,6 +443,8 @@ twentyc.rest.Select = twentyc.cls.extend(
       this.name_field = jq.data("name-field") || "name"
       this.id_field = jq.data("id-field") || "id"
       this.selected_field = jq.data("selected-field") || "selected"
+      this.load_type = jq.data("load-type") || "get"
+      this.drf_name = jq.data("drf-name") || jq.attr("name");
       this.Widget(base_url, jq);
     },
 
@@ -455,8 +461,16 @@ twentyc.rest.Select = twentyc.cls.extend(
       response.non_field_errors(this.render_non_field_errors.bind(this))
     },
 
-
     load : function(select_this) {
+
+      if(this.load_type == "drf-choices")
+        return this._load_drf_choices(select_this);
+
+      return this._load_get(select_this);
+
+    },
+
+    _load_get : function(select_this) {
 
       return this.get().then(function(response) {
         var select = this.element;
@@ -472,7 +486,26 @@ twentyc.rest.Select = twentyc.cls.extend(
           select.append(opt);
         });
 
+        if(select_this)
+          select.val(select_this);
+
         $(this).trigger("load:after", [select, response.content.data]);
+      }.bind(this));
+    },
+
+    _load_drf_choices : function(select_this) {
+      return this.options().then(function(response) {
+        var select = this.element.empty();
+        var options = response.content.data[0].actions.POST[this.drf_name].choices;
+        $(options).each(function() {
+          select.append(
+            $('<option>').val(this.value).text(this.display_name)
+          )
+        });
+
+        if(select_this)
+          select.val(select_this);
+
       }.bind(this));
     },
 
