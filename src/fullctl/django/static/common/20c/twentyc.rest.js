@@ -62,12 +62,25 @@ twentyc.rest.Response = twentyc.cls.define(
   {
 
     Response : function(response, status) {
+
       if(!response || (!response.data && !response.errors) ) {
         this.status = status;
         return;
       }
+      this.status = status;
       this.content = response;
     },
+
+    /**
+     * invokes a callback on each row in the api response
+     * data resultset
+     *
+     * callback will be passed the data row as well as the index
+     * of the row entry
+     *
+     * @method rows
+     * @param {Function} callback
+     */
 
     rows : function(callback) {
       var i;
@@ -76,12 +89,31 @@ twentyc.rest.Response = twentyc.cls.define(
       }
     },
 
+    /**
+     * returns the first row in the api response
+     * data resultset
+     *
+     * @method first
+     * @returns {Object}
+     */
+
     first : function() {
       if(this.content && this.content.data) {
         return this.content.data[0];
       }
       return null;
     },
+
+    /**
+     * process field errors returned by the api
+     * in a callback
+     *
+     * callback wil be invoked once for each field and
+     * be passed an array of strings
+     *
+     * @method field_errors
+     * @param {Function} callback
+     */
 
     field_errors : function(callback) {
       if(!this.has_errors())
@@ -96,6 +128,14 @@ twentyc.rest.Response = twentyc.cls.define(
       }
     },
 
+    /**
+     * process non-field errors returned by the api
+     * in a callback
+     *
+     * @method non_field_errors
+     * @param {Function} callback
+     */
+
     non_field_errors : function(callback) {
       if(!this.has_errors())
         return
@@ -106,20 +146,39 @@ twentyc.rest.Response = twentyc.cls.define(
         nfe = [nfe];
 
       if(nfe) {
-        var i;
         callback(nfe)
       }
 
     },
+
+    /**
+     * returns a user friendly error message for the
+     * http status of the response
+     *
+     * @method http_status_text
+     * @returns {String}
+     */
 
     http_status_text : function() {
       if(this.status == 401) return "Unauthorized Access";
       if(this.status == 403) return "Permission Denied";
       if(this.status == 404) return "Resource not found";
       if(this.status == 405) return "Method not allowed";
+      if(this.status == 429){
+        if (this.content.errors.detail) return this.content.errors.detail;
+        return "Request is rate limited";
+      }
       if(this.status == 500) return "Internal Error";
       return "Http Error "+this.status;
     },
+
+    /**
+     * returns whether the response has error information
+     * or not
+     *
+     * @method has_errors
+     * @returns {Boolean}
+     */
 
     has_errors : function() {
       if(this.status > 400) {
@@ -135,6 +194,15 @@ twentyc.rest.Response = twentyc.cls.define(
   }
 );
 
+/**
+ * Base API functionality / connection handler
+ *
+ * @class Client
+ * @constructor
+ * @namespace twentyc.rest
+ * @param {String} base_url path to the api root
+ */
+
 twentyc.rest.Client = twentyc.cls.define(
   "Client",
   {
@@ -142,15 +210,39 @@ twentyc.rest.Client = twentyc.cls.define(
       this.base_url = base_url.replace(/\/$/g,'');
     },
 
+    /**
+     * returns path to endpoint by appending
+     * provided value to the api root base url
+     * @method endpoint_url
+     * @param {String} endpoint
+     */
+
     endpoint_url : function(endpoint) {
       if(!endpoint)
         return this.base_url+"/";
       return this.base_url+"/"+endpoint + "/";
     },
 
+    /**
+     * Encodes and object literal to json
+     * @method encode
+     * @param {Object} data
+     * @returns {String}
+     */
+
     encode : function(data) {
       return JSON.stringify(data);
     },
+
+    /**
+     * Perform a read request (GET, HEAD, OPTIONS) on the api
+     *
+     * @method read
+     * @param {String} endpoint api endpoint
+     * @param {Object} data url parameters to pass
+     * @param {String} method http request method (GET, HEAD or OPTIONS)
+     * @returns {Promise}
+     */
 
     read : function(endpoint, data, method) {
       method = method.toLowerCase()
@@ -183,6 +275,16 @@ twentyc.rest.Client = twentyc.cls.define(
 
       return request;
     },
+
+    /**
+     * Perform a write request (POST, PUT, PATCH, DELETE) on the api
+     *
+     * @method write
+     * @param {String} endpoint api endpoint
+     * @param {Object} data payload
+     * @param {String} method http request method
+     * @returns {Promise}
+     */
 
     write : function(endpoint, data, method) {
       method = method.toLowerCase();
@@ -221,17 +323,67 @@ twentyc.rest.Client = twentyc.cls.define(
       return request;
     },
 
+    /**
+     * Wrapper to perform a `GET` request on the api
+     *
+     * @method get
+     * @param {String} endpoint
+     * @param {Object} params url parameters
+     * @returns {Promise}
+     */
+
     get : function(endpoint, params) {
       return this.read(endpoint, params, "get");
     },
+
+    /**
+     * Wrapper to perform a `OPTIONS` request on the api
+     *
+     * @method options
+     * @param {String} endpoint
+     * @param {Object} params url parameters
+     * @returns {Promise}
+     */
+
+    options : function(endpoint, params) {
+      return this.read(endpoint, params, "options");
+    },
+
+    /**
+     * Wrapper to perform a `POST` request on the api
+     *
+     * @method post
+     * @param {String} endpoint
+     * @param {object} data payload
+     * @returns {Promise}
+     */
 
     post : function(endpoint, data) {
       return this.write(endpoint, data, "post");
     },
 
+    /**
+     * Wrapper to perform a `PUT` request on the api
+     *
+     * @method post
+     * @param {String} endpoint
+     * @param {object} data payload
+     * @returns {Promise}
+     */
+
     put : function(endpoint, data) {
       return this.write(endpoint, data, "put");
     },
+
+    /**
+     * Wrapper to perform a `DELETE` request on the api
+     *
+     * @method post
+     * @param {String} endpoint
+     * @param {object} data payload
+     * @returns {Promise}
+     */
+
 
     delete : function(endpoint, data) {
       return this.write(endpoint, data, "delete");
@@ -239,15 +391,39 @@ twentyc.rest.Client = twentyc.cls.define(
   }
 );
 
+/**
+ * Base class for API widgets
+ *
+ * @class Widget
+ * @extends twentyc.rest.Client
+ * @namespace twentyc.rest
+ * @constructor
+ * @param {String} base_url api root
+ * @param {jQuery result} jq jquery result holding the main element of the widget
+ */
+
 twentyc.rest.Widget = twentyc.cls.extend(
   "Widget",
   {
     Widget : function(base_url, jq) {
      this.action = jq.data("api-action")
+
+     /**
+      * allows you to define local actions (experimental)
+      * @property {Object} local_actions
+      */
      this.local_actions = {}
      this.Client(base_url);
      this.bind(jq);
     },
+
+    /**
+     * Sets the widget state to processing
+     *
+     * This will trigger the `processing` event
+     *
+     * @method start_processing
+     */
 
     start_processing : function() {
       this.busy = true
@@ -259,6 +435,15 @@ twentyc.rest.Widget = twentyc.cls.extend(
       $(this).trigger("processing");
     },
 
+
+    /**
+     * Sets the widget state to ready or done with processing
+     *
+     * This will trigger the `ready` event
+     *
+     * @method done_processing
+     */
+
     done_processing : function() {
       this.busy = false
       if(this.loading_shim && !window.debug_loading_shim)
@@ -266,11 +451,44 @@ twentyc.rest.Widget = twentyc.cls.extend(
       $(this).trigger("ready");
     },
 
+    /**
+     * Clones a template element by name and returns it
+     *
+     * Templates for a widget should be stored within an element inside
+     * the widget that has it's `.templates` css class set
+     *
+     * A template is designated a template if it has the
+     * `data-template` attribute set to hold the template name
+     *
+     * ```html
+     * <div class="widget">
+     *  <div class="templates">
+     *    <div data-template="my_template"></div>
+     *  </div>
+     * </div>
+     * ```
+     *
+     * ```javascript
+     * var tmpl = widget.template('my_template')
+     * ```
+     *
+     * @method template
+     * @param {String} name template name (as specified in data-template)
+     * @returns {jQuery result} jquery result holding the cloned template node
+     */
+
     template : function(name) {
       var tmpl = this.element.closest_descendant('.templates').find('[data-template="'+name+'"]')
       var clone = tmpl.clone().attr('data-template', null);
       return clone;
     },
+
+    /**
+     * Binds the widget to a html element
+     *
+     * @method bind
+     * @param {jQuery result} jq jquery result holding the html element
+     */
 
     bind : function(jq) {
       jq.data("rest_widget", this);
@@ -294,21 +512,45 @@ twentyc.rest.Widget = twentyc.cls.extend(
       $(this).on("api-read:after", function() {
         this.done_processing();
       }.bind(this));
-
-
     },
+
+    /**
+     * Defines a local action that some widget's
+     * may invoke
+     *
+     * Local actions can be set on the widget element or sub elements
+     * via the `data-action` attribute
+     *
+     * @method local_action
+     * @param {String} name action name
+     * @param {Function} fn
+     */
 
     local_action : function(name, fn) {
       this.local_actions[name] = fn;
     },
+
+    /**
+     * Clears all validation / input errors for the widget
+     *
+     * @method clear_errors
+     */
 
     clear_errors : function() {
       this.element.find('.validation-error').detach();
       this.element.find('.validation-error-indicator').removeClass("validation-error-indicator");
     },
 
+    /**
+     * Renders field errors (think input vaidation errors)
+     *
+     * @method render_error
+     * @param {String} key field name
+     * @param {Array} errors list of error strings
+     */
+
     render_error : function(key, errors) {
-      var i, e;
+      var i;
       var error_node = $('<div>').addClass("validation-error");
       var input = this.element.find('[name="'+key+'"]');
       input.addClass("validation-error-indicator")
@@ -319,8 +561,16 @@ twentyc.rest.Widget = twentyc.cls.extend(
         error_node.insertAfter(input);
     },
 
+    /**
+     * Renders non field errors (think server errors, generic errors)
+     *
+     * @method render_non_field_errors
+     * @param {Array} errors list of error strings
+     */
+
     render_non_field_errors : function(errors) {
       var error_node = $('<div>').addClass("alert alert-danger validation-error non-field-errors");
+      let i;
       for(i = 0; i < errors.length; i++) {
         $(twentyc.rest).trigger("non-field-error", [errors[i], errors, i, error_node, this]);
         if(errors[i])
@@ -328,6 +578,15 @@ twentyc.rest.Widget = twentyc.cls.extend(
       }
       this.element.prepend(error_node)
     },
+
+    /**
+     * Prepares the payload for the widget's write request
+     * by checking for form elements and converting their values
+     * to an object literal compatible to be sent as a payload
+     *
+     * @param payload
+     * @returns {Object}
+     */
 
     payload : function() {
       var data = {};
@@ -353,6 +612,29 @@ twentyc.rest.Widget = twentyc.cls.extend(
   twentyc.rest.Client
 );
 
+/**
+ * Form widget that binds a HTML form to the REST api
+ *
+ * The form element should have the following attributes set
+ *
+ * # required
+ *
+ * - data-api-base: api root or full path to endpoint
+ *
+ * # optional
+ *
+ * - data-api-action: if specified will be appended as endpoint to data-api-base
+ * - data-api-method: request method for writes, defaults to POST
+ *
+ * If the form element contains a button element with the
+ * `submit` css class set it will be wired to submit the form
+ * on click
+ *
+ * @class Form
+ * @extends twentyc.rest.Widget
+ * @namespace twentyc.rest
+ * @param {jQuery result} jq form element
+ */
 
 twentyc.rest.Form = twentyc.cls.extend(
   "Form",
@@ -362,6 +644,17 @@ twentyc.rest.Form = twentyc.cls.extend(
       this.form_action = jq.data("api-action")
       this.Widget(base_url, jq);
     },
+
+    /**
+     * Fill the form fields from values provided in
+     * an object literal thats keyed by field name
+     *
+     * Names in `data` will be matched against the `name` attribute
+     * of the form inputs
+     *
+     * @method fill
+     * @param {Object} data
+     */
 
     fill : function(data) {
       var key, value;
@@ -386,6 +679,13 @@ twentyc.rest.Form = twentyc.cls.extend(
       response.non_field_errors(this.render_non_field_errors.bind(this))
     },
 
+    /**
+     * Submit the form using the specified method
+     *
+     * @method submit
+     * @param {String} method http request method
+     */
+
     submit : function(method) {
       this.clear_errors();
 
@@ -398,6 +698,15 @@ twentyc.rest.Form = twentyc.cls.extend(
         this.post_failure.bind(this)
       );
     },
+
+    /**
+     * Binds the form widget to a html element
+     *
+     * This is called automatically in the constructor
+     *
+     * @method bind
+     * @param {jQuery result} jq
+     */
 
     bind : function(jq) {
       this.Widget_bind(jq);
@@ -420,6 +729,13 @@ twentyc.rest.Form = twentyc.cls.extend(
       });
     },
 
+    /**
+     * Wires a button to submit the form
+     *
+     * @method wire_submit
+     * @param {jQuery result} jq_button jquery result holding button element
+     */
+
     wire_submit : function(jq_button) {
       var widget = this;
       jq_button.off("click").click(function() {
@@ -430,6 +746,36 @@ twentyc.rest.Form = twentyc.cls.extend(
   twentyc.rest.Widget
 );
 
+/**
+ * Wires a `select` element to the API
+ *
+ * The select element should have the following attributes set
+ *
+ * # required
+ *
+ * - data-api-base: api root or full path to endpoint
+ *
+ * # optional
+ *
+ * - data-api-load: endpoint that should be requested to load options
+ * - data-name-field: which data resultset field to use for option text,
+ *   defaults to "name"
+ * - data-id-field: which data resultset field to use for option value,
+ *   defaultd to "id"
+ * - data-selected-field: which data resultset field to check whether and option
+ *   should be auto-selected, defaults to "selected"
+ * - data-load-type: what load method to use, can be "get" or "drf_choices",
+ *   with the latter being a way to load in django-rest-framework field values
+ *   choices. Defaults to "get"
+ * - data-drf-name: relevant if load type is "drf-choices". Specifies the
+ *   serializer field name, will default to "name" attribute if not specified.
+ *
+ * @class Select
+ * @extends twentyc.rest.widget
+ * @namespace twentyc.rest
+ * @param {jQuery result} jq jquery result holding the select element
+ */
+
 twentyc.rest.Select = twentyc.cls.extend(
   "Select",
   {
@@ -439,6 +785,8 @@ twentyc.rest.Select = twentyc.cls.extend(
       this.name_field = jq.data("name-field") || "name"
       this.id_field = jq.data("id-field") || "id"
       this.selected_field = jq.data("selected-field") || "selected"
+      this.load_type = jq.data("load-type") || "get"
+      this.drf_name = jq.data("drf-name") || jq.attr("name");
       this.Widget(base_url, jq);
     },
 
@@ -456,7 +804,53 @@ twentyc.rest.Select = twentyc.cls.extend(
     },
 
 
+    /**
+     * loads options from the api
+     *
+     * this will call _load_get or _load_drf_choices depending
+     * on which load-type is specified (see data-load-type attribute)
+     *
+     * triggers load:after event
+     *
+     * @method load
+     * @param {Mixed} select_this if specified will select this value after
+     *   load
+     */
+
     load : function(select_this) {
+
+      if(this.load_type == "drf-choices")
+        return this._load_drf_choices(select_this);
+
+      return this._load_get(select_this);
+
+    },
+
+    /**
+     * loads data in via a GET request
+     *
+     * expects data to come back as a list of object literals
+     * containing keys for `this.name_field` and `this.id_field`
+     *
+     * this method is called automatically by `this.load` if the
+     * the load-type of the select widget is set to "get"
+     *
+     * Example assuming this.name_field == 'name' and this.id_field = 'id'
+     *
+     * {
+     *   "data": [
+     *     { "name": "Choice 1", "id": 1 },
+     *     { "name": "Choice 2", "id": 2 }
+     *   ]
+     * }
+     *
+     * @method _load_get
+     * @private
+     * @param {Mixed} select_this if specified will select this value after
+     *   load
+     */
+
+    _load_get : function(select_this) {
 
       return this.get().then(function(response) {
         var select = this.element;
@@ -472,9 +866,51 @@ twentyc.rest.Select = twentyc.cls.extend(
           select.append(opt);
         });
 
+        if(select_this)
+          select.val(select_this);
+
         $(this).trigger("load:after", [select, response.content.data]);
       }.bind(this));
     },
+
+    /**
+     * loads data in via a OPTIONS request to a django-rest-framework
+     * api endpoint
+     *
+     * this method is called automatically by `this.load` if the
+     * the load-type of the select widget is set to "drf_choices"
+     *
+     * @method _load_drf_choices
+     * @private
+     * @param {Mixed} select_this if specified will select this value after
+     *   load
+     */
+
+    _load_drf_choices : function(select_this) {
+      return this.options().then(function(response) {
+        var select = this.element.empty();
+        var options = response.content.data[0].actions.POST[this.drf_name].choices;
+        $(options).each(function() {
+          select.append(
+            $('<option>').val(this.value).text(this.display_name)
+          )
+        });
+
+        if(select_this)
+          select.val(select_this);
+
+      }.bind(this));
+    },
+
+    /**
+     * refreshes options from the api
+     *
+     * this is the same as load, but will maintain the current
+     * selection choice as long as it still exists in the the
+     * fresh dataset
+     *
+     * @method refresh
+     */
 
     refresh : function() {
       var val = this.element.val()
@@ -508,6 +944,73 @@ twentyc.rest.Select = twentyc.cls.extend(
   twentyc.rest.Widget
 );
 
+/**
+ * Data listing widget
+ *
+ * A way to visualize an api data response in a table
+ *
+ * # element attributes
+ *
+ * This widget element should have these html attributes set
+ *
+ * ## required
+ *
+ * - data-api-base: api root or full path to endpoint
+ *
+ * ## optional
+ *
+ * - data-api-action: if specified will be appended as endpoint to data-api-base
+ *
+ * # DOM structure
+ *
+ * The widget element should contain the following child elements
+ *
+ * - element with `list-body` css class, which will serve as a
+ *   container for rows, if your widget element is a table this
+ *   would be a tbody element.
+ * - element with data-template="row" attr set, which will be used
+ *   to clone for individual rows
+ *
+ *   within the row element, child elements will be scanned for
+ *   data-field attributes to match against the field names in the api
+ *   result set.
+ *
+ * # Example
+ *
+ * ```json
+ * {
+ *   "data": [
+ *      { "id": 1, "name": "first row" },
+ *      {" id": 2, "name": "second row" }
+ *   ]
+ * }
+ * ```
+ *
+ * ```html
+ * <table data-api-base="/api/my_list" id="my_list">
+ *  <tbody class="list-body"></tbody>
+ *  <tbody class="templates">
+ *    <tr data-template="row">
+ *      <td data-field="id"></td>
+ *      <td data-field="name"></td>
+ *    </tr>
+ *  </tbody>
+ * </table>
+ * ```
+ *
+ * ```javascript
+ * var list = new twentyc.rest.List($('#my_list'))
+ * list.load();
+ * ```
+ *
+ *
+ * @class List
+ * @extends twentyc.rest.Widget
+ * @namespace twentyc.rest
+ * @constructor
+ * @param {jQuery result} jq jquery result holding widget element (table)
+ */
+
 twentyc.rest.List = twentyc.cls.extend(
   "List",
   {
@@ -520,6 +1023,16 @@ twentyc.rest.List = twentyc.cls.extend(
       this.Widget(base_url, jq);
     },
 
+    /**
+     * loads rows into the list
+     *
+     * this empties all current rows before it does so
+     *
+     * triggers load:after event
+     *
+     * @method load
+     */
+
     load : function() {
       return this.get(this.action, this.payload()).then(function(response) {
         this.list_body.empty()
@@ -530,6 +1043,15 @@ twentyc.rest.List = twentyc.cls.extend(
         return
       }.bind(this));
     },
+
+    /**
+     * insert a new row from object
+     *
+     * triggers insert:after event
+     *
+     * @method insert
+     * @param {Object} data
+     */
 
     insert : function(data) {
       var toggle, k, row_element, col_element;
@@ -572,10 +1094,25 @@ twentyc.rest.List = twentyc.cls.extend(
       }.bind(this));
     },
 
+    /**
+     * Removes the row for the supplied api response row object
+     *
+     * @method remove
+     * @param {Object} data
+     */
+
     remove : function(data) {
       $(this).trigger("remove:before", [data]);
       this.list_body.find('.row-'+data[this.id_field]).detach();
     },
+
+    /**
+     * return row element for object id
+     *
+     * @method find_row
+     * @param {String} id
+     * @returns {jQuery result}
+     */
 
     find_row : function(id) {
       return this.list_body.find('.row-'+id);
@@ -615,7 +1152,7 @@ twentyc.rest.List = twentyc.cls.extend(
               return apiobj[p1];
             }
           )
-          var request = widget[method](_action, row.data("apiobject")).then(
+          widget[method](_action, row.data("apiobject")).then(
             callback, widget.action_failure.bind(widget)
           );
         });
@@ -631,15 +1168,57 @@ twentyc.rest.List = twentyc.cls.extend(
   twentyc.rest.Widget
 );
 
+/**
+ * Special form widget for handling user permissions
+ *
+ * This expect a form element that contains checkboxes for
+ * permission flags
+ *
+ * Each checkbox element should have these attributes set
+ *
+ * - data-permission-flag unique flag name to describe the permssion level
+ *
+ * # Example
+ *
+ * ```html
+ * <span><input data-permission-flag="c" type="checkbox"> create</span>
+ * <span><input data-permission-flag="r" type="checkbox"> read</span>
+ * <span><input data-permission-flag="u" type="checkbox"> update</span>
+ * <span><input data-permission-flag="d" type="checkbox"> delete</span>
+ * ```
+ * @class PermissionForm
+ * @extends twentyc.rest.Form
+ * @namespace twentyc.rest
+ * @constructor
+ */
 
 twentyc.rest.PermissionsForm = twentyc.cls.extend(
   "PermissionsForm",
   {
+
+    /**
+     * Updates the checkboxes states according to the flags
+     * provided
+     *
+     * For example passing `crud` would check all checkboxes
+     * while passing `r` would only check the checkbox for read access
+     *
+     * @method set_flag_values
+     * @param {String} flags
+     */
+
     set_flag_values : function(flags) {
-      var form = this;
       this.element.find('input[data-permission-flag]').each(function() {
         var flag_name = $(this).data("permission-flag")
-        var value = (flags.indexOf(flag_name) > -1)
+        if(flag_name.length == 1) {
+          var value = (flags.perms.indexOf(flag_name) > -1)
+        } else {
+          var i, value = true;
+          for(i = 0; i < flag_name.length; i++) {
+            if(flags.perms.indexOf(flag_name.charAt(i)) == -1)
+              value = false;
+          }
+        }
         $(this).prop("checked", value)
       });
     },

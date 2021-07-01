@@ -155,7 +155,7 @@ fullctl.application.Tool = $tc.extend(
       this.active = false
     },
 
-    initialize_sortable_headers: function(intialSortedHeading) {
+    initialize_sortable_headers: function() {
       const list = this.$w.list
 
       // Add click function to headings to sort
@@ -166,8 +166,10 @@ fullctl.application.Tool = $tc.extend(
         this.handle_click( $(button) );
       }.bind(this))
 
-      // Initial conditions for sorting
-      this.sortHeading = intialSortedHeading || this.tableHeadings.first().data("sort-target");
+      let sortButton = this.tableHeadings.filter("[data-sort-initial]");
+      this.sortHeading = sortButton.data("sort-target");
+      this.sortSecondary = sortButton.data("sort-secondary");
+
       this.sortAsc = true;
       this.ordering = "";
 
@@ -180,6 +182,8 @@ fullctl.application.Tool = $tc.extend(
 
     handle_click: function(button) {
         let sortTarget = button.data("sort-target");
+
+        this.sortSecondary = button.data("sort-secondary")
 
         if ( sortTarget == this.sortHeading ){
           this.sortAsc = !this.sortAsc;
@@ -196,10 +200,13 @@ fullctl.application.Tool = $tc.extend(
     },
 
     return_ordering: function() {
+
+      let secondary = (this.sortSecondary ? ","+this.sortSecondary : "")
+
       if ( this.sortAsc ){
-        return this.sortHeading
+        return this.sortHeading + secondary;
       }
-      return "-" + this.sortHeading
+      return "-" + this.sortHeading + secondary;
     },
 
 
@@ -370,6 +377,7 @@ fullctl.application.Application = $tc.define(
         main : new fullctl.application.Component("main")
       }
       this.tools = this.$t = {}
+      $(fullctl.application).trigger("initialized", [this, id]);
     },
 
     tool : function(name, fn) {

@@ -56,7 +56,12 @@ class load_instance:
 
             org = request.org
             if not public and org not in Organization.accessible(request.user):
-                raise django.http.Http404()
+                if request.user.is_authenticated:
+                    raise django.http.Http404()
+                else:
+                    return redirect(
+                        reverse("login") + f"?next={request.get_full_path()}"
+                    )
 
             try:
                 instance, _ = model.objects.get_or_create(org=org)
