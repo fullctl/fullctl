@@ -6,12 +6,25 @@ import traceback
 import pytz
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 
 from fullctl.django.models.abstract.base import HandleRefModel
-from fullctl.django.tasks import launch_task
+#from fullctl.django.tasks import launch_task
 
+
+class TaskClaimed(IOError):
+    def __init__(self, task):
+        super().__init__(f"Task already claimed by another worker: {task}")
+
+class WorkerUnqualified(IOError):
+    def __init__(self, task, qualifier):
+        super().__init__(f"Worker does not qualify to process this task: {task}, {qualifier}")
 
 class TaskLimitError(IOError):
+    pass
+
+class TaskAlreadyStarted(IOError):
     pass
 
 
@@ -48,9 +61,18 @@ class Task(HandleRefModel):
         unique=True,
         null=True,
         blank=True,
-        help_text="task queue id (celery task id)",
+        help_text="task queue id (celery task id or orm worker id)",
     )
 
+    # describes a parent task this task is attached to
+    #
+    # a task wont be executed before it's parent task is executed
+    parent_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
+    parent_id = models.PositiveIntegerField(null=True, blank=True)
+    parent = GenericForeignKey("parent_type", "parent_id")
+
+    # limit concurrent instances of this task type being processed
+    # -1 means no limit
     limit = -1
 
     class Meta:
@@ -75,6 +97,29 @@ class Task(HandleRefModel):
         store in the param_json field
         """
         self.param_json = json.dumps(param)
+
+    @property
+    def qualifies(self):
+
+        qualifers = (self._meta.model, "qualifiers", [])
+
+        for qualifier in qualifiers:
+            if not qualifier.check(self):
+                raise WorkerUnqualified(self, qualifier)
+
+        return True
+
+
+
+    def claim(self, queue_id):
+        self.refresh_from_db()
+        if self.queue_id and self.queue_id != queue_id:
+            raise TaskClaimed(self)
+        elif self.queue_id:
+            return
+
+        self.queue_id = queue_id
+        self.save()
 
     def clean(self):
         super().clean()
@@ -102,6 +147,10 @@ class Task(HandleRefModel):
         self.save()
 
     def _run(self):
+
+        if self.status != "pending":
+            raise TaskAlreadyStarted()
+
         self.status = "running"
         self.save()
         try:
@@ -113,9 +162,8 @@ class Task(HandleRefModel):
             self._fail(traceback.format_exc())
 
     def run_command(self, command):
-        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        output, error = p.communic
+        subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # XXX this needs to capture output
 
 
 class TaskContainer(HandleRefModel):
