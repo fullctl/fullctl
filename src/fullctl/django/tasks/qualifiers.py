@@ -4,6 +4,7 @@ Task qualifiers to facilitate selective task processing
 
 from django.conf import settings
 
+
 class Base:
 
     """
@@ -14,6 +15,7 @@ class Base:
 
     def check(self, task):
         raise NotImplementedError()
+
 
 class Setting(Base):
     """
@@ -26,7 +28,6 @@ class Setting(Base):
 
         self.setting = setting
         self.value = value
-
 
     def __str__(self):
         return f"{self.__class__.__name__} {self.setting}"
@@ -48,7 +49,7 @@ class Setting(Base):
             return b
 
         # otherwise compare values
-        return (self.value == _value)
+        return self.value == _value
 
 
 class SettingUnset(Base):
@@ -69,5 +70,3 @@ class SettingUnset(Base):
         except AttributeError:
             return True
         return False
-
-

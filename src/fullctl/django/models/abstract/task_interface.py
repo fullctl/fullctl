@@ -10,19 +10,25 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 
 from fullctl.django.models.abstract.base import HandleRefModel
-#from fullctl.django.tasks import launch_task
+
+# from fullctl.django.tasks import launch_task
 
 
 class TaskClaimed(IOError):
     def __init__(self, task):
         super().__init__(f"Task already claimed by another worker: {task}")
 
+
 class WorkerUnqualified(IOError):
     def __init__(self, task, qualifier):
-        super().__init__(f"Worker does not qualify to process this task: {task}, {qualifier}")
+        super().__init__(
+            f"Worker does not qualify to process this task: {task}, {qualifier}"
+        )
+
 
 class TaskLimitError(IOError):
     pass
+
 
 class TaskAlreadyStarted(IOError):
     pass
@@ -67,7 +73,9 @@ class Task(HandleRefModel):
     # describes a parent task this task is attached to
     #
     # a task wont be executed before it's parent task is executed
-    parent_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
+    parent_type = models.ForeignKey(
+        ContentType, on_delete=models.CASCADE, null=True, blank=True
+    )
     parent_id = models.PositiveIntegerField(null=True, blank=True)
     parent = GenericForeignKey("parent_type", "parent_id")
 
@@ -108,8 +116,6 @@ class Task(HandleRefModel):
                 raise WorkerUnqualified(self, qualifier)
 
         return True
-
-
 
     def claim(self, queue_id):
         self.refresh_from_db()

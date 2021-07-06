@@ -10,6 +10,7 @@ from fullctl.django.models.abstract.task_interface import Task, WorkerUnqualifie
 
 TASK_MODELS = []
 
+
 def worker_id():
 
     """
@@ -22,10 +23,9 @@ def worker_id():
     """
 
     return getattr(
-        settings,
-        "TASK_ORM_WORKER_ID",
-        f"{socket.gethostname()}:{os.getpid()}"
+        settings, "TASK_ORM_WORKER_ID", f"{socket.gethostname()}:{os.getpid()}"
     )
+
 
 def dicover_tasks():
 
@@ -56,7 +56,7 @@ def fetch_task():
 
         # filter tasks that aren't changed to parent task
         # or where the parent is finished
-        qset = qset.filter(Q(parent__isnull=True) | Q(parent__status=="completed"))
+        qset = qset.filter(Q(parent__isnull=True) | Q(parent__status == "completed"))
 
         # order by date of creation
         qset = qset.order_by("created")
@@ -64,7 +64,6 @@ def fetch_task():
         # no pending tasks for this task model
         if not qset.exists():
             continue
-
 
         for task in qset:
             try:
@@ -84,7 +83,3 @@ def work_task(task):
     task.refresh_from_db()
     task.claim(wid)
     task._run()
-
-
-
-
