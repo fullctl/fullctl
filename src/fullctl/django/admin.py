@@ -3,7 +3,7 @@ from django.contrib import admin
 from django_handleref.admin import VersionAdmin
 
 import fullctl.django.auditlog as auditlog
-from fullctl.django.models.concrete import AuditLog, OrganizationUser
+from fullctl.django.models.concrete import AuditLog, OrganizationUser, ManagementTask
 
 
 class BaseAdmin(VersionAdmin):
@@ -37,6 +37,26 @@ class OrganizationUserInline(admin.TabularInline):
 class OrganizationAdmin(BaseAdmin):
     list_display = ("id", "name", "slug")
     inlines = (OrganizationUserInline,)
+
+
+class TaskAdmin(BaseAdmin):
+    list_display = (
+        "id",
+        "source",
+        "queue_id",
+        "status",
+        "op",
+        "param",
+        "time",
+        "created",
+        "updated",
+    )
+    list_filter = ("status", "op")
+
+
+@admin.register(ManagementTask)
+class ManagementTaskAdmin(TaskAdmin):
+    pass
 
 
 @admin.register(AuditLog)

@@ -2,14 +2,17 @@ import datetime
 import json
 import subprocess
 import traceback
+import time
 
 import pytz
+from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 
 from fullctl.django.models.abstract.base import HandleRefModel
+from fullctl.django.tasks.util import worker_id
 
 # from fullctl.django.tasks import launch_task
 
@@ -48,6 +51,17 @@ class Task(HandleRefModel):
 
     op = models.CharField(max_length=255)
 
+    status = models.CharField(
+        max_length=255,
+        choices=(
+            ("pending", _("Pending")),
+            ("running", _("Running")),
+            ("completed", _("Completed")),
+            ("failed", _("Failed")),
+        ),
+        default="pending",
+    )
+
     param_json = models.TextField(
         blank=True, null=True, help_text="json containing args and kwargs"
     )
@@ -60,6 +74,20 @@ class Task(HandleRefModel):
         blank=True,
         null=True,
         help_text="task output - can also be used to " "store results",
+    )
+
+    timeout = models.IntegerField(
+        null=True, blank=True, default=None, help_text="task timeout in seconds"
+    )
+
+    time = models.FloatField(default=0.0, help_text="time sepnt in seconds")
+
+    source = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        default=worker_id,
+        help_text="host id where task was triggered",
     )
 
     queue_id = models.CharField(
@@ -89,6 +117,16 @@ class Task(HandleRefModel):
     class HandleRef:
         tag = "task"
 
+    @classmethod
+    def create_task(cls, op, param_args=None, param_kwargs=None, **kwargs):
+
+        param = {"args": param_args or [], "kwargs": param_kwargs or {}}
+
+        task = cls(op=op, param=param, status="pending", **kwargs)
+        task.clean()
+        task.save()
+        return task
+
     @property
     def param(self):
         """
@@ -109,7 +147,7 @@ class Task(HandleRefModel):
     @property
     def qualifies(self):
 
-        qualifers = (self._meta.model, "qualifiers", [])
+        qualifiers = getattr(self._meta.model, "qualifiers", [])
 
         for qualifier in qualifiers:
             if not qualifier.check(self):
@@ -159,10 +197,13 @@ class Task(HandleRefModel):
 
         self.status = "running"
         self.save()
+        t_start = time.time()
         try:
             op = getattr(self, f"op_{self.op}")
             param = self.param
             output = op(*param["args"], **param["kwargs"])
+            t_end = time.time()
+            self.time = t_end - t_start
             self._complete(output)
         except Exception:
             self._fail(traceback.format_exc())
