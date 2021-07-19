@@ -92,7 +92,6 @@ class Task(HandleRefModel):
 
     queue_id = models.CharField(
         max_length=255,
-        unique=True,
         null=True,
         blank=True,
         help_text="task queue id (celery task id or orm worker id)",
@@ -154,16 +153,6 @@ class Task(HandleRefModel):
                 raise WorkerUnqualified(self, qualifier)
 
         return True
-
-    def claim(self, queue_id):
-        self.refresh_from_db()
-        if self.queue_id and self.queue_id != queue_id:
-            raise TaskClaimed(self)
-        elif self.queue_id:
-            return
-
-        self.queue_id = queue_id
-        self.save()
 
     def clean(self):
         super().clean()

@@ -60,6 +60,12 @@ class CommandInterface(BaseCommand):
                 "--timeout", type=int, help="Max execution time in queue (seconds)"
             )
 
+    def _run(self, *args, **kwargs):
+        with reversion.create_revision():
+            self.run(*args, **kwargs)
+            if not self.commit:
+                raise PretendMode()
+
     @auditlog()
     def handle(self, auditlog=None, *args, **kwargs):
         self.auditlog_context = auditlog
@@ -99,10 +105,7 @@ class CommandInterface(BaseCommand):
 
         try:
             sid = transaction.savepoint()
-            with reversion.create_revision():
-                self.run(*args, **kwargs)
-                if not self.commit:
-                    raise PretendMode()
+            self._run(*args, **kwargs)
         except PretendMode:
             if sid:
                 transaction.savepoint_rollback(sid)
@@ -124,6 +127,7 @@ class CommandInterface(BaseCommand):
         if self.auditlog_enabled and self.commit:
             auditlog.append_data(output="\n".join(self.output))
             auditlog.log(f"command")
+
 
     def log_debug(self, msg):
         self.log.debug(msg)

@@ -32,6 +32,6 @@ class Command(CommandInterface):
         except TaskModel.DoesNotExist:
             raise ValueError(f"{TaskModel} instance {task_id} not found")
 
-        self.log.info(f"Processing {task}")
+        self.log_info(f"Processing {task}")
         work_task(task)
-        self.log.info(f"Done!")
+        self.log_info(f"Done!")
