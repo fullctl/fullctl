@@ -86,7 +86,6 @@ class Command(CommandInterface):
         super().add_arguments(parser)
         parser.add_argument("--workers", help="number of concurrent  workers", type=int)
 
-
     def _run(self, *args, **kwargs):
         discover_tasks()
         self.sleep_interval = 0.5
@@ -97,11 +96,10 @@ class Command(CommandInterface):
         async def _main():
             await asyncio.gather(
                 asyncio.create_task(self._poll_tasks()),
-                asyncio.create_task(self._process_workers())
+                asyncio.create_task(self._process_workers()),
             )
 
         asyncio.run(_main())
-
 
     async def _process_workers(self):
 
@@ -126,7 +124,6 @@ class Command(CommandInterface):
 
             task = await sync_to_async(fetch_task)()
 
-
             if not task or task.queue_id:
                 continue
 
@@ -137,7 +134,6 @@ class Command(CommandInterface):
             await sync_to_async(self.claim_task)(task)
 
             await self.delegate_task(task)
-
 
     def claim_task(self, task):
         try:
@@ -152,7 +148,6 @@ class Command(CommandInterface):
                 task.save()
                 self.log_error(err)
             self.log_debug("Task already claimed, skipping")
-
 
     async def delegate_task(self, task):
         self.log_info(f"Delegating task {task}")

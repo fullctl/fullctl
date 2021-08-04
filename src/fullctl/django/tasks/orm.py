@@ -31,7 +31,6 @@ def discover_tasks():
             TASK_MODELS.append(model)
 
 
-
 def fetch_task(**filters):
     """
     Checks for the next available and qualifying
@@ -76,8 +75,6 @@ def fetch_tasks(limit=1, **filters):
                 return tasks
 
     return tasks
-
-
 
 
 def claim_task(task):

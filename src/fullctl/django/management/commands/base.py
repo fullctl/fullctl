@@ -128,7 +128,6 @@ class CommandInterface(BaseCommand):
             auditlog.append_data(output="\n".join(self.output))
             auditlog.log(f"command")
 
-
     def log_debug(self, msg):
         self.log.debug(msg)
         self.stdout.write(msg)

@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('django_fullctl', '0009_taskclaim'),
+        ("django_fullctl", "0009_taskclaim"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='managementtask',
-            name='queue_id',
-            field=models.CharField(blank=True, help_text='task queue id (celery task id or orm worker id)', max_length=255, null=True),
+            model_name="managementtask",
+            name="queue_id",
+            field=models.CharField(
+                blank=True,
+                help_text="task queue id (celery task id or orm worker id)",
+                max_length=255,
+                null=True,
+            ),
         ),
     ]
