@@ -3,7 +3,7 @@ from django.contrib import admin
 from django_handleref.admin import VersionAdmin
 
 import fullctl.django.auditlog as auditlog
-from fullctl.django.models.concrete import AuditLog, OrganizationUser, ManagementTask
+from fullctl.django.models.concrete import AuditLog, OrganizationUser, Task
 
 
 class BaseAdmin(VersionAdmin):
@@ -54,8 +54,8 @@ class TaskAdmin(BaseAdmin):
     list_filter = ("status", "op")
 
 
-@admin.register(ManagementTask)
-class ManagementTaskAdmin(TaskAdmin):
+@admin.register(Task)
+class TaskAdmin(TaskAdmin):
     pass
 
 

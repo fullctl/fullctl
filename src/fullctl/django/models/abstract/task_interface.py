@@ -99,18 +99,12 @@ class Task(HandleRefModel):
         help_text="task queue id (celery task id or orm worker id)",
     )
 
-    # describes a parent task this task is attached to
-    #
-    # a task wont be executed before it's parent task is executed
-    parent_type = models.ForeignKey(
-        ContentType, on_delete=models.CASCADE, null=True, blank=True
+    parent = models.ForeignKey(
+        "django_fullctl.Task", on_delete=models.CASCADE, null=True, blank=True
     )
-    parent_id = models.PositiveIntegerField(null=True, blank=True)
-    parent = GenericForeignKey("parent_type", "parent_id")
 
     # limit concurrent instances of this task type being processed
-    # limits should be defined by task op
-    limits = {}
+    limit = None
 
     class Meta:
         abstract = True
@@ -120,18 +114,17 @@ class Task(HandleRefModel):
 
     @classmethod
     def validate_limits(cls, op):
-
-        limit = cls.limits.get(op)
-
-        if limit is None:
+        if cls.limit is None:
             return
 
         count = cls.objects.filter(op=op, status__in=["pending", "running"]).count()
-        if limit >= count:
+        if cls.limit >= count:
             raise TaskLimitError()
 
     @classmethod
-    def create_task(cls, op, param_args=None, param_kwargs=None, **kwargs):
+    def create_task(cls, param_args=None, param_kwargs=None, **kwargs):
+
+        op = cls.HandleRef.tag
 
         cls.validate_limits(op)
 
@@ -171,17 +164,10 @@ class Task(HandleRefModel):
         return True
 
     def __str__(self):
-        return f"{self.__class__.__name__}({self.id}): {self.op} {self.param['args']}"
+        return f"{self.__class__.__name__}({self.id}): {self.param['args']}"
 
     def clean(self):
         super().clean()
-        op_name = f"op_{self.op}"
-        if not hasattr(self, op_name):
-            raise ValidationError(f"The operation `{op_name}` does not exist")
-
-        if not callable(getattr(self, op_name)):
-            raise ValidationError(f"The operation `{op_name}` is not callable")
-
         try:
             if self.param_json:
                 json.loads(self.param_json)
@@ -215,14 +201,17 @@ class Task(HandleRefModel):
         self.save()
         t_start = time.time()
         try:
-            op = getattr(self, f"op_{self.op}")
             param = self.param
-            output = op(*param["args"], **param["kwargs"])
+            output = self.run(*param["args"], **param["kwargs"])
             t_end = time.time()
             self.time = t_end - t_start
             self._complete(output)
         except Exception:
             self._fail(traceback.format_exc())
+
+    def run(self, *args, **kwargs):
+        """ extend in proxy model """
+        raise NotImplementedError()
 
     def run_command(self, command):
         # TODO this needs to capture output

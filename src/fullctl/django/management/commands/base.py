@@ -11,7 +11,7 @@ import reversion
 
 from fullctl.django.auditlog import auditlog
 from fullctl.django.tasks.orm import worker_id
-from fullctl.django.models.concrete.tasks import ManagementTask
+from fullctl.django.models.concrete.tasks import CallCommand
 
 
 class PretendMode(IOError):
@@ -85,8 +85,7 @@ class CommandInterface(BaseCommand):
         if self.queue:
             command_kwargs.pop("commit", None)
             command_kwargs.pop("queue", None)
-            task = ManagementTask.create_task(
-                "call_command",
+            task = CallCommand.create_task(
                 [command_name] + list(args),
                 command_kwargs,
                 timeout=kwargs.get("timeout", None),

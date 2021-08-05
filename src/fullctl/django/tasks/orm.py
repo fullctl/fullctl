@@ -11,24 +11,8 @@ from fullctl.django.models.abstract.task_interface import (
     WorkerUnqualified,
     TaskClaimed,
 )
-from fullctl.django.models.concrete.tasks import TaskClaim
-
-TASK_MODELS = []
-
-
-def discover_tasks():
-
-    """
-    Cycle through all django models and identify
-    task models
-    """
-
-    if TASK_MODELS:
-        return TASK_MODELS
-
-    for model in apps.get_models():
-        if issubclass(model, Task):
-            TASK_MODELS.append(model)
+from fullctl.django.models.concrete.tasks import TaskClaim, Task
+from fullctl.django.tasks import specify_task
 
 
 def fetch_task(**filters):
@@ -47,36 +31,32 @@ def fetch_tasks(limit=1, **filters):
 
     tasks = []
 
-    for model in TASK_MODELS:
+    # filter tasks waiting for execution
+    qset = Task.objects.filter(status="pending", queue_id__isnull=True)
 
-        # filter tasks waiting for execution
-        qset = model.objects.filter(status="pending", queue_id__isnull=True)
+    if filters:
+        qset = qset.filter(**filters)
 
-        if filters:
-            qset = qset.filter(**filters)
+    # order by date of creation
+    qset = qset.order_by("created")
 
-        # order by date of creation
-        qset = qset.order_by("created")
+    # no pending tasks for this task model
+    if not qset.exists():
+        return tasks
 
-        # no pending tasks for this task model
-        if not qset.exists():
+    for task in qset:
+        if task.parent_id and task.parent.status != "completed":
+            if task.parent.status in ["failed", "cancelled"]:
+                task.cancel(f"parent status: {task.parent.status}")
+            continue
+        try:
+            task.qualifies
+            tasks.append(specify_task(task))
+        except WorkerUnqualified:
             continue
 
-        for task in qset:
-            if task.parent_id and task.parent.status != "completed":
-                if task.parent.status in ["failed", "cancelled"]:
-                    task.cancel(f"parent status: {task.parent.status}")
-                continue
-            try:
-                task.qualifies
-                tasks.append(task)
-            except WorkerUnqualified:
-                continue
-
-            if len(tasks) == limit:
-                return tasks
-
-    return tasks
+        if len(tasks) == limit:
+            return tasks
 
 
 def claim_task(task):

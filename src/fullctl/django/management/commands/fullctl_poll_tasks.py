@@ -8,7 +8,7 @@ import uuid
 from asgiref.sync import sync_to_async
 
 from fullctl.django.management.commands.base import CommandInterface
-from fullctl.django.tasks.orm import discover_tasks, fetch_task, claim_task, TaskClaimed
+from fullctl.django.tasks.orm import fetch_task, claim_task, TaskClaimed
 
 
 class Worker:
@@ -87,7 +87,6 @@ class Command(CommandInterface):
         parser.add_argument("--workers", help="number of concurrent  workers", type=int)
 
     def _run(self, *args, **kwargs):
-        discover_tasks()
         self.sleep_interval = 0.5
         self.workers_num = int(kwargs.get("workers") or 1)
 
