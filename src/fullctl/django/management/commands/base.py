@@ -80,15 +80,16 @@ class CommandInterface(BaseCommand):
         command_kwargs = kwargs.copy()
         command_kwargs.pop("stdout", None)
         command_kwargs.pop("stderr", None)
+        command_kwargs.pop("timeout", None)
         command_name = self.__class__.__module__.split(".")[-1]
 
         if self.queue:
             command_kwargs.pop("commit", None)
             command_kwargs.pop("queue", None)
             task = CallCommand.create_task(
-                [command_name] + list(args),
-                command_kwargs,
                 timeout=kwargs.get("timeout", None),
+                *([command_name] + list(args)),
+                **command_kwargs,
             )
             auditlog.log("command:queued")
             self.log_info(f"Command sent to queue: {command_name}")

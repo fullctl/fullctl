@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.apps import apps
 from django.conf import settings
 from fullctl.django.tasks.util import worker_id
-from fullctl.django.models.abstract.task_interface import (
+from fullctl.django.models import (
     Task,
     WorkerUnqualified,
     TaskClaimed,
@@ -50,8 +50,9 @@ def fetch_tasks(limit=1, **filters):
                 task.cancel(f"parent status: {task.parent.status}")
             continue
         try:
+            task = specify_task(task)
             task.qualifies
-            tasks.append(specify_task(task))
+            tasks.append(task)
         except WorkerUnqualified:
             continue
 

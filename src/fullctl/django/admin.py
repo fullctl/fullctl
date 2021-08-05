@@ -44,6 +44,7 @@ class TaskAdmin(BaseAdmin):
         "id",
         "source",
         "queue_id",
+        "parent",
         "status",
         "op",
         "param",
