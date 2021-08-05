@@ -33,6 +33,7 @@ class TaskLimitError(IOError):
     Raised when there are currently too many pending
     instances of a task
     """
+
     pass
 
 
@@ -41,6 +42,7 @@ class TaskAlreadyStarted(IOError):
     Raised when trying to work a task that is already
     started
     """
+
     pass
 
 
@@ -49,6 +51,7 @@ class ParentTaskNotFinsihed(IOError):
     Raised when trying to work a child task
     before the parent task has finished
     """
+
     pass
 
 
@@ -144,7 +147,6 @@ class Task(HandleRefModel):
 
     @classmethod
     def create_task(cls, *args, **kwargs):
-
 
         parent = kwargs.pop("parent", None)
         timeout = kwargs.pop("timeout", None)
@@ -247,6 +249,7 @@ class Task(HandleRefModel):
     def run_command(self, command):
         # TODO this needs to capture output
         subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
 
 class TaskClaim(HandleRefModel):
 

@@ -7,7 +7,8 @@ from fullctl.django.models.abstract.base import HandleRefModel
 
 ALERT_RECIPIENT_TYPE = (("email", _("Email")),)
 
-#XXX this needs to be adapted to the new task system
+# XXX this needs to be adapted to the new task system
+
 
 class AlertGroup(Task):
 
