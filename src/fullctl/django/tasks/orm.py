@@ -64,6 +64,8 @@ def fetch_tasks(limit=1, **filters):
 
         for task in qset:
             if task.parent_id and task.parent.status != "completed":
+                if task.parent.status in ["failed", "cancelled"]:
+                    task.cancel(f"parent status: {task.parent.status}")
                 continue
             try:
                 task.qualifies

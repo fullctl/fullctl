@@ -47,6 +47,7 @@ class Task(HandleRefModel):
         - running: task is currently executing
         - completed: task completed succesfully
         - failed: task ended due to error
+        - cancelled: task canceled
     """
 
     op = models.CharField(max_length=255)
@@ -58,6 +59,7 @@ class Task(HandleRefModel):
             ("running", _("Running")),
             ("completed", _("Completed")),
             ("failed", _("Failed")),
+            ("cancelled", _("Cancelled")),
         ),
         default="pending",
     )
@@ -124,10 +126,9 @@ class Task(HandleRefModel):
         if limit is None:
             return
 
-        count =cls.objects.filter(op=op, status__in=["pending","running"]).count()
+        count = cls.objects.filter(op=op, status__in=["pending", "running"]).count()
         if limit >= count:
             raise TaskLimitError()
-
 
     @classmethod
     def create_task(cls, op, param_args=None, param_kwargs=None, **kwargs):
@@ -172,7 +173,6 @@ class Task(HandleRefModel):
     def __str__(self):
         return f"{self.__class__.__name__}({self.id}): {self.op} {self.param['args']}"
 
-
     def clean(self):
         super().clean()
         op_name = f"op_{self.op}"
@@ -187,6 +187,14 @@ class Task(HandleRefModel):
                 json.loads(self.param_json)
         except Exception as exc:
             raise ValidationError(f"Parameters could not be JSON encoded: {exc}")
+
+    def cancel(self, reason):
+        self._cancel(reason)
+
+    def _cancel(self, reason):
+        self.output = reason
+        self.status = "cancelled"
+        self.save()
 
     def _complete(self, output):
         self.output = output
