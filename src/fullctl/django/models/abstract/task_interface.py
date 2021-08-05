@@ -68,12 +68,12 @@ class Task(HandleRefModel):
     error = models.TextField(
         blank=True,
         null=True,
-        help_text="if the task failed will contain " "traceback or error info",
+        help_text="if the task failed will contain traceback or error info",
     )
     output = models.TextField(
         blank=True,
         null=True,
-        help_text="task output - can also be used to " "store results",
+        help_text="task output - can also be used to store results",
     )
 
     timeout = models.IntegerField(
@@ -107,8 +107,8 @@ class Task(HandleRefModel):
     parent = GenericForeignKey("parent_type", "parent_id")
 
     # limit concurrent instances of this task type being processed
-    # -1 means no limit
-    limit = -1
+    # limits should be defined by task op
+    limits = {}
 
     class Meta:
         abstract = True
@@ -117,7 +117,22 @@ class Task(HandleRefModel):
         tag = "task"
 
     @classmethod
+    def validate_limits(cls, op):
+
+        limit = cls.limits.get(op)
+
+        if limit is None:
+            return
+
+        count =cls.objects.filter(op=op, status__in=["pending","running"]).count()
+        if limit >= count:
+            raise TaskLimitError()
+
+
+    @classmethod
     def create_task(cls, op, param_args=None, param_kwargs=None, **kwargs):
+
+        cls.validate_limits(op)
 
         param = {"args": param_args or [], "kwargs": param_kwargs or {}}
 
@@ -153,6 +168,10 @@ class Task(HandleRefModel):
                 raise WorkerUnqualified(self, qualifier)
 
         return True
+
+    def __str__(self):
+        return f"{self.__class__.__name__}({self.id}): {self.op} {self.param['args']}"
+
 
     def clean(self):
         super().clean()
@@ -198,71 +217,5 @@ class Task(HandleRefModel):
             self._fail(traceback.format_exc())
 
     def run_command(self, command):
+        # TODO this needs to capture output
         subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        # XXX this needs to capture output
-
-
-class TaskContainer(HandleRefModel):
-
-    """
-    Decribes a model that is able to spawn tasks
-
-    Needs to implement a `task_class` property
-    that returns the model to use for task storage
-    """
-
-    class Meta:
-        abstract = True
-
-    @property
-    def task_class(self):
-        """override this"""
-        return Task
-
-    @property
-    def tasks_active(self):
-        return self.task_set.exclude(status__in=["completed", "failed"])
-
-    def task_validate(self, task):
-        if task.limit > -1:
-            if self.tasks_active.filter(op=task.op) > task.limit:
-                raise TaskLimitError(task.op)
-        task.full_clean()
-        return task
-
-    def start_task(self, op, *args, **kwargs):
-        task = self.task_class(
-            status="pending",
-            op=op,
-            owner=self,
-        )
-        task.param = {"args": args, "kwargs": kwargs}
-        task = self.task_validate(task)
-        task.save()
-        launch_task(task)
-        return task
-
-    def task_time(self, op=None):
-        """
-        Returns the amount of time (in seconds) that has passed
-        since a task has been run.
-
-        Keyword Argument(s):
-            - op(str): if specified only consider tasks with that op
-
-        Returns:
-            - None: if no task has been run
-            - int: seconds since task has been run
-        """
-        qs = self.task_set.all().order_by("-created")
-        if op:
-            qs.filter(op=op)
-
-        task = qs.first()
-
-        if not task:
-            return None
-
-        return (
-            datetime.datetime.now().replace(tzinfo=pytz.UTC) - task.updated
-        ).total_seconds()
