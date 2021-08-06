@@ -3,6 +3,8 @@ import pytest
 
 import fullctl.django.tasks.orm as orm
 
+from fullctl.django.models.concrete.tasks import TaskLimitError
+
 import tests.django_tests.testapp.models as models
 
 @pytest.mark.django_db
@@ -70,6 +72,40 @@ def test_task_qualifiers(settings):
 
     settings.TEST_QUALIFIER = False
     assert task not in orm.fetch_tasks()
+
+@pytest.mark.django_db
+def test_task_result():
+    task = models.TestTask.create_task(1,2)
+    orm.work_task(task)
+    assert task.result == 3
+
+@pytest.mark.django_db
+def test_task_limits():
+    task = models.LimitedTask.create_task("test")
+    with pytest.raises(TaskLimitError):
+        task = models.LimitedTask.create_task("test")
+
+    orm.work_task(task)
+    task = models.LimitedTask.create_task("test")
+
+@pytest.mark.django_db
+def test_task_limits_with_id():
+    task_a = models.LimitedTaskWithLimitId.create_task("test")
+    task_b = models.LimitedTaskWithLimitId.create_task("other")
+    with pytest.raises(TaskLimitError):
+        task_a = models.LimitedTaskWithLimitId.create_task("test")
+    with pytest.raises(TaskLimitError):
+        task_b = models.LimitedTaskWithLimitId.create_task("other")
+
+
+    orm.work_task(task_a)
+    orm.work_task(task_b)
+    task_a = models.LimitedTaskWithLimitId.create_task("test")
+    task_b = models.LimitedTaskWithLimitId.create_task("other")
+
+
+
+
 
 
 
