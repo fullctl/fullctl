@@ -3,6 +3,7 @@ from fullctl.django.management.commands.base import CommandInterface
 from fullctl.django.tasks.orm import work_task, specify_task
 from fullctl.django.models import Task
 
+
 class Command(CommandInterface):
 
     help = "Process the specified task"
@@ -27,5 +28,3 @@ class Command(CommandInterface):
             self.log_error(task.error)
         else:
             self.log_info("Task finished")
-
-

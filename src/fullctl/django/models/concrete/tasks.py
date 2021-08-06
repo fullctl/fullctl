@@ -16,6 +16,11 @@ from fullctl.django.tasks.util import worker_id
 import fullctl.django.tasks as tasks
 
 
+class LimitAction:
+    error = 0
+    silent = 1
+
+
 class TaskClaimed(IOError):
     def __init__(self, task):
         super().__init__(f"Task already claimed by another worker: {task}")
@@ -69,6 +74,8 @@ class Task(HandleRefModel):
     """
 
     op = models.CharField(max_length=255)
+
+    limit_id = models.CharField(max_length=255, blank=True, default="")
 
     status = models.CharField(
         max_length=255,
@@ -125,9 +132,6 @@ class Task(HandleRefModel):
         related_name="children",
     )
 
-    # limit concurrent instances of this task type being processed
-    limit = None
-
     class Meta:
         db_table = "fullctl_task"
         verbose_name = _("Task")
@@ -137,33 +141,41 @@ class Task(HandleRefModel):
         tag = "task"
 
     @classmethod
-    def validate_limits(cls, op):
-        if cls.limit is None:
-            return
-
-        count = cls.objects.filter(op=op, status__in=["pending", "running"]).count()
-        if cls.limit >= count:
-            raise TaskLimitError()
-
-    @classmethod
     def create_task(cls, *args, **kwargs):
 
         parent = kwargs.pop("parent", None)
         timeout = kwargs.pop("timeout", None)
         op = cls.HandleRef.tag
 
-        cls.validate_limits(op)
-
         if parent:
-            # gross?
             parent = Task(id=parent.id)
 
         param = {"args": args or [], "kwargs": kwargs or {}}
 
         task = cls(op=op, param=param, status="pending", parent=parent, timeout=timeout)
-        task.clean()
+        task.limit_id = task.generate_limit_id
+
+        try:
+            task.clean()
+        except TaskLimitError:
+            if task.limit_action == LimitAction.silent:
+                pass
+            raise
+
         task.save()
         return task
+
+    @property
+    def generate_limit_id(self):
+        return ""
+
+    @property
+    def limit(self):
+        return self.task_meta_property("limit")
+
+    @property
+    def limit_action(self):
+        return self.task_meta_property("limit_action", LimitAction.error)
 
     @property
     def param(self):
@@ -205,6 +217,36 @@ class Task(HandleRefModel):
     def __str__(self):
         return f"{self.__class__.__name__}({self.id}): {self.param['args']}"
 
+    def task_meta_property(self, name, default=None):
+        task_meta = self.task_meta
+        if not task_meta:
+            return default
+
+        return getattr(task_meta, name, default)
+
+    def validate_limits(self):
+        """
+        Checks that creating a new instance of this task
+        doesnt violate any limit we have specified
+        """
+
+        # no limit specified
+        if self.limit is None:
+            return
+
+        op = self.HandleRef.tag
+        limit_id = self.generate_limit_id
+
+        count = self._meta.model.objects.filter(
+            op=op, limit_id=limit_id, status__in=["pending", "running"]
+        ).count()
+
+        # if the count of currently pending / running instances of this
+        # task is higher than the limit we specified we raise a
+        # TaskLimitError
+        if self.limit <= count:
+            raise TaskLimitError()
+
     def clean(self):
         super().clean()
         try:
@@ -212,6 +254,9 @@ class Task(HandleRefModel):
                 json.loads(self.param_json)
         except Exception as exc:
             raise ValidationError(f"Parameters could not be JSON encoded: {exc}")
+
+        # this needs to be the last validation
+        self.validate_limits()
 
     def cancel(self, reason):
         self._cancel(reason)

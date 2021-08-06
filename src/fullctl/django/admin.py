@@ -47,6 +47,7 @@ class TaskAdmin(BaseAdmin):
         "parent",
         "status",
         "op",
+        "limit_id",
         "param",
         "time",
         "created",
