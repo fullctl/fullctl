@@ -56,7 +56,20 @@ def test_parent_task():
 
 
 
+@pytest.mark.django_db
+def test_task_qualifiers(settings):
 
+    task = models.QualifierTestTask.create_task(1,2)
+
+    # worker qualifies, task should be in tasks
+
+    settings.TEST_QUALIFIER = True
+    assert task in orm.fetch_tasks()
+
+    # worker no longer qualifiers, task should not be in tasks
+
+    settings.TEST_QUALIFIER = False
+    assert task not in orm.fetch_tasks()
 
 
 
