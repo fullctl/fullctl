@@ -1,11 +1,11 @@
-import reversion
 import asyncio
 import uuid
 
+import reversion
 from asgiref.sync import sync_to_async
 
 from fullctl.django.management.commands.base import CommandInterface
-from fullctl.django.tasks.orm import fetch_task, claim_task, TaskClaimed
+from fullctl.django.tasks.orm import TaskClaimed, claim_task, fetch_task
 
 
 class Worker:

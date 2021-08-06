@@ -1,14 +1,13 @@
 import logging
 import traceback
 
-from django.db import transaction
-from django.core.management.base import BaseCommand
-
 import reversion
+from django.core.management.base import BaseCommand
+from django.db import transaction
 
 from fullctl.django.auditlog import auditlog
-from fullctl.django.tasks.orm import worker_id
 from fullctl.django.models.concrete.tasks import CallCommand
+from fullctl.django.tasks.orm import worker_id
 
 
 class PretendMode(IOError):

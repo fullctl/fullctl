@@ -1,6 +1,6 @@
 from fullctl.django.management.commands.base import CommandInterface
-from fullctl.django.tasks.orm import work_task, specify_task
 from fullctl.django.models import Task
+from fullctl.django.tasks.orm import specify_task, work_task
 
 
 class Command(CommandInterface):

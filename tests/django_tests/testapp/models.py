@@ -3,7 +3,7 @@ Contains a bunch of concrete models to help testing
 """
 
 from fullctl.django.models import Task
-from fullctl.django.tasks import register, qualifiers
+from fullctl.django.tasks import qualifiers, register
 
 
 @register

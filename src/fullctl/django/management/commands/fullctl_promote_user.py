@@ -1,6 +1,6 @@
-from fullctl.django.management.commands.base import CommandInterface
-
 from django.contrib.auth import get_user_model
+
+from fullctl.django.management.commands.base import CommandInterface
 
 
 class Command(CommandInterface):

@@ -1,11 +1,8 @@
 import pytest
 
-
 import fullctl.django.tasks.orm as orm
-
-from fullctl.django.models.concrete.tasks import TaskLimitError
-
 import tests.django_tests.testapp.models as models
+from fullctl.django.models.concrete.tasks import TaskLimitError
 
 
 @pytest.mark.django_db
