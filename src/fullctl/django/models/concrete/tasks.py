@@ -258,7 +258,7 @@ class Task(HandleRefModel):
             self.refresh_from_db()
 
             if timeout and (time.time() - t).total_seconds > timeout:
-                raise IOError("Task wait() timeout")
+                raise OSError("Task wait() timeout")
 
     async def async_wait(self, timeout=None):
         """
@@ -278,7 +278,7 @@ class Task(HandleRefModel):
             await asyncio.sleep(0.1)
             sync_to_async(self.refresh_from_db)()
             if timeout and (time.time() - t).total_seconds > timeout:
-                raise IOError("Task wait() timeout")
+                raise OSError("Task wait() timeout")
 
     def task_meta_property(self, name, default=None):
         """

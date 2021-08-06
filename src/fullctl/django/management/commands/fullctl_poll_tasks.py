@@ -23,7 +23,7 @@ class Worker:
 
     def set_task(self, task):
         if task and self.task:
-            raise IOError("Worker has already been assiged a task")
+            raise OSError("Worker has already been assiged a task")
         self.task = task
         self.process = None
 
