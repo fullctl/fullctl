@@ -27,11 +27,11 @@ from fullctl.django.tasks import register
 @register
 class SumTask(Task):
 
-    # mandatory 
+    # required 
     class Meta:
         proxy = True
     
-    # mandatory
+    # required
     class HandleRef:
         tag = "task_sum"
 
@@ -41,6 +41,7 @@ class SumTask(Task):
         result_type = str
         qualifiers = [qualifiers.Setting('IMPORTANT_SETTING', True),]
 
+    # required
     def run(self, a, b, *args, **kwargs):
         return (a,b)
 ```
