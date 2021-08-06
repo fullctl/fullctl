@@ -372,7 +372,7 @@ class Task(HandleRefModel):
             self._fail(traceback.format_exc())
 
     def run(self, *args, **kwargs):
-        """ extend in proxy model """
+        """extend in proxy model"""
         raise NotImplementedError()
 
     def run_command(self, command):
