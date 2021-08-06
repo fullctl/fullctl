@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "social_django",
     "fullctl.django.apps.DjangoFullctlConfig",
+    "tests.django_tests.testapp.apps.TestAppConfig",
 ]
 
 MIDDLEWARE = [

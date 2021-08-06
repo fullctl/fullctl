@@ -69,6 +69,15 @@ Check perms on table
 SELECT grantee, privilege_type FROM information_schema.role_table_grants WHERE table_name='django_migrations';
 ```
 
-### TODO
+## Services
 
-Decide whether to use a common `.env` file (like aaactl_web) or use one from the service directory (like ixctl_web).
+### Bumping release
+
+```sh
+poetry run ctl version bump .
+poetry lock
+git commit -am "lock, bump version"
+poetry run ctl deploy_dev
+```
+
+### TODO
