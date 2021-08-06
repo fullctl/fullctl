@@ -59,6 +59,8 @@ def fetch_tasks(limit=1, **filters):
         if len(tasks) == limit:
             return tasks
 
+    return tasks
+
 
 def claim_task(task):
 

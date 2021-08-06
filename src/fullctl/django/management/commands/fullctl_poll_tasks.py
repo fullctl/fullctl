@@ -58,8 +58,6 @@ class Worker:
             "python",
             "manage.py",
             "fullctl_work_task",
-            task._meta.app_label,
-            task._meta.model_name,
             f"{task.id}",
         ]
         p = await asyncio.create_subprocess_shell(

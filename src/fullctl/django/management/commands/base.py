@@ -121,7 +121,6 @@ class CommandInterface(BaseCommand):
             else:
                 transaction.rollback()
             err_txt = traceback.format_exc()
-            auditlog.append_data(error=f"{err_txt}")
             self.log_error(err_txt)
 
         if self.auditlog_enabled and self.commit:
@@ -139,6 +138,7 @@ class CommandInterface(BaseCommand):
 
     def log_error(self, msg):
         self.log.error(msg)
+        self.auditlog_context.append_data(error=f"{msg}")
 
     def run(self, *args, **kwargs):
         raise NotImplementedError()

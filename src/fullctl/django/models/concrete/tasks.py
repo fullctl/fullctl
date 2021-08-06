@@ -183,9 +183,18 @@ class Task(HandleRefModel):
         self.param_json = json.dumps(param)
 
     @property
+    def task_meta(self):
+        return getattr(self, "TaskMeta", None)
+
+    @property
     def qualifies(self):
 
-        qualifiers = getattr(self._meta.model, "qualifiers", [])
+        task_meta = self.task_meta
+
+        if not task_meta:
+            return True
+
+        qualifiers = getattr(task_meta, "qualifiers", [])
 
         for qualifier in qualifiers:
             if not qualifier.check(self):
