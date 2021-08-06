@@ -65,6 +65,13 @@ This qualifier allows you to require certain conditions to exist within the djan
 ```py
 from fullctl.django.tasks import qualifiers
 class MyTask(Task):
+
+    class Meta:
+        proxy = True
+    
+    class HandleRef:
+        tag = "task_my"
+
     class TaskMeta:
         qualifiers = [
             # require settings.IMPORTANT_SETTING to be True
@@ -90,6 +97,12 @@ Allow a maximum of 1 pending instances to be up for the task.
 
 ```py
 class MyTask(Task):
+    class Meta:
+        proxy = True
+    
+    class HandleRef:
+        tag = "task_my"
+
     class TaskMeta:
         limit = 1
 
@@ -103,6 +116,12 @@ by the first task argument
 
 ```py
 class MyTask(Task):
+    class Meta:
+        proxy = True
+    
+    class HandleRef:
+        tag = "task_my"
+
     class TaskMeta:
         limit = 1 
 
@@ -151,6 +170,12 @@ You can specify a result type for the task in `TaskMeta` with the `result_type` 
 
 ```py
 class SumTask(Task):
+    class Meta:
+        proxy = True
+
+    class HandleRef:
+        tag = "task_sum"
+
     class TaskMeta:
         result_type = int
 
