@@ -4,6 +4,8 @@ import subprocess
 import traceback
 import time
 import pytz
+import asyncio
+from asgiref.sync import sync_to_async
 from io import StringIO
 
 from django.utils.translation import gettext_lazy as _
@@ -195,11 +197,35 @@ class Task(HandleRefModel):
         self.param_json = json.dumps(param)
 
     @property
+    def result(self):
+        """
+        Returns the task result if task completed
+        otherwise returns None
+
+        You can type cast a result type by specifying
+        the `result_type` property in `TaskMeta`
+        """
+        if self.status == "completed":
+            typ = self.task_meta_property("result_type", str)
+            return typ(self.output)
+        return None
+
+    @property
     def task_meta(self):
+        """
+        Returns TaskMeta if it exists, None otherwise
+        """
         return getattr(self, "TaskMeta", None)
 
     @property
     def qualifies(self):
+
+        """
+        Checks if the environment qualifies to process
+        this task.
+
+        Will raise a WorkerUnqualified exception if not
+        """
 
         task_meta = self.task_meta
 
@@ -217,7 +243,58 @@ class Task(HandleRefModel):
     def __str__(self):
         return f"{self.__class__.__name__}({self.id}): {self.param['args']}"
 
+    def wait(self, timeout=None):
+        """
+        Waits for the task to be completed. This is a blocking action
+
+        Keyword Arguments:
+
+        - timeout(`int`): if specified timeout after n seconds
+        """
+        t = time.time()
+
+        while True:
+            if self.status == "completed":
+                return
+            time.sleep(0.1)
+            self.refresh_from_db()
+
+            if timeout and (time.time() - t).total_seconds > timeout:
+                raise IOError("Task wait() timeout")
+
+    async def async_wait(self, timeout=None):
+        """
+        Waits for a task to be completed with asyncio.
+        This is a blocking action
+
+        Keyword Arguments:
+
+        - timeout(`int`): if specified timeout after n seconds
+        """
+
+        t = time.time()
+
+        while True:
+            if self.status == "completed":
+                return
+            await asyncio.sleep(0.1)
+            sync_to_async(self.refresh_from_db)()
+            if timeout and (time.time() - t).total_seconds > timeout:
+                raise IOError("Task wait() timeout")
+
     def task_meta_property(self, name, default=None):
+        """
+        Returns a TaskMeta property value
+
+        Arguments:
+
+        - name(`str`) property name
+
+        Keyword Arguments:
+
+        - default(`mixed`): default value to return if property
+        is not specified
+        """
         task_meta = self.task_meta
         if not task_meta:
             return default
