@@ -6,11 +6,8 @@ from fullctl.django.models import Task
 from fullctl.django.tasks import register, qualifiers
 
 
-
-
 @register
 class TestTask(Task):
-
     class Meta:
         proxy = True
 
@@ -21,11 +18,11 @@ class TestTask(Task):
         result_type = int
 
     def run(self, a, b, *args, **kwargs):
-        return (a+b)
+        return a + b
+
 
 @register
 class ParentTestTask:
-
     class Meta:
         proxy = True
 
@@ -34,12 +31,11 @@ class ParentTestTask:
 
     def run(self, a, *args, **kwargs):
         b = int(self.parent.output)
-        return (a+b)
+        return a + b
 
 
 @register
 class QualifierTestTask(TestTask):
-
     class Meta:
         proxy = True
 
@@ -51,23 +47,24 @@ class QualifierTestTask(TestTask):
             qualifiers.Setting("TEST_QUALIFIER", True),
         ]
 
+
 @register
 class LongTask(TestTask):
-
     class Meta:
         proxy = True
 
     class HandleRef:
         tag = "task_long"
 
-    def run(self, a,b, *args, **kwargs):
+    def run(self, a, b, *args, **kwargs):
         import time
+
         time.sleep(1)
-        return (a+b)
+        return a + b
+
 
 @register
 class LimitedTask(Task):
-
     class Meta:
         proxy = True
 
@@ -83,7 +80,6 @@ class LimitedTask(Task):
 
 @register
 class LimitedTaskWithLimitId(LimitedTask):
-
     class Meta:
         proxy = True
 
@@ -96,4 +92,3 @@ class LimitedTaskWithLimitId(LimitedTask):
     @property
     def generate_limit_id(self):
         return self.param["args"][0]
-

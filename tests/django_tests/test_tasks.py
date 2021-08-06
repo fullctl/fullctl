@@ -7,16 +7,18 @@ from fullctl.django.models.concrete.tasks import TaskLimitError
 
 import tests.django_tests.testapp.models as models
 
+
 @pytest.mark.django_db
 def test_fetch_tasks():
 
-    task = models.TestTask.create_task(1,2)
+    task = models.TestTask.create_task(1, 2)
     assert task == orm.fetch_task()
+
 
 @pytest.mark.django_db
 def test_work_tasks():
 
-    task = models.TestTask.create_task(1,2)
+    task = models.TestTask.create_task(1, 2)
 
     orm.claim_task(task)
 
@@ -28,11 +30,12 @@ def test_work_tasks():
     assert task.status == "completed"
     assert int(task.output) == 3
 
+
 @pytest.mark.django_db
 def test_parent_task():
 
-    task_par = models.TestTask.create_task(1,2)
-    task_chl = models.TestTask.create_task(7,3,parent=task_par)
+    task_par = models.TestTask.create_task(1, 2)
+    task_chl = models.TestTask.create_task(7, 3, parent=task_par)
 
     # cant run child task before parent is finished
 
@@ -57,11 +60,10 @@ def test_parent_task():
     orm.work_task(task_chl)
 
 
-
 @pytest.mark.django_db
 def test_task_qualifiers(settings):
 
-    task = models.QualifierTestTask.create_task(1,2)
+    task = models.QualifierTestTask.create_task(1, 2)
 
     # worker qualifies, task should be in tasks
 
@@ -73,11 +75,13 @@ def test_task_qualifiers(settings):
     settings.TEST_QUALIFIER = False
     assert task not in orm.fetch_tasks()
 
+
 @pytest.mark.django_db
 def test_task_result():
-    task = models.TestTask.create_task(1,2)
+    task = models.TestTask.create_task(1, 2)
     orm.work_task(task)
     assert task.result == 3
+
 
 @pytest.mark.django_db
 def test_task_limits():
@@ -88,6 +92,7 @@ def test_task_limits():
     orm.work_task(task)
     task = models.LimitedTask.create_task("test")
 
+
 @pytest.mark.django_db
 def test_task_limits_with_id():
     task_a = models.LimitedTaskWithLimitId.create_task("test")
@@ -97,18 +102,7 @@ def test_task_limits_with_id():
     with pytest.raises(TaskLimitError):
         task_b = models.LimitedTaskWithLimitId.create_task("other")
 
-
     orm.work_task(task_a)
     orm.work_task(task_b)
     task_a = models.LimitedTaskWithLimitId.create_task("test")
     task_b = models.LimitedTaskWithLimitId.create_task("other")
-
-
-
-
-
-
-
-
-
-

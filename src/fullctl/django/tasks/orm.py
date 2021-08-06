@@ -2,16 +2,13 @@
 ORM based task delegation
 """
 from django.db import IntegrityError
-from django.db.models import Q
-from django.apps import apps
-from django.conf import settings
 from fullctl.django.tasks.util import worker_id
 from fullctl.django.models import (
     Task,
     WorkerUnqualified,
     TaskClaimed,
 )
-from fullctl.django.models.concrete.tasks import TaskClaim, Task
+from fullctl.django.models.concrete.tasks import TaskClaim
 from fullctl.django.tasks import specify_task
 
 

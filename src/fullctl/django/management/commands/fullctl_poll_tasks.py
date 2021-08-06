@@ -1,8 +1,5 @@
-import subprocess
 import reversion
 import asyncio
-import threading
-import time
 import uuid
 
 from asgiref.sync import sync_to_async
@@ -41,7 +38,7 @@ class Worker:
 
         if not self.task:
             return
-        task = self.task
+        self.task
         if not self.process:
             # no process has been spawned yet, run the command
             await self._run_command()

@@ -1,5 +1,3 @@
-import fullctl.django.tasks.qualifiers as qualifiers
-
 TASK_MODELS = {}
 
 

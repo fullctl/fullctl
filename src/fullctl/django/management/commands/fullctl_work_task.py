@@ -1,4 +1,3 @@
-from django.contrib.contenttypes.models import ContentType
 from fullctl.django.management.commands.base import CommandInterface
 from fullctl.django.tasks.orm import work_task, specify_task
 from fullctl.django.models import Task

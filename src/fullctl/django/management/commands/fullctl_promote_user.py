@@ -2,8 +2,6 @@ from fullctl.django.management.commands.base import CommandInterface
 
 from django.contrib.auth import get_user_model
 
-import time
-
 
 class Command(CommandInterface):
 

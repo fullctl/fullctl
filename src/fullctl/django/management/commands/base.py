@@ -1,9 +1,6 @@
 import logging
 import traceback
-import socket
-import json
 
-from django.conf import settings
 from django.db import transaction
 from django.core.management.base import BaseCommand
 
@@ -86,7 +83,7 @@ class CommandInterface(BaseCommand):
         if self.queue:
             command_kwargs.pop("commit", None)
             command_kwargs.pop("queue", None)
-            task = CallCommand.create_task(
+            CallCommand.create_task(
                 timeout=kwargs.get("timeout", None),
                 *([command_name] + list(args)),
                 **command_kwargs,
@@ -125,7 +122,7 @@ class CommandInterface(BaseCommand):
 
         if self.auditlog_enabled and self.commit:
             auditlog.append_data(output="\n".join(self.output))
-            auditlog.log(f"command")
+            auditlog.log("command")
 
     def log_debug(self, msg):
         self.log.debug(msg)
