@@ -23,21 +23,15 @@ poetry install
 poetry run pre-commit clean
 ```
 
-### Services
-
-fullctl expects all used services to be cloned in it's parent dir. For example:
-
-```
-github.com/fullctl/
-  fullctl/
-  aaactl/
-  ixctl/
-  prefixctl/
-```
-
-### Database
+## Database
 
 This uses a common database server between fullctl services, each service still has it's own database.
+
+To start it separately:
+
+```sh
+poetry run Ctl/dev/compose.sh up postgres
+```
 
 #### Backups
 
@@ -70,6 +64,27 @@ SELECT grantee, privilege_type FROM information_schema.role_table_grants WHERE t
 ```
 
 ## Services
+
+fullctl expects all used services to be cloned in it's parent dir. For example:
+
+```
+github.com/fullctl/
+  fullctl/
+  aaactl/
+  ixctl/
+  prefixctl/
+```
+
+To start individually, for example `aaactl`
+semanage port -m -t http_port_t -p tcp 8001
+
+
+```sh
+# change the port it listens on if needed
+# export AAACTL_PORT=7002
+poetry run Ctl/dev/compose.sh up aaactl_web
+```
+
 
 ### Bumping release
 
