@@ -47,6 +47,13 @@ urlpatterns += [
         ),
     ),
     path(
+        "api/",
+        include(
+            ("fullctl.django.rest.urls.aaactl_sync", "fullctl_aaactl_sync_api"),
+            namespace="fullctl_aaactl_sync_api",
+        ),
+    ),
+    path(
         "login/",
         auth_views.LoginView.as_view(template_name="common/auth/login.html"),
         name="login",
