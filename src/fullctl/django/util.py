@@ -1,9 +1,25 @@
 from django.conf import settings
+from fullctl.django.context import current_request
 
 if "django_peeringdb" in settings.INSTALLED_APPS:
     import django_peeringdb.models.concrete as pdb_models
 else:
     pdb_models = None
+
+
+def host_url():
+
+    """
+    Will see if a current request context exist and if it
+    does return host url as it exists on the requests HTTP_HOST attribute.
+
+    Otherwise settings.HOST_URL is returned
+    """
+
+    with current_request() as request:
+        if request:
+            return request.META["HTTP_HOST"]
+        return settings.HOST_URL
 
 
 def verified_asns(perms):

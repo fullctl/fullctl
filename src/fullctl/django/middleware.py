@@ -4,6 +4,7 @@ from fullctl.django.auth import permissions
 from fullctl.django.models import Organization
 from fullctl.django.context import current_request
 
+
 class CurrentRequestContext:
 
     """
@@ -18,6 +19,7 @@ class CurrentRequestContext:
     def __call__(self, request):
         with current_request(request):
             return self.get_response(request)
+
 
 class RequestAugmentation:
 
