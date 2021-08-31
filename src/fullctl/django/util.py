@@ -1,4 +1,5 @@
 from django.conf import settings
+
 from fullctl.django.context import current_request
 
 if "django_peeringdb" in settings.INSTALLED_APPS:

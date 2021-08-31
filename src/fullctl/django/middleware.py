@@ -1,8 +1,8 @@
 from django.http import Http404
 
 from fullctl.django.auth import permissions
-from fullctl.django.models import Organization
 from fullctl.django.context import current_request
+from fullctl.django.models import Organization
 
 
 class CurrentRequestContext:
