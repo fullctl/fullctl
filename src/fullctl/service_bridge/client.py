@@ -5,6 +5,7 @@ class ServiceBridgeError(IOError):
     def __init__(self, bridge, status, data=None):
         super().__init__(f"Service bridge error: {bridge} [{status}]")
         self.data = data
+        self.status = status
 
     @property
     def errors(self):
@@ -55,20 +56,19 @@ class Bridge:
 
     def get(self, endpoint, **kwargs):
         url = f"{self.url}/{endpoint}"
-        return self._data(requests.get(url, self._requests_kwargs(**kwargs)))
+        return self._data(requests.get(url, **self._requests_kwargs(**kwargs)))
 
     def post(self, endpoint, **kwargs):
         url = f"{self.url}/{endpoint}"
-        return self._data(requests.post(url, self._requests_kwargs(**kwargs)))
+        return self._data(requests.post(url, **self._requests_kwargs(**kwargs)))
 
     def put(self, endpoint, **kwargs):
         url = f"{self.url}/{endpoint}"
-        return self._data(requests.put(url, self._requests_kwargs(**kwargs)))
+        return self._data(requests.put(url, **self._requests_kwargs(**kwargs)))
 
     def delete(self, endpoint, **kwargs):
         url = f"{self.url}/{endpoint}"
-        return self._data(requests.delete(url, self._requests_kwargs(**kwargs)))
-
+        return self._data(requests.delete(url, **self._requests_kwargs(**kwargs)))
 
 
 class AaaCtl(Bridge):

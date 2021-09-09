@@ -11,7 +11,7 @@ from django.core.management import call_command
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-import fullctl.django.tasks as tasks
+import fullctl.django.tasks
 from fullctl.django.models.abstract.base import HandleRefModel
 from fullctl.django.tasks.util import worker_id
 
@@ -405,7 +405,7 @@ class TaskClaim(HandleRefModel):
         tag = "task_claim"
 
 
-@tasks.register
+@fullctl.django.tasks.register
 class CallCommand(Task):
 
     """

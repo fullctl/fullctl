@@ -19,6 +19,8 @@ from fullctl.django.rest.decorators import grainy_endpoint
 from fullctl.django.rest.mixins import CachedObjectMixin, OrgQuerysetMixin
 from fullctl.django.rest.route.aaactl_sync import route
 from fullctl.django.rest.serializers.aaactl_sync import Serializers
+from fullctl.django.rest.core import BadRequest
+
 
 @route
 class User(CachedObjectMixin, viewsets.GenericViewSet):
@@ -41,9 +43,12 @@ class User(CachedObjectMixin, viewsets.GenericViewSet):
     lookup_url_kwarg = "remote_id"
 
     @grainy_endpoint("aaactl_sync.user")
-    def update(self, request, username, *args, **kwargs):
+    def update(self, request, remote_id, *args, **kwargs):
         user = self.get_object()
         serializer = self.serializer_class(instance=user, data=request.data)
+        if not serializer.is_valid():
+            return BadRequest(serializer.errors)
+        serializer.save()
         return Response(serializer.data)
 
 
@@ -64,9 +69,18 @@ class Organization(CachedObjectMixin, viewsets.GenericViewSet):
     lookup_url_kwarg = "remote_id"
 
     @grainy_endpoint("aaactl_sync.org")
-    def update(self, request, remote_id, *args, **kwargs):
-        org = self.get_object()
-        serializer = self.serializer_class(instance=org, data=request.data)
+    def create(self, request, *args, **kwargs):
+        try:
+            instance = models.Organization.objects.get(
+                remote_id=request.data["remote_id"]
+            )
+        except models.Organization.DoesNotExist:
+            instance = None
+        serializer = self.serializer_class(instance=instance, data=request.data)
+
+        if not serializer.is_valid():
+            return BadRequest(serializer.errors)
+        org = serializer.save()
         return Response(serializer.data)
 
 
@@ -79,22 +93,18 @@ class OrganizationUser(CachedObjectMixin, viewsets.GenericViewSet):
     """
 
     serializer_class = Serializers.orguser
-    queryset = models.OrganizationUser.objects.all()
+    queryset = get_user_model().objects.all()
 
-    lookup_field = "org__remote_id"
-    lookup_url_kwarg = "org_remote_id"
-
-    @grainy_endpoint("aaactl_sync.orguser")
-    def create(self, request, pk, *args, **kwargs):
-        org = self.get_object()
-
-        #serializer = self.serializer_class(instance=user, data=request.data)
-        #return Response(serializer.data)
-
+    # this approach assumes that aaactl is the only authentication
+    # provider
+    lookup_field = "social_auth__uid"
+    lookup_url_kwarg = "remote_id"
 
     @grainy_endpoint("aaactl_sync.orguser")
-    def destroy(self, request, pk, *args, **kwargs):
-        org = self.get_object()
-
-
-
+    def update(self, request, remote_id, *args, **kwargs):
+        user = self.get_object()
+        serializer = self.serializer_class(data=request.data)
+        if not serializer.is_valid():
+            return BadRequest(serializer.errors)
+        serializer.save()
+        return Response(serializer.data)
