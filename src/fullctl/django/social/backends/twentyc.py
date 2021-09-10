@@ -26,6 +26,8 @@ class TwentycOAuth2(BaseOAuth2):
             "email": response.get("email") or "",
             "first_name": response.get("given_name"),
             "last_name": response.get("family_name"),
+            "is_superuser": response.get("is_superuser"),
+            "is_staff": response.get("is_staff"),
         }
 
     def user_data(self, access_token, *args, **kwargs):

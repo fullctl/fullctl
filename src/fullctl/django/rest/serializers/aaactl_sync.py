@@ -15,7 +15,7 @@ class User(ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ["username", "first_name", "last_name", "email"]
+        fields = ["username", "first_name", "last_name", "email", "is_superuser", "is_staff"]
 
 
 @register
@@ -53,6 +53,10 @@ class OrganizationUser(serializers.Serializer):
 
 @register
 class ExpireSession(serializers.Serializer):
+
+    """
+    not implemented yet
+    """
 
     username = serializers.CharField()
 
