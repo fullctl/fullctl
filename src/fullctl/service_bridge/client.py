@@ -5,6 +5,7 @@ class ServiceBridgeError(IOError):
     def __init__(self, bridge, status, data=None):
         super().__init__(f"Service bridge error: {bridge} [{status}]")
         self.data = data
+        self.status = status
 
     @property
     def errors(self):
@@ -26,6 +27,10 @@ class Bridge:
     class Meta:
         service = "base"
 
+    @property
+    def auth_headers(self):
+        return {"Authorization": f"token {self.key}"}
+
     def __init__(self, host, key, org_slug):
         self.url = f"{host}/api"
         self.org = org_slug
@@ -42,13 +47,28 @@ class Bridge:
         else:
             raise ServiceBridgeError(self, status)
 
+    def _requests_kwargs(self, **kwargs):
+        if kwargs.get("headers"):
+            kwargs["headers"].update(self.auth_headers)
+        else:
+            kwargs["headers"] = self.auth_headers
+        return kwargs
+
     def get(self, endpoint, **kwargs):
-        url = f"{self.url}/{endpoint}?key={self.key}"
-        return self._data(requests.get(url, **kwargs))
+        url = f"{self.url}/{endpoint}"
+        return self._data(requests.get(url, **self._requests_kwargs(**kwargs)))
 
     def post(self, endpoint, **kwargs):
-        url = f"{self.url}/{endpoint}?key={self.key}"
-        return self._data(requests.post(url, **kwargs))
+        url = f"{self.url}/{endpoint}"
+        return self._data(requests.post(url, **self._requests_kwargs(**kwargs)))
+
+    def put(self, endpoint, **kwargs):
+        url = f"{self.url}/{endpoint}"
+        return self._data(requests.put(url, **self._requests_kwargs(**kwargs)))
+
+    def delete(self, endpoint, **kwargs):
+        url = f"{self.url}/{endpoint}"
+        return self._data(requests.delete(url, **self._requests_kwargs(**kwargs)))
 
 
 class AaaCtl(Bridge):
