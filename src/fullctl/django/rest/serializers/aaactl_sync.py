@@ -15,7 +15,14 @@ class User(ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ["username", "first_name", "last_name", "email", "is_superuser", "is_staff"]
+        fields = [
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "is_superuser",
+            "is_staff",
+        ]
 
 
 @register
