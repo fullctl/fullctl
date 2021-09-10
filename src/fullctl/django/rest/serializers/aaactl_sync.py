@@ -1,10 +1,9 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+import fullctl.django.models as models
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
-
-import fullctl.django.models as models
 
 Serializers, register = serializer_registry()
 

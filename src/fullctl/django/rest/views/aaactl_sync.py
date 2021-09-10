@@ -6,20 +6,16 @@ These views require permissions to the `aaactl_sync` namespace which usually
 only exists on the internal api key used for service bridging
 """
 
-import datetime
-
 from django.contrib.auth import get_user_model
-
 from rest_framework import viewsets
 from rest_framework.response import Response
-from rest_framework.decorators import action
 
 import fullctl.django.models as models
+from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.decorators import grainy_endpoint
-from fullctl.django.rest.mixins import CachedObjectMixin, OrgQuerysetMixin
+from fullctl.django.rest.mixins import CachedObjectMixin
 from fullctl.django.rest.route.aaactl_sync import route
 from fullctl.django.rest.serializers.aaactl_sync import Serializers
-from fullctl.django.rest.core import BadRequest
 
 
 @route
@@ -80,7 +76,7 @@ class Organization(CachedObjectMixin, viewsets.GenericViewSet):
 
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
-        org = serializer.save()
+        serializer.save()
         return Response(serializer.data)
 
 
@@ -102,7 +98,7 @@ class OrganizationUser(CachedObjectMixin, viewsets.GenericViewSet):
 
     @grainy_endpoint("aaactl_sync.orguser")
     def update(self, request, remote_id, *args, **kwargs):
-        user = self.get_object()
+        self.get_object()
         serializer = self.serializer_class(data=request.data)
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
