@@ -338,9 +338,15 @@ div.menu div.menu-deco-border {
 }
 
 
+div.dropdown-meny.show,
+span.header-control.show,
+span.dropdown.show {
+  display: inline-block !important;
+}
+
 .dropdown-item,
 .dropdown-menu {
-  background-color: #0F1317;
+  background-color: #0F1317 !important;
 }
 
 .dropdown-item.selected:hover,
