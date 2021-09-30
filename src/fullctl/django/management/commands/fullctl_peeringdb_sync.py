@@ -1,20 +1,24 @@
 from django.conf import settings
-from django.core.management.base import BaseCommand
 from peeringdb import get_backend, initialize_backend, resource
 from peeringdb.client import Client
 
+from fullctl.django.management.commands.base import CommandInterface
 
-class Command(BaseCommand):
+class Command(CommandInterface):
 
     """
     Pull peeringdb updates
     """
 
+    always_commit = True
+
     def add_arguments(self, parser):
         parser.add_argument("--pdburl", default="https://www.peeringdb.com/api")
 
-    def handle(self, *args, **kwargs):
+    def run(self, *args, **kwargs):
         self.pdburl = kwargs.get("pdburl")
+        self.username = getattr(settings, "PDB_API_USERNAME", "")
+        self.password = getattr(settings, "PDB_API_PASSWORD", "")
         self.sync()
 
     def sync(self):
@@ -22,8 +26,8 @@ class Command(BaseCommand):
         config = {
             "sync": {
                 "url": self.pdburl,
-                "user": "",
-                "password": "",
+                "user": self.username,
+                "password": self.password,
                 "strip_tz": 1,
                 "timeout": 0,
                 "only": [],
@@ -36,7 +40,7 @@ class Command(BaseCommand):
         }
 
         initialize_backend("django_peeringdb", **config["orm"])
-        get_backend()
+        # b = get_backend()
 
         client = Client(config, **config)
         print("Syncing from", config["sync"]["url"])
