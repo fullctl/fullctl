@@ -43,5 +43,4 @@ class Command(CommandInterface):
         initialize_backend("django_peeringdb", **config["orm"])
 
         client = Client(config, **config)
-        print("Syncing from", config["sync"]["url"])
         client.update_all(resource.all_resources())
