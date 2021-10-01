@@ -104,7 +104,8 @@ class grainy_endpoint(base):
             if decorator.require_auth and not request.user.is_authenticated:
                 return Response(status=401)
 
-            decorator.load_org_instance(request, kwargs)
+            if decorator.instance_class:
+                decorator.load_org_instance(request, kwargs)
 
             with reversion.create_revision():
                 if isinstance(request.user, get_user_model()):

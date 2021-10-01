@@ -72,6 +72,8 @@ ctl:
 
     - type: changelog
       name: changelog
+    - name: version
+      type: version
     - type: venv
       name: venv
       config:

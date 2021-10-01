@@ -9,6 +9,13 @@ from django_grainy.decorators import grainy_model
 from fullctl.django.auth import permissions
 from fullctl.django.models.abstract import HandleRefModel
 
+__all__ = [
+    "generate_secret",
+    "Organization",
+    "Instance",
+    "OrganizationUser",
+]
+
 
 def generate_secret():
     return token_urlsafe()
@@ -231,7 +238,7 @@ class OrganizationUser(HandleRefModel):
     class Meta:
         db_table = "fullctl_org_user"
         verbose_name = _("Organization User")
-        verbose_name = _("Organization Users")
+        verbose_name_plural = _("Organization Users")
 
     def __str__(self):
         return f"{self.user.username} <{self.user.email}>"

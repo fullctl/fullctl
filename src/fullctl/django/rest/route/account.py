@@ -10,3 +10,4 @@ def route(viewset):
         ref_tag = viewset.serializer_class.ref_tag
 
     router.register(ref_tag, viewset, basename=ref_tag)
+    return viewset

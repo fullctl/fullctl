@@ -4,6 +4,11 @@ from django_handleref.models import HandleRefModel as SoftDeleteHandleRefModel
 
 from fullctl.django.inet.util import pdb_lookup
 
+__all__ = [
+    "HandleRefModel",
+    "PdbRefModel",
+]
+
 
 class HandleRefModel(SoftDeleteHandleRefModel):
     """

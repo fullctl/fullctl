@@ -30,25 +30,46 @@ multi_line_output = 3
 
 [tool.poetry.dependencies]
 python = "^3.7"
-django-handleref = ">=0.5"
-djangorestframework = ">=3.11,<4"
-Django = ">=2.2,<4"
-django-peeringdb = "*"
-django-reversion = "<4"
-django-inet = "*"
-django-autocomplete-light = ">=3,<=4"
-social-auth-app-django = "<4"
-grainy = ">=1.8.1,<2"
-django-grainy = ">=1.9.0,<2"
-pyyaml = "*"
+
+# django deps
+Django = "~3.2"
+django-autocomplete-light = "^3"
+django-crispy-forms = "^1.8"
+django-grainy = "^1.9"
+django-handleref = "^1"
+django-inet = "^1"
+django-recaptcha = "^2"
+djangorestframework = "^3"
+django-reversion = "^3"
+social-auth-app-django = "^3"
+
+# only needed for ixctl now, compare vs django-inet?
+django-netfields = "<2"
+
+confu = "^1.5"
+grainy = "^1.8.1"
+psycopg2-binary = ">2.8,<3"
+pyyaml = "^5.4"
+
+# move to aaactl?
+stripe = "^2.55.2"
+
+# move to pdbctl
+django-peeringdb = "^2.8"
+peeringdb = "^1"
+
+# XXX still used?
+whitenoise = "^5.2.0"
 pip = "*"
 celery = "<6,>=5"
-peeringdb = "<2"
-whitenoise = "^5.2.0"
+uWSGI = "^2.0.19"
+
 
 [tool.poetry.dev-dependencies]
 docker-compose = "^1.29.1"
 # tests
+codecov = ">=2"
+coverage = ">=5"
 pytest = ">=6.0.1"
 pytest-django = ">=3.8.0"
 pytest-cov = "*"

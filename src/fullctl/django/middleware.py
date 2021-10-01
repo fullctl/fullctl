@@ -1,7 +1,24 @@
 from django.http import Http404
 
 from fullctl.django.auth import permissions
+from fullctl.django.context import current_request
 from fullctl.django.models import Organization
+
+
+class CurrentRequestContext:
+
+    """
+    Middleware that sets the current request context
+
+    This allows us to access the current request from anywhere we need to
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        with current_request(request):
+            return self.get_response(request)
 
 
 class RequestAugmentation:

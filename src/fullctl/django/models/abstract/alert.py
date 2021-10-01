@@ -4,12 +4,13 @@ from django.utils.translation import gettext_lazy as _
 
 from fullctl.django.mail import send_plain
 from fullctl.django.models.abstract.base import HandleRefModel
-from fullctl.django.models.abstract.task_interface import TaskContainer
 
 ALERT_RECIPIENT_TYPE = (("email", _("Email")),)
 
+# XXX this needs to be adapted to the new task system
 
-class AlertGroup(TaskContainer):
+
+class AlertGroup:
 
     """
     Describes a group of recipients for alert notifications

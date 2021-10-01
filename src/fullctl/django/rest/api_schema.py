@@ -115,7 +115,7 @@ class BaseSchema(AutoSchema):
 
 class PeeringDBImportSchema(AutoSchema):
     def __init__(self, *args, **kwargs):
-        super(AutoSchema, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)

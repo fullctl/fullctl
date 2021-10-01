@@ -23,21 +23,15 @@ poetry install
 poetry run pre-commit clean
 ```
 
-### Services
-
-fullctl expects all used services to be cloned in it's parent dir. For example:
-
-```
-github.com/fullctl/
-  fullctl/
-  aaactl/
-  ixctl/
-  prefixctl/
-```
-
-### Database
+## Database
 
 This uses a common database server between fullctl services, each service still has it's own database.
+
+To start it separately:
+
+```sh
+poetry run Ctl/dev/compose.sh up postgres
+```
 
 #### Backups
 
@@ -69,6 +63,36 @@ Check perms on table
 SELECT grantee, privilege_type FROM information_schema.role_table_grants WHERE table_name='django_migrations';
 ```
 
-### TODO
+## Services
 
-Decide whether to use a common `.env` file (like aaactl_web) or use one from the service directory (like ixctl_web).
+fullctl expects all used services to be cloned in it's parent dir. For example:
+
+```
+github.com/fullctl/
+  fullctl/
+  aaactl/
+  ixctl/
+  prefixctl/
+```
+
+To start individually, for example `aaactl`
+semanage port -m -t http_port_t -p tcp 8001
+
+
+```sh
+# change the port it listens on if needed
+# export AAACTL_PORT=7002
+poetry run Ctl/dev/compose.sh up aaactl_web
+```
+
+
+### Bumping release
+
+```sh
+poetry run ctl version bump .
+poetry lock
+git commit -am "lock, bump version"
+poetry run ctl deploy_dev
+```
+
+### TODO
