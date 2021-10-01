@@ -140,7 +140,7 @@ $ctl.service_bridge.aaactl = $tc.extend(
      */
 
     has_service_costs : function(product, callback) {
-      var j, item, org = this.org(), status = {};
+      var j, item, org = this.org();
 
       return this.get(`billing/${org}/services/`).then((response) => {
         response.rows((row, i) => {

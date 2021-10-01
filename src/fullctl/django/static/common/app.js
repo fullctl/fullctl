@@ -1,9 +1,10 @@
 (function($, $tc) {
 
 
-fullctl = {
+window.fullctl = {
   urlparam : new URLSearchParams(window.location.search)
 }
+var fullctl = window.fullctl;
 
 fullctl.template = function(name) {
   return $('[data-template="'+name+'"]').clone().attr("data-template",null);
@@ -306,8 +307,6 @@ fullctl.application.Header = $tc.extend(
     },
 
     wire_elements : function() {
-
-      var header = this;
 
       this.widget('select_org', ($e) => {
         var w = new twentyc.rest.List($e.select_org);

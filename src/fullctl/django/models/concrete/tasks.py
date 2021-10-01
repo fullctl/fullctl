@@ -15,6 +15,18 @@ import fullctl.django.tasks
 from fullctl.django.models.abstract.base import HandleRefModel
 from fullctl.django.tasks.util import worker_id
 
+__all__ = [
+    "LimitAction",
+    "TaskClaimed",
+    "WorkerUnqualified",
+    "TaskLimitError",
+    "TaskAlreadyStarted",
+    "ParentTaskNotFinished",
+    "Task",
+    "TaskClaim",
+    "CallCommand",
+]
+
 
 class LimitAction:
     error = 0
@@ -51,7 +63,7 @@ class TaskAlreadyStarted(IOError):
     pass
 
 
-class ParentTaskNotFinsihed(IOError):
+class ParentTaskNotFinished(IOError):
     """
     Raised when trying to work a child task
     before the parent task has finished
@@ -357,7 +369,7 @@ class Task(HandleRefModel):
             raise TaskAlreadyStarted()
 
         if self.parent and self.parent.status != "completed":
-            raise ParentTaskNotFinsihed()
+            raise ParentTaskNotFinished()
 
         self.status = "running"
         self.save()

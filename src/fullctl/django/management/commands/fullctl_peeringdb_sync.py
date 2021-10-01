@@ -1,8 +1,9 @@
 from django.conf import settings
-from peeringdb import get_backend, initialize_backend, resource
+from peeringdb import initialize_backend, resource
 from peeringdb.client import Client
 
 from fullctl.django.management.commands.base import CommandInterface
+
 
 class Command(CommandInterface):
 
@@ -40,7 +41,6 @@ class Command(CommandInterface):
         }
 
         initialize_backend("django_peeringdb", **config["orm"])
-        # b = get_backend()
 
         client = Client(config, **config)
         print("Syncing from", config["sync"]["url"])

@@ -43,8 +43,7 @@ class JSONRenderer(renderers.JSONRenderer):
 
         # FIXME: should be a config value to disable/enable profile
         # info in the response data
-        if True:
-            container["profiling"] = {"queries": len(connection.queries)}
+        container["profiling"] = {"queries": len(connection.queries)}
 
         if status >= 400:
             container["errors"] = data
