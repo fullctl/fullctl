@@ -1,13 +1,13 @@
 from django.conf import settings
-from django.contrib.auth import views as auth_views
-from django.urls import include, path
+from django.contrib.staticfiles import views as static_file_views
+from django.urls import include, path, re_path
 from django.views.generic import TemplateView
 
 import fullctl.django.views
 
 urlpatterns = []
 
-if "django_peeringdb" in settings.INSTALLED_APPS:
+if getattr(settings, "PDBCTL_HOST", None):
 
     import fullctl.django.autocomplete.pdb
 
@@ -29,6 +29,11 @@ if "django_peeringdb" in settings.INSTALLED_APPS:
         ),
     ]
 
+if settings.DEBUG:
+    # support version ignorant serving of static files
+    urlpatterns += [
+        re_path(r"^s/[^\/]+/(?P<path>.*)$", static_file_views.serve),
+    ]
 
 urlpatterns += [
     path("_diag", fullctl.django.views.diag),
@@ -54,11 +59,14 @@ urlpatterns += [
         ),
     ),
     path(
-        "login/",
-        auth_views.LoginView.as_view(template_name="common/auth/login.html"),
-        name="login",
+        "api/",
+        include(
+            ("fullctl.django.rest.urls.service_bridge", "service_bridge_api"),
+            namespace="service_bridge_api",
+        ),
     ),
-    path("logout/", auth_views.LogoutView.as_view(next_page="/login"), name="logout"),
+    path("logout/", fullctl.django.views.logout, name="logout"),
+    path("login/", fullctl.django.views.login, name="login"),
     path(
         "apidocs/swagger",
         TemplateView.as_view(

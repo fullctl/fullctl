@@ -2,6 +2,8 @@ import datetime
 import re
 import sys
 
+from django.conf import settings
+
 # from django.conf import settings
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
@@ -28,6 +30,17 @@ def diag(request):
         txt += f"{k}: {v}\n"
 
     return HttpResponse(mark_safe(f"<div><pre>Meta:\n{txt}</pre></div>"))
+
+
+@require_auth()
+def login(request):
+    return redirect("/")
+
+
+def logout(request):
+    response = redirect(f"{settings.AAACTL_HOST}/account/auth/logout/")
+    request.session.delete()
+    return response
 
 
 def handle_error(request, exception, status):

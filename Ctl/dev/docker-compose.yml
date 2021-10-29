@@ -28,9 +28,9 @@ services:
     environment:
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: postgres
-      # defaults
-      DATABASE_USER: account_service
-      DATABASE_NAME: account_service
+      # defaults -- setting here overrides .env
+      # DATABASE_USER: aaactl
+      # DATABASE_NAME: aaactl
       # DATABASE_PORT: 5432
     logging:
       options:
@@ -69,6 +69,28 @@ services:
       - ../../src/fullctl:/srv/service/main/fullctl
       - ../../../ixctl/src:/srv/service/main
 
+  ixctl_worker:
+    build:
+      context: ../../../ixctl
+      dockerfile: Ctl/docker/Dockerfile.rsconfgen
+    # command: fullctl_poll_tasks
+    command: runserver
+    env_file:
+      - .env
+      - ../../../ixctl/Ctl/dev/.env
+    environment:
+      DATABASE_PASSWORD: devPASSWORD
+      DATABASE_HOST: postgres
+    logging:
+      options:
+        max-size: 100m
+        max-file: "3"
+    user: 6300:6300
+    volumes:
+      - ../../src/fullctl:/srv/service/main/fullctl
+      - ../../../ixctl/src:/srv/service/main
+#      - ../../../ixctl/LOCAL/mnt/arouteserver:/arouteserver:Z
+
   peerctl_web:
     build:
       context: ../../../peerctl
@@ -86,20 +108,43 @@ services:
         max-file: "3"
     ports:
       # this needs to be set in the shell, compose env vars aren't read yet
-      - "${PEERCTL_PORT:-6001}:6001"
+      - "${PEERCTL_PORT:-7303}:6001"
     volumes:
       - ../../src/fullctl:/srv/service/main/fullctl
       - ../../../peerctl/src:/srv/service/main
 
 
-  devicectl_web:
+#  devicectl_web:
+#    build:
+#      context: ../../../devicectl
+#      dockerfile: Dockerfile
+#    command: runserver 0.0.0.0:6001
+#    env_file:
+#      - .env
+#      - ../../../devicectl/Ctl/dev/.env
+#    environment:
+#      DATABASE_PASSWORD: devPASSWORD
+#      DATABASE_HOST: postgres
+#    logging:
+#      options:
+#        max-size: 100m
+#        max-file: "3"
+#    ports:
+#      # this needs to be set in the shell, compose env vars aren't read yet
+#      - "${DEVICECTL_PORT:-6001}:6001"
+#    volumes:
+#      - ../../src/fullctl:/srv/service/main/fullctl
+#      - ../../../devicectl/src:/srv/service/main
+
+
+  pdbctl_web:
     build:
-      context: ../../../devicectl
+      context: ../../../pdbctl
       dockerfile: Dockerfile
     command: runserver 0.0.0.0:6001
     env_file:
       - .env
-      - ../../../devicectl/Ctl/dev/.env
+      - ../../../pdbctl/Ctl/dev/.env
     environment:
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: postgres
@@ -109,10 +154,10 @@ services:
         max-file: "3"
     ports:
       # this needs to be set in the shell, compose env vars aren't read yet
-      - "${DEVICECTL_PORT:-6001}:6001"
+      - "${PDBCTL_PORT:-7302}:6001"
     volumes:
       - ../../src/fullctl:/srv/service/main/fullctl
-      - ../../../devicectl/src:/srv/service/main
+      - ../../../pdbctl/src:/srv/service/main
 
 
 volumes:

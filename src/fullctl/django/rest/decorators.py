@@ -68,6 +68,26 @@ class load_object(base):
         return wrapped
 
 
+class grainy_endpoint_response(grainy_rest_viewset_response):
+
+    """
+    Override of grainy_rest_viewset_response so we can
+    toggle permission application to responses on or off
+    through our grainy_endpoint decorator
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.enable_apply_perms = kwargs.pop("enable_apply_perms", True)
+
+    def apply_perms(self, request, response, view_function, view):
+
+        if self.enable_apply_perms:
+            return super().apply_perms(request, response, view_function, view)
+        return response
+
+
 class grainy_endpoint(base):
     def __init__(
         self,
@@ -81,6 +101,7 @@ class grainy_endpoint(base):
         self.require_auth = require_auth
         self.explicit = explicit
         self.instance_class = instance_class
+        self.enable_apply_perms = kwargs.pop("enable_apply_perms", True)
         self.kwargs = kwargs
 
     def __call__(self, fn):
@@ -91,12 +112,13 @@ class grainy_endpoint(base):
         else:
             permissions_cls = RemotePermissions
 
-        @grainy_rest_viewset_response(
+        @grainy_endpoint_response(
             namespace=decorator.namespace,
             namespace_instance=decorator.namespace,
             explicit=decorator.explicit,
             ignore_grant_all=True,
             permissions_cls=permissions_cls,
+            enable_apply_perms=decorator.enable_apply_perms,
             **decorator.kwargs,
         )
         def wrapped(self, request, *args, **kwargs):

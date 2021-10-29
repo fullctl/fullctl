@@ -16,9 +16,9 @@ fullctl.formatters = {}
 
 fullctl.formatters.pretty_speed = (value) => {
   if(value >= 1000000)
-    value = (value / 1000000).toFixed(2)+"T";
+    value = parseInt(value / 1000000)+"T";
   else if(value >= 1000)
-    value = (value / 1000).toFixed(2)+"G";
+    value = parseInt(value / 1000)+"G";
   else
     value = value+"M";
   return value
@@ -32,6 +32,86 @@ fullctl.formatters.monitor_status = (value) => {
   }
   return value
 }
+
+
+fullctl.loading_animation = () => {
+  var anim = $('<div class="spinner loadingio-spinner-bars-k879i8bcs9"><div class="ldio-a9ruqenne8l"><div></div><div></div><div></div><div></div></div></div>');
+  return $('<div>').addClass("loading-anim").append(anim);
+}
+
+fullctl.widget.Wizard = $tc.define(
+  "Wizard",
+  {
+    Wizard : function(jq) {
+      this.element = jq;
+      this.step = 1;
+      this.element.addClass("wiz-step wiz-step-1");
+
+      var wizard = this;
+
+      this.element.find('button[data-wizard-step]').click(function() {
+        wizard.set_step($(this).data("wizard-step"));
+      });
+    },
+
+    set_step : function(n) {
+      this.element.removeClass("wiz-step-"+this.step);
+      this.element.addClass("wiz-step-"+n);
+      this.step = n;
+    }
+  }
+
+);
+
+fullctl.widget.StatusBadge = $tc.extend(
+  "StatusBadge",
+  {
+
+    StatusBadge : function(base_url, jq, refresh_values) {
+      this.row_id = jq.data("row-id")
+      this.field_name = jq.data("name")
+      this.refresh_time = parseInt(jq.data("refresh") || 1000);
+      this.loading_shim_disabled = true;
+      this.refresh_timer = new twentyc.util.SmartTimeout(()=>{},1000);
+      this.refresh_values = refresh_values;
+      this.Widget(base_url, jq);
+    },
+
+
+    spinner : function() {
+			return $('<div class="spinner loadingio-spinner-bars-k879i8bcs9"><div class="ldio-a9ruqenne8l"><div></div><div></div><div></div><div></div></div></div>');
+    },
+
+    load : function() {
+      return this.get().then((response) => {
+        response.rows((row) => {
+          if(row.id == this.row_id) {
+            var value = row[this.field_name];
+            this.render(value, row);
+          }
+        })
+      });
+    },
+
+    refresh : function() {
+      this.refresh_timer.set(
+        ()=>{this.load()},
+        this.refresh_time
+      );
+    },
+
+    render : function(value, row) {
+      this.element.removeClass().addClass("status-badge "+value)
+      this.element.empty().append($('<span>').text(value));
+      if(this.refresh_values && $.inArray(value, this.refresh_values) == -1) {
+          this.element.append(this.spinner());
+          this.refresh();
+      }
+
+    }
+  },
+  twentyc.rest.Widget
+);
 
 
 fullctl.widget.OrganizationSelect = $tc.extend(
@@ -156,81 +236,24 @@ fullctl.application.Tool = $tc.extend(
       this.active = false
     },
 
+    apply_ordering: function() {
+      //deprecated
+      return;
+    },
+
     initialize_sortable_headers: function() {
-      const list = this.$w.list
-
-      // Add click function to headings to sort
-      const table = list.element[0];
-      this.tableHeadings = $(table).first().find("th[data-sort-target]");
-      this.tableHeadings.click( function(event) {
-        let button = event.currentTarget;
-        this.handle_click( $(button) );
-      }.bind(this))
-
-      let sortButton = this.tableHeadings.filter("[data-sort-initial]");
-      this.sortHeading = sortButton.data("sort-target");
-      this.sortSecondary = sortButton.data("sort-secondary");
-
-      this.sortAsc = true;
-      this.ordering = "";
-
-      /*
-      Specific to django-rest-framework: we add "ordering" as a query
-      parameter to the API calls
-      */
-      list.payload = function(){return {ordering: this.ordering}}
+      //deprecated
+      return;
     },
 
-    handle_click: function(button) {
-        let sortTarget = button.data("sort-target");
+    custom_dialog : function(title) {
+      this.$e.body.empty();
+      var custom_dialog = $('<div>').addClass("tool-custom")
+      custom_dialog.append($('<h4>').addClass("tool-title").text(title));
+      this.$e.body.append(custom_dialog);
+      return custom_dialog;
+    }
 
-        this.sortSecondary = button.data("sort-secondary")
-
-        if ( sortTarget == this.sortHeading ){
-          this.sortAsc = !this.sortAsc;
-        } else {
-          this.sortHeading = sortTarget;
-          this.sortAsc = true;
-        };
-        this.sync();
-    },
-
-    apply_ordering : function() {
-        this.$w.list.ordering = this.return_ordering();
-        this.format_headings();
-    },
-
-    return_ordering: function() {
-
-      let secondary = (this.sortSecondary ? ","+this.sortSecondary : "")
-
-      if ( this.sortAsc ){
-        return this.sortHeading + secondary;
-      }
-      return "-" + this.sortHeading + secondary;
-    },
-
-
-    format_headings : function() {
-      let heading = this.sortHeading;
-      let asc = this.sortAsc;
-
-      $(this.tableHeadings).each( function() {
-        $(this).find("span").remove();
-        if ( $(this).data("sort-target") == heading ){
-          if ( asc ){
-            $(this).removeClass("selected-order-header-desc")
-            $(this).addClass("selected-order-header-asc");
-          } else {
-            $(this).removeClass("selected-order-header-asc")
-            $(this).addClass("selected-order-header-desc");
-          }
-        } else {
-            $(this).removeClass("selected-order-header-asc");
-            $(this).removeClass("selected-order-header-desc");
-        }
-      })
-    },
   },
   fullctl.application.Component
 );
@@ -353,6 +376,16 @@ fullctl.application.Header = $tc.extend(
   fullctl.application.Component
 );
 
+fullctl.application.Pages = $tc.extend(
+  "Pages",
+  {
+    Pages : function() {
+      this.Component("pages");
+    }
+  },
+  fullctl.application.Component
+);
+
 
 fullctl.application.Toolbar = $tc.extend(
   "Toolbar",
@@ -392,6 +425,10 @@ fullctl.application.Application = $tc.define(
           this.$t[i].sync(app);
         }
       }
+    },
+
+    page : function(page) {
+      $('[data-component="pages"]').find('[aria-controls="'+page+'"]').tab('show');
     }
   }
 );

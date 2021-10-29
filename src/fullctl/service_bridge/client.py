@@ -1,4 +1,14 @@
+import json
+import os
+import time
+import urllib.parse
+
 import requests
+
+from fullctl.service_bridge.data import DataObject
+
+# Location of test data
+TEST_DATA_PATH = "."
 
 
 class ServiceBridgeError(IOError):
@@ -24,17 +34,34 @@ class AuthError(ServiceBridgeError):
 
 
 class Bridge:
+
+    # set to > 0 if you want the bridge to cache GET
+    # responses for the specified duration (seconds)
+    cache_duration = 0
+
     class Meta:
         service = "base"
+        ref_tag = "base"
+        data_object_cls = DataObject
 
     @property
     def auth_headers(self):
         return {"Authorization": f"token {self.key}"}
 
-    def __init__(self, host, key, org_slug):
+    @property
+    def ref_tag(self):
+        return self.Meta.ref_tag
+
+    @property
+    def data_object_cls(self):
+        return self.Meta.data_object_cls
+
+    def __init__(self, host, key, org_slug, **kwargs):
         self.url = f"{host}/api"
         self.org = org_slug
         self.key = key
+        self.cache = kwargs.get("cache", None)
+        self.cache_duration = kwargs.get("cache_duration", 5)
 
     def _data(self, response):
         status = response.status_code
@@ -54,21 +81,91 @@ class Bridge:
             kwargs["headers"] = self.auth_headers
         return kwargs
 
+    def cached(self, url, now, params):
+        if self.cache is None:
+            return None
+        data, timestamp = self.cache.get(url, {}).get(params, (None, 0))
+        if now - timestamp > self.cache_duration:
+            return None
+        return data
+
+    def test_data(self, path, params):
+        if params:
+            param_str = "/" + urllib.parse.quote(urllib.parse.urlencode(params))
+        else:
+            param_str = ""
+        file_path = os.path.join(TEST_DATA_PATH, f"{path.rstrip('/')}{param_str}.json")
+        with open(file_path) as fh:
+            return json.load(fh)["data"]
+
     def get(self, endpoint, **kwargs):
-        url = f"{self.url}/{endpoint}"
-        return self._data(requests.get(url, **self._requests_kwargs(**kwargs)))
+        url = f"{self.url}/{endpoint}/"
+
+        # if the url starts with a test:// protocol, attempt
+        # to load test data from path instead.
+        if url.startswith("test://"):
+            return self.test_data(url.split("://")[1], kwargs.get("params"))
+
+        now = time.time()
+        params = json.dumps(kwargs.get("params"))
+
+        cached_data = self.cached(url, now, params)
+        if cached_data:
+            return cached_data
+
+        data = self._data(requests.get(url, **self._requests_kwargs(**kwargs)))
+
+        if self.cache is not None:
+            self.cache.setdefault(url, {})[params] = (data, now)
+
+        return data
 
     def post(self, endpoint, **kwargs):
-        url = f"{self.url}/{endpoint}"
+        url = f"{self.url}/{endpoint}/"
         return self._data(requests.post(url, **self._requests_kwargs(**kwargs)))
 
     def put(self, endpoint, **kwargs):
-        url = f"{self.url}/{endpoint}"
+        url = f"{self.url}/{endpoint}/"
         return self._data(requests.put(url, **self._requests_kwargs(**kwargs)))
 
     def delete(self, endpoint, **kwargs):
-        url = f"{self.url}/{endpoint}"
+        url = f"{self.url}/{endpoint}/"
         return self._data(requests.delete(url, **self._requests_kwargs(**kwargs)))
+
+    def object(self, id, raise_on_notfound=True, join=None):
+        url = f"data/{self.ref_tag}/{id}"
+        params = {}
+
+        if join:
+            params.update(join=join)
+        data = self.get(url, params=params)
+        try:
+            return self.data_object_cls(ref_tag=self.ref_tag, **data[0])
+        except IndexError:
+            if raise_on_notfound:
+                raise KeyError(f"{self.data_object_cls.description} does not exist")
+            return None
+
+    def objects(self, **kwargs):
+        url = f"data/{self.ref_tag}"
+        for k, v in kwargs.items():
+            if isinstance(v, list):
+                kwargs[k] = ",".join([str(a) for a in v])
+        data = self.get(url, params=kwargs)
+        for row in data:
+            yield self.data_object_cls(ref_tag=self.ref_tag, **row)
+
+    def first(self, **kwargs):
+        for o in self.objects(**kwargs):
+            return o
+
+    def heartbeat(self):
+        data = self.get("system/heartbeat")
+        return data[0].get("status")
+
+    def status(self):
+        data = self.get("system/status")
+        return data[0]
 
 
 class AaaCtl(Bridge):
@@ -76,9 +173,7 @@ class AaaCtl(Bridge):
     """
     Service bridge to aaactl
 
-    TODO: this should probably live in the aaactl repo?
-          But, do we really want to install aaactl as a package
-          for each fullctl service?
+    TODO: move to service_bridge/aaactl.py
     """
 
     def requires_billing(self, product_name):
@@ -96,7 +191,7 @@ class AaaCtl(Bridge):
         return False
 
     def require_subscription(self, product_name):
-        data = self.get(f"billing/org/{self.org}/services/")
+        data = self.get(f"billing/org/{self.org}/services")
 
         for row in data:
             for item in row.get("items"):
@@ -105,7 +200,7 @@ class AaaCtl(Bridge):
 
         payload = {"product": product_name}
         try:
-            data = self.post(f"billing/org/{self.org}/subscribe/", data=payload)
+            data = self.post(f"billing/org/{self.org}/subscribe", data=payload)
         except ServiceBridgeError as exc:
             if exc.has_error("product", "unknown"):
                 return {}

@@ -2,17 +2,19 @@
 
 set -e
 
-CREATE_PG="aaactl ixctl prefixctl devicectl peerctl"
+CREATE_PG="aaactl ixctl prefixctl devicectl peerctl pdbctl"
 
 
 for each in $CREATE_PG; do
   # create user
   psql --username "$POSTGRES_USER" <<-EOSQL
-    CREATE USER $each WITH PASSWORD '$POSTGRES_PASSWORD' CREATEDB;
+    CREATE DATABASE $each;
+    CREATE USER $each WITH PASSWORD '$POSTGRES_PASSWORD';
+    GRANT ALL PRIVILEGES ON DATABASE $each TO $each;
 EOSQL
 
   # create db as user
-  createdb --username $POSTGRES_USER -O ixctl ixctl
+  #createdb --username $POSTGRES_USER -O $each $each
 done
 
 

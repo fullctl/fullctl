@@ -234,6 +234,10 @@ twentyc.rest.Client = twentyc.cls.define(
       return JSON.stringify(data);
     },
 
+    format_request_url : function(url, method) {
+      return url;
+    },
+
     /**
      * Perform a read request (GET, HEAD, OPTIONS) on the api
      *
@@ -253,7 +257,7 @@ twentyc.rest.Client = twentyc.cls.define(
         $.ajax({
           method : method.toUpperCase(),
           data : data,
-          url : this.endpoint_url(endpoint),
+          url : this.format_request_url(this.endpoint_url(endpoint), method),
         }).done(function(result) {
           var response = new twentyc.rest.Response(result);
           $(this).trigger("api-request:success", [endpoint, data, response, method]);
@@ -295,7 +299,7 @@ twentyc.rest.Client = twentyc.cls.define(
         $.ajax({
           dataType : "json",
           method : method.toUpperCase(),
-          url : this.endpoint_url(endpoint),
+          url : this.format_request_url(this.endpoint_url(endpoint), method),
           data : this.encode(data),
           headers : {
             "Content-Type" : "application/json",
@@ -431,7 +435,9 @@ twentyc.rest.Widget = twentyc.cls.extend(
         this.loading_shim = $('<div>').addClass("loading-shim")
         this.element.append(this.loading_shim);
       }
-      this.loading_shim.show();
+      if(!this.loading_shim_disabled)
+        this.loading_shim.show();
+
       $(this).trigger("processing");
     },
 
@@ -658,6 +664,7 @@ twentyc.rest.Form = twentyc.cls.extend(
 
     fill : function(data) {
       var key, value;
+      this.clear_errors();
       for(key in data) {
         value = data[key];
         this.element.find('[name="'+key+'"]').each(function() {
@@ -667,7 +674,20 @@ twentyc.rest.Form = twentyc.cls.extend(
             $(this).val(value);
           }
         });
+
+        this.element.find('[data-field="'+key+'"]').each(function() {
+          $(this).text(value);
+        });
       }
+    },
+
+
+    reset : function() {
+      var k ,empty = {};
+      for(k in this.payload()) {
+        empty[k] = ""
+      }
+      this.fill(empty);
     },
 
     post_success : function(result) {
@@ -712,7 +732,7 @@ twentyc.rest.Form = twentyc.cls.extend(
       this.Widget_bind(jq);
       this.method = jq.data("api-method") || "POST";
 
-      this.element.find('input,textarea').keydown(function(event){
+      this.element.find('input').keydown(function(event){
         if(event.keyCode == 13) {
           event.preventDefault();
           this.submit();
@@ -722,10 +742,18 @@ twentyc.rest.Form = twentyc.cls.extend(
 
       var widget = this;
 
-      this.element.find('button.submit').click(function() {
+
+      this.element.find('button').click(function(event) {
+        event.preventDefault();
+        return false;
+      });
+
+      this.element.find('button.submit,button[data-element="submit"]').click(function(event) {
+        event.preventDefault();
         widget.submit(
           $(this).data("api-method")
         );
+        return false;
       });
     },
 
@@ -746,6 +774,110 @@ twentyc.rest.Form = twentyc.cls.extend(
   twentyc.rest.Widget
 );
 
+
+twentyc.rest.Input = twentyc.cls.extend(
+  "Input",
+  {
+    Input : function(jq) {
+      var base_url = jq.data("api-base");
+      this.Widget(base_url, jq);
+    },
+
+    /**
+     * Sets the widget state to processing
+     *
+     * This will trigger the `processing` event
+     *
+     * @method start_processing
+     */
+
+    start_processing : function() {
+      this.busy = true
+      this.element.prop("disabled", true);
+      $(this).trigger("processing");
+    },
+
+
+    /**
+     * Sets the widget state to ready or done with processing
+     *
+     * This will trigger the `ready` event
+     *
+     * @method done_processing
+     */
+
+    done_processing : function() {
+      this.busy = false
+      this.element.prop("disabled", false);
+      $(this).trigger("ready");
+    },
+
+
+    post_success : function(result) {
+
+    },
+
+    post_failure : function(response) {
+      console.error(response);
+      response.field_errors(this.render_error.bind(this));
+      response.non_field_errors(this.render_non_field_errors.bind(this))
+    },
+
+
+    bind : function(jq) {
+      this.Widget_bind(jq);
+      this.method = jq.data("api-method") || "POST";
+
+      this.element.on("keyup", function(ev) {
+        this.clear_errors();
+
+        if(ev.which != 13)
+          return;
+
+        var action = this.action;
+        var fn = this[this.method.toLowerCase()].bind(this);
+
+        fn(action, this.payload()).then(
+          this.post_success.bind(this),
+          this.post_failure.bind(this)
+        );
+      }.bind(this));
+    }
+
+  },
+  twentyc.rest.Widget
+);
+
+
+twentyc.rest.Button = twentyc.cls.extend(
+  "Button",
+  {
+    bind : function(jq) {
+      this.Widget_bind(jq);
+      this.method = jq.data("api-method") || "POST";
+
+      this.element.on("mouseup", function(ev) {
+
+        var confirm_required = this.element.data("confirm");
+        if(confirm_required && !confirm(confirm_required))
+          return;
+
+        this.clear_errors();
+
+        var action = this.action;
+        var fn = this[this.method.toLowerCase()].bind(this);
+
+        fn(action, this.payload()).then(
+          this.post_success.bind(this),
+          this.post_failure.bind(this)
+        );
+      }.bind(this));
+
+    }
+  },
+  twentyc.rest.Input
+);
+
 /**
  * Wires a `select` element to the API
  *
@@ -764,7 +896,7 @@ twentyc.rest.Form = twentyc.cls.extend(
  *   defaultd to "id"
  * - data-selected-field: which data resultset field to check whether and option
  *   should be auto-selected, defaults to "selected"
- * - data-load-type: what load method to use, can be "get" or "drf_choices",
+ * - data-load-type: what load method to use, can be "get" or "drf-choices",
  *   with the latter being a way to load in django-rest-framework field values
  *   choices. Defaults to "get"
  * - data-drf-name: relevant if load type is "drf-choices". Specifies the
@@ -780,27 +912,27 @@ twentyc.rest.Select = twentyc.cls.extend(
   "Select",
   {
     Select : function(jq) {
-      var base_url = jq.data("api-base")
       this.load_action = jq.data("api-load")
       this.name_field = jq.data("name-field") || "name"
       this.id_field = jq.data("id-field") || "id"
       this.selected_field = jq.data("selected-field") || "selected"
       this.load_type = jq.data("load-type") || "get"
       this.drf_name = jq.data("drf-name") || jq.attr("name");
-      this.Widget(base_url, jq);
+      this.null_option = jq.data("null-option")
+      this.proxy_data = jq.data("proxy-data")
+      this.Input(jq);
     },
 
     payload: function() {
       return { "id": this.element.val() }
     },
 
-    post_success : function(result) {
-
+    load_params : function() {
+      return null;
     },
 
-    post_failure : function(response) {
-      response.field_errors(this.render_error.bind(this));
-      response.non_field_errors(this.render_non_field_errors.bind(this))
+    filter : function(item) {
+      return true;
     },
 
 
@@ -818,6 +950,16 @@ twentyc.rest.Select = twentyc.cls.extend(
      */
 
     load : function(select_this) {
+
+      if(this.proxy_data) {
+        var select = this.element;
+        select.empty();
+
+        $(this.proxy_data).find('option').each(function() {
+          select.append($(this).clone());
+        });
+        return;
+      }
 
       if(this.load_type == "drf-choices")
         return this._load_drf_choices(select_this);
@@ -852,13 +994,25 @@ twentyc.rest.Select = twentyc.cls.extend(
 
     _load_get : function(select_this) {
 
-      return this.get().then(function(response) {
+
+      return this.get(null, this.load_params()).then(function(response) {
         var select = this.element;
         var name_field = this.name_field
         var id_field = this.id_field
         var selected_field = this.selected_field
-        select.empty()
+        var widget = this;
+
+        select.empty();
+
+        if(this.null_option) {
+          let null_parts = this.null_option.split(";");
+          select.append($('<option>').val(null_parts[0]).text(null_parts[1]));
+        }
+
+
         $(response.content.data).each(function() {
+          if(!widget.filter(this))
+            return;
           var selected = this[selected_field] || false;
           var opt = $('<option>').val(this[id_field]).text(this[name_field])
           if(selected)
@@ -869,7 +1023,7 @@ twentyc.rest.Select = twentyc.cls.extend(
         if(select_this)
           select.val(select_this);
 
-        $(this).trigger("load:after", [select, response.content.data]);
+        $(this).trigger("load:after", [select, response.content.data, this]);
       }.bind(this));
     },
 
@@ -890,6 +1044,13 @@ twentyc.rest.Select = twentyc.cls.extend(
       return this.options().then(function(response) {
         var select = this.element.empty();
         var options = response.content.data[0].actions.POST[this.drf_name].choices;
+
+        if(this.null_option) {
+          let null_parts = this.null_option.split(";");
+          select.append($('<option>').val(null_parts[0]).text(null_parts[1]));
+        }
+
+
         $(options).each(function() {
           select.append(
             $('<option>').val(this.value).text(this.display_name)
@@ -920,6 +1081,11 @@ twentyc.rest.Select = twentyc.cls.extend(
       );
     },
 
+    prepare_write_url : function(url) {
+      return url;
+    },
+
+
     bind : function(jq) {
       this.Widget_bind(jq);
       this.method = jq.data("api-method") || "POST";
@@ -933,15 +1099,17 @@ twentyc.rest.Select = twentyc.cls.extend(
         if(!this.action)
           return;
 
+        var action = this.action;
         var fn = this[this.method.toLowerCase()].bind(this);
-        fn(this.action, this.payload()).then(
+
+        fn(action, this.payload()).then(
           this.post_success.bind(this),
           this.post_failure.bind(this)
         );
       }.bind(this));
     }
   },
-  twentyc.rest.Widget
+  twentyc.rest.Input
 );
 
 /**
@@ -1021,6 +1189,8 @@ twentyc.rest.List = twentyc.cls.extend(
       this.formatters = {}
 
       this.Widget(base_url, jq);
+      this.list_head = this.element.find('thead,.list-header').first();
+      this.initialize_sorting();
     },
 
     /**
@@ -1034,6 +1204,9 @@ twentyc.rest.List = twentyc.cls.extend(
      */
 
     load : function() {
+      if(this.sortable)
+        this.apply_ordering();
+
       return this.get(this.action, this.payload()).then(function(response) {
         this.list_body.empty()
         response.rows(function(row, idx) {
@@ -1042,6 +1215,21 @@ twentyc.rest.List = twentyc.cls.extend(
         $(this).trigger("load:after");
         return
       }.bind(this));
+    },
+
+    /**
+     * reload single row
+     */
+
+    reload_row : function(id) {
+      var row = this.find_row(id);
+      if(row) {
+        return this.get(id, this.payload()).then(function(response) {
+          var new_row = this.insert(response.first())
+          new_row.insertAfter(row);
+          row.detach();
+        }.bind(this));
+      }
     },
 
     /**
@@ -1069,7 +1257,7 @@ twentyc.rest.List = twentyc.cls.extend(
             col_element.removeClass(toggle);
           }
         } else if(!formatter) {
-          col_element.text(data[k])
+          col_element.text(data[k]).val(data[k])
         } else {
           val = formatter(data[k], data, col_element)
           col_element.empty().append(val)
@@ -1086,6 +1274,8 @@ twentyc.rest.List = twentyc.cls.extend(
       this.wire(row_element)
 
       $(this).trigger("insert:after", [row_element, data]);
+
+      return row_element;
     },
 
     api_callback_remove : function(response) {
@@ -1115,7 +1305,7 @@ twentyc.rest.List = twentyc.cls.extend(
      */
 
     find_row : function(id) {
-      return this.list_body.find('.row-'+id);
+      return this.list_body.find('.row-'+id.replace(':','\\:'));
     },
 
     action_failure : function(response) {
@@ -1163,7 +1353,96 @@ twentyc.rest.List = twentyc.cls.extend(
       this.Widget_bind(jq);
 
       this.list_body = jq.find(".list-body")
-    }
+    },
+
+    payload : function() {
+      if(this.ordering) {
+        return { ordering: this.ordering };
+      }
+      return {};
+    },
+
+    /**
+     * sorting
+     */
+
+    initialize_sorting: function() {
+      var widget = this;
+
+      this.sort_headings = this.list_head.find('[data-sort-target]');
+      this.sortable = (this.sort_headings.length > 0);
+
+      if(!this.sortable)
+        return;
+
+      this.sort_headings.click(function (){
+        var button = $(this)
+        widget.sort(button.data("sort-target"), button.data("sort-secondary"));
+      });
+
+      let sort_button = this.sort_headings.filter("[data-sort-initial]");
+      this.sort_target = sort_button.data("sort-target");
+      this.sort_secondary = sort_button.data("sort-secondary");
+
+      this.sort_asc = true;
+      this.ordering = "";
+
+      /*
+      Specific to django-rest-framework: we add "ordering" as a query
+      parameter to the API calls
+      */
+      this.payload = function(){return {ordering: this.ordering}}
+
+      console.log("sort init", this);
+    },
+
+    sort: function(target, secondary) {
+      this.sort_secondary = secondary;
+      if ( target == this.sort_target ){
+          this.sort_asc = !this.sort_asc;
+      } else {
+          this.sort_target = target;
+          this.sort_asc = true;
+      };
+      this.load();
+    },
+
+    apply_ordering : function() {
+      this.ordering = this.return_ordering();
+      this.indicate_ordering();
+    },
+
+    return_ordering: function() {
+      let secondary = (this.sort_secondary ? ","+this.sort_secondary : "")
+      if ( this.sort_asc ){
+        return this.sort_target + secondary;
+      }
+      return "-" + this.sort_target + secondary;
+    },
+
+
+    indicate_ordering : function() {
+      let heading = this.sort_target;
+      let asc = this.sort_asc;
+
+      $(this.sort_headings).each( function() {
+        $(this).find("span").remove();
+        if ( $(this).data("sort-target") == heading ){
+          if ( asc ){
+            $(this).removeClass("selected-order-header-desc")
+            $(this).addClass("selected-order-header-asc");
+          } else {
+            $(this).removeClass("selected-order-header-asc")
+            $(this).addClass("selected-order-header-desc");
+          }
+        } else {
+            $(this).removeClass("selected-order-header-asc");
+            $(this).removeClass("selected-order-header-desc");
+        }
+      })
+    },
+
+
   },
   twentyc.rest.Widget
 );

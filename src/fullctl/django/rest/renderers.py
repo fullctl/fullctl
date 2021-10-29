@@ -1,7 +1,7 @@
 import datetime
 import json
 
-import django_countries
+import django_countries.fields
 from django.db import connection
 from django.utils.encoding import smart_text
 from rest_framework import renderers
