@@ -1,0 +1,29 @@
+{% load static i18n %}
+<form data-template="form_virtual_port"
+  data-api-base="{% url "devicectl_api:virtual_port-list" org_tag=request.org.slug %}"
+  data-api-action=""
+  data-api-method="POST"
+  >
+  <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+      <label for="virtual_port-name">{% trans "Name" %}</label>
+      <input type="text" class="form-control" id="virtual_port-name" name="name" />
+    </div>
+  </div>
+  <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+      <label for="virtual_port-logical_port">{% trans "Logical Port" %}</label>
+      <span class="modal-control">
+      <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+      <select data-api-base="{% url "devicectl_api:logical_port-list" org_tag=request.org.slug %}" data-api-action="" class="form-control" id="virtual_port-logical_port" name="logical_port">
+      <select>
+      </span>
+    </div>
+  </div>
+  <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+      <label for="virtual_port-vlan_id">{% trans "VLAN id" %}</label>
+      <input type="text" class="form-control" id="virtual_port-vlan_id" name="vlan_id" />
+    </div>
+  </div>
+</form>

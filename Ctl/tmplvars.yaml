@@ -1,0 +1,16 @@
+project_name: "pdbctl"
+service_home: "/srv/service"
+virtual_env: "venv"
+database_name: "pdbctl"
+database_user: "pdbctl"
+coverage_repos: "django_pdbctl,pdbctl"
+
+package:
+  repository: https://github.com/fullctl/pbctl
+  description: allows other fullctl services to facilitate updates to and from PeeringDB
+  installable: false
+  documentation: false
+  copyright: 2021
+  license: Apache-2
+  status: 4 - Beta
+  version: 0.1.0

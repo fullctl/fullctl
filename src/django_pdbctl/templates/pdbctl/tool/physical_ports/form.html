@@ -1,0 +1,39 @@
+{% load static i18n %}
+<form data-template="form_physical_port"
+  data-api-base="{% url "devicectl_api:physical_port-list" org_tag=request.org.slug %}"
+  data-api-action=""
+  data-api-method="POST"
+  >
+  <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+      <label for="physical_port-name">{% trans "Name" %}</label>
+      <input type="text" class="form-control" id="physical_port-name" name="name" />
+    </div>
+  </div>
+  <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+      <label for="physical_port-device">{% trans "Device" %}</label>
+      <span class="modal-control">
+      <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+      <select data-api-base="{% url "devicectl_api:device-list" org_tag=request.org.slug %}" data-api-action="" class="form-control" id="physical_port-device" name="device">
+      <select>
+      </span>
+    </div>
+  </div>
+  <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+      <label for="physical_port-logical_port">{% trans "Logical Port" %}</label>
+      <span class="modal-control">
+      <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+      <select data-api-base="{% url "devicectl_api:logical_port-list" org_tag=request.org.slug %}" data-api-action="" class="form-control" id="physical_port-logical_port" name="logical_port">
+      <select>
+      </span>
+    </div>
+  </div>
+  <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+      <label for="physical_port-description">{% trans "Description" %}</label>
+      <input type="text" class="form-control" id="physical_port-description" name="description" />
+    </div>
+  </div>
+</form>

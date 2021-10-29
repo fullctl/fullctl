@@ -1,0 +1,51 @@
+{% load static i18n %}
+<table
+  class="table"
+  data-api-base="{% url "devicectl_api:physical_port-list" org_tag=request.org.slug %}"
+  data-api-action=""
+  data-template="list">
+  <thead>
+    <tr>
+      <th data-sort-target="name" class="sortable-button">{% trans "Name" %}</th>
+      <th data-sort-target="device" class="sortable-button">{% trans "Device" %}</th>
+      <th data-sort-target="logical_port" class="sortable-button">{% trans "Logical Port" %}</th>
+      <th data-sort-target="description" class="sortable-button">{% trans "Description" %}</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody class="list-body">
+  </tbody>
+  <tbody class="templates">
+    <tr data-template="row">
+      <td data-field="display_name" class="highlight"></td>
+      <td data-field="device_name"></td>
+      <td data-field="logical_port_name"></td>
+      <td data-field="description"></td>
+      <td data-field="controls" class="right">
+        <div class="row">
+          <div class="col-xs-12 col-lg-6">
+            <a data-action="edit_physical_port"><span class="icon devicectl icon-edit"></span><span class="label devicectl">{% trans "Edit" %}</span></a>
+          </div>
+          <div class="col-xs-12 col-lg-6">
+        <a
+          data-api-action="{id}"
+          data-api-callback="remove"
+          data-confirm="Remove physical_port?"
+          data-api-method="DELETE"><span class="icon devicectl icon-delete"></span><span class="devicectl label">{% trans "Delete" %}</span></a>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <!--
+    <tr data-template="row" class="secondary">
+      <td class="indent"></td>
+      <td class="property" colspan="5">
+        <div class="row">
+        </div>
+      </td>
+    </tr>
+    -->
+
+  </tbody>
+</table>
+
