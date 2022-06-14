@@ -1,6 +1,7 @@
 from django.http import HttpRequest
 
 from fullctl.django import context_processors
+from fullctl.django.auth import RemotePermissionsError
 
 
 # Settings fixture allows for safe manipulations of settings inside test
@@ -14,6 +15,23 @@ def test_account_service(db, dj_account_objects, settings):
             "create_org": "localhost/account/org/create/",
             "manage_org": "localhost/account/?org=test",
             "billing_setup": "localhost/billing/setup?org=test",
+        }
+    }
+
+    context = context_processors.account_service(request)
+
+    assert context["account_service"] == expected
+
+
+def test_account_service_no_org(db, dj_account_objects, settings):
+
+    request = HttpRequest()
+
+    expected = {
+        "urls": {
+            "create_org": "localhost/account/org/create/",
+            "manage_org": "localhost/account/?org=",
+            "billing_setup": "localhost/billing/setup?org=",
         }
     }
 
@@ -39,6 +57,23 @@ def test_permissions_crud(db, dj_account_objects, settings):
     assert context["permissions"] == full_perms
 
 
+def test_permissions_crud_no_org(db, dj_account_objects, settings):
+    request = HttpRequest()
+    request.user = dj_account_objects.user
+    request.perms = dj_account_objects.perms
+
+    context = context_processors.permissions(request)
+    assert context["permissions"] == {}
+
+
+def test_permissions_crud_RemotePermissionsError():
+    request = HttpRequest()
+    request.error_response = RemotePermissionsError()
+
+    context = context_processors.permissions(request)
+    assert context["permissions"] == {}
+
+
 def test_permissions_readonly(db, dj_account_objects, settings):
     request = HttpRequest()
     request.org = dj_account_objects.orgs[1]
@@ -54,3 +89,16 @@ def test_permissions_readonly(db, dj_account_objects, settings):
 
     context = context_processors.permissions(request)
     assert context["permissions"] == readonly_perms
+
+
+def test_conf(db, dj_account_objects, settings):
+    request = HttpRequest()
+
+    conf_support_email = {
+        "google_analytics_id": None,
+        "cloudflare_analytics_id": "asdf",
+        "support_email": "support@localhost",
+    }
+
+    conf = context_processors.conf(request)
+    assert conf == conf_support_email

@@ -1,14 +1,37 @@
-import pytest
+"""
+Utilities functions and classes for fullctl unit-testing
+"""
+
+from django.contrib.auth import get_user_model
+from django.core.management.color import no_style
+from django.db import connection
 from django.test import Client
+from rest_framework.test import APIClient
+
+from fullctl.django.auth import permissions
+from fullctl.django.models.concrete import Organization, OrganizationUser
+
+
+def reset_auto_fields():
+
+    """
+    Resets the primary key field on Organization instances
+    """
+
+    sequence_sql = connection.ops.sequence_reset_sql(no_style(), [Organization])
+    with connection.cursor() as cursor:
+        for sql in sequence_sql:
+            cursor.execute(sql)
 
 
 class AccountObjects:
-    def __init__(self, handle):
-        from django.contrib.auth import get_user_model
-        from rest_framework.test import APIClient
 
-        from fullctl.django.auth import permissions
-        from fullctl.django.models import Organization, OrganizationUser
+    """
+    Sets up users and orgs for testing
+    """
+
+    def __init__(self, handle):
+        reset_auto_fields()
 
         self.user = user = get_user_model().objects.create_user(
             username=f"user_{handle}",
@@ -42,7 +65,9 @@ class AccountObjects:
 
         # add permissions
         user.grainy_permissions.add_permission(self.orgs[0], "crud")
+        user.grainy_permissions.add_permission(f"*.{self.orgs[0].id}", "crud")
         user.grainy_permissions.add_permission(self.orgs[1], "r")
+        user.grainy_permissions.add_permission(f"*.{self.orgs[1].id}", "r")
 
         self.org = self.orgs[0]
 
@@ -59,29 +84,4 @@ class AccountObjects:
 
         self.client = Client()
         self.client.login(username=user.username, password="test")
-
-        self.perms = permissions(user)
-
-
-def make_account_objects(handle="test"):
-    return AccountObjects(handle)
-
-
-@pytest.fixture
-def dj_client_anon():
-    return Client()
-
-
-@pytest.fixture
-def dj_account_objects():
-    return make_account_objects()
-
-
-@pytest.fixture
-def dj_account_objects_b():
-    return make_account_objects("test_b")
-
-
-@pytest.fixture
-def dj_account_objects_c():
-    return make_account_objects("test_c")
+        self.perms = permissions(user, refresh=True)

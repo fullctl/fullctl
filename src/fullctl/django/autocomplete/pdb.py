@@ -16,7 +16,7 @@ class peeringdb_ix(autocomplete.Select2QuerySetView):
 
 class peeringdb_asn(autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        qs = pdbctl.Network().objects(q=self.q)
+        qs = list(pdbctl.Network().objects(q_asn=self.q))
         return qs
 
     def get_result_label(self, item):

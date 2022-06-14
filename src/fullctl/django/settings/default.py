@@ -32,6 +32,9 @@ settings_manager.set_option("STATIC_URL", f"/s/{PACKAGE_VERSION}/")
 settings_manager.set_option("SESSION_COOKIE_NAME", f"{SERVICE_TAG}sid")
 settings_manager.set_bool("SESSION_COOKIE_SECURE", True)
 
+if RELEASE_ENV == "dev":
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 # settings_manager.set_from_env("SESSION_COOKIE_DOMAIN")
 
 settings_manager.set_option("DEFAULT_FROM_EMAIL", SERVER_EMAIL)
@@ -84,3 +87,5 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
+
+FULLCTL_ADDON_URLS = []
