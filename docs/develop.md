@@ -107,7 +107,7 @@ At this point you will want to go through each service in order and follow its i
 
 **CentOS7** sometimes seems to have an issue allowing one container to connect to another, see [this](https://stackoverflow.com/questions/39134551/centos-vm-with-docker-getting-host-unreachable-when-trying-to-connect-to-itself/39211891#39211891) and [this](https://github.com/moby/moby/issues/32138) for possible workarounds.
 
-### aaactl 
+### aaactl
 
 Follow [instructions](https://github.com/fullctl/aaactl/blob/prep-release/docs/deploy.md) for the points listed below:
 

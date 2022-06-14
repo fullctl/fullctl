@@ -8,7 +8,7 @@
 
 ### Service Bridge
 
-- `SERVICE_KEY` - api key to use for fullctl service bridge communications 
+- `SERVICE_KEY` - api key to use for fullctl service bridge communications
 - `AAACTL_HOST` - host url for aaactl service (e.g., "https://account.fullctl.com"). This will automatically be defaulted to `OAUTH_TWENTYC_HOST`
 - `PDBCTL_HOST` - host url for pdbctl service (e.g., "https://pdb.fullctl.com")
 - `IXCTL_HOST` - host url for ixctl service (e.g., "https://ix.fullctl.com")
@@ -34,6 +34,6 @@
 
 ### Development and Testing
 
-- `BILLING_INTEGRATIOON` - if False will disable all billing checks 
+- `BILLING_INTEGRATIOON` - if False will disable all billing checks
 - `SERVICE_TAG` - should be the service reference tag (e.g., 'ixctl')
 - `USE_LOCAL_PERMISSIONS` - if `True` permissions will be handled locally instead of through aaactl.
