@@ -58,18 +58,16 @@ peeringdb = "^1"
 # tests
 codecov = ">=2"
 coverage = ">=5"
-pytest = ">=6.0.1"
-pytest-django = ">=3.8.0"
+pytest = ">=6"
+pytest-django = ">=3.8"
 pytest-cov = "*"
-pytest-pythonpath = "*"
 
 # linting
-bandit = "^1.6.2"
-black = { version = ">=20", allow-prereleases = true }
-isort = "^5.7.0"
-flake8 = "^3.8.4"
-pre-commit = "^2.13.0"
-pyupgrade = "^2.19.4"
+black = ">=20"
+isort = ">=5.7"
+flake8 = ">=3.8"
+pre-commit = ">=2.13"
+pyupgrade = ">=2.19"
 
 # docs
 markdown = "*"
