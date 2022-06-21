@@ -3,207 +3,64 @@
   class="table list-table"
   data-api-base="{% url "aclctl_api:filter_rule-list" org_tag=request.org.slug %}"
   data-template="list">
+  <thead>
+    <tr>
+      <th data-sort-target="src_port" data-sort-secondary="src_prefix,dest_prefix" class="sortable-button">{% trans "Source Port" %}</th>
+      <th data-sort-target="src_prefix" data-sort-initial="yes" data-sort-secondary="src_port,dest_prefix"  class="sortable-button">{% trans "Source Prefix" %}</th>
+      <th data-sort-target="dest_port" data-sort-secondary="dest_prefix,src_prefix" class="sortable-button">{% trans "Destination Port" %}</th>
+      <th data-sort-target="dest_prefix" data-sort-secondary="dest_port,src_prefix" class="sortable-button">{% trans "Destination Prefix" %}</th>
+      <th></th>
+    </tr>
+  </thead>
+
   <tbody class="list-body">
   </tbody>
+
   <tbody class="list-footer">
     <tr>
       <td colspan="4">
-        <button type="button" class="button aclctl rounded-button" data-element="button_add_prefix_set">
-          <span class="icon aclctl icon-add"></span>
-          {% trans "Add Prefix Set" %}
+        <button type="button" class="button aclctl rounded-button" data-element="button_add_filter_rule">
+          <span class="icon neon-green icon-add"></span>
+            {% trans "Add Filter Rule" %}
         </button>
 
       </td>
     </tr>
   </tbody>
+
   <tbody class="templates">
     <tr data-template="row" class="with-border">
-      <td data-field="name" class="prefix-name highlight"></td>
-      <td data-field="description"></td>
-      <td>
+      <td data-field="src_port">
       </td>
+
+      <td data-field="src_prefix">
+      </td>
+
+      <td data-field="dest_port">
+      </td>
+
+      <td data-field="dest_prefix">
+      </td>
+
       <td data-field="controls" class="right">
-        <div class="row">
-          <div class="col-6 col-lg-6 col-xl-6 right">
+        <div class="row property">
+          <div class="col-xs-12 col-lg-6">
+            <a class="button" data-action="edit_filter_rule"><span class="icon ixctl icon-edit"></span><span class="label ixctl">{% trans "Edit" %}</span></a>
           </div>
-          <div class="col-3 col-lg-3 col-xl-3 right">
-            <a data-action="edit_prefix_set"><span class="icon aclctl icon-edit"></span><span class="label aclctl underline">{% trans "Edit" %}</span></a>
-          </div>
-          <div class="col-3 col-lg-3 col-xl-3 right">
-            <a data-api-action="{id}"
+          <div class="col-xs-12 col-lg-6">
+            <a class="button"
+              data-api-action="{id}"
               data-api-callback="remove"
-              data-confirm="Remove prefix set?"
-              data-api-method="DELETE"><span class="icon aclctl icon-delete"></span><span class="aclctl label underline">{% trans "Delete" %}</span></a>
+              data-confirm="Remove Filter Rule?"
+              data-api-method="DELETE"><span class="icon ixctl icon-delete"></span><span class="ixctl label">{% trans "Delete" %}</span>
+            </a>
           </div>
-
         </div>
-      </td>
-    </tr>
-    <tr data-template="row" class="secondary with-border">
-      <td colspan="4">
-	    <div class="row property">
-	      <div class="col-md-auto field">
-		{% trans "Monitors" %}: <span class="highlight" data-field="num_monitors"></span>
-	      </div>
-	      <div class="col-md-auto field">
-		<a class="button" data-action="add_monitor" class="aclctl"><span class="label aclctl">{% trans "Add a monitor to this set" %}</span></a>
-	      </div>
-	      <div class="col field-empty">
-	      </div>
-	      <div class="col-md-auto field">
-		{% trans "Import form IRR" %}:
-		<span data-field="irr_import" data-toggle="checked">
-			<span data-false class="">No</span>
-			<span data-true class="green-text font-weight-bold">Auto</span>
-		</span>
-	      </div>
-	    </div>
-      </td>
-    </tr>
-    <tr data-template="row" class="monlist secondary with-border">
-      <td colspan="4">
-
-      </td>
-    </tr>
-    {% block "prefix-set-addon-row" %}
-    {% endblock %}
-    <tr data-template="row" class="secondary prelist">
-      <td colspan="4">
-	    <div class="row property">
-	      <div class="col-md-auto field-empty">
-		    <a data-action="list_prefixes"><span class="icon aclctl icon-caret-left"></span><span class="label aclctl">{% trans "Show / Edit / Add Prefixes" %}</span></a>
-	      </div>
-	      <div class="col-md-auto field">
-			{% trans "Active" %}: <span class="highlight" data-field="num_prefixes"></span>
-	      </div>
-	      <div class="col field-empty">
-	      </div>
-	      <div class="col-md-auto field-empty">
-		      <label class="mb-0">
-		        <input
-		          type="checkbox"
-		          data-api-base="{% url "aclctl_api:filter_rule-detail" org_tag=request.org.slug pk="prefixset_id" %}"
-		          data-api-method="PUT"
-		          class="ux-keep-list-open" data-field="ux_keep_list_open">{% trans "Keep List Open" %}
-		      </label>
-	      </div>
-	    </div>
-      </td>
-    </tr>
-    <tr data-template="row" class="padding-row">
-      <td colspan="4">
-
       </td>
     </tr>
   </tbody>
 </table>
 
-<div data-template="pfxmon_list"
-  data-api-action="monitors"
-  data-api-base="{% url "aclctl_api:filter_rule-detail" org_tag=request.org.slug pk=0 %}">
-  <div class="list-body"></div>
-
-  <div class="templates">
-    <div data-template="row" class="row property">
-      <div class="col field">
-        {% trans "Monitor" %}: <span class="highlight" data-field="status"></span>
-      </div>
-      <div class="col field">
-        {% trans "Origin" %}: <span class="highlight" data-field="asnset_origin_name"></span>
-      </div>
-      <div class="col field">
-        {% trans "Upstream" %}: <span class="highlight" data-field="asnset_upstream_name"></span>
-      </div>
-      <div class="col field">
-        {% trans "AS_PATH" %}:<span class="highlight" data-field="asn_path"></span>
-      </div>
-      <div class="col-3 field">
-        <span>
-          <span class="nowrap">
-            <span class="">{% trans "Specifics" %}: </span>
-            <span data-field="alert_specifics" data-toggle="checked">
-            {% include "common/app/checkbox.html" %}
-            </span>
-          </span>
-          <span class="nowrap">
-            <span class="">{% trans "Dampening" %}:</span>
-            <span data-field="alert_dampening" data-toggle="checked">
-            {% include "common/app/checkbox.html" %}
-            </span>
-          </span>
-        </span>
-      </div>
-      <div class="col-1 field">
-        <span>
-          <span class="nowrap">
-            <span class="">{% trans "ROA" %}:</span>
-            <span data-field="roa_validation" data-toggle="checked">
-            {% include "common/app/checkbox.html" %}
-            </span>
-          </span>
-        </span>
-     </div>
-     <div class="col-1 field-empty right">
-        <a data-action="edit_prefix_monitor"><span class="icon aclctl icon-edit"></span></a>
-        <a data-api-action="delete_monitor"
-          data-api-callback="remove"
-          data-confirm="Remove monitor?"
-          data-api-method="DELETE"><span class="icon aclctl icon-delete"></span></a>
-     </div>
-    </div>
-  </div>
-</div>
-
-<table>
-<tbody>
-<tr class="prelist" data-template="prefixes_list"
-  data-api-base="{% url "aclctl_api:filter_rule-detail" org_tag=request.org.slug pk=0 %}"
-  data-api-action="prefixes">
-  <td colspan="4" class="inner-list-container">
-
-    <div class="list-body column-list-3 inner-list"></div>
-    <div class="templates">
-      <div class="prefix-container" data-template="row">
-        <span class="prefix" data-field="prefix"></span>
-        <span class="prefix-addon-controls"></span>
-        <a class="irr-import-hide"
-          data-api-action="delete_prefix"
-          data-api-callback="remove"
-          data-confirm="{% trans "Delete prefix?" %}"
-          data-api-method="DELETE">
-          <span class="icon aclctl icon-delete irr-import-hide"></span>
-        </a>
-      </div>
-    </div>
-
-    <div class="controls">
-      <div class="alert alert-info irr-import-show">
-      {% blocktrans trimmed %}
-      This prefix set is currenty configured to automatically import prefixes through
-      IRR. Manual prefix management has been disabled.
-      {% endblocktrans %}
-      </div>
-
-      <form class="form-inline flex-row-reverse irr-import-hide"
-        data-api-base="{% url "aclctl_api:filter_rule-detail" org_tag=request.org.slug pk=0 %}"
-        data-api-action="add_prefix"
-        data-api-method="POST">
-        <div class="input-group mb-2 mr-sm-2" data-api-submit="yes">
-          <input type="text" placeholder="{% trans "Mask Length Range" %}" class="form-control" id="mask_length_range" name="mask_length_range" />
-          <div class="input-group-append">
-            <button type="button" class="submit">{% trans "Add" %}</button>
-          </div>
-
-        </div>
-        <div class="input-group mb-2 mr-sm-2" data-api-submit="yes">
-          <input type="text" placeholder="{% trans "Prefix" %}" class="form-control" id="prefix" name="prefix" />
-        </div>
-      </form>
-    </div>
-  </td>
-</tr>
-</tbody>
-</table>
 
 {% block "prefix-set-addon-template" %}
 {% endblock %}

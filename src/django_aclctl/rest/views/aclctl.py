@@ -28,8 +28,13 @@ class FilterRule(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericViewSet):
 
     @grainy_endpoint(namespace="filter_rule.{request.org.permission_id}")
     def list(self, request, org, instance, *args, **kwargs):
+
+        queryset = models.FilterRule.objects.filter(instance=instance).order_by("src_port")
+        ordering_filter = CaseInsensitiveOrderingFilter(["src_port", "src_prefix", "dest_port", "dest_prefix"])
+        queryset = ordering_filter.filter_queryset(request, queryset, self)
+
         serializer = Serializers.filter_rule(
-            instance = models.FilterRule.objects.filter(instance=instance),
+            instance = queryset,
             many = True,
         )
         return Response(serializer.data)
@@ -47,6 +52,7 @@ class FilterRule(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericViewSet):
 
         return Response(Serializers.filter_rule(instance=filter_rule).data)
 
+    @load_object("filter_rule", models.FilterRule, pk="pk", instance="instance")
     @grainy_endpoint(namespace="filter_rule.{request.org.permission_id}.{filter_rule.pk}")
     def retrieve(self, request, org, filter_rule, instance, *args, **kwargs):
         serializer = Serializers.filter_rule(
@@ -55,9 +61,11 @@ class FilterRule(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericViewSet):
         )
         return Response(serializer.data)
 
+    @load_object("filter_rule", models.FilterRule, pk="pk", instance="instance")
     @auditlog()
     @grainy_endpoint(namespace="filter_rule.{request.org.permission_id}.{filter_rule.pk}")
     def update(self, request, org, filter_rule, instance, auditlog=None, *args, **kwargs):
+        
         serializer = Serializers.filter_rule(
             filter_rule,
             data=request.data,
@@ -71,6 +79,7 @@ class FilterRule(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericViewSet):
 
         return Response(Serializers.filter_rule(instance=filter_rule).data)
 
+    @load_object("filter_rule", models.FilterRule, pk="pk", instance="instance")
     @auditlog()
     @grainy_endpoint(namespace="filter_rule.{request.org.permission_id}.{filter_rule.pk}")
     def destroy(self, request, org, filter_rule, instance, auditlog=None, *args, **kwargs):

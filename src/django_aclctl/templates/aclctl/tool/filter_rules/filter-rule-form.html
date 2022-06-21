@@ -1,21 +1,33 @@
 {% load static i18n %}
 <form data-template="form_filter_rule"
-  data-api-base="{% url "prefixctl_api:filter_rule-list" org_tag=request.org.slug %}"
+  data-api-base="{% url "aclctl_api:filter_rule-list" org_tag=request.org.slug %}"
   data-api-method="POST"
   >
   <div class="row form-group">
     <div class="col-12" data-api-submit="yes">
-      <label for="name">{% trans "Name" %}</label>
-      <input type="text" class="form-control" id="name" name="name" />
+      <label for="name">{% trans "Source Port" %}</label>
+      <input type="text" class="form-control" id="src-port" name="src_port" />
     </div>
   </div>
   <div class="row form-group">
     <div class="col-12" data-api-submit="yes">
-      <label for="description">{% trans "Description" %}</label>
-      <input type="text" class="form-control" id="description" name="description" />
+      <label for="description">{% trans "Source Prefix" %}</label>
+      <input type="text" class="form-control" id="src-prefix" name="src_prefix" />
     </div>
   </div>
-  <div class="row form-check">
+  <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+      <label for="irr-as-set">{% trans "Destination Port" %}</label>
+      <input type="text" class="form-control" id="dest-port" name="dest_port" />
+    </div>
+  </div>
+  <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+      <label for="irr-sources">{% trans "Destination Prefix" %}</label>
+      <input type="text" class="form-control" id="dest-prefix" name="dest_prefix" />
+    </div>
+  </div>
+  <!--div class="row form-check">
     <div class="col-12" data-api-submit="yes">
       <input type="checkbox" class="form-check-input" id="irr-import" name="irr_import" />
       <label for="irr-import" class="form-check-label">{% trans "Automatic import from IRR" %}</label>
@@ -30,29 +42,7 @@
         {% endblocktrans %}
       </div>
     </div>
-  </div>
-  <div class="row form-group">
-    <div class="col-12" data-api-submit="yes">
-      <label for="irr-as-set">{% trans "IRR Import AS-SET" %}</label>
-      <input type="text" class="form-control" id="irr-as-set" name="irr_as_set" />
-    </div>
-  </div>
-  <div class="row form-group">
-    <div class="col-12" data-api-submit="yes">
-      <label for="irr-sources">{% trans "IRR Import Sources" %}</label>
-      <input type="text" class="form-control" id="irr-sources" name="irr_sources" />
-    </div>
-  </div>
-
-  <!-- hidden payload -->
-  <div class="row form-check" style="display:none">
-    <div class="col-12" data-api-submit="yes">
-      <input type="checkbox" class="form-check-input" id="ux-keep-list-open" name="ux_keep_list_open" />
-      <label for="ux-keep-list-open" class="form-check-label">{% trans "Keep list open" %}</label>
-    </div>
-  </div>
-
-
+  </div-->
 </form>
 
 
