@@ -65,16 +65,18 @@ class FilterRule(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericViewSet):
     @auditlog()
     @grainy_endpoint(namespace="filter_rule.{request.org.permission_id}.{filter_rule.pk}")
     def update(self, request, org, filter_rule, instance, auditlog=None, *args, **kwargs):
-        
+
+        data = request.data
+        data["instance"] = instance.id
+
         serializer = Serializers.filter_rule(
             filter_rule,
-            data=request.data,
+            data=data,
         )
 
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         filter_rule = serializer.save()
-        filter_rule.instance = instance
         filter_rule.save()
 
         return Response(Serializers.filter_rule(instance=filter_rule).data)

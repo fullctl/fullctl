@@ -12,5 +12,4 @@ class FilterRule(ModelSerializer):
 
     class Meta:
         model = models.FilterRule
-        fields = ["src_port", "src_prefix", "dest_port", "dest_prefix"]
-
+        fields = ["src_port", "src_prefix", "dest_port", "dest_prefix", "instance"]
