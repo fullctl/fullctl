@@ -93,11 +93,7 @@ $ctl.application.Aclctl.ModalFilterRule = $tc.extend(
         function(event, endpoint, payload, response) {
           var data = response.first()
           var list = $ctl.aclctl.$t.filter_rules.$w.list;
-          list.load().then(() => {
-            if(!data.irr_import) {
-              $ctl.aclctl.$t.filter_rules.expand_prefixes(data)
-            }
-          });
+          list.load();
           modal.hide();
         }
       );
