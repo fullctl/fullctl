@@ -88,6 +88,23 @@ $ctl.application.Aclctl.ModalFilterRule = $tc.extend(
         title = "Edit Filter Rule"
       }
 
+      this.select_source_type = new twentyc.rest.Select(form.element.find("#src-type"));
+
+      $(this.select_source_type.element).on("change", () => {
+        this.select_prefix_set.load().then(()=>{});
+        var v = this.select_source_type.element.val()
+        form.element.find('#tgl-src-prefix-set,#tgl-src-prefix').hide();
+        form.element.find('#tgl-src-'+v).show();
+      });
+      this.select_source_type.load(filter_rule ? filter_rule.src_type : null).then() => {
+        if(filter_rule && filter_rule.src_type == "prefix-set") {
+          this.select_prefix_set.load(filter_rule.src_prefix_set).then(() => {});
+        }
+      });
+
+      this.select_prefix_set = new twentyc.rest.Select(form.element.find("#src-prefix-set"));
+
+
       $(this.form).on(
         "api-write:success",
         function(event, endpoint, payload, response) {

@@ -103,3 +103,6 @@ settings_manager.try_include(env_file)
 
 # TODO combine to log summarry to INFO
 settings.print_debug(f"loaded settings for version {PACKAGE_VERSION} (DEBUG: {DEBUG})")
+
+
+settings_manager.set_option("PREFIXCTL_HOST", "")

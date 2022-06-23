@@ -8,6 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from django_grainy.decorators import grainy_model
 from fullctl.django.models.abstract.base import HandleRefModel
 from fullctl.django.models.concrete import Instance
+from fullctl.django.fields.service_bridge.prefixctl import PrefixSet
 
 from netfields import CidrAddressField
 
@@ -15,6 +16,12 @@ __all__ = (
     "Instance",
     "FilterRule",
 )
+
+SOURCE_TYPES = (
+    ("prefix", _("Prefix")),
+    ("prefix-set", _("Prefix Set")),
+)
+
 
 @grainy_model(namespace="filter_rule", namespace_instance="filter_rule.{instance.instance.org.permission_id}.{instance.id}")
 @reversion.register
@@ -29,9 +36,11 @@ class FilterRule(HandleRefModel):
     )
 
     src_port = models.PositiveIntegerField()
-    dest_port = models.PositiveIntegerField()
+    src_prefix = CidrAddressField(null=True, blank=True)
+    src_prefix_set = PrefixSet(null=True, blank=True)
+    src_type = models.CharField(max_length=255, default="prefix", choices=SOURCE_TYPES)
 
-    src_prefix = CidrAddressField()
+    dest_port = models.PositiveIntegerField()
     dest_prefix = CidrAddressField()
 
     # TODO device reference either through devicectl
