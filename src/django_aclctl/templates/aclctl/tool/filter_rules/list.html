@@ -5,10 +5,10 @@
   data-template="list">
   <thead>
     <tr>
-      <th data-sort-target="src_port" data-sort-secondary="src_prefix,dest_prefix" class="sortable-button">{% trans "Source Port" %}</th>
-      <th data-sort-target="src_prefix" data-sort-initial="yes" data-sort-secondary="src_port,dest_prefix"  class="sortable-button">{% trans "Source Prefix" %}</th>
-      <th data-sort-target="dest_port" data-sort-secondary="dest_prefix,src_prefix" class="sortable-button">{% trans "Destination Port" %}</th>
-      <th data-sort-target="dest_prefix" data-sort-secondary="dest_port,src_prefix" class="sortable-button">{% trans "Destination Prefix" %}</th>
+      <th>{% trans "Source" %}</th>
+      <th>{% trans "Source Port" %}</th>
+      <th>{% trans "Destination" %}</th>
+      <th>{% trans "Destination Port" %}</th>
       <th></th>
     </tr>
   </thead>
@@ -30,17 +30,10 @@
 
   <tbody class="templates">
     <tr data-template="row" class="with-border">
-      <td data-field="src_port">
-      </td>
-
-      <td data-field="src_prefix">
-      </td>
-
-      <td data-field="dest_port">
-      </td>
-
-      <td data-field="dest_prefix">
-      </td>
+      <td data-field="src_prefix"></td>
+      <td data-field="src_port"></td>
+      <td data-field="dest_prefix"></td>
+      <td data-field="dest_port"></td>
 
       <td data-field="controls" class="right">
         <div class="row property">

@@ -37,6 +37,17 @@ $ctl.application.Aclctl.FilterRules = $tc.extend(
         });
       };
 
+      this.$w.list.formatters.src_prefix = (v, data) => {
+        if(data.src_type == "prefix")
+          return v;
+
+        var n = $('<div>')
+        n.append($('<label>').text("PrefixCtl"));
+        n.append($('<div>').text(data.src_prefix_set_name));
+        return n;
+      };
+
+
       this.$w.list.element.find('[data-element="button_add_filter_rule"]').click(() => {
         this.prompt_add_filter_rule();
       });
@@ -96,13 +107,17 @@ $ctl.application.Aclctl.ModalFilterRule = $tc.extend(
         form.element.find('#tgl-src-prefix-set,#tgl-src-prefix').hide();
         form.element.find('#tgl-src-'+v).show();
       });
-      this.select_source_type.load(filter_rule ? filter_rule.src_type : null).then() => {
-        if(filter_rule && filter_rule.src_type == "prefix-set") {
-          this.select_prefix_set.load(filter_rule.src_prefix_set).then(() => {});
-        }
+      this.select_source_type.load(filter_rule ? filter_rule.src_type : null).then(() => {
       });
 
       this.select_prefix_set = new twentyc.rest.Select(form.element.find("#src-prefix-set"));
+
+      if(filter_rule && filter_rule.src_type == "prefix-set") {
+        this.select_prefix_set.load(filter_rule.src_prefix_set);
+        form.element.find('#tgl-src-prefix').hide();
+        form.element.find('#tgl-src-prefix-set').show();
+      }
+
 
 
       $(this.form).on(
