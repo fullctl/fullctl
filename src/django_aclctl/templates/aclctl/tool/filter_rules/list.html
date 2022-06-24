@@ -5,6 +5,7 @@
   data-template="list">
   <thead>
     <tr>
+      <th>{% trans "Priority" %}</th>
       <th>{% trans "Source" %}</th>
       <th>{% trans "Port" %}</th>
       <th>{% trans "Destination" %}</th>
@@ -18,7 +19,7 @@
 
   <tbody class="list-footer">
     <tr>
-      <td colspan="4">
+      <td colspan="7">
         <button type="button" class="button aclctl rounded-button" data-element="button_add_filter_rule">
           <span class="icon fullctl icon-add"></span>
             {% trans "Add Filter Rule" %}
@@ -30,6 +31,7 @@
 
   <tbody class="templates">
     <tr data-template="row" class="with-border">
+      <td data-field="priority"></td>
       <td data-field="src_prefix"></td>
       <td data-field="src_port"></td>
       <td data-field="dest_prefix"></td>
@@ -53,6 +55,16 @@
     </tr>
   </tbody>
 </table>
+
+<div data-template="priority_inline_edit">
+  <input
+    type="text"
+    class="slim"
+    data-api-action
+    data-api-method="PUT"
+    data-api-base="{% url "aclctl_api:filter_rule-detail" org_tag=request.org.slug pk=0 %}"
+  >
+</div>
 
 
 {% block "prefix-set-addon-template" %}

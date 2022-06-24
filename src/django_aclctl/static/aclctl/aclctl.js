@@ -47,6 +47,27 @@ $ctl.application.Aclctl.FilterRules = $tc.extend(
         return n;
       };
 
+      this.$w.list.formatters.priority = (v, data) => {
+        var n = this.template("priority_inline_edit");
+        var input = new twentyc.rest.Input(n.find('input'))
+        input.element.val(v);
+
+        input.payload = () => {
+          var payload = $.extend({}, data);
+          payload.priority = input.element.val();
+          return payload;
+        }
+
+        $(input).on("api-write:success", () => { this.$w.list.load(); });
+
+        input.format_request_url = (url) => {
+          return url.replace("/0/", "/"+data.id+"/");
+        }
+
+        return input.element;
+      };
+
+
 
       this.$w.list.element.find('[data-element="button_add_filter_rule"]').click(() => {
         this.prompt_add_filter_rule();

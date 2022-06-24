@@ -3,6 +3,12 @@
   data-api-base="{% url "aclctl_api:filter_rule-list" org_tag=request.org.slug %}"
   data-api-method="POST"
   >
+  <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+      <label for="priority">{% trans "Priority" %}</label>
+      <input type="text" class="form-control" id="priority" name="priority" placeholder="{% trans "auto" %}" />
+    </div>
+  </div>
   <div class="row">
     <div class="col-12">
       <div class="alert alert-info">

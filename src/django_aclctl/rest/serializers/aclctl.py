@@ -14,7 +14,7 @@ class FilterRule(ModelSerializer):
 
     class Meta:
         model = models.FilterRule
-        fields = ["src_type", "src_port", "src_prefix", "src_prefix_set", "src_prefix_set_name", "dest_port", "dest_prefix", "instance"]
+        fields = ["priority", "src_type", "src_port", "src_prefix", "src_prefix_set", "src_prefix_set_name", "dest_port", "dest_prefix", "instance"]
 
 
     def get_src_prefix_set_name(self, obj):

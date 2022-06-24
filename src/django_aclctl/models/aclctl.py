@@ -4,6 +4,7 @@ import secrets
 import fullctl.django.tasks
 import reversion
 from django.db import models
+from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django_grainy.decorators import grainy_model
 from fullctl.django.models.abstract.base import HandleRefModel
@@ -35,6 +36,8 @@ class FilterRule(HandleRefModel):
         Instance, related_name="filter_rules", on_delete=models.CASCADE
     )
 
+    priority = models.IntegerField(default=50)
+
     src_port = models.PositiveIntegerField()
     src_prefix = CidrAddressField(null=True, blank=True)
     src_prefix_set = PrefixSet(null=True, blank=True)
@@ -55,6 +58,18 @@ class FilterRule(HandleRefModel):
         tag = "filter_rule"
 
 
+    @classmethod
+    def new_rule_priority(cls, instance):
+
+        last = cls.objects.filter(instance=instance).order_by("priority").last()
+
+        if last:
+            return last.priority + settings.ACLCTL_PRIORITY_GAP
+
+        return settings.ACLCTL_PRIORITY_GAP
+
+
     def __str__(self):
 
         return f"{self.src_prefix}:{self.src_port} / {self.dest_prefix}:{self.dest_port} ({self.id})"
+

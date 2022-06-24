@@ -29,10 +29,7 @@ class FilterRule(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericViewSet):
     @grainy_endpoint(namespace="filter_rule.{request.org.permission_id}")
     def list(self, request, org, instance, *args, **kwargs):
 
-        queryset = models.FilterRule.objects.filter(instance=instance).order_by("src_port")
-        ordering_filter = CaseInsensitiveOrderingFilter(["src_port", "src_prefix", "dest_port", "dest_prefix"])
-        queryset = ordering_filter.filter_queryset(request, queryset, self)
-
+        queryset = models.FilterRule.objects.filter(instance=instance).order_by("priority")
         serializer = Serializers.filter_rule(
             instance = queryset,
             many = True,
@@ -45,6 +42,10 @@ class FilterRule(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericViewSet):
 
         data = request.data
         data["instance"] = instance.id
+
+        if data.get("priority", "") == "":
+            data["priority"] = models.FilterRule.new_rule_priority(instance)
+
         serializer = Serializers.filter_rule(data=data)
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
