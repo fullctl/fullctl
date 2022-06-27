@@ -5,7 +5,6 @@ $ctl.application.Aclctl.Settings = $tc.extend(
     Settings : function() {
       this.urlparam = "edit-filter-rule-template"
       this.Tool("settings");
-      console.log("STOP");
     },
 
     format_request_url : function(url) {
@@ -14,8 +13,6 @@ $ctl.application.Aclctl.Settings = $tc.extend(
 
     menu : function() {
       var menu = this.Tool_menu();
-
-      console.log("MENU", menu)
 
       this.widget("filter_rule_templates", ($e) => {
         return new twentyc.rest.List(
@@ -30,7 +27,7 @@ $ctl.application.Aclctl.Settings = $tc.extend(
       };
 
       this.$w.filter_rule_templates.format_request_url = (url) => {
-        return url.replace("ix_tag", fullctl.aclctl.ix_object().slug);
+        return url;
       };
 
       menu.find('[data-element="button_add_filter_rule_template"]').click(()=>{
@@ -41,15 +38,15 @@ $ctl.application.Aclctl.Settings = $tc.extend(
         this.general_settings();
       });
 
-
       return menu;
     },
 
     sync : function() {
       var namespace = "filter_rule."+fullctl.org.id;
       this.$e.menu.find('[data-element="button_add_filter_rule_template"]').grainy_toggle(namespace, "c");
-      // nothing there yet
       this.$e.menu.find('[data-element="button_general_settings"]').hide();
+
+      this.$w.filter_rule_templates.load();
     },
 
     unload_dialog : function() {
@@ -57,7 +54,6 @@ $ctl.application.Aclctl.Settings = $tc.extend(
     },
 
     general_settings : function() {
-      var ix = $ctl.aclctl.ix_object();
       var dialog = this.custom_dialog("General settings for "+ix.name);
       var form = new twentyc.rest.Form(
         this.template("form_general_settings", dialog)
@@ -100,7 +96,6 @@ $ctl.application.Aclctl.Settings = $tc.extend(
 
 
       $(form).on("api-write:success", (ev, e, payload) => {
-        fullctl.aclctl.$t.filter_rule_templates.sync();
         fullctl.aclctl.page('overview');
         this.unload_dialog();
       });
@@ -108,41 +103,39 @@ $ctl.application.Aclctl.Settings = $tc.extend(
     },
 
 
-    edit_filter_rule_template : function(rs) {
-      console.log("editing", rs);
+    edit_filter_rule_template : function(rule) {
+      console.log("editing", rule);
 
       var form = new twentyc.rest.Form(
-        this.template("form_filter_rule_template_page", this.custom_dialog('Edit '+rs.name))
+        this.template("form_filter_rule_template_page", this.custom_dialog('Edit '+rule.name))
       );
       var button_delete = new twentyc.rest.Button(
-        form.element.find('[data-element="rs_delete"]')
+        form.element.find('[data-element="filter_rule_template_delete"]')
       );
       button_delete.format_request_url = this.format_request_url
-      button_delete.action = rs.id;
+      button_delete.action = rule.id;
 
-      form.form_action = rs.id;
+      form.form_action = rule.id;
       form.method = "put";
       form.format_request_url = this.format_request_url;
 
 
       $(form).on("api-write:before", (ev, e, payload) => {
-        payload["id"] = rs.id;
+        payload["id"] = rule.id;
       });
 
 
       $(form).on("api-write:success", (ev, e, payload) => {
-        fullctl.aclctl.$t.filter_rule_templates.sync();
         fullctl.aclctl.page('overview');
       });
 
       $(button_delete).on("api-write:success", (ev, e, payload) => {
-        fullctl.aclctl.$t.filter_rule_templates.sync();
         fullctl.aclctl.page('overview');
         this.unload_dialog();
       });
 
 
-      form.fill(rs);
+      form.fill(rule);
 
     }
 

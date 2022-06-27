@@ -26,12 +26,13 @@ class FilterRule(ModelSerializer):
         return obj.src_prefix_set.object.name;
 
 @register
-class FilterRuleTemplate(TemplateSerializer):
+class FilterRuleTemplate(ModelSerializer):
 
     ref_tag = "filter_rule_template"
 
     class Meta(TemplateSerializer.Meta):
         model = models.FilterRuleTemplate
+        fields = ["id", "name", "instance", "type", "body"]
 
 
 @register

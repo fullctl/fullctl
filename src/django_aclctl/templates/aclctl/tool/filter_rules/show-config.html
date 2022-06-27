@@ -2,10 +2,12 @@
 <div class="row" style="margin-bottom: 24px;">
     <div class="col"></div>
     <div class="col-md-auto toolbar-field">
-        Template
-        <select data-api-base="/api/devicetmpl/63311/list_available/" data-element="port_device_template"><option value="bird-bgp-neighbors">BIRD BGP neighbors</option><option value="junos-bgp-neighbors">Juniper Junos OS BGP neighbors</option><option value="junos-set-bgp-neighbors">Juniper Junos OS set BGP neighbors</option><option value="sros-md-bgp-neighbors">Nokia SR OS MD-CLI BGP neighbors</option><option value="sros-classic-bgp-neighbors">Nokia SR OS Classic CLI BGP neighbors</option></select>
+        {% trans "Template" %}
+        <select data-element="filter_rule_config_template">
+          <option value="cisco-nexus">Cisco Nexus</option>
+        </select>
     </div>
-    <button class="col-md-auto tool-spacing-left" data-element="device_config">
+    <button class="col-md-auto tool-spacing-left" data-element="filter_rule_config">
         <span class="icon fullctl icon-settings"></span>
         <span class="label">Show config</span>
     </button>

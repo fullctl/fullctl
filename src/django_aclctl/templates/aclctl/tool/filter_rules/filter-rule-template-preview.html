@@ -5,8 +5,8 @@
         <label for="template">{% trans "Template" %}</label>
         <select
         id="template"
-        data-api-base=""
-        name="devicetmpl"
+        data-api-base="{% url "aclctl_api:filter_rule_template-list" org_tag=request.org.slug %}"
+        name="tmpl_id"
         data-null-option="0;Default"
         class="form-control"></select>
     </div>
@@ -15,8 +15,8 @@
     <div class="col-12" data-api-submit="yes">
         <textarea
         name="body"
-        data-api-preview=""
-        data-api-preview-default=""
+        data-api-preview="{% url "aclctl_api:config-filter-rule" org_tag=request.org.slug type="custom" tmpl_id="tmpl_id" %}"
+        data-api-preview-default="{% url "aclctl_api:config-filter-rule" org_tag=request.org.slug type="type" tmpl_id="default" %}"
         class="form-control template-editor"></textarea>
     </div>
     </div>

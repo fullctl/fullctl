@@ -11,6 +11,7 @@ $ctl.application.Aclctl = $tc.extend(
         return new $ctl.application.Aclctl.FilterRules();
       });
       this.$t.filter_rules.activate();
+
       $($ctl).trigger("init_tools", [this]);
       $($ctl.application).trigger("aclctl-ready", [this]);
     }
@@ -31,6 +32,10 @@ $ctl.application.Aclctl.FilterRules = $tc.extend(
           this.template("list", this.$e.body)
         );
       })
+
+      $('[data-element="filter_rule_config"]').click(()=>{
+        new $ctl.application.Aclctl.ModalFilterRuleConfig();
+      });
 
       this.$w.list.formatters.row = (row, data) => {
         row.find('a[data-action="edit_filter_rule"]').click(() => {
@@ -161,13 +166,10 @@ $ctl.application.Aclctl.ModalFilterRule = $tc.extend(
 $ctl.application.Aclctl.ModalFilterRuleConfig = $tc.extend(
   "ModalFilterRuleConfig",
   {
-    ModalFilterRuleConfig: function(peer) {
-      this.peer = peer;
+    ModalFilterRuleConfig: function() {
       var form = new $ctl.application.Aclctl.FilterRuleTemplatePreview(
         $ctl.template('filter_rule_config'),
-        peer,//peer ? {id:peer.device_id} : fullctl.peerctl.port_object().device,
-        "test",//fullctl.peerctl.$t.peering_lists.$w.port_device_template.element.val(),
-        peer//peer
+        $('[data-element="filter_rule_config_template"]').val(),
       );
 
       this.Modal("save_lg", "Filter Rule Config", form.element);
@@ -185,22 +187,16 @@ $ctl.application.Aclctl.ModalFilterRuleConfig = $tc.extend(
 $ctl.application.Aclctl.FilterRuleTemplatePreview = $tc.extend(
   "FilterRuleTemplatePreview",
   {
-    FilterRuleTemplatePreview: function(jq, device, type, peer) {
-      this.peer = peer;
-      this.device = device;
+    FilterRuleTemplatePreview: function(jq, type) {
+      this.type = type;
       this.TemplatePreview(jq, $ctl.application.Aclctl.ModalFilterTemplateSelect, type);
     },
 
     preview_payload: function() {
       var payload = {
         type: this.type,
-        device: this.device.id
+        tmpl_id: this.tmpl_id,
       }
-
-      if(this.peer) {
-        payload.member = this.peer.id;
-      }
-
       return payload;
     }
   },
@@ -211,7 +207,7 @@ $ctl.application.Aclctl.ModalFilterTemplateSelect = $tc.extend(
   "ModalFilterTemplateSelect",
   {
     load_params : function() {
-      return {"test": "123"};
+      return {"type": $('[data-element="filter_rule_config_template"]').val()};
     }
   },
   $ctl.TemplateSelect
@@ -220,9 +216,6 @@ $ctl.application.Aclctl.ModalFilterTemplateSelect = $tc.extend(
 $(document).ready(function() {
   $ctl.aclctl = new $ctl.application.Aclctl();
 
-  $('[data-element="device_config"]').click(()=>{
-    new $ctl.application.Aclctl.ModalFilterRuleConfig();
-  });
 });
 
 })(jQuery, twentyc.cls, fullctl);

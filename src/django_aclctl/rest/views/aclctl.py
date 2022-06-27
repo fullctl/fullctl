@@ -97,11 +97,17 @@ class FilterRule(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericViewSet):
 class FilterRuleTemplate(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericViewSet):
     serializer_class = Serializers.filter_rule_template
     queryset = models.FilterRuleTemplate.objects.all()
+    ref_tag = "filter_rule_template"
 
 
     @grainy_endpoint(namespace="filter_rule.{request.org.permission_id}")
     def list(self, request, org, instance, *args, **kwargs):
         queryset = models.FilterRuleTemplate.objects.filter(instance=instance)
+
+        filter_type = request.GET.get("type")
+        if filter_type:
+            queryset = queryset.filter(type=filter_type)
+
         serializer = self.serializer_class(
             instance = queryset,
             many = True,
@@ -147,7 +153,7 @@ class FilterRuleTemplate(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVi
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         tmpl = serializer.save()
-        ftmpl.save()
+        tmpl.save()
 
         return Response(self.serializer_class(instance=tmpl).data)
 
@@ -170,13 +176,13 @@ class FilterRuleConfig(TemplateRenderView):
     ref_tag = "config"
 
 
-    @action(detail=False, methods=["post", "get"], url_name="filter_rule_config", url_path="filter_rules/(?P<type>[^/.]+)/(?P<tmpl_id>[^/.]+)")
+    @action(detail=False, methods=["post", "get"], url_name="filter-rule", url_path="filter_rules/(?P<type>[^/.]+)/(?P<tmpl_id>[^/.]+)")
     @auditlog()
     @grainy_endpoint(namespace="filter_rule.{request.org.permission_id}.render")
     def render(self, request, org, instance, type, tmpl_id, auditlog=None, *args, **kwargs):
         return Response(self._render(request, instance, type, tmpl_id, *args, **kwargs).data)
 
-    @action(detail=False, methods=["post", "get"], renderer_classes=[PlainTextRenderer], url_name="filter_rule_config", url_path="filter_rules/(?P<type>[^/.]+)/(?P<tmpl_id>[^/.]+)/plain")
+    @action(detail=False, methods=["post", "get"], renderer_classes=[PlainTextRenderer], url_name="filter-rule-plain", url_path="filter_rules/(?P<type>[^/.]+)/(?P<tmpl_id>[^/.]+)/plain")
     @auditlog()
     @grainy_endpoint(namespace="filter_rule.{request.org.permission_id}.render")
     def render_plain(self, request, org, instance, type, tmpl_id, auditlog=None, *args, **kwargs):
