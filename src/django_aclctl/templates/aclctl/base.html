@@ -50,6 +50,9 @@ $(document).ready(() => {
 <!-- aclctl does not have an extra toolbar atm -->
 {% endblock %}
 
+{% block "app_show_config" %}
+{% endblock %}
+
 {% block "app_content_menu" %}
 <div class="menu-deco-border"></div>
 {% endblock %}
@@ -58,6 +61,7 @@ $(document).ready(() => {
 <div class="tab-content" id="app-pages">
   <div class="tab-pane show active" id="overview" role="tabpanel" aria-labelledby="tab-overview">
 		{% include "aclctl/tool/filter_rules/main.html" %}
+    {% include "aclctl/tool/filter_rules/show-config.html" %}
   </div>
 
   <div class="tab-pane" id="settings" role="tabpanel" aria-labelledby="tab-settings">
