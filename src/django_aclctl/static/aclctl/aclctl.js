@@ -37,6 +37,38 @@ $ctl.application.Aclctl.FilterRules = $tc.extend(
         });
       };
 
+      this.$w.list.formatters.src_prefix = (v, data) => {
+        if(data.src_type == "prefix")
+          return v;
+
+        var n = $('<div>')
+        n.append($('<label>').text("PrefixCtl"));
+        n.append($('<div>').text(data.src_prefix_set_name));
+        return n;
+      };
+
+      this.$w.list.formatters.priority = (v, data) => {
+        var n = this.template("priority_inline_edit");
+        var input = new twentyc.rest.Input(n.find('input'))
+        input.element.val(v);
+
+        input.payload = () => {
+          var payload = $.extend({}, data);
+          payload.priority = input.element.val();
+          return payload;
+        }
+
+        $(input).on("api-write:success", () => { this.$w.list.load(); });
+
+        input.format_request_url = (url) => {
+          return url.replace("/0/", "/"+data.id+"/");
+        }
+
+        return input.element;
+      };
+
+
+
       this.$w.list.element.find('[data-element="button_add_filter_rule"]').click(() => {
         this.prompt_add_filter_rule();
       });
@@ -87,6 +119,27 @@ $ctl.application.Aclctl.ModalFilterRule = $tc.extend(
         form.method = "PUT";
         title = "Edit Filter Rule"
       }
+
+      this.select_source_type = new twentyc.rest.Select(form.element.find("#src-type"));
+
+      $(this.select_source_type.element).on("change", () => {
+        this.select_prefix_set.load().then(()=>{});
+        var v = this.select_source_type.element.val()
+        form.element.find('#tgl-src-prefix-set,#tgl-src-prefix').hide();
+        form.element.find('#tgl-src-'+v).show();
+      });
+      this.select_source_type.load(filter_rule ? filter_rule.src_type : null).then(() => {
+      });
+
+      this.select_prefix_set = new twentyc.rest.Select(form.element.find("#src-prefix-set"));
+
+      if(filter_rule && filter_rule.src_type == "prefix-set") {
+        this.select_prefix_set.load(filter_rule.src_prefix_set);
+        form.element.find('#tgl-src-prefix').hide();
+        form.element.find('#tgl-src-prefix-set').show();
+      }
+
+
 
       $(this.form).on(
         "api-write:success",

@@ -1,9 +1,23 @@
 from django.urls import include, path
+from django.conf import settings
 
 # import django_aclctl.rest.views
+
 from django_aclctl import views
 
-urlpatterns = [
+import fullctl.django.rest.urls.service_bridge_proxy as proxy
+
+proxy.setup("prefixctl", proxy.proxy_api(
+    "prefixctl",
+    settings.PREFIXCTL_HOST,
+    [
+        ("pfxset/{org_tag}", "pfxset/<str:org_tag>/", "list"),
+    ],
+))
+
+urlpatterns = proxy.urlpatterns(["prefixctl"])
+
+urlpatterns += [
     path(
         "api/",
         include(

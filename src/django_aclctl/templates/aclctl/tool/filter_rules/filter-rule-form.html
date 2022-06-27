@@ -5,26 +5,77 @@
   >
   <div class="row form-group">
     <div class="col-12" data-api-submit="yes">
-      <label for="name">{% trans "Source Port" %}</label>
+      <label for="priority">{% trans "Priority" %}</label>
+      <input type="text" class="form-control" id="priority" name="priority" placeholder="{% trans "auto" %}" />
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-info">
+       {% blocktrans %}
+       The source can either be a prefix, or a group of prefixes managed through
+       a prefix set in your PrefixCtl environment.
+        {% endblocktrans %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row form-group">
+    <div class="col-6" data-api-submit="yes">
+      <label for="description">{% trans "Source Type" %}</label>
+      <span class="modal-control">
+      <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+      <select
+        class="form-control"
+        id="src-type"
+        name="src_type"
+        data-api-base="{% url "aclctl_api:filter_rule-list" org_tag=request.org.slug %}"
+        data-load-type="drf-choices"
+        >
+      <select>
+      </span>
+    </div>
+
+    <div class="col-6" data-api-submit="yes">
+
+      <div id="tgl-src-prefix">
+        <label for="src_prefix">{% trans "Prefix" %}</label>
+        <input type="text" class="form-control" id="src-prefix" name="src_prefix" />
+      </div>
+
+
+      <div id="tgl-src-prefix-set" style="display:none;">
+        <label for="src_prefix_set">{% trans "PrefixCtl Prefix Set" %}</label>
+        <span class="modal-control">
+        <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+        <select
+          class="form-control"
+          id="src-prefix-set"
+          name="src_prefix_set"
+          data-api-base="{% url "proxies-api-prefixctl-list" org_tag=request.org.slug %}"
+          >
+        <select>
+        </span>
+      </div>
+
+    </div>
+  </div>
+  <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+      <label for="src_port">{% trans "Source Port" %}</label>
       <input type="text" class="form-control" id="src-port" name="src_port" />
     </div>
   </div>
   <div class="row form-group">
     <div class="col-12" data-api-submit="yes">
-      <label for="description">{% trans "Source Prefix" %}</label>
-      <input type="text" class="form-control" id="src-prefix" name="src_prefix" />
-    </div>
-  </div>
-  <div class="row form-group">
-    <div class="col-12" data-api-submit="yes">
-      <label for="irr-as-set">{% trans "Destination Port" %}</label>
-      <input type="text" class="form-control" id="dest-port" name="dest_port" />
-    </div>
-  </div>
-  <div class="row form-group">
-    <div class="col-12" data-api-submit="yes">
-      <label for="irr-sources">{% trans "Destination Prefix" %}</label>
+      <label for="dest-prefix">{% trans "Destination Prefix" %}</label>
       <input type="text" class="form-control" id="dest-prefix" name="dest_prefix" />
+    </div>
+  </div>
+  <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+      <label for="dest-port">{% trans "Destination Port" %}</label>
+      <input type="text" class="form-control" id="dest-port" name="dest_port" />
     </div>
   </div>
 </form>

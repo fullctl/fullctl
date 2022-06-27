@@ -5,10 +5,11 @@
   data-template="list">
   <thead>
     <tr>
-      <th data-sort-target="src_port" data-sort-secondary="src_prefix,dest_prefix" class="sortable-button">{% trans "Source Port" %}</th>
-      <th data-sort-target="src_prefix" data-sort-initial="yes" data-sort-secondary="src_port,dest_prefix"  class="sortable-button">{% trans "Source Prefix" %}</th>
-      <th data-sort-target="dest_port" data-sort-secondary="dest_prefix,src_prefix" class="sortable-button">{% trans "Destination Port" %}</th>
-      <th data-sort-target="dest_prefix" data-sort-secondary="dest_port,src_prefix" class="sortable-button">{% trans "Destination Prefix" %}</th>
+      <th>{% trans "Priority" %}</th>
+      <th>{% trans "Source" %}</th>
+      <th>{% trans "Port" %}</th>
+      <th>{% trans "Destination" %}</th>
+      <th>{% trans "Port" %}</th>
       <th></th>
     </tr>
   </thead>
@@ -18,7 +19,7 @@
 
   <tbody class="list-footer">
     <tr>
-      <td colspan="4">
+      <td colspan="7">
         <button type="button" class="button aclctl rounded-button" data-element="button_add_filter_rule">
           <span class="icon fullctl icon-add"></span>
             {% trans "Add Filter Rule" %}
@@ -30,17 +31,11 @@
 
   <tbody class="templates">
     <tr data-template="row" class="with-border">
-      <td data-field="src_port">
-      </td>
-
-      <td data-field="src_prefix">
-      </td>
-
-      <td data-field="dest_port">
-      </td>
-
-      <td data-field="dest_prefix">
-      </td>
+      <td data-field="priority"></td>
+      <td data-field="src_prefix"></td>
+      <td data-field="src_port"></td>
+      <td data-field="dest_prefix"></td>
+      <td data-field="dest_port"></td>
 
       <td data-field="controls" class="right">
         <div class="row property">
@@ -60,6 +55,16 @@
     </tr>
   </tbody>
 </table>
+
+<div data-template="priority_inline_edit">
+  <input
+    type="text"
+    class="slim"
+    data-api-action
+    data-api-method="PUT"
+    data-api-base="{% url "aclctl_api:filter_rule-detail" org_tag=request.org.slug pk=0 %}"
+  >
+</div>
 
 
 {% block "prefix-set-addon-template" %}

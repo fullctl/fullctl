@@ -11,10 +11,16 @@ from django_aclctl.models import (
 @admin.register(FilterRule)
 class FilterRuleAdmin(BaseAdmin):
 
-    list_display = ("instance", "org", "src_port", "src_prefix", "dest_port", "dest_prefix", "created", "updated")
-    readonly_fields = ("org", )
+    list_display = ("instance", "org", "src_port", "src_prefix", "src_prefix_set", "dest_port", "dest_prefix", "created", "updated")
+    readonly_fields = ("org", "src_prefix_set_object")
 
     search_fields = ("instance__org__name", "instance__org__slug", "src_prefix", "dest_prefix")
 
     def org(self, obj):
         return obj.instance.org
+
+    def src_prefix_set_object(self, obj):
+        if not obj.src_prefix_set:
+            return "?"
+        ref_obj = obj.src_prefix_set.object
+        return f"{ref_obj.name} ({obj.src_prefix_set.source})"
