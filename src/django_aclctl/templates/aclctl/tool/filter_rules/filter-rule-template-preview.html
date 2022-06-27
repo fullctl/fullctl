@@ -1,0 +1,23 @@
+{% load i18n %}
+<form data-api-base="/" data-template="filter_rule_config">
+    <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+        <label for="template">{% trans "Template" %}</label>
+        <select
+        id="template"
+        data-api-base=""
+        name="devicetmpl"
+        data-null-option="0;Default"
+        class="form-control"></select>
+    </div>
+    </div>
+    <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+        <textarea
+        name="body"
+        data-api-preview=""
+        data-api-preview-default=""
+        class="form-control template-editor"></textarea>
+    </div>
+    </div>
+</form>

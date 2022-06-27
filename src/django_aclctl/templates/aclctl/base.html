@@ -27,11 +27,15 @@ $(document).ready(() => {
 <!-- aclctl does not have an extra toolbar atm -->
 {% endblock %}
 
+{% block "app_show_config" %}
+{% endblock %}
+
 {% block "app_content_menu" %}
 <div class="menu-deco-border"></div>
 {% endblock %}
 
 {% block "app_content_main" %}
+{% include "aclctl/tool/filter_rules/show-config.html" %}
 {% include "aclctl/tool/filter_rules/main.html" %}
 {% endblock %}
 

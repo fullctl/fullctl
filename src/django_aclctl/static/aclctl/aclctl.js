@@ -104,8 +104,71 @@ $ctl.application.Aclctl.ModalFilterRule = $tc.extend(
   $ctl.application.Modal
 )
 
+$ctl.application.Aclctl.ModalFilterRuleConfig = $tc.extend(
+  "ModalFilterRuleConfig",
+  {
+    ModalFilterRuleConfig: function(peer) {
+      this.peer = peer;
+      var form = new $ctl.application.Aclctl.FilterRuleTemplatePreview(
+        $ctl.template('filter_rule_config'),
+        peer,//peer ? {id:peer.device_id} : fullctl.peerctl.port_object().device,
+        "test",//fullctl.peerctl.$t.peering_lists.$w.port_device_template.element.val(),
+        peer//peer
+      );
+
+      this.Modal("save_lg", "Filter Rule Config", form.element);
+      this.$e.button_submit.text("Copy to clipboard").click(()=>{
+        form.editor.select();
+        document.execCommand("copy");
+        this.hide();
+      });
+      //form.wire_submit(this.$e.button_submit);
+    }
+  },
+  $ctl.application.Modal
+);
+
+$ctl.application.Aclctl.FilterRuleTemplatePreview = $tc.extend(
+  "FilterRuleTemplatePreview",
+  {
+    FilterRuleTemplatePreview: function(jq, device, type, peer) {
+      this.peer = peer;
+      this.device = device;
+      this.TemplatePreview(jq, $ctl.application.Aclctl.ModalFilterTemplateSelect, type);
+    },
+
+    preview_payload: function() {
+      var payload = {
+        type: this.type,
+        device: this.device.id
+      }
+
+      if(this.peer) {
+        payload.member = this.peer.id;
+      }
+
+      return payload;
+    }
+  },
+  $ctl.TemplatePreview
+)
+
+$ctl.application.Aclctl.ModalFilterTemplateSelect = $tc.extend(
+  "ModalFilterTemplateSelect",
+  {
+    load_params : function() {
+      return {"test": "123"};
+    }
+  },
+  $ctl.TemplateSelect
+)
+
 $(document).ready(function() {
   $ctl.aclctl = new $ctl.application.Aclctl();
+
+  $('[data-element="device_config"]').click(()=>{
+    new $ctl.application.Aclctl.ModalFilterRuleConfig();
+  });
 });
 
 })(jQuery, twentyc.cls, fullctl);
