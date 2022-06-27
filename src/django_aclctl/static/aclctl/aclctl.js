@@ -11,6 +11,7 @@ $ctl.application.Aclctl = $tc.extend(
         return new $ctl.application.Aclctl.FilterRules();
       });
       this.$t.filter_rules.activate();
+      $($ctl).trigger("init_tools", [this]);
       $($ctl.application).trigger("aclctl-ready", [this]);
     }
   },

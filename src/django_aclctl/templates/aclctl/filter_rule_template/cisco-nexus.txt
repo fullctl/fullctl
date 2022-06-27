@@ -1,0 +1,6 @@
+ip access-list ACLCTL
+{% for rule in filter_rules %}
+{% for prefix in rule.src_prefixes %}
+  {{ rule.priority }} {{ rule.action }} {{ rule.protocol }} {{ prefix }} {{ rule.dest_prefix }} range {{ rule.src_port }} {{ rule.dest_port }}
+{% endfor %}
+{% endfor %}

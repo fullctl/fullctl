@@ -4,8 +4,10 @@ from django.conf import settings
 # import django_aclctl.rest.views
 
 from django_aclctl import views
+from django_aclctl.models.aclctl import FilterRuleTemplate
 
 import fullctl.django.rest.urls.service_bridge_proxy as proxy
+from fullctl.django.views.template import TemplateFileView
 
 proxy.setup("prefixctl", proxy.proxy_api(
     "prefixctl",
@@ -25,6 +27,7 @@ urlpatterns += [
             namespace="aclctl_api",
         ),
     ),
+    path("tmpl/filter_rule_template/<str:template_type>/", TemplateFileView.as_view(TemplateModel=FilterRuleTemplate), name='default-template'),
     path("<str:org_tag>/", views.view_instance, name="aclctl-home"),
     path("", views.org_redirect),
 ]

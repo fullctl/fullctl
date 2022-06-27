@@ -5,6 +5,7 @@
 {% block "js" %}
 {{ block.super }}
 <script src="{% static "aclctl/aclctl.js" %}" type="text/javascript"></script>
+<script src="{% static "aclctl/aclctl.settings.js" %}" type="text/javascript"></script>
 <script>
 $(document).ready(() => {
 });
@@ -16,6 +17,28 @@ $(document).ready(() => {
 <link rel="stylesheet" type="text/css" href="{% static "aclctl/aclctl.css" %}" />
 {% endblock %}
 
+{% block "header_middle" %}
+<div class="app-pages-nav" data-component="pages">
+  <nav class="nav justify-content-center">
+
+    <a class="nav-link active"
+      id="tab-overview"
+      data-toggle="tab"
+      role="tab"
+      aria-controls="overview"
+      aria-selected="true"
+      href="#overview">{% trans "Traffic Filters" %}</a>
+
+    <a class="nav-link"
+      data-toggle="tab"
+      role="tab"
+      aria-controls="settings"
+      aria-selected="false"
+      id="settings-tab"
+      href="#settings">{% trans "Settings" %}</a>
+  </nav>
+</div>
+{% endblock %}
 
 {% block "header_right" %}
 {% with app_id="aclctl" %}
@@ -32,7 +55,15 @@ $(document).ready(() => {
 {% endblock %}
 
 {% block "app_content_main" %}
-{% include "aclctl/tool/filter_rules/main.html" %}
+<div class="tab-content" id="app-pages">
+  <div class="tab-pane show active" id="overview" role="tabpanel" aria-labelledby="tab-overview">
+		{% include "aclctl/tool/filter_rules/main.html" %}
+  </div>
+
+  <div class="tab-pane" id="settings" role="tabpanel" aria-labelledby="tab-settings">
+		{% include "aclctl/tool/settings/main.html" %}
+  </div>
+</div>
 {% endblock %}
 
 {% block "templates" %}
