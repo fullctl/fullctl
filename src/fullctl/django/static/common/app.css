@@ -464,6 +464,11 @@ input.slim {
   margin-top: 3px;
 }
 
+.list-body label {
+  font-size: 11px;
+  margin:0px;
+}
+
 
 .list-body + .list-no-data {
   display: none;
@@ -481,6 +486,7 @@ tbody.list-body:empty + tbody.list-no-data {
 }
 
 
+.list-body td input.slim,
 .list-body div.secondary input[type="text"],
 div.toolbar-field input[type="text"] {
   border: 1px solid;

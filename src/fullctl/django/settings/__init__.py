@@ -172,6 +172,11 @@ class SettingsManager(confu.util.SettingsManager):
         self.set_option("GOOGLE_ANALYTICS_ID", "")
         self.set_option("CLOUDFLARE_ANALYTICS_ID", "")
 
+        self.set_option(
+            "SERVICE_APP_DIR",
+            os.path.join(self.scope["BASE_DIR"], "main", f"django_{service_tag}"),
+        )
+
         # eval from default.py file
         filename = os.path.join(os.path.dirname(__file__), "default.py")
         self.try_include(filename)
@@ -375,3 +380,11 @@ class SettingsManager(confu.util.SettingsManager):
                 base, ext = os.path.splitext(file)
                 if ext == ".md":
                     API_DOC_INCLUDES[base] = os.path.join(API_DOC_PATH, file)
+
+    def set_netom_integration(self):
+        import netom
+
+        self.set_option("NETOM_DIR", os.path.dirname(netom.__file__))
+        self.set_option(
+            "NETOM_TEMPLATE_DIR", os.path.join(NETOM_DIR, "templates", "netom0")
+        )
