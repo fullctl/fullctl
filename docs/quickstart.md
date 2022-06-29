@@ -23,6 +23,15 @@ Please checkout and install https://github.com/fullctl/fullctl and once you have
 - OAUTH_TWENTYC_KEY: the oauth application client id
 - OAUTH_TWENTYC_SECRET: the oauth application client secret
 
+### Integration with prefixctl
+
+AclCtl can pull prefix data from PrefixCtl, for this to work the `PREFIXCTL_URL` environment variable should be set.
+
+```
+PREFIXCTL_URL=https://dev6.20c.com:8045
+```
+
+
 ### Building and starting
 
 You can launch the app via: 

@@ -11,7 +11,7 @@ from fullctl.django.views.template import TemplateFileView
 
 proxy.setup("prefixctl", proxy.proxy_api(
     "prefixctl",
-    settings.PREFIXCTL_HOST,
+    settings.PREFIXCTL_URL,
     [
         ("pfxset/{org_tag}", "pfxset/<str:org_tag>/", "list"),
     ],
