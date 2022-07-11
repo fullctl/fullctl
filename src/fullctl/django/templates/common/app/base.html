@@ -64,7 +64,7 @@ fullctl.permissions = {{ permissions|safe }}
           {% for svcapp in service_applications %}
           {%   if svcapp.slug != service_tag %}
           {%     with "common/logos/"|add:svcapp.slug|add:"-dark.svg" as other_app_logo %}
-          <a href="{{ svcapp.org_redirect }}"><img class="app-logo" src="{% static other_app_logo %}" alt="{{ svcapp.slug }}"></a>
+          <a data-grainy-remove="{{ svcapp.grainy }}.{{ request.org.remote_id}}" href="{{ svcapp.org_redirect }}"><img class="app-logo" src="{% static other_app_logo %}" alt="{{ svcapp.slug }}"></a>
           {%     endwith %}
           {%   endif %}
           {% endfor %}

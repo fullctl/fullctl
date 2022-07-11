@@ -411,6 +411,9 @@ fullctl.application.Application = $tc.define(
       }
       this.tools = this.$t = {}
       $(fullctl.application).trigger("initialized", [this, id]);
+      $('[data-grainy-remove]').each(function() {
+        $(this).grainy_toggle($(this).data("grainy-remove"), "r");
+      });
     },
 
     tool : function(name, fn) {
