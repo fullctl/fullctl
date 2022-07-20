@@ -95,8 +95,8 @@ class FilterRule(HandleRefModel):
     def src_prefixes(self):
         if self.src_type == "prefix":
             return [str(self.src_prefix)]
-        pfxset = self.src_prefix_set.object
-        return [pfx["prefix"] for pfx in pfxset.prefixes]
+        prefix_set = self.src_prefix_set.object
+        return [prefix["prefix"] for prefix in prefix_set.prefixes]
 
     def __str__(self):
 

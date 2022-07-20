@@ -9,7 +9,7 @@ BILLING_INTEGRATION = False
 
 SECURE_SSL_REDIRECT = False
 
-PDBCTL_HOST = "cache://pdbctl"
+PDBCTL_URL = "cache://pdbctl"
 
 LOGGING = {
     "version": 1,

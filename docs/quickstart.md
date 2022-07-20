@@ -19,7 +19,7 @@ aclctl requires a fullctl aaactl instance to use as an authentication and accoun
 
 Please checkout and install https://github.com/fullctl/fullctl and once you have done so, set the following environment variables in your `.env` file
 
-- OAUTH_TWENTYC_HOST: the url of your aaactl instance (e.g, https://localhost:8001)
+- OAUTH_TWENTYC_URL: the url of your aaactl instance (e.g, https://localhost:8001)
 - OAUTH_TWENTYC_KEY: the oauth application client id
 - OAUTH_TWENTYC_SECRET: the oauth application client secret
 

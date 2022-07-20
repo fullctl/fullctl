@@ -13,7 +13,7 @@ proxy.setup("prefixctl", proxy.proxy_api(
     "prefixctl",
     settings.PREFIXCTL_URL,
     [
-        ("pfxset/{org_tag}", "pfxset/<str:org_tag>/", "list"),
+        ("prefix_set/{org_tag}", "prefix_set/<str:org_tag>/", "list"),
     ],
 ))
 
