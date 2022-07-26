@@ -42,7 +42,7 @@ django-netfields = "<2"
 
 # prod serving
 whitenoise = "^6"
-uWSGI = "^2.0.19"
+pyuwsgi = "^2.0.19"
 
 confu = "^1.5"
 grainy = "^1.8.1"
