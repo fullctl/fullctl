@@ -275,10 +275,19 @@ class SettingsManager(confu.util.SettingsManager):
         self.set_option("AAACTL_URL", "")
         self.set_option("PDBCTL_URL", "")
         self.set_option("PEERCTL_URL", "")
+        self.set_option("PREFIXCTL_URL", "")
         self.set_option("IXCTL_URL", "")
 
-    def set_twentyc_oauth(self, AAACTL_URL=None):
+    def set_twentyc_social_oauth(self, AAACTL_URL=None):
+        """
+        This function sets the variables required to OAuth against aaactl using
+        django-social-auth. It does not set the SOCIAL_AUTH_PIPELINE or
+        AUTHENTICATION_BACKENDS.
+        """
         if not AAACTL_URL:
+            # call this separately, incase this wasn't called from set_twentyc_service
+            # TODO - make this unneeded
+            self.set_option("AAACTL_URL", "")
             AAACTL_URL = self.get("AAACTL_URL")
 
         self.set_option("OAUTH_TWENTYC_URL", AAACTL_URL)
@@ -298,6 +307,11 @@ class SettingsManager(confu.util.SettingsManager):
         self.set_option("SOCIAL_AUTH_TWENTYC_KEY", self.get("OAUTH_TWENTYC_KEY"))
         self.set_option("SOCIAL_AUTH_TWENTYC_SECRET", self.get("OAUTH_TWENTYC_SECRET"))
         self.set_option("SOCIAL_AUTH_REDIRECT_IS_HTTPS", True)
+
+    def set_twentyc_oauth(self, AAACTL_URL=None):
+        if not AAACTL_URL:
+            AAACTL_URL = self.get("AAACTL_URL")
+        self.set_twentyc_social_oauth(AAACTL_URL)
 
         AUTHENTICATION_BACKENDS = [
             "fullctl.django.social.backends.twentyc.TwentycOAuth2",
