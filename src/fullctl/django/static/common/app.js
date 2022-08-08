@@ -14,6 +14,11 @@ fullctl.application = {}
 fullctl.widget = {}
 fullctl.formatters = {}
 fullctl.modals = {}
+fullctl.util = {}
+
+fullctl.util.slugify = (txt) => {
+  return txt.toLowerCase().replace(/\s/g, "-").replace(/_/g, "-").replace(/[^a-zA-Z0-9-]/g,"").replace(/-+/g, '-');
+};
 
 fullctl.formatters.pretty_speed = (value) => {
   if(value >= 1000000)
