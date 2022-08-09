@@ -428,7 +428,7 @@ whitenoise = "^6"
 type = "git"
 url = "https://github.com/fullctl/fullctl.git"
 reference = "prep-release"
-resolved_reference = "a117aa314449ce3107a587777ae1e8d43e5f461c"
+resolved_reference = "7937d322c466f46b7e383420c94d8cf083e0a9a9"
 
 [[package]]
 name = "ghp-import"
