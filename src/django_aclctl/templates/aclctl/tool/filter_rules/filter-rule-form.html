@@ -66,12 +66,49 @@
       <input type="text" class="form-control" id="src-port" name="src_port" />
     </div>
   </div>
+
   <div class="row form-group">
-    <div class="col-12" data-api-submit="yes">
-      <label for="dest-prefix">{% trans "Destination Prefix" %}</label>
-      <input type="text" class="form-control" id="dest-prefix" name="dest_prefix" />
+    <div class="col-6" data-api-submit="yes">
+      <label for="description">{% trans "Destination Type" %}</label>
+      <span class="modal-control">
+      <img class="caret" dest="{% static "common/icons/ui-caret-caret/down.svg" %}">
+      <select
+        class="form-control"
+        id="dest-type"
+        name="dest_type"
+        data-api-base="{% url "aclctl_api:filter_rule-list" org_tag=request.org.slug %}"
+        data-load-type="drf-choices"
+        >
+      <select>
+      </span>
+    </div>
+
+    <div class="col-6" data-api-submit="yes">
+
+      <div id="tgl-dest-prefix">
+        <label for="dest_prefix">{% trans "Prefix" %}</label>
+        <input type="text" class="form-control" id="dest-prefix" name="dest_prefix" />
+      </div>
+
+
+      <div id="tgl-dest-prefix-set" style="display:none;">
+        <label for="dest_prefix_set">{% trans "PrefixCtl Prefix Set" %}</label>
+        <span class="modal-control">
+        <img class="caret" dest="{% static "common/icons/ui-caret-caret/down.svg" %}">
+        <select
+          class="form-control"
+          id="dest-prefix-set"
+          name="dest_prefix_set"
+          data-api-base="{% url "proxies-api-prefixctl-list" org_tag=request.org.slug %}"
+          >
+        <select>
+        </span>
+      </div>
+
     </div>
   </div>
+
+
   <div class="row form-group">
     <div class="col-12" data-api-submit="yes">
       <label for="dest-port">{% trans "Destination Port" %}</label>

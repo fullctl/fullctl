@@ -6,18 +6,24 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('django_aclctl', '0007_filterruletemplate_type'),
+        ("django_aclctl", "0007_filterruletemplate_type"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='filterrule',
-            name='action',
-            field=models.CharField(choices=[('permit', 'Permit'), ('deny', 'Deny')], default='permit', max_length=255),
+            model_name="filterrule",
+            name="action",
+            field=models.CharField(
+                choices=[("permit", "Permit"), ("deny", "Deny")],
+                default="permit",
+                max_length=255,
+            ),
         ),
         migrations.AddField(
-            model_name='filterrule',
-            name='protocol',
-            field=models.CharField(choices=[('tcp', 'TCP'), ('udp', 'UDP')], default='tcp', max_length=255),
+            model_name="filterrule",
+            name="protocol",
+            field=models.CharField(
+                choices=[("tcp", "TCP"), ("udp", "UDP")], default="tcp", max_length=255
+            ),
         ),
     ]

@@ -1,6 +1,10 @@
-ip access-list ACLCTL
+ip access-list {{ context.access_control_list.slug }}
+{% set count = namespace(value=10) %}
 {% for rule in filter_rules %}
 {% for prefix in rule.src_prefixes %}
-  {{ rule.priority }} {{ rule.action }} {{ rule.protocol }} {{ prefix }} {{ rule.dest_prefix }} range {{ rule.src_port }} {{ rule.dest_port }}
+{% for dest_prefix in rule.dest_prefixes %}
+  {{ count.value }} {{ rule.action }} {% if prefix %}{{ prefix }}{% else %}any{% endif %} {{ rule.src_port_cisco }} {% if dest_prefix %}{{ dest_prefix }}{% else %}any{% endif %} {{ rule.dest_port_cisco }}
+{% set count.value = count.value + 10 %}
+{% endfor %}
 {% endfor %}
 {% endfor %}

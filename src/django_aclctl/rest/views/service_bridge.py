@@ -4,7 +4,7 @@ from fullctl.django.rest.views.service_bridge import HeartbeatViewSet, StatusVie
 
 @route
 class Status(StatusViewSet):
-    checks = ("bridge_aaactl", )
+    checks = ("bridge_aaactl",)
 
 
 @route

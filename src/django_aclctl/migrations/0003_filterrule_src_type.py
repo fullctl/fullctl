@@ -6,13 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('django_aclctl', '0002_filterrule_src_prefix_set'),
+        ("django_aclctl", "0002_filterrule_src_prefix_set"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='filterrule',
-            name='src_type',
-            field=models.CharField(choices=[('prefix', 'Prefix'), ('prefix-set', 'Prefix Set')], default='prefix', max_length=255),
+            model_name="filterrule",
+            name="src_type",
+            field=models.CharField(
+                choices=[("prefix", "Prefix"), ("prefix-set", "Prefix Set")],
+                default="prefix",
+                max_length=255,
+            ),
         ),
     ]

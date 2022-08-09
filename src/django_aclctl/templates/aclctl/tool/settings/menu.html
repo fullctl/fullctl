@@ -2,12 +2,24 @@
 <div
   class="section tabs"
   data-template="menu">
-  <!-- <h4>{% trans "AclCtl" %}</h4> -->
+  <h4>{% trans "Access Control List" %}</h4>
 
   <a type="button" class="button" data-element="button_general_settings">
     <span class="icon fullctl icon-settings"></span>
-    <span class="label">{% trans "General settings" %}</span>
+    <span class="label">{% trans "Settings" %}</span>
   </a>
+
+  <a type="button" class="button" data-element="button_delete_access_control_list">
+    <span class="icon fullctl icon-delete"></span>
+    <span class="label">{% trans "Delete" %}</span>
+  </a>
+
+  <a type="button" class="button" data-element="button_create_access_control_list">
+    <span class="icon fullctl icon-add"></span>
+    <span class="label">{% trans "New list" %}</span>
+  </a>
+
+
 
   <h4>{% trans "Templates" %}</h4>
   <h5>{% trans "Filter Rule Config" %}</h5>

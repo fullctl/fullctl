@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('django_aclctl', '0004_alter_filterrule_src_prefix'),
+        ("django_aclctl", "0004_alter_filterrule_src_prefix"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='filterrule',
-            name='priority',
+            model_name="filterrule",
+            name="priority",
             field=models.IntegerField(default=50),
         ),
     ]

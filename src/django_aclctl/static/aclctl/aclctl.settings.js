@@ -8,7 +8,7 @@ $ctl.application.Aclctl.Settings = $tc.extend(
     },
 
     format_request_url : function(url) {
-      return url;
+      return url.replace(/acl_tag/, fullctl.aclctl.access_control_list_slug());
     },
 
     menu : function() {
@@ -38,15 +38,25 @@ $ctl.application.Aclctl.Settings = $tc.extend(
         this.general_settings();
       });
 
+      menu.find('[data-element="button_delete_access_control_list"]').click(()=>{
+        this.delete_access_control_list();
+      });
+
+
+      menu.find('[data-element="button_create_access_control_list"]').click(()=>{
+        this.create_access_control_list();
+      });
+
+
       return menu;
     },
 
     sync : function() {
       var namespace = "filter_rule."+fullctl.org.id;
       this.$e.menu.find('[data-element="button_add_filter_rule_template"]').grainy_toggle(namespace, "c");
-      this.$e.menu.find('[data-element="button_general_settings"]').hide();
 
       this.$w.filter_rule_templates.load();
+      this.general_settings();
     },
 
     unload_dialog : function() {
@@ -54,18 +64,65 @@ $ctl.application.Aclctl.Settings = $tc.extend(
     },
 
     general_settings : function() {
-      var dialog = this.custom_dialog("General settings for "+ix.name);
+      var access_control_list = fullctl.aclctl.access_control_list_object();
+      if(!access_control_list)
+        return;
+      var dialog = this.custom_dialog("Settings for "+access_control_list.name);
       var form = new twentyc.rest.Form(
         this.template("form_general_settings", dialog)
       );
       form.format_request_url = this.format_request_url;
-      form.fill(ix);
+      form.fill(access_control_list);
 
       $(form).on("api-write:success", ()=>{
         $ctl.aclctl.refresh().then(()=>{
-          $ctl.aclctl.select_ix(ix.id);
+          $ctl.aclctl.select_access_control_list(access_control_list.id);
         });
       });
+    },
+
+    create_access_control_list : function() {
+      var dialog = this.custom_dialog("Create new list");
+      var form = new twentyc.rest.Form(
+        this.template("form_create_access_control_list", dialog)
+      );
+
+      var slug_field = form.element.find('[name=slug]')
+
+      form.element.find('[name=name]').on("keyup", function() {
+        slug_field.val(fullctl.util.slugify($(this).val()));
+      });
+
+      form.format_request_url = this.format_request_url;
+      $(form).on("api-write:success", (ev, data, r_data, response)=>{
+        console.log("response", response, r_data)
+        $ctl.aclctl.refresh().then(()=>{
+          $ctl.aclctl.select_access_control_list(response.first().id);
+          fullctl.aclctl.page('overview');
+        });
+      });
+    },
+
+
+    delete_access_control_list: function() {
+      var access_control_list = $ctl.aclctl.access_control_list_object();
+      var dialog = this.custom_dialog("Delete "+access_control_list.name);
+
+      var form = this.template("form_delete_access_control_list", dialog);
+      var button = new twentyc.rest.Button(
+        form.find('[data-element="button_delete_access_control_list_proceed"]')
+      );
+
+      button.action = access_control_list.slug;
+      $(button).on("api-write:success", () => {
+        $ctl.aclctl.refresh().then(() => {
+          $ctl.aclctl.unload_access_control_list(access_control_list.id);
+          $ctl.aclctl.select_access_control_list();
+          $ctl.aclctl.page("overview");
+        });
+      });
+
+      form.find('.access_control_list-name').text(access_control_list.name);
     },
 
 
@@ -151,7 +208,7 @@ $($ctl).on("init_tools", (e, app) => {
 
   $('#settings-tab').on('show.bs.tab', () => {
     app.$t.settings.sync();
-    app.$t.settings.create_filter_rule_template();
+    app.$t.settings.general_settings();
   });
 });
 

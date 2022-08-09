@@ -6,14 +6,14 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('django_aclctl', '0008_auto_20220624_1358'),
+        ("django_aclctl", "0008_auto_20220624_1358"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='filterruletemplate',
-            name='body',
-            field=models.TextField(default=''),
+            model_name="filterruletemplate",
+            name="body",
+            field=models.TextField(default=""),
             preserve_default=False,
         ),
     ]

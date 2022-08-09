@@ -46,9 +46,36 @@ $(document).ready(() => {
 {% endwith %}
 {% endblock %}
 
-{% block "app_content_toolbar_outer" %}
-<!-- aclctl does not have an extra toolbar atm -->
+{% block "app_content_toolbar" %}
+
+<div class="row">
+  <div class="col-6 col-md-8">
+    <div class="toolbar-control-group">
+
+
+      <span class="inline-label">{% trans "List:" %}</span>
+      <span class="toolbar-control">
+        <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+      <select
+        data-api-load="yes"
+        data-api-base="{% url "aclctl_api:access_control_list-list" org_tag=request.org.slug %}"
+        data-element="select_access_control_list"></select>
+      </span>
+
+    </div>
+
+  </div>
+
+  <div class="col-6 col-md-4 right">
+      <button type="button" class="button" style="display:none" data-element="button_create_access_control_list">
+        <span class="icon fullctl icon-add"></span>
+        <span class="label">{% trans "Create" %}</span>
+      </button>
+  </div>
+</div>
+
 {% endblock %}
+
 
 {% block "app_show_config" %}
 {% endblock %}

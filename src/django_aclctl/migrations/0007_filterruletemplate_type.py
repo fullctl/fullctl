@@ -6,13 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('django_aclctl', '0006_filterruletemplate'),
+        ("django_aclctl", "0006_filterruletemplate"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='filterruletemplate',
-            name='type',
-            field=models.CharField(choices=[('cisco-nexus', 'Cisco Nexus')], default='cisco-nexus', max_length=255),
+            model_name="filterruletemplate",
+            name="type",
+            field=models.CharField(
+                choices=[("cisco-nexus", "Cisco Nexus")],
+                default="cisco-nexus",
+                max_length=255,
+            ),
         ),
     ]

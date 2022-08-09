@@ -11,7 +11,7 @@ AclCtl is containerized with Docker. First we want to copy the example environme
 ```sh
 cp Ctl/dev/example.env Ctl/dev/.env
 ```
-Any of the env variables can be changed, and you should set your own secret key. 
+Any of the env variables can be changed, and you should set your own secret key.
 
 ### Authentication and accounts
 
@@ -34,7 +34,7 @@ PREFIXCTL_URL=https://dev6.20c.com:8045
 
 ### Building and starting
 
-You can launch the app via: 
+You can launch the app via:
 ```sh
 Ctl/dev/compose.sh build
 Ctl/dev/compose.sh up

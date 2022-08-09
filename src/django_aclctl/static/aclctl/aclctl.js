@@ -7,16 +7,34 @@ $ctl.application.Aclctl = $tc.extend(
       this.Application("aclctl");
       this.$c.header.app_slug = "prefix";
 
+      this.init_container("access_control_list", "access_control_lists");
+
       this.tool("filter_rules", () => {
         return new $ctl.application.Aclctl.FilterRules();
       });
       this.$t.filter_rules.activate();
 
+      $(this.$c.toolbar.$e.button_create_access_control_list).click(() => {
+        fullctl.aclctl.page('settings');
+        fullctl.aclctl.$t.settings.create_access_control_list();
+      });
+
+      $(this).one("no-containers", () => {
+        fullctl.aclctl.page('settings');
+        fullctl.aclctl.$t.settings.create_access_control_list();
+      });
+
       $($ctl).trigger("init_tools", [this]);
       $($ctl.application).trigger("aclctl-ready", [this]);
+    },
+
+    permission_ui : function() {
+      let $e = this.$c.toolbar.$e;
+      let org = $ctl.org.id;
+      $e.button_create_access_control_list.grainy_toggle(`access_control_list.${org}`, "c");
     }
   },
-  $ctl.application.Application
+  $ctl.application.ContainerApplication
 );
 
 $ctl.application.Aclctl.FilterRules = $tc.extend(
@@ -32,6 +50,11 @@ $ctl.application.Aclctl.FilterRules = $tc.extend(
           this.template("list", this.$e.body)
         );
       })
+
+      $(this.$w.list).on("api-read:before", (ev, ep, data) => {
+        data.access_control_list = fullctl.aclctl.access_control_list();
+      });
+
 
       $('[data-element="filter_rule_config"]').click(()=>{
         new $ctl.application.Aclctl.ModalFilterRuleConfig();
@@ -52,6 +75,17 @@ $ctl.application.Aclctl.FilterRules = $tc.extend(
         n.append($('<div>').text(data.src_prefix_set_name));
         return n;
       };
+
+      this.$w.list.formatters.dest_prefix = (v, data) => {
+        if(data.dest_type == "prefix")
+          return v;
+
+        var n = $('<div>')
+        n.append($('<label>').text("PrefixCtl"));
+        n.append($('<div>').text(data.dest_prefix_set_name));
+        return n;
+      };
+
 
       this.$w.list.formatters.priority = (v, data) => {
         var n = this.template("priority_inline_edit");
@@ -91,6 +125,7 @@ $ctl.application.Aclctl.FilterRules = $tc.extend(
 
     menu : function() {
       var menu = this.Tool_menu();
+
       menu.find('[data-element="button_add_filter_rule"]').click(() => {
         this.prompt_add_filter_rule();
       });
@@ -101,8 +136,12 @@ $ctl.application.Aclctl.FilterRules = $tc.extend(
     },
 
     activate : function() {
-      this.$w.list.load();
       return this.Tool_activate();
+    },
+
+    sync : function() {
+
+      this.$w.list.load();
     }
   },
   $ctl.application.Tool
@@ -118,6 +157,10 @@ $ctl.application.Aclctl.ModalFilterRule = $tc.extend(
 
       var modal = this;
       var title = "Add Filter Rule"
+
+      $(form).on("api-write:before", function(ev,ep,data,method) {
+        data.access_control_list = fullctl.aclctl.access_control_list();
+      });
 
       if(filter_rule) {
         form.fill(filter_rule)
@@ -143,6 +186,26 @@ $ctl.application.Aclctl.ModalFilterRule = $tc.extend(
         this.select_prefix_set.load(filter_rule.src_prefix_set);
         form.element.find('#tgl-src-prefix').hide();
         form.element.find('#tgl-src-prefix-set').show();
+      }
+
+
+      this.select_dest_type = new twentyc.rest.Select(form.element.find("#dest-type"));
+
+      $(this.select_dest_type.element).on("change", () => {
+        this.select_dest_prefix_set.load().then(()=>{});
+        var v = this.select_dest_type.element.val()
+        form.element.find('#tgl-dest-prefix-set,#tgl-dest-prefix').hide();
+        form.element.find('#tgl-dest-'+v).show();
+      });
+      this.select_dest_type.load(filter_rule ? filter_rule.dest_type : null).then(() => {
+      });
+
+      this.select_dest_prefix_set = new twentyc.rest.Select(form.element.find("#dest-prefix-set"));
+
+      if(filter_rule && filter_rule.dest_type == "prefix-set") {
+        this.select_dest_prefix_set.load(filter_rule.dest_prefix_set);
+        form.element.find('#tgl-dest-prefix').hide();
+        form.element.find('#tgl-dest-prefix-set').show();
       }
 
 
@@ -190,6 +253,11 @@ $ctl.application.Aclctl.FilterRuleTemplatePreview = $tc.extend(
     FilterRuleTemplatePreview: function(jq, type) {
       this.type = type;
       this.TemplatePreview(jq, $ctl.application.Aclctl.ModalFilterTemplateSelect, type);
+    },
+
+    format_request_url : function(url) {
+      console.log("URL", url);
+      return url.replace(/acl_tag/g, fullctl.aclctl.access_control_list_slug());
     },
 
     preview_payload: function() {
