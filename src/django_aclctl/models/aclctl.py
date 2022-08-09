@@ -43,7 +43,7 @@ RULE_PROTOCOLS = (
 def validate_ports(value):
     ports = value.replace(" - ", "-").split("-")
     if len(ports) > 2:
-        raise ValidationError("Currently only supports as ingle port, or a port range")
+        raise ValidationError("Currently only supports as single port or a port range")
     ports = [str(int(port)) for port in ports]
     return "-".join(ports) or None
 
