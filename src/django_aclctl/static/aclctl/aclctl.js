@@ -256,8 +256,7 @@ $ctl.application.Aclctl.FilterRuleTemplatePreview = $tc.extend(
     },
 
     format_request_url : function(url) {
-      console.log("URL", url);
-      return url.replace(/acl_tag/g, fullctl.aclctl.access_control_list_slug());
+      return url.replace(/acl_tag/g, fullctl.aclctl.access_control_list_slug()).replace(/\/\/$/,"/");
     },
 
     preview_payload: function() {
