@@ -453,6 +453,7 @@ fullctl.application.ContainerApplication = $tc.extend(
       var selector_name = "select_"+ref_tag;
 
       this.selector_name = selector_name;
+      this.title_base = window.document.title;
 
       this.$c.toolbar.widget(selector_name, ($e) => {
         var e = $e[selector_name];
@@ -484,6 +485,7 @@ fullctl.application.ContainerApplication = $tc.extend(
         } else {
           this.sync();
           this.sync_url(this.$c.toolbar.$e[selector_name].val());
+          this.sync_title(this.$c.toolbar.$e[selector_name].val());
         }
       });
 
@@ -531,6 +533,15 @@ fullctl.application.ContainerApplication = $tc.extend(
 
       this.sync();
       this.sync_url(id);
+      this.sync_title(id);
+    },
+
+    sync_title : function(id) {
+      var container = this.containers[id];
+      if(container)
+        window.document.title = this.title_base + " / " + container.slug;
+      else
+        window.document.title = this.title_base;
     },
 
     sync_url: function(id) {
