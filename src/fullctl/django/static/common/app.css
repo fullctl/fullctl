@@ -799,7 +799,7 @@ div.menu div.menu-deco-border {
   position: absolute;
   height: 2px;
   left: 15px;
-  right: -15px;
+  right: -12px;
   z-index: 10;
   top: 0px;
 }
@@ -837,6 +837,12 @@ div.list-th,
 .table td,
 .table th {
   border-top: none;
+  padding: 12px;
+}
+
+.table th {
+  vertical-align: bottom;
+  border-bottom: 2px solid #dee2e6;
 }
 
 .tool {
@@ -894,7 +900,7 @@ td.property {
 }
 
 div.list-body .secondary .property {
-  margin-left: -15px;
+  margin-left: calc(var(--bs-gutter-x) * -0.5);
 }
 
 div.list-body .secondary .property .transparent-field,
@@ -921,7 +927,7 @@ div.list-body .secondary button {
 }
 
 tr.secondary > td {
-  padding: 0px 15px;
+  padding: 0px calc(var(--bs-gutter-x) * .5);
 }
 
 .row.double-row > div.field > span {
@@ -1030,12 +1036,6 @@ div.inner-list > div {
   position: relative;
 }
 
-.prefix-container a[data-api-action="delete_prefix"] {
-  position: absolute;
-  right: 0;
-  padding-right: 8px;
-}
-
 .prefix-container a,
 .prefix-container span {
   display: inline-block;
@@ -1102,10 +1102,8 @@ h5.modal-title {
   line-height: 26px;
 }
 
-button.close {
+button.btn-close {
   text-shadow: none;
-  position: relative;
-  top: -40px;
   opacity: 1;
 }
 

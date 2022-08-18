@@ -102,7 +102,7 @@ fullctl.permissions = {{ permissions|safe }}
           <img src="{% static "common/icons/icon/org.svg" %}">
         </span>
 
-        <button data-element="button_select_org" class="button" type="button"  id="org-menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <button data-element="button_select_org" class="button" type="button"  id="org-menu" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         {{ request.org.display_name }}
         </button>
         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="org-menu">
@@ -139,7 +139,7 @@ fullctl.permissions = {{ permissions|safe }}
 
           {% if oauth_manages_org %}
 
-          <a class="dropdown-item" href="{{ account_service.urls.create_org }}?service={{ app_id }}">
+          <a class="dropdown-item" href="{{ account_service.urls.create_org }}">
             <span class="icon icon-add"></span>{% trans "Create Organization" %}</a>
           {% endif %}
         </div>
@@ -151,7 +151,7 @@ fullctl.permissions = {{ permissions|safe }}
         <span class="icon">
           <img src="{% static "common/icons/icon/user.svg" %}">
         </span>
-        <button data-element="button_account" class="button" type="button"  id="user-menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <button data-element="button_account" class="button" type="button"  id="user-menu" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         {{ request.user.username }}
         </button>
         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="user-menu">

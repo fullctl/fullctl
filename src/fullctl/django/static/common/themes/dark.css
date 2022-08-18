@@ -1,6 +1,15 @@
+:root {
+  --bs-body-color: #b8bbbc;
+  --bs-body-bg: #191f26;
+}
+
+.nav {
+  --bs-nav-link-hover-color: unset;
+}
+
 body {
-  background-color: #191f26;
-  color: #b8bbbc;
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
 }
 
 .inactive {
@@ -264,6 +273,10 @@ div.menu div.section.tabs .active {
   background-color: inherit;
 }
 
+.table th {
+  border-color: #dee2e6;
+}
+
 .modal-body .table tr.sub-row {
   background-color: #181818;
 }
@@ -438,11 +451,11 @@ h5.modal-title {
   color: #fff;
 }
 
-button.close {
+button.btn-close {
   color: #fff !important;
 }
 
-button.close:hover {
+button.btn-close:hover {
   color: #fff !important;
 }
 
@@ -723,7 +736,7 @@ a.nav-link {
 
 span.tag {
   background-color: #29323b;
-  color: #b8bbbc;
+  color: var(--bs-body-color);
 }
 
 span.tag-name {
