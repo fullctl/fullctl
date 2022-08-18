@@ -14,16 +14,16 @@
   <div class="row controls" style="display:flex">
     <div class="col-12">
 
-      <div class="row form-group">
+      <div class="row mb-3">
         <div class="col-12" data-api-submit="yes">
-          <label for="filter-rule-template-name">{% trans "Name" %}</label>
+          <label for="filter-rule-template-name" class="form-label">{% trans "Name" %}</label>
           <input type="text" class="form-control" id="filter-rule-template-name" name="name" />
         </div>
       </div>
       <h5>{% trans "Device type" %}</h5>
-      <div class="row form-group">
+      <div class="row mb-3">
         <div class="col-12" data-api-submit="yes">
-          <label for="filter-rule-template-type">{% trans "Type" %}</label>
+          <label for="filter-rule-template-type" class="form-label">{% trans "Type" %}</label>
           <span class="modal-control">
           <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
           <select class="form-control" id="filter-rule-template-type" name="type">
@@ -33,9 +33,9 @@
         </div>
       </div>
 
-      <div class="row form-group" style="height:300px">
+      <div class="row mb-3" style="height:300px">
         <div class="col-12" data-api-submit="yes">
-          <label for="filter-rule-template-body">{% trans "Template Body" %}</label>
+          <label for="filter-rule-template-body" class="form-label">{% trans "Template Body" %}</label>
           <textarea type="text" data-api-base="{% url "default-template" template_type="cisco-nexus" %}" value="32" style="height:93%" class="form-control" id="filter-rule-template-body" name="body" /></textarea>
         </div>
       </div>
