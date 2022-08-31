@@ -19,7 +19,8 @@ $ctl.application.Aclctl = $tc.extend(
         fullctl.aclctl.$t.settings.create_access_control_list();
       });
 
-      $(this).one("no-containers", () => {
+      $(this).on("no-containers", () => {
+        fullctl.aclctl.hide_page('overview');
         fullctl.aclctl.page('settings');
         fullctl.aclctl.$t.settings.create_access_control_list();
       });

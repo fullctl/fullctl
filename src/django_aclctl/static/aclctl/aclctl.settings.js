@@ -98,6 +98,7 @@ $ctl.application.Aclctl.Settings = $tc.extend(
         console.log("response", response, r_data)
         $ctl.aclctl.refresh().then(()=>{
           $ctl.aclctl.select_access_control_list(response.first().id);
+          fullctl.aclctl.show_page('overview');
           fullctl.aclctl.page('overview');
         });
       });
@@ -118,7 +119,8 @@ $ctl.application.Aclctl.Settings = $tc.extend(
         $ctl.aclctl.refresh().then(() => {
           $ctl.aclctl.unload_access_control_list(access_control_list.id);
           $ctl.aclctl.select_access_control_list();
-          $ctl.aclctl.page("overview");
+          if ($ctl.aclctl.get_page("overview").css("display") != "none")
+            $ctl.aclctl.page("overview");
         });
       });
 
