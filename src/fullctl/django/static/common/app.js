@@ -436,8 +436,38 @@ fullctl.application.Application = $tc.define(
       }
     },
 
+    /**
+     * Gets the element representing the page in the pages menu.
+     * 
+     * @method get_page
+     * @param {String} page Value set for aria-controls
+     */
+    get_page : function(page) {
+      return $('[data-component="pages"]').find('[aria-controls="'+page+'"]');
+    },
+
     page : function(page) {
-      $('[data-component="pages"]').find('[aria-controls="'+page+'"]').tab('show');
+      this.get_page(page).tab('show');
+    },
+
+    /**
+     * Makes visible the page in the pages menu so you can navigate to the tab
+     * 
+     * @method show_page
+     * @param {String} page Value set for aria-controls
+     */
+    show_page : function(page) {
+      this.get_page(page).show();
+    },
+
+    /**
+     * Hides the page in the pages menu so you can't navigate to the tab
+     * 
+     * @method hide_page
+     * @param {String} page Value set for aria-controls
+     */
+    hide_page : function(page) {
+      this.get_page(page).hide();
     }
   }
 );
