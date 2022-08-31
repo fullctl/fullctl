@@ -438,7 +438,7 @@ fullctl.application.Application = $tc.define(
 
     /**
      * Gets the element representing the page in the pages menu.
-     * 
+     *
      * @method get_page
      * @param {String} page Value set for aria-controls
      */
@@ -452,7 +452,7 @@ fullctl.application.Application = $tc.define(
 
     /**
      * Makes visible the page in the pages menu so you can navigate to the tab
-     * 
+     *
      * @method show_page
      * @param {String} page Value set for aria-controls
      */
@@ -462,7 +462,7 @@ fullctl.application.Application = $tc.define(
 
     /**
      * Hides the page in the pages menu so you can't navigate to the tab
-     * 
+     *
      * @method hide_page
      * @param {String} page Value set for aria-controls
      */
