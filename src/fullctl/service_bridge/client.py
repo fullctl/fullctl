@@ -174,7 +174,7 @@ class Bridge:
 
     def create(self, data):
         url = f"{self.url_prefix}{self.ref_tag}"
-        data = self.post(url, data=data)
+        data = self.post(url, json=data)
         return data
 
     def destroy(self, obj):
@@ -184,12 +184,12 @@ class Bridge:
 
     def update(self, obj, data):
         url = f"{self.url_prefix}{self.ref_tag}/{obj.id}"
-        data = self.put(url, data=data)
+        data = self.put(url, json=data)
         return data
 
     def partial_update(self, obj, data):
         url = f"{self.url_prefix}{self.ref_tag}/{obj.id}"
-        data = self.patch(url, data=data)
+        data = self.patch(url, json=data)
         return data
 
     def update_if_changed(self, obj, data):
