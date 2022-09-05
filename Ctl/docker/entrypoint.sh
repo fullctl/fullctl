@@ -34,7 +34,7 @@ case "$@" in
     export RELEASE_ENV=run_tests
     export PDBCTL_URL=test://pdbctl
     cd main
-    pytest tests/ -vv --cov-report=term-missing --cov-report=xml --cov=django_aclctl --cov=aclctl
+    pytest tests/ -vv
     ;;
   "test_mode" )
     source venv/bin/activate

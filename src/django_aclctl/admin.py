@@ -1,6 +1,5 @@
 from django.contrib import admin
-from fullctl.django.admin import BaseAdmin, BaseTabularAdmin
-from fullctl.django.models.concrete import OrganizationUser
+from fullctl.django.admin import BaseAdmin
 
 from django_aclctl.models import AccessControlList, FilterRule, FilterRuleTemplate
 

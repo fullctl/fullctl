@@ -28,4 +28,4 @@ application = get_wsgi_application()
 # from helloworld.wsgi import HelloWorldApplication
 # application = HelloWorldApplication(application)
 
-from django.conf import settings
+from django.conf import settings  # noqa

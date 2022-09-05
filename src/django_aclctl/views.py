@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.http import Http404
 from django.shortcuts import redirect, render
 from fullctl.django.decorators import load_instance, require_auth
 
@@ -8,7 +9,6 @@ from django_aclctl.models import AccessControlList
 
 
 def make_env(request, **kwargs):
-    org = kwargs.get("org")
     r = {"env": settings.RELEASE_ENV, "version": settings.PACKAGE_VERSION}
     r.update(**kwargs)
 
