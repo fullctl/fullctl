@@ -48,8 +48,25 @@ fullctl.permissions = {{ permissions|safe }}
 </script>
 
 {% block "header" %}
+
 <div class="container-fluid header-outer">
   <div class="top-border {{ request.app_id }} app_bg"></div>
+
+  {% if request.impersonating %}
+  <div class="row">
+    <div class="col-12 col-sm-2"></div>
+    <div class="col-12 col-sm-8">
+      <div class="alert alert-info center">
+      {% blocktrans with user=request.user logged_in_user=request.impersonating.superuser %}
+      You are currently impersonating <b>{{ user }}</b> - logged in as <b>{{ logged_in_user }}</b>
+      {% endblocktrans %}
+      </div>
+    </div>
+    <div class="col-12 col-sm-2"></div>
+  </div>
+  {% endif %}
+
+
   <div class="row header" data-component="header">
 
     <!-- logo and app switcher -->

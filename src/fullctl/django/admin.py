@@ -1,5 +1,8 @@
 import reversion
+from django.conf.urls import url
 from django.contrib import admin
+from django.http import HttpResponseForbidden
+from django.shortcuts import redirect
 from django_handleref.admin import VersionAdmin
 
 import fullctl.django.auditlog as auditlog
@@ -117,6 +120,47 @@ class AuditLogAdmin(admin.ModelAdmin):
         elif obj and obj.object_id:
             return "<deleted>"
         return ""
+
+
+class UrlActionMixin:
+    def make_redirect(self, obj, action):
+        opts = obj.model._meta
+        return redirect(f"admin:{opts.app_label}_{opts.model_name}_changelist")
+
+    def actions_view(self, request, object_id, action, **kwargs):
+        """
+        Allows one to call any actions defined in this model admin
+        to be called via an admin view placed at <model_name>/<id>/<action>/<action_name>.
+        """
+        if not request.user.is_superuser:
+            return HttpResponseForbidden(request)
+
+        obj = self.get_queryset(request).filter(pk=object_id)
+        if obj.exists():
+            redir = self.make_redirect(obj, action)
+            action = self.get_action(action)
+            if action:
+                action[0](self, request, obj)
+                return redir
+        return redirect(
+            "admin:%s_%s_changelist"
+            % (obj.model._meta.app_label, obj.model._meta.model_name)
+        )
+
+    def get_urls(self):
+        """
+        Adds the actions view as a subview of this model's admin views.
+        """
+        info = self.model._meta.app_label, self.model._meta.model_name
+
+        urls = [
+            url(
+                r"^(\d+)/action/([\w]+)/$",
+                self.admin_site.admin_view(self.actions_view),
+                name="%s_%s_actions" % info,
+            ),
+        ] + super().get_urls()
+        return urls
 
 
 @admin.register(ServiceBridgeAction)

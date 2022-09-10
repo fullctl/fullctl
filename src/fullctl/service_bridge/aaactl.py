@@ -2,7 +2,7 @@ try:
     from django.conf import settings
 
     DEFAULT_SERVICE_KEY = settings.SERVICE_KEY
-except ImportError:
+except (ImportError, AttributeError):
     DEFAULT_SERVICE_KEY = ""
 
 from fullctl.service_bridge.client import Bridge, DataObject
@@ -53,3 +53,9 @@ class ServiceApplication(Aaactl):
     class Meta(Aaactl.Meta):
         ref_tag = "service_application"
         data_object_cls = ServiceApplicationObject
+
+
+class User(Aaactl):
+    class Meta(Aaactl.Meta):
+        ref_tag = "user"
+        data_object_cls = AaactlEntity
