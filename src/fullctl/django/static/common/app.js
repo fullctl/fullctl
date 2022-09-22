@@ -419,6 +419,17 @@ fullctl.application.Application = $tc.define(
       $('[data-grainy-remove]').each(function() {
         $(this).grainy_toggle($(this).data("grainy-remove"), "r");
       });
+
+    },
+
+    autoload_page : function() {
+      var hash = window.location.hash;
+      if(hash) {
+        hash = hash.substr(1);
+        if(this.get_page(hash)) {
+          this.page(hash);
+        }
+      }
     },
 
     tool : function(name, fn) {
@@ -434,6 +445,7 @@ fullctl.application.Application = $tc.define(
           this.$t[i].sync(app);
         }
       }
+
     },
 
     /**
