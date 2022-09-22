@@ -18,8 +18,10 @@ SOURCE_MAP = {
     "as_set": {"pdbctl": pdbctl.Network, "peerctl": peerctl.Network},
 }
 
+
 class ReferenceNotSetError(ValueError):
     pass
+
 
 class ReferenceNotFoundError(KeyError):
     pass

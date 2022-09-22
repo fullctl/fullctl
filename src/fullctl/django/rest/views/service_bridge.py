@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import viewsets
 from rest_framework.response import Response
 
-from fullctl.django.models import Organization, Instance
+from fullctl.django.models import Instance, Organization
 from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.decorators import grainy_endpoint
 from fullctl.django.rest.serializers.service_bridge import (
@@ -95,7 +95,6 @@ class StatusViewSet(SystemViewSet):
         import fullctl.service_bridge.devicectl as devicectl
 
         return devicectl.Ixctl(cache_duration=1).heartbeat()
-
 
 
 class DataViewSet(viewsets.ModelViewSet):

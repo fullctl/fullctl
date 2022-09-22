@@ -42,7 +42,6 @@ class Device(Devicectl):
     class Meta(Devicectl.Meta):
         ref_tag = "device"
 
-
     def request_dummy_device(self, org_slug, name, purpose):
 
         device = self.first(name=name, org_slug=org_slug)
@@ -50,12 +49,14 @@ class Device(Devicectl):
         if device:
             return device
 
-        device = self.create({
-            "name": name,
-            "description": f"{purpose}",
-            "org": org_slug,
-            "type": "dummy"
-        })
+        device = self.create(
+            {
+                "name": name,
+                "description": f"{purpose}",
+                "org": org_slug,
+                "type": "dummy",
+            }
+        )
 
         return device[0]
 
@@ -69,16 +70,20 @@ class Port(Devicectl):
     class Meta(Devicectl.Meta):
         ref_tag = "port"
 
-    def request_dummy_ports(self, org_slug, ports, name_prefix, device_type, member_id_arg="id"):
-        return self.post("data/port/request_dummy_ports", json={
-            "org": org_slug,
-            "name_prefix": name_prefix,
-            "device_type": device_type,
-            "ports": ports}
+    def request_dummy_ports(
+        self, org_slug, ports, name_prefix, device_type, member_id_arg="id"
+    ):
+        return self.post(
+            "data/port/request_dummy_ports",
+            json={
+                "org": org_slug,
+                "name_prefix": name_prefix,
+                "device_type": device_type,
+                "ports": ports,
+            },
         )
 
 
 class PortInfo(Devicectl):
     class Meta(Devicectl.Meta):
         ref_tag = "port_info"
-
