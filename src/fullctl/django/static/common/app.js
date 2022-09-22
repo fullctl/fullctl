@@ -420,6 +420,12 @@ fullctl.application.Application = $tc.define(
         $(this).grainy_toggle($(this).data("grainy-remove"), "r");
       });
 
+
+      $('[data-bs-toggle="tab"]').on('show.bs.tab', function() {
+        window.history.replaceState({}, document.title, $(this).attr("href"));
+      });
+
+
     },
 
     autoload_page : function() {
