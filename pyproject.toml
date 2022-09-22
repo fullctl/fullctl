@@ -73,6 +73,7 @@ pyupgrade = ">=2.19"
 markdown = "*"
 markdown-include = ">=0.5,<1"
 mkdocs = "^1.2.3"
+uritemplate = "*"
 
 # ctl
 ctl = "^1"

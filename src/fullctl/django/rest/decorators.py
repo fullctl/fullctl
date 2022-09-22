@@ -1,3 +1,5 @@
+from functools import wraps
+
 import reversion
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -147,6 +149,7 @@ class grainy_endpoint(base):
 
         inner.__name__ = fn.__name__
 
+        @wraps(fn)
         def outer(self, request, *args, **kwargs):
 
             """

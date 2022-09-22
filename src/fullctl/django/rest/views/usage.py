@@ -14,10 +14,6 @@ from fullctl.django.rest.usage import REGISTERED
 @route
 class Usage(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericViewSet):
 
-    """
-    Manage user's organizations
-    """
-
     serializer_class = Serializers.usage
     queryset = models.Organization.objects.all()
 
@@ -27,8 +23,7 @@ class Usage(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericViewSet):
     def list(self, request, org, *args, **kwargs):
 
         """
-        list the organizations that the user belongs
-        to or has permissions to
+        List organization's usage for metered apis
         """
 
         data = []
