@@ -17,6 +17,10 @@ from django_aclctl.rest.serializers.aclctl import Serializers
 @route
 class AccessControlList(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericViewSet):
 
+    """
+    Manage access-control-lists
+    """
+
     serializer_class = Serializers.access_control_list
     queryset = models.AccessControlList.objects.all()
     ref_tag = "access_control_list"
@@ -25,6 +29,10 @@ class AccessControlList(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVie
 
     @grainy_endpoint(namespace="access_control_list.{request.org.permission_id}")
     def list(self, request, org, instance, *args, **kwargs):
+
+        """
+        List all access-control-lists for the specified organization
+        """
 
         queryset = models.AccessControlList.objects.filter(instance=instance).order_by(
             "name"
@@ -38,6 +46,11 @@ class AccessControlList(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVie
     @auditlog()
     @grainy_endpoint(namespace="access_control_list.{request.org.permission_id}")
     def create(self, request, org, instance, auditlog=None, *args, **kwargs):
+
+        """
+        Creates a new access-control-list
+        """
+
         data = request.data
         data["instance"] = instance.id
         serializer = Serializers.access_control_list(data=data)
@@ -59,6 +72,11 @@ class AccessControlList(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVie
         namespace="access_control_list.{request.org.permission_id}.{access_control_list.pk}"
     )
     def retrieve(self, request, org, access_control_list, instance, *args, **kwargs):
+
+        """
+        Retrieve the specified access-control-list
+        """
+
         serializer = Serializers.access_control_list(
             instance=access_control_list,
             many=False,
@@ -85,6 +103,10 @@ class AccessControlList(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVie
         *args,
         **kwargs
     ):
+
+        """
+        Update the specified access-control-list
+        """
 
         data = request.data
         data["instance"] = instance.id
@@ -121,13 +143,18 @@ class AccessControlList(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVie
         *args,
         **kwargs
     ):
+
+        """
+        Delete the specified access-control-list
+        """
+
         access_control_list.delete()
         access_control_list.id = request.data.get("id")
         return Response(
             Serializers.access_control_list(instance=access_control_list).data
         )
 
-    @action(detail=True, methods=["GET"])
+    @action(detail=True, methods=["GET"], serializer_class=Serializers.filter_rule)
     @load_object(
         "access_control_list",
         models.AccessControlList,
@@ -138,6 +165,11 @@ class AccessControlList(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVie
     def filter_rules(
         self, request, org, instance, access_control_list, *args, **kwargs
     ):
+
+        """
+        List all filter rules defined in the specified access-control-list
+        """
+
         queryset = models.FilterRule.objects.filter(
             access_control_list=access_control_list
         ).order_by("priority")

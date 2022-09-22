@@ -56,11 +56,18 @@ class AccessControlList(HandleRefModel):
     """
 
     instance = models.ForeignKey(
-        Instance, related_name="access_control_lists", on_delete=models.CASCADE
+        Instance,
+        related_name="access_control_lists",
+        on_delete=models.CASCADE,
+        help_text=_("Id of your organization's aclctl instance"),
     )
 
-    name = models.CharField(max_length=255)
-    slug = models.SlugField(default="list")
+    name = models.CharField(
+        max_length=255, help_text=_("A user friendly name for the list")
+    )
+    slug = models.SlugField(
+        default="list", help_text=_("A unique url-friendly identifier for the list")
+    )
 
     class Meta:
         db_table = "aclctl_access_control_list"
@@ -88,27 +95,81 @@ class FilterRule(HandleRefModel):
     """
 
     access_control_list = models.ForeignKey(
-        AccessControlList, on_delete=models.CASCADE, related_name="filter_rules"
+        AccessControlList,
+        on_delete=models.CASCADE,
+        related_name="filter_rules",
+        help_text=_("The filter rule is defined in this access control list"),
     )
 
-    priority = models.IntegerField(default=50)
+    priority = models.IntegerField(
+        default=50,
+        help_text=_(
+            "Ordering priority of the filter rule. When the filter rule configuration is later rendered this will dictate the rule's place in the output"
+        ),
+    )
 
     action = models.CharField(max_length=255, choices=RULE_ACTIONS, default="permit")
     protocol = models.CharField(max_length=255, choices=RULE_PROTOCOLS, default="tcp")
 
     src_port = models.CharField(
-        max_length=255, null=True, blank=True, validators=(validate_ports,)
+        max_length=255,
+        null=True,
+        blank=True,
+        validators=(validate_ports,),
+        help_text=_("Source port"),
     )
-    src_prefix = CidrAddressField(null=True, blank=True)
-    src_prefix_set = PrefixSet(null=True, blank=True)
-    src_type = models.CharField(max_length=255, default="prefix", choices=SOURCE_TYPES)
+    src_prefix = CidrAddressField(
+        null=True,
+        blank=True,
+        help_text=_(
+            "Source prefix - if src_type is set to `prefix` this property is used for the source prefix. Should be a valid ipv4 or ipv6 prefix"
+        ),
+    )
+    src_prefix_set = PrefixSet(
+        null=True,
+        blank=True,
+        help_text=_(
+            "Source prefix set through prefixCtl - if src_type is set to `prefix_set` this property is used for the source prefix(es). Should be the id of one of your prefixCtl prefix sets"
+        ),
+    )
+    src_type = models.CharField(
+        max_length=255,
+        default="prefix",
+        choices=SOURCE_TYPES,
+        help_text=_(
+            "Determines whether the source prefix comes from the `src_prefix` property or the `src_prefix_set` property"
+        ),
+    )
 
     dest_port = models.CharField(
-        max_length=255, null=True, blank=True, validators=(validate_ports,)
+        max_length=255,
+        null=True,
+        blank=True,
+        validators=(validate_ports,),
+        help_text=_("Destination port"),
     )
-    dest_prefix = CidrAddressField(null=True, blank=True)
-    dest_prefix_set = PrefixSet(null=True, blank=True)
-    dest_type = models.CharField(max_length=255, default="prefix", choices=SOURCE_TYPES)
+    dest_prefix = CidrAddressField(
+        null=True,
+        blank=True,
+        help_text=_(
+            "Destination prefix - if dest_type is set to `prefix` this property is used for the destination prefix. Should be a valid ipv4 or ipv6 prefix"
+        ),
+    )
+    dest_prefix_set = PrefixSet(
+        null=True,
+        blank=True,
+        help_text=_(
+            "Destination prefix set through prefixCtl - if dest_type is set to `prefix_set` this property is used for the destination prefix(es). Should be the id of one of your prefixCtl prefix sets"
+        ),
+    )
+    dest_type = models.CharField(
+        max_length=255,
+        default="prefix",
+        choices=SOURCE_TYPES,
+        help_text=_(
+            "Determines whether the destination prefix comes from the `dest_prefix` property or the `dest_prefix_set` property"
+        ),
+    )
 
     # TODO device reference either through devicectl
     # or nautobot
@@ -178,10 +239,18 @@ class FilterRule(HandleRefModel):
 @reversion.register
 class FilterRuleTemplate(TemplateModel):
 
-    type = models.CharField(max_length=255, choices=DEVICE_TYPES, default="cisco-nexus")
+    type = models.CharField(
+        max_length=255,
+        choices=DEVICE_TYPES,
+        default="cisco-nexus",
+        help_text=_("Device type"),
+    )
 
     instance = models.ForeignKey(
-        Instance, related_name="filter_rule_templates", on_delete=models.CASCADE
+        Instance,
+        related_name="filter_rule_templates",
+        on_delete=models.CASCADE,
+        help_text=_("Id of your organization's aclctl instance"),
     )
 
     class HandleRef:
