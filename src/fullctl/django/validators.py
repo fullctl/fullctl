@@ -1,4 +1,5 @@
 import re
+import ipaddress
 
 from django.core.exceptions import ValidationError
 
@@ -41,3 +42,19 @@ def validate_alphanumeric_list(value):
 
     for item in value:
         validate_alphanumeric(item)
+
+
+def ip_address_string(value):
+    """
+    Takes an ip address string and returns a validated normalized
+    ip address string.
+
+    This will strep the net mask if it is provided
+    """
+
+    if not value:
+        return value
+    value = str(value)
+    if "/" in value:
+        return str(ipaddress.ip_network(value)[0])
+    return str(ipaddress.ip_address(value))
