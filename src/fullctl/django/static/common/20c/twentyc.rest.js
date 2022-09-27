@@ -1251,7 +1251,6 @@ twentyc.rest.Button = twentyc.cls.extend(
  * - data-drf-name: relevant if load type is "drf-choices". Specifies the
  *   serializer field name, will default to "name" attribute if not specified.
  * - data-null-option: specify to add a "empty" value option with a label
- * - data-change-confirm: specify a confirmation prompt for selecting a different option
  *
  * @class Select
  * @extends twentyc.rest.Input
@@ -1272,20 +1271,7 @@ twentyc.rest.Select = twentyc.cls.extend(
       this.drf_name = jq.data("drf-name") || jq.attr("name");
       this.null_option = jq.data("null-option")
       this.proxy_data = jq.data("proxy-data")
-      this.change_confirm = jq.data("change-confirm")
       this.Input(jq);
-
-      this.element.on("change", (ev) => {
-        if(this.change_confirm) {
-          var b = confirm(this.change_confirm);
-          if(!b) {
-            ev.stopPropagation();
-            ev.preventDefault();
-            return false;
-          }
-        }
-      });
-
     },
 
     payload: function() {
