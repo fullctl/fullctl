@@ -56,5 +56,5 @@ def ip_address_string(value):
         return value
     value = str(value)
     if "/" in value:
-        return str(ipaddress.ip_network(value)[0])
+        return str(ipaddress.ip_interface(value))
     return str(ipaddress.ip_address(value))
