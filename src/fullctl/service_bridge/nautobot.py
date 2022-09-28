@@ -46,6 +46,7 @@ class Nautobot(Bridge):
     def ux_url(self, id):
         return f"{self.host}/{self.ref_tag}/{id}/?tab=main"
 
+
 class DeviceTypeObject(NautobotObject):
     description = "Nautobot Device Type"
 
@@ -65,8 +66,10 @@ class Device(Nautobot):
         ref_tag = "dcim/devices"
         data_object_cls = DeviceObject
 
+
 class InterfaceObject(NautobotObject):
     description = "Nautobot Interface"
+
 
 class Interface(Nautobot):
     class Meta(Nautobot.Meta):
@@ -76,6 +79,7 @@ class Interface(Nautobot):
 
 class IPAddressObject(NautobotObject):
     description = "Nautobot IP-Address"
+
 
 class IPAddress(Nautobot):
     class Meta(Nautobot.Meta):
