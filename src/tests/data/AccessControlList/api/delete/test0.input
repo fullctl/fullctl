@@ -1,0 +1,10 @@
+{
+	"acl-keep": {
+	  "name": "ACL-keep",
+	  "slug": "acl-keep"
+	},
+	"acl-delete": {
+	  "name": "ACL-delete",
+	  "slug": "acl-delete"
+	}
+}

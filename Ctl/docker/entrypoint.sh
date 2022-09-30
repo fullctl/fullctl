@@ -36,6 +36,14 @@ case "$@" in
     cd main
     pytest tests/ -vv
     ;;
+  "run_tests_cov" )
+    source venv/bin/activate
+    export DJANGO_SETTINGS_MODULE=aclctl.settings
+    export RELEASE_ENV=run_tests
+    export PDBCTL_URL=test://pdbctl
+    cd main
+    pytest -vs --cov=django_aclctl --cov-report=term-missing --cov-report=xml tests/
+    ;;
   "test_mode" )
     source venv/bin/activate
     cd main

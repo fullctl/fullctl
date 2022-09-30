@@ -15,6 +15,7 @@ services:
       context: ../..
       dockerfile: Dockerfile
     command: "runserver 0.0.0.0:8000"
+    user: root
     env_file: .env
     ports:
       - "${DJANGO_PORT:-8000}:8000"

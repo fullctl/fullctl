@@ -1,0 +1,4 @@
+{
+    "status": 200,
+    "response": {"data": [{"instance": 1, "name": "ACL-test", "slug": "acl-test", "id": 1, "grainy": "access_control_list.1.1", "status": "ok"}], "errors": {}, "profiling": {"queries": 0}}
+}
