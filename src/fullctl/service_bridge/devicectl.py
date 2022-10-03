@@ -87,3 +87,12 @@ class Port(Devicectl):
 class PortInfo(Devicectl):
     class Meta(Devicectl.Meta):
         ref_tag = "port_info"
+
+class VirtualPort(Devicectl):
+    class Meta(Devicectl.Meta):
+        ref_tag = "virtual_port"
+
+class IPAddress(Devicectl):
+    class Meta(Devicectl.Meta):
+        ref_tag = "ip"
+

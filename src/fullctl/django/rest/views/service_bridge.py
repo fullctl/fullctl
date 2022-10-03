@@ -190,11 +190,7 @@ class DataViewSet(viewsets.ModelViewSet):
     @grainy_endpoint("service_bridge")
     def create(self, request, *args, **kwargs):
 
-        data = request.data.copy()
-        org_slug = data.get("org")
-        if org_slug:
-            org = Organization.objects.get(slug=org_slug)
-            data["instance"] = Instance.get_or_create(org).id
+        data = self.prepare_write_data(request)
 
         serializer = self.serializer_class(data=data)
         if not serializer.is_valid():
@@ -209,14 +205,20 @@ class DataViewSet(viewsets.ModelViewSet):
 
     @grainy_endpoint("service_bridge")
     def partial_update(self, request, pk, *args, **kwargs):
+
+        data = self.prepare_write_data(request)
         instance = self.get_object()
 
-        serializer = self.serializer_class(instance, data=request.data, partial=True)
+        serializer = self.serializer_class(instance, data=data, partial=True)
 
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
 
         serializer.save()
+
+        if hasattr(self, "after_update"):
+            self.after_update(instance, data)
+
         return Response(serializer.data)
 
     @grainy_endpoint("service_bridge")
