@@ -1314,6 +1314,7 @@ twentyc.rest.Select = twentyc.cls.extend(
         $(this.proxy_data).find('option').each(function() {
           select.append($(this).clone());
         });
+        $(this).trigger("load:after", [select, {}, this]);
         return new Promise((resolve, reject) => {
           resolve();
         });
