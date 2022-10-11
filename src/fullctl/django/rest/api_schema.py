@@ -59,7 +59,7 @@ class BaseSchema(AutoSchema):
         We override this so operation ids become "{op} {reftag}"
         """
 
-        serializer, model = self.get_classes(path, method)
+        # serializer, model = self.get_classes(path, method)
         # op_type = self.get_operation_type(path, method)
         method_name = getattr(self.view, "action", method.lower())
 
@@ -70,7 +70,7 @@ class BaseSchema(AutoSchema):
         else:
             action = self.method_mapping[method.lower()]
 
-        name = self.get_operation_id_base(path, method, action)
+        # name = self.get_operation_id_base(path, method, action)
 
         name = self.view.__class__.__name__
 
