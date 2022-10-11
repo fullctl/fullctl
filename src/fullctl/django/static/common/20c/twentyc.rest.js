@@ -1804,7 +1804,7 @@ twentyc.rest.List = twentyc.cls.extend(
       Specific to django-rest-framework: we add "ordering" as a query
       parameter to the API calls
       */
-      this.payload = function(){return {ordering: this.ordering}}
+      this.payload = function(){return {ordering: this.ordering};};
 
       console.log("sort init", this);
     },
