@@ -24,7 +24,7 @@ services:
         max-size: 100m
         max-file: "3"
     volumes:
-      - ../../src:/srv/aclctl/main
+      - ../../src:/srv/service/main:Z
     depends_on:
       - postgres
 
