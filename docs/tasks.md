@@ -27,10 +27,10 @@ from fullctl.django.tasks import register
 @register
 class SumTask(Task):
 
-    # required 
+    # required
     class Meta:
         proxy = True
-    
+
     # required
     class HandleRef:
         tag = "task_sum"
@@ -68,7 +68,7 @@ class MyTask(Task):
 
     class Meta:
         proxy = True
-    
+
     class HandleRef:
         tag = "task_my"
 
@@ -99,7 +99,7 @@ Allow a maximum of 1 pending instances to be up for the task.
 class MyTask(Task):
     class Meta:
         proxy = True
-    
+
     class HandleRef:
         tag = "task_my"
 
@@ -118,12 +118,12 @@ by the first task argument
 class MyTask(Task):
     class Meta:
         proxy = True
-    
+
     class HandleRef:
         tag = "task_my"
 
     class TaskMeta:
-        limit = 1 
+        limit = 1
 
     @property
     def generate_limit_id(self):

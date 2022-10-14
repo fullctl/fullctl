@@ -40,7 +40,7 @@ ctl:
           - Ctl/tmplvars.yaml
         ignore:
           - \.git/
-    
+
     # command to remove temporary files
 
     - name: clean
@@ -68,7 +68,7 @@ ctl:
 
           - stage: python_template
             plugin: python_template
-    
+
 
     - type: changelog
       name: changelog

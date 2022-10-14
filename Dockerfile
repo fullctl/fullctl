@@ -20,18 +20,16 @@ ARG run_deps=" \
     postgresql-libs \
     "
 # env to pass to sub images
-ENV BUILD_DEPS=$build_deps
 ENV RUN_DEPS=$run_deps
 ENV SERVICE_HOME=$install_to
 ENV VIRTUAL_ENV=$virtual_env
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-ENV POETRY_VERSION=1.1.11
-
+ENV POETRY_VERSION=1.1.13
 
 # build container
 FROM base as builder
 
-RUN apk --update --no-cache add $BUILD_DEPS
+RUN apk upgrade --nocache --available && apk --no-cache add $build_deps
 
 # Use Pip to install Poetry
 RUN pip install "poetry==$POETRY_VERSION"
@@ -41,9 +39,9 @@ RUN python3 -m venv "$VIRTUAL_ENV"
 
 WORKDIR /build
 
-
 # individual files here instead of COPY . . for caching
 COPY pyproject.toml poetry.lock ./
 RUN poetry install --no-root
+
 # Need to upgrade pip and wheel within Poetry for all its installs
 RUN poetry run pip install --upgrade pip wheel

@@ -1314,6 +1314,7 @@ twentyc.rest.Select = twentyc.cls.extend(
         $(this.proxy_data).find('option').each(function() {
           select.append($(this).clone());
         });
+        $(this).trigger("load:after", [select, {}, this]);
         return new Promise((resolve, reject) => {
           resolve();
         });
@@ -1732,6 +1733,7 @@ twentyc.rest.List = twentyc.cls.extend(
         var method = ($(this).data("api-method") || "POST").toLowerCase();
         var action = $(this).data("api-action").toLowerCase();
         var callback = $(this).data("api-callback");
+        var callback_name = $(this).data("api-callback");
         var confirm_set = $(this).data("confirm")
 
         if(callback)
@@ -1749,6 +1751,8 @@ twentyc.rest.List = twentyc.cls.extend(
           )
           widget[method](_action, row.data("apiobject")).then(
             callback, widget.action_failure.bind(widget)
+          ).then(
+            $(widget).trigger("api_callback_"+callback_name+":after")
           );
         });
       });
@@ -1800,9 +1804,7 @@ twentyc.rest.List = twentyc.cls.extend(
       Specific to django-rest-framework: we add "ordering" as a query
       parameter to the API calls
       */
-      this.payload = function(){return {ordering: this.ordering}}
-
-      console.log("sort init", this);
+      this.payload = function(){return {ordering: this.ordering};};
     },
 
     sort: function(target, secondary) {

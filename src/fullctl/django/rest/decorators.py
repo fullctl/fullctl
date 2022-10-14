@@ -1,3 +1,5 @@
+from functools import wraps
+
 import reversion
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -7,6 +9,7 @@ from rest_framework.response import Response
 
 from fullctl.django.auth import Permissions, RemotePermissions
 from fullctl.django.models import Instance, Organization
+from fullctl.django.rest.authentication import APIKey
 from fullctl.django.rest.core import HANDLEREF_FIELDS
 from fullctl.service_bridge.client import AaaCtl
 
@@ -121,7 +124,14 @@ class grainy_endpoint(base):
             enable_apply_perms=decorator.enable_apply_perms,
             **decorator.kwargs,
         )
-        def wrapped(self, request, *args, **kwargs):
+        def inner(self, request, *args, **kwargs):
+
+            """
+            inner wrapper, called after grainy permissioning logic ran
+
+            handles auth requirement, loading of organization instance
+            and opening of reversion context
+            """
 
             if decorator.require_auth and not request.user.is_authenticated:
                 return Response(status=401)
@@ -137,18 +147,40 @@ class grainy_endpoint(base):
 
                 return fn(self, request, *args, **kwargs)
 
-        wrapped.__name__ = fn.__name__
+        inner.__name__ = fn.__name__
 
-        return wrapped
+        @wraps(fn)
+        def outer(self, request, *args, **kwargs):
+
+            """
+            outer wrapper, called before grainy permissioning logic runs
+
+            handles superuser imitation for sufficiently provisioned api keys
+            """
+
+            as_user = request.headers.get("X-User")
+            if as_user and hasattr(request, "api_key"):
+                if permissions_cls(APIKey(request.api_key)).check(
+                    f"superuser.{as_user}", "c"
+                ):
+                    request.user = get_user_model().objects.get(
+                        social_auth__uid=as_user
+                    )
+
+            return inner(self, request, *args, **kwargs)
+
+        outer.__name__ = fn.__name__
+
+        return outer
 
 
 class _aaactl:
     @property
     def connected(self):
-        return getattr(settings, "AAACTL_HOST", None) is not None
+        return getattr(settings, "AAACTL_URL", None) is not None
 
     def bridge(self, org_slug):
-        return AaaCtl(settings.AAACTL_HOST, settings.SERVICE_KEY, org_slug)
+        return AaaCtl(settings.AAACTL_URL, settings.SERVICE_KEY, org_slug)
 
 
 class billable(_aaactl):
@@ -156,7 +188,7 @@ class billable(_aaactl):
     """
     Will use the aaactl service bridge to determine
     if the specified product/service has accumulated
-    costs during the current subscription cycle and
+    costs during the current subscription subscription_cycle and
     return an error response if the there are costs
     but the organization has not yet set up billing
     """
@@ -185,7 +217,7 @@ class billable(_aaactl):
                 return Response(
                     {
                         "non_field_errors": [
-                            f"Billing setup required to continue using {product}. Please set up billing for your organization at {settings.AAACTL_HOST}/billing/setup?org={request.org.slug}"
+                            f"Billing setup required to continue using {product}. Please set up billing for your organization at {settings.AAACTL_URL}/billing/setup?org={request.org.slug}"
                         ]
                     },
                     status=403,
@@ -203,7 +235,9 @@ def serializer_registry():
         if not hasattr(cls, "ref_tag"):
             cls.ref_tag = cls.Meta.model.HandleRef.tag
             cls.Meta.fields += ["grainy"] + HANDLEREF_FIELDS
-        setattr(Serializers, cls.ref_tag, cls)
+
+        ref_tag = cls.ref_tag.replace(".", "__")
+        setattr(Serializers, ref_tag, cls)
         return cls
 
     return (Serializers, register)

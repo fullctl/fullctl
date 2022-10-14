@@ -31,7 +31,9 @@ class SoftRequiredValidator:
 
 
 class ModelSerializer(serializers.ModelSerializer):
-    grainy = serializers.SerializerMethodField()
+    grainy = serializers.SerializerMethodField(help_text="Grainy permission namespace")
+
+    status = serializers.CharField(help_text="Object status", read_only=True)
 
     def get_grainy(self, obj):
         if hasattr(obj, "Grainy"):

@@ -35,6 +35,10 @@ button span.label {
 }
 
 
+[data-api-submit] {
+  position: relative;
+}
+
 button:focus {
   outline: none;
 }
@@ -411,7 +415,7 @@ div.header .app-switcher .selected {
   padding-bottom: 9px;
   padding-left: 15px;
   padding-right: 28px;
-  width: 210px;
+  width: 220px;
   display: inline-block;
   cursor: pointer;
   position: relative;
@@ -464,6 +468,11 @@ input.slim {
   margin-top: 3px;
 }
 
+.list-body label {
+  font-size: 11px;
+  margin:0px;
+}
+
 
 .list-body + .list-no-data {
   display: none;
@@ -481,6 +490,7 @@ tbody.list-body:empty + tbody.list-no-data {
 }
 
 
+.list-body td input.slim,
 .list-body div.secondary input[type="text"],
 div.toolbar-field input[type="text"] {
   border: 1px solid;
@@ -573,6 +583,14 @@ div.menu .button:hover {
 
 div.menu .button span.label {
   text-decoration: underline;
+}
+
+.shift-down .menu-deco-border {
+  margin-top: 55px;
+}
+
+.shift-down .menu .section {
+  padding-top: 55px;
 }
 
 div.toolbar .button {
@@ -785,7 +803,7 @@ div.menu div.menu-deco-border {
   position: absolute;
   height: 2px;
   left: 15px;
-  right: -15px;
+  right: -12px;
   z-index: 10;
   top: 0px;
 }
@@ -823,6 +841,12 @@ div.list-th,
 .table td,
 .table th {
   border-top: none;
+  padding: 12px;
+}
+
+.table th {
+  vertical-align: bottom;
+  border-bottom: 2px solid #dee2e6;
 }
 
 .tool {
@@ -861,6 +885,11 @@ div.list-th,
   --margin-top: -12px;
   --margin-bottom: -12px;
 }
+
+.marg-top-xl {
+  margin-top: 55px;
+}
+
 td.property {
   padding: 0px 15px;
 }
@@ -875,7 +904,7 @@ td.property {
 }
 
 div.list-body .secondary .property {
-  margin-left: -15px;
+  margin-left: calc(var(--bs-gutter-x) * -0.5);
 }
 
 div.list-body .secondary .property .transparent-field,
@@ -902,7 +931,7 @@ div.list-body .secondary button {
 }
 
 tr.secondary > td {
-  padding: 0px 15px;
+  padding: 0px calc(var(--bs-gutter-x) * .5);
 }
 
 .row.double-row > div.field > span {
@@ -1011,12 +1040,6 @@ div.inner-list > div {
   position: relative;
 }
 
-.prefix-container a[data-api-action="delete_prefix"] {
-  position: absolute;
-  right: 0;
-  padding-right: 8px;
-}
-
 .prefix-container a,
 .prefix-container span {
   display: inline-block;
@@ -1083,10 +1106,8 @@ h5.modal-title {
   line-height: 26px;
 }
 
-button.close {
+button.btn-close {
   text-shadow: none;
-  position: relative;
-  top: -40px;
   opacity: 1;
 }
 
@@ -1149,7 +1170,9 @@ div.controls select:disabled {
 
 
 div.controls input[type="text"],
-div.controls input[type="password"] {
+div.controls input[type="text"]:disabled,
+div.controls input[type="password"],
+div.controls input[type="password"]:disabled {
   padding: 6px 8px;
   height: auto;
 }

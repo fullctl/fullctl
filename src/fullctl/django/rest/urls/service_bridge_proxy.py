@@ -1,6 +1,7 @@
 import json
 
 import requests
+from django.conf import settings
 from django.http import JsonResponse
 from django.urls import include, path
 
@@ -15,8 +16,10 @@ def proxy_api(service, host, endpoints):
     """
 
     paths = [
-        proxy_api_endpoint(service, host, {"remote": remote, "local": local})
-        for remote, local in endpoints
+        proxy_api_endpoint(
+            service, host, {"remote": remote, "local": local, "name": name}
+        )
+        for remote, local, name in endpoints
     ]
 
     return include(paths)
@@ -24,7 +27,7 @@ def proxy_api(service, host, endpoints):
 
 def proxy_api_endpoint(service, host, endpoint):
     def view_proxy(request, org_tag, *args, **kwargs):
-        api_key = request.user.key_set.first()
+        api_key = settings.SERVICE_KEY
         method = request.method.lower()
         request_fn = getattr(requests, method)
 
@@ -34,13 +37,16 @@ def proxy_api_endpoint(service, host, endpoint):
         if method in ["post", "put", "patch"]:
             _kwargs.update(json=json.loads(request.body))
 
-        print(_kwargs)
-
         endpoint_remote = endpoint["remote"].format(org_tag=org_tag, **kwargs)
 
         url = f"{host}/api/{endpoint_remote}"
 
-        response = request_fn(url, params={"key": api_key.key}, **_kwargs)
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "X-User": request.user.social_auth.first().uid,
+        }
+
+        response = request_fn(url, headers=headers, **_kwargs)
         print("proxied response in", response.elapsed.total_seconds())
 
         json_dumps_params = {}
@@ -55,14 +61,15 @@ def proxy_api_endpoint(service, host, endpoint):
         )
 
     return path(
-        endpoint["local"], view_proxy, name=f"proxies-api-{service}-{endpoint['local']}"
+        endpoint["local"], view_proxy, name=f"proxies-api-{service}-{endpoint['name']}"
     )
 
 
 def setup(service, patterns):
 
     if service in PROXIED:
-        raise ValueError(f"Proxied api for service {service} already setup")
+        print(f"Proxied api for service {service} already setup")
+        return
 
     PROXIED[service] = patterns
 

@@ -22,7 +22,7 @@ class Organization(viewsets.GenericViewSet):
     def list(self, request, *args, **kwargs):
 
         """
-        list the organizations that the user belongs
+        List the organizations that the requesting user belongs
         to or has permissions to
         """
 
@@ -43,5 +43,10 @@ class User(viewsets.GenericViewSet):
     @action(detail=False, methods=["GET"])
     @grainy_endpoint()
     def asns(self, request, org, *args, **kwargs):
+
+        """
+        Lists the asns that the requesting user has been verified for.
+        """
+
         serializer = Serializers.asn(verified_asns(request.perms), many=True)
         return Response(serializer.data)

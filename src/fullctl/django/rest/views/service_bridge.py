@@ -4,8 +4,13 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import viewsets
 from rest_framework.response import Response
 
+from fullctl.django.models import Instance, Organization
 from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.decorators import grainy_endpoint
+from fullctl.django.rest.serializers.service_bridge import (
+    HeartbeatSerializer,
+    StatusSerializer,
+)
 
 
 class MethodFilter:
@@ -24,20 +29,32 @@ class SystemViewSet(viewsets.GenericViewSet):
 
 
 class HeartbeatViewSet(SystemViewSet):
+
     ref_tag = "heartbeat"
+    serializer_class = HeartbeatSerializer
 
     @grainy_endpoint("service_bridge.system")
     def list(self, request):
+        """
+        Service heart-beat, check if the service is alive and responding
+        """
+
         return Response({"status": "ok"})
 
 
 class StatusViewSet(SystemViewSet):
+
     ref_tag = "status"
+    serializer_class = StatusSerializer
     checks = []
 
     @grainy_endpoint("service_bridge.system")
     def list(self, request):
 
+        """
+        Returns service bridge status for all the service bridges
+        in use
+        """
         results = {}
 
         for check in self.checks:
@@ -73,6 +90,11 @@ class StatusViewSet(SystemViewSet):
         import fullctl.service_bridge.ixctl as ixctl
 
         return ixctl.Ixctl(cache_duration=1).heartbeat()
+
+    def check_bridge_devicectl(self, request):
+        import fullctl.service_bridge.devicectl as devicectl
+
+        return devicectl.Ixctl(cache_duration=1).heartbeat()
 
 
 class DataViewSet(viewsets.ModelViewSet):
@@ -154,3 +176,57 @@ class DataViewSet(viewsets.ModelViewSet):
             qset = qset.select_related(*field)
 
         return qset, join
+
+    def prepare_write_data(self, request):
+
+        data = request.data.copy()
+        org_slug = data.get("org")
+        if org_slug:
+            org = Organization.objects.get(slug=org_slug)
+            data["instance"] = Instance.get_or_create(org).id
+
+        return data
+
+    @grainy_endpoint("service_bridge")
+    def create(self, request, *args, **kwargs):
+
+        data = self.prepare_write_data(request)
+
+        serializer = self.serializer_class(data=data)
+        if not serializer.is_valid():
+            return BadRequest(serializer.errors)
+
+        obj = serializer.save()
+
+        if hasattr(self, "after_create"):
+            self.after_create(obj, data)
+
+        return Response(serializer.data)
+
+    @grainy_endpoint("service_bridge")
+    def partial_update(self, request, pk, *args, **kwargs):
+
+        data = self.prepare_write_data(request)
+        instance = self.get_object()
+
+        serializer = self.serializer_class(instance, data=data, partial=True)
+
+        if not serializer.is_valid():
+            return BadRequest(serializer.errors)
+
+        serializer.save()
+
+        if hasattr(self, "after_update"):
+            self.after_update(instance, data)
+
+        return Response(serializer.data)
+
+    @grainy_endpoint("service_bridge")
+    def destroy(self, request, pk, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.serializer_class(instance)
+        response = Response(serializer.data)
+
+        instance.delete()
+
+        return response

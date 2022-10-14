@@ -4,6 +4,7 @@ import time
 import urllib.parse
 
 import requests
+import requests.exceptions
 
 from fullctl.service_bridge.data import DataObject
 
@@ -39,6 +40,9 @@ class Bridge:
     # responses for the specified duration (seconds)
     cache_duration = 0
 
+    results_key = "data"
+    url_prefix = "data/"
+
     class Meta:
         service = "base"
         ref_tag = "base"
@@ -60,18 +64,21 @@ class Bridge:
         self.url = f"{host}/api"
         self.org = org_slug
         self.key = key
+        self.host = host
         self.cache = kwargs.get("cache", None)
         self.cache_duration = kwargs.get("cache_duration", 5)
 
     def _data(self, response):
         status = response.status_code
-        if status == 200:
-            return response.json().get("data")
+        if status in [200, 201, 202, 203, 204, 205]:
+            return response.json().get(self.results_key)
         elif status in [401, 403]:
             raise AuthError(self, status)
         elif status in [400]:
+            print(response.json())
             raise ServiceBridgeError(self, 400, data=response.json())
         else:
+            # print(response.content)
             raise ServiceBridgeError(self, status)
 
     def _requests_kwargs(self, **kwargs):
@@ -79,6 +86,7 @@ class Bridge:
             kwargs["headers"].update(self.auth_headers)
         else:
             kwargs["headers"] = self.auth_headers
+
         return kwargs
 
     def cached(self, url, now, params):
@@ -96,7 +104,7 @@ class Bridge:
             param_str = ""
         file_path = os.path.join(TEST_DATA_PATH, f"{path.rstrip('/')}{param_str}.json")
         with open(file_path) as fh:
-            return json.load(fh)["data"]
+            return json.load(fh)[self.results_key]
 
     def get(self, endpoint, **kwargs):
         url = f"{self.url}/{endpoint}/"
@@ -128,12 +136,22 @@ class Bridge:
         url = f"{self.url}/{endpoint}/"
         return self._data(requests.put(url, **self._requests_kwargs(**kwargs)))
 
+    def patch(self, endpoint, **kwargs):
+        url = f"{self.url}/{endpoint}/"
+        return self._data(requests.patch(url, **self._requests_kwargs(**kwargs)))
+
     def delete(self, endpoint, **kwargs):
         url = f"{self.url}/{endpoint}/"
-        return self._data(requests.delete(url, **self._requests_kwargs(**kwargs)))
+        try:
+            return self._data(requests.delete(url, **self._requests_kwargs(**kwargs)))
+        except ServiceBridgeError as exc:
+            if exc.status == 404:
+                pass
+            else:
+                raise
 
     def object(self, id, raise_on_notfound=True, join=None):
-        url = f"data/{self.ref_tag}/{id}"
+        url = f"{self.url_prefix}{self.ref_tag}/{id}"
         params = {}
 
         if join:
@@ -147,13 +165,52 @@ class Bridge:
             return None
 
     def objects(self, **kwargs):
-        url = f"data/{self.ref_tag}"
+        url = f"{self.url_prefix}{self.ref_tag}"
         for k, v in kwargs.items():
             if isinstance(v, list):
                 kwargs[k] = ",".join([str(a) for a in v])
         data = self.get(url, params=kwargs)
         for row in data:
             yield self.data_object_cls(ref_tag=self.ref_tag, **row)
+
+    def create(self, data):
+        url = f"{self.url_prefix}{self.ref_tag}"
+        data = self.post(url, json=data)
+        return data
+
+    def destroy(self, obj):
+        url = f"{self.url_prefix}{self.ref_tag}/{obj.id}"
+        try:
+            data = self.delete(url)
+            return data
+        except requests.exceptions.JSONDecodeError:
+            return {}
+
+    def update(self, obj, data):
+        url = f"{self.url_prefix}{self.ref_tag}/{obj.id}"
+        data = self.put(url, json=data)
+        return data
+
+    def partial_update(self, obj, data):
+        url = f"{self.url_prefix}{self.ref_tag}/{obj.id}"
+        data = self.patch(url, json=data)
+        return data
+
+    def update_if_changed(self, obj, data):
+
+        diff = {}
+
+        for field, value in data.items():
+            if getattr(obj, field) != value:
+                diff[field] = value
+
+        if not diff:
+            return
+
+        url = f"{self.url_prefix}{self.ref_tag}/{obj.id}"
+        data = self.patch(url, data=diff)
+
+        return data
 
     def first(self, **kwargs):
         for o in self.objects(**kwargs):
@@ -167,6 +224,12 @@ class Bridge:
         data = self.get("system/status")
         return data[0]
 
+    def ux_url(self, id):
+        return None
+
+    def api_url(self, id):
+        return f"{self.url}/{self.url_prefix}{self.ref_tag}/{id}"
+
 
 class AaaCtl(Bridge):
 
@@ -178,13 +241,13 @@ class AaaCtl(Bridge):
 
     def requires_billing(self, product_name):
 
-        sub = self.require_subscription(product_name)
+        subscription = self.require_subscription(product_name)
 
-        if not sub:
+        if not subscription:
             return False
 
-        if not sub["pay"]:
-            for item in sub.get("items"):
+        if not subscription["payment_method"]:
+            for item in subscription.get("items"):
                 if item["name"].lower() == product_name and item["cost"] > 0:
                     return True
 

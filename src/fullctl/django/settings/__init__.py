@@ -172,6 +172,11 @@ class SettingsManager(confu.util.SettingsManager):
         self.set_option("GOOGLE_ANALYTICS_ID", "")
         self.set_option("CLOUDFLARE_ANALYTICS_ID", "")
 
+        self.set_option(
+            "SERVICE_APP_DIR",
+            os.path.join(self.scope["BASE_DIR"], "main", f"django_{service_tag}"),
+        )
+
         # eval from default.py file
         filename = os.path.join(os.path.dirname(__file__), "default.py")
         self.try_include(filename)
@@ -267,24 +272,34 @@ class SettingsManager(confu.util.SettingsManager):
 
     def set_service_bridges(self):
         # no default so we error sooner
-        self.set_option("AAACTL_HOST", "")
-        self.set_option("PDBCTL_HOST", "")
-        self.set_option("PEERCTL_HOST", "")
-        self.set_option("IXCTL_HOST", "")
+        self.set_option("AAACTL_URL", "")
+        self.set_option("PDBCTL_URL", "")
+        self.set_option("PEERCTL_URL", "")
+        self.set_option("PREFIXCTL_URL", "")
+        self.set_option("IXCTL_URL", "")
+        self.set_option("DEVICECTL_URL", "")
 
-    def set_twentyc_oauth(self, AAACTL_HOST=None):
-        if not AAACTL_HOST:
-            AAACTL_HOST = self.get("AAACTL_HOST")
+    def set_twentyc_social_oauth(self, AAACTL_URL=None):
+        """
+        This function sets the variables required to OAuth against aaactl using
+        django-social-auth. It does not set the SOCIAL_AUTH_PIPELINE or
+        AUTHENTICATION_BACKENDS.
+        """
+        if not AAACTL_URL:
+            # call this separately, incase this wasn't called from set_twentyc_service
+            # TODO - make this unneeded
+            self.set_option("AAACTL_URL", "")
+            AAACTL_URL = self.get("AAACTL_URL")
 
-        self.set_option("OAUTH_TWENTYC_HOST", AAACTL_HOST)
+        self.set_option("OAUTH_TWENTYC_URL", AAACTL_URL)
         self.set_option(
-            "OAUTH_TWENTYC_ACCESS_TOKEN_URL", f"{AAACTL_HOST}/account/auth/o/token/"
+            "OAUTH_TWENTYC_ACCESS_TOKEN_URL", f"{AAACTL_URL}/account/auth/o/token/"
         )
         self.set_option(
-            "OAUTH_TWENTYC_AUTHORIZE_URL", f"{AAACTL_HOST}/account/auth/o/authorize/"
+            "OAUTH_TWENTYC_AUTHORIZE_URL", f"{AAACTL_URL}/account/auth/o/authorize/"
         )
         self.set_option(
-            "OAUTH_TWENTYC_PROFILE_URL", f"{AAACTL_HOST}/account/auth/o/profile/"
+            "OAUTH_TWENTYC_PROFILE_URL", f"{AAACTL_URL}/account/auth/o/profile/"
         )
 
         self.set_option("OAUTH_TWENTYC_KEY", "")
@@ -294,6 +309,11 @@ class SettingsManager(confu.util.SettingsManager):
         self.set_option("SOCIAL_AUTH_TWENTYC_SECRET", self.get("OAUTH_TWENTYC_SECRET"))
         self.set_option("SOCIAL_AUTH_REDIRECT_IS_HTTPS", True)
 
+    def set_twentyc_oauth(self, AAACTL_URL=None):
+        if not AAACTL_URL:
+            AAACTL_URL = self.get("AAACTL_URL")
+        self.set_twentyc_social_oauth(AAACTL_URL)
+
         AUTHENTICATION_BACKENDS = [
             "fullctl.django.social.backends.twentyc.TwentycOAuth2",
             # fall back to local auth
@@ -302,8 +322,8 @@ class SettingsManager(confu.util.SettingsManager):
         self.set_option("AUTHENTICATION_BACKENDS", AUTHENTICATION_BACKENDS)
 
         GRAINY_REMOTE = {
-            "url_load": urljoin(AAACTL_HOST, "grainy/load/"),
-            # "url_get": f"{OAUTH_TWENTYC_HOST}/grainy/get/" + "{}/",
+            "url_load": urljoin(AAACTL_URL, "grainy/load/"),
+            # "url_get": f"{OAUTH_TWENTYC_URL}/grainy/get/" + "{}/",
         }
         self.set_option("GRAINY_REMOTE", GRAINY_REMOTE)
 
@@ -375,3 +395,11 @@ class SettingsManager(confu.util.SettingsManager):
                 base, ext = os.path.splitext(file)
                 if ext == ".md":
                     API_DOC_INCLUDES[base] = os.path.join(API_DOC_PATH, file)
+
+    def set_netom_integration(self):
+        import netom
+
+        self.set_option("NETOM_DIR", os.path.dirname(netom.__file__))
+        self.set_option(
+            "NETOM_TEMPLATE_DIR", os.path.join(NETOM_DIR, "templates", "netom0")
+        )

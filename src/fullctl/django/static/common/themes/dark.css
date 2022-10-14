@@ -1,6 +1,15 @@
+:root {
+  --bs-body-color: #b8bbbc;
+  --bs-body-bg: #191f26;
+}
+
+.nav {
+  --bs-nav-link-hover-color: unset;
+}
+
 body {
-  background-color: #191f26;
-  color: #b8bbbc;
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
 }
 
 .inactive {
@@ -79,6 +88,14 @@ div.validation-error.non-field-errors {
 .loading-shim {
   background-color: rgba(0,0,0,0.5);
 }
+
+span.icon.fullctl {
+  background-color: #D1FF27;
+}
+.fullctl {
+  color: #D1FF27;
+}
+
 
 .ixctl {
   color: #D1FF27;
@@ -187,6 +204,11 @@ div.list-body .secondary .property [data-field] {
   color: #fff;
 }
 
+.list-body label {
+  color: #D1FF27;
+}
+
+.list-body td input.slim,
 .list-body div.secondary input[type="text"],
 div.toolbar-field input[type="text"] {
   background-color: #191F26;
@@ -249,6 +271,10 @@ div.menu div.section.tabs .active {
 
 .table .table {
   background-color: inherit;
+}
+
+.table th {
+  border-color: #dee2e6;
 }
 
 .modal-body .table tr.sub-row {
@@ -425,11 +451,11 @@ h5.modal-title {
   color: #fff;
 }
 
-button.close {
+button.btn-close {
   color: #fff !important;
 }
 
-button.close:hover {
+button.btn-close:hover {
   color: #fff !important;
 }
 
@@ -710,7 +736,7 @@ a.nav-link {
 
 span.tag {
   background-color: #29323b;
-  color: #b8bbbc;
+  color: var(--bs-body-color);
 }
 
 span.tag-name {
