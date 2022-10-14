@@ -34,7 +34,7 @@ class ServiceBridgeReferenceModel(HandleRefModel):
         """
         Returns the service name for the reference
         """
-        if not self.reference:
+        if not self.reference or not self.reference.bridge:
             return None
         return f"{self.reference.bridge.Meta.service}"
 

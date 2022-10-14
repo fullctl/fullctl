@@ -32,10 +32,18 @@ class ReferencedObject:
 
     @property
     def ux_url(self):
+
+        if not self.bridge:
+            return None
+
         return self.bridge().ux_url(self.id)
 
     @property
     def api_url(self):
+
+        if not self.bridge:
+            return None
+
         return self.bridge().api_url(self.id)
 
     def __init__(self, bridge, id, remote_lookup="id"):

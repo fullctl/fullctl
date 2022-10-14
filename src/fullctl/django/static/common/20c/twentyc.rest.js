@@ -1805,8 +1805,6 @@ twentyc.rest.List = twentyc.cls.extend(
       parameter to the API calls
       */
       this.payload = function(){return {ordering: this.ordering};};
-
-      console.log("sort init", this);
     },
 
     sort: function(target, secondary) {

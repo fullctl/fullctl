@@ -229,7 +229,6 @@ fullctl.application.Tool = $tc.extend(
 
     menu : function() {
       var menu = this.template("menu")
-      console.log(this);
       this.$e.menu.append(menu);
       return menu
     },
