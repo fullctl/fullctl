@@ -7,6 +7,7 @@ from django.conf import settings
 # from django.conf import settings
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
+from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
 from fullctl.django.decorators import require_auth
@@ -29,7 +30,7 @@ def diag(request):
         # if k.startswith("HTTP"):
         txt += f"{k}: {v}\n"
 
-    return HttpResponse(mark_safe(f"<div><pre>Meta:\n{txt}</pre></div>"))
+    return HttpResponse(mark_safe(f"<div><pre>Meta:\n{escape(txt)}</pre></div>"))
 
 
 @require_auth()
