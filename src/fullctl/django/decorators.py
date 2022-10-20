@@ -56,7 +56,10 @@ class load_instance:
 
             org = request.org
             if not public and org not in Organization.accessible(request.user):
-                if request.user.is_authenticated:
+
+                if request.user.is_authenticated and not getattr(
+                    request, "impersonating", None
+                ):
                     raise django.http.Http404()
                 else:
                     return redirect(
