@@ -4,7 +4,7 @@
 [![PyPI](https://img.shields.io/pypi/pyversions/fullctl.svg?maxAge=600)](https://pypi.python.org/pypi/fullctl)
 [![Tests](https://github.com/fullctl/fullctl/workflows/tests/badge.svg)](https://github.com/fullctl/fullctl)
 [![Codecov](https://img.shields.io/codecov/c/github/fullctl/fullctl/master.svg?maxAge=60)](https://codecov.io/github/fullctl/fullctl)
-[![CodeQL](https://github.com/fullctl/fullctl/workflows/codeql.yml/badge.svg)](https://github.com/fullctl/fullctl)
+[![CodeQL](https://github.com/fullctl/fullctl/workflows/codeql/badge.svg?branch=prep-release)](https://github.com/fullctl/fullctl)
 
 Core classes and functions for service applications
 
