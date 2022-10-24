@@ -2,7 +2,6 @@
 
 [![Tests](https://github.com/fullctl/aclctl/workflows/tests/badge.svg)](https://github.com/fullctl/aclctl)
 [![Codecov](https://img.shields.io/codecov/c/github/fullctl/aclctl/master.svg?maxAge=60)](https://codecov.io/github/fullctl/aclctl)
-[![CodeQL](https://github.com/fullctl/aclctl/workflows/CodeQL/badge.svg)](https://github.com/fullctl/aclctl)
 
 aclCtl is the FullCtl SoT for access control list (ACL) and network policy information. It is used for managing traffic filtering and device security.
 
