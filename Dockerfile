@@ -1,8 +1,10 @@
-FROM python:3.9-alpine as base
 
 ARG virtual_env=/venv
 ARG install_to=/srv/service
+ARG poetry_pin="==1.2.2"
+
 ARG build_deps=" \
+    build-base \
     postgresql-dev \
     g++ \
     git \
@@ -19,20 +21,23 @@ ARG run_deps=" \
     libgcc \
     postgresql-libs \
     "
+
+FROM python:3.9-alpine as base
+
 # env to pass to sub images
-ENV RUN_DEPS=$run_deps
-ENV SERVICE_HOME=$install_to
 ENV VIRTUAL_ENV=$virtual_env
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-ENV POETRY_VERSION=1.1.13
 
 # build container
 FROM base as builder
 
-RUN apk upgrade --nocache --available && apk --no-cache add $build_deps
+ARG build_deps
+ARG poetry_pin
+
+RUN apk upgrade --no-cache --available && apk --no-cache add $build_deps
 
 # Use Pip to install Poetry
-RUN pip install "poetry==$POETRY_VERSION"
+RUN python -m pip install --upgrade pip && pip install "poetry$poetry_pin"
 
 # Create a VENV
 RUN python3 -m venv "$VIRTUAL_ENV"
