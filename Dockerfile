@@ -22,11 +22,12 @@ ARG run_deps=" \
     postgresql-libs \
     "
 
-FROM python:3.9-alpine as base
 
 # env to pass to sub images
 ENV VIRTUAL_ENV=$virtual_env
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+FROM python:3.9-alpine as base
 
 # build container
 FROM base as builder
