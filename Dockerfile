@@ -27,9 +27,9 @@ FROM python:3.9-alpine as base
 ARG virtual_env
 
 # env to pass to sub images
+ENV PYTHONUNBUFFERED=1
 ENV VIRTUAL_ENV=$virtual_env
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-
 
 # build container
 FROM base as builder
