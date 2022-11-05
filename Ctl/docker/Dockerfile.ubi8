@@ -1,4 +1,4 @@
-ARG poetry_version=1.1.11
+ARG poetry_version=1.2.2
 ARG uid=6300
 ARG user=fullctl
 
