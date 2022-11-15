@@ -48,11 +48,7 @@ confu = "^1.5"
 grainy = "^1.8.1"
 psycopg2-binary = "^2.8"
 # psycopg = {extras = ["binary"], version = "^3.0.14"}
-pyyaml = "^5.4"
-
-# move to pdbctl
-django-peeringdb = "^2.8"
-peeringdb = "^1"
+pyyaml = "^6"
 
 [tool.poetry.dev-dependencies]
 # tests
