@@ -527,7 +527,7 @@ fullctl.application.ContainerApplication = $tc.extend(
 
       $(this.$c.toolbar.$w[selector_name]).one("load:after", () => {
 
-        if(this.preselect_container) {
+        if(this["preselect_"+ref_tag]) {
           this[selector_name](this["preselect_"+ref_tag])
         } else {
           this.sync();
