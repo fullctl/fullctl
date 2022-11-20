@@ -37,7 +37,8 @@ FROM base as builder
 ARG build_deps
 ARG poetry_pin
 
-RUN apk upgrade --no-cache --available && apk --no-cache add $build_deps
+RUN apk upgrade --no-cache --available \
+    && apk --no-cache add $build_deps
 
 # Use Pip to install Poetry
 RUN python -m pip install --upgrade pip && pip install "poetry$poetry_pin"
