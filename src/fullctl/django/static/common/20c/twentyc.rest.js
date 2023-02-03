@@ -467,8 +467,10 @@ twentyc.rest.Client = twentyc.cls.define(
      * @returns {Promise}
      */
 
-    write : function(endpoint, data, method) {
+    write : function(endpoint, data, method, url = null) {
+      url = url || this.endpoint_url(endpoint);
       method = method.toLowerCase();
+
       $(this).trigger("api-request:before", [endpoint,data,method])
       $(this).trigger("api-write:before", [endpoint,data,method])
       $(this).trigger("api-"+method+":before", [endpoint,data])
@@ -476,7 +478,7 @@ twentyc.rest.Client = twentyc.cls.define(
         $.ajax({
           dataType : "json",
           method : method.toUpperCase(),
-          url : this.format_request_url(this.endpoint_url(endpoint), method),
+          url : this.format_request_url(url, method),
           data : this.encode(data),
           headers : {
             "Content-Type" : "application/json",

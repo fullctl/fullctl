@@ -4,21 +4,24 @@
   --clr-primary-300: hsl(214, 6%, 77%);
   --clr-primary-400: hsl(225, 2%, 57%);
   --clr-primary-500: hsl(223, 3%, 53%);
-  --clr-primary-700: hsl(230, 3%, 38%);
+  --clr-primary-700: hsl(233, 4%, 43%);
   --clr-primary-800: hsl(227, 9%, 19%);
   --clr-primary-900: #191B22;
 
   --clr-accent-400: #D1FF27;
+  --clr-accent-500: #FD7E14;
   --clr-accent-600: red;
 
   --clr-bg-200: rgba(246, 248, 250, 1);
   --clr-bg-210: hsl(210, 14%, 95%);
+  --clr-bg-300: #E5E5E5;
   --clr-bg-700: rgba(62, 70, 79, 1);
   --clr-bg-800: rgba(44, 47, 58, 0.96);
   --clr-bg-850: hsl(227, 12%, 14%);
   --clr-bg-900: #191B22;
 
-  --clr-border-400: var(--clr-primary-800);
+  --clr-border-200: var(--clr-primary-500);
+  --clr-border-400: var(--clr-primary-700);
 
 
   --theme-secondary-border-color: rgba(255, 255, 255, 0.15);
@@ -30,7 +33,6 @@
   --theme-alert-info-border: rgba(255, 255, 255, 0.12);
 
 
-  --theme-modal-color: #191B22;
 
   --foreground: var(--clr-primary-100);
   --background: var(--clr-bg-900);
@@ -38,42 +40,55 @@
   /* need to manually find this */
   --clr-filter-black-to-foreground: invert(100%) sepia(2%) saturate(8%) hue-rotate(335deg) brightness(101%) contrast(101%);
 
-  --bs-body-color: var(--foreground);
-  --bs-body-bg: var(--background);
-
   --th-clr: var(--clr-primary-400);
-  --th-bg: var(--clr-bg-850);
+  --th-bg: var(--clr-bg-800);
+  --card-header-bg: var(--clr-bg-850);
+  --list-group-bg: var(--clr-bg-700);
   --list-table-hover: var(--clr-bg-850);
   --footer-clr: var(--clr-primary-700);
   --header-bg: var(--clr-bg-900);
   --primary-btn-clr: var(--clr-primary-800);
   --primary-btn-bg: var(--clr-accent-400);
+  --secondary-list-btn-bg: var(--clr-bg-800);
+  --box-bg: var(--clr-bg-800);
   --dropdown-svg-url: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='rgb(255, 255, 255)' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
   --codeblock-even-bg: var(--clr-bg-800);
+  --modal-clr: var(--clr-primary-200);
+  --modal-bg: var(--clr-bg-700);
+
+  --bs-body-color: var(--foreground);
+  --bs-body-color-rgb: var(--foreground);
+  --bs-body-bg: var(--background);
 
   color-scheme: dark;
 }
 
 :root[data-theme="light"] {
   --theme-bg-secondary: #3E464F;
-  --clr-border-400: rgba(25, 27, 34, 0.05);
+  --clr-border-400: var(--clr-primary-500);
   --theme-secondary-border-color: rgba(25, 27, 34, 0.15);
 
 
-  --theme-modal-color: #fff;
 
   --foreground: var(--clr-primary-900);
-  --background: var(--clr-bg-200);
+  --background: var(--clr-bg-300);
 
   /* need to manually find this */
   --clr-filter-black-to-foreground: invert(7%) sepia(12%) saturate(1104%) hue-rotate(189deg) brightness(99%) contrast(93%);
 
   --footer-clr: var(--clr-primary-300);
   --th-clr: var(--clr-primary-500);
-  --th-bg: var(--clr-bg-210);
+  --th-bg: var(--clr-bg-200);
+  --card-header-bg: var(--clr-bg-300);
+  --list-group-bg: var(--clr-bg-300);
   --list-table-hover: var(--clr-bg-210);
   --header-bg: var(--clr-bg-700);
+  --secondary-list-btn-bg: var(--modal-bg);
+  --box-bg: var(--clr-bg-200);
   --dropdown-svg-url: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='rgb(0, 0, 0)' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --codeblock-even-bg: var(--clr-bg-200);
+  --modal-bg: var(--clr-bg-200);
+  --modal-clr: var(--clr-primary-800);
 
   color-scheme: light;
 }
@@ -129,11 +144,35 @@ body {
 }
 
 .modal {
-  --bs-modal-bg: var(--background);
+  --bs-modal-bg: var(--modal-bg);
+  --bs-modal-color: var(--modal-clr);
+}
+
+.modal .modal-content div.controls,
+.modal .modal-content div label {
+  color : var(--modal-clr);
 }
 
 .btn-close {
   filter: var(--clr-filter-black-to-foreground);
+}
+
+.card {
+  background-color: var(--list-group-bg);
+}
+
+.card .card-header {
+  font-weight: bold;
+  background-color: var(--card-header-bg);
+}
+
+.card li.highlight {
+  background-color: var(--th-bg) !important;
+}
+
+div.modal .list-group-item {
+  background-color: var(--list-group-bg);
+  color: var(--foreground);
 }
 
 /**
@@ -197,6 +236,15 @@ pre.codeblock code:nth-child(even) {
   background-color: var(--foreground);
 }
 
+.icon.filled {
+  background-color: transparent;
+}
+
+.icon-background {
+  background-color: var(--clr-bg-900);
+  border-radius: 200vw;
+}
+
 .alert-danger {
   color: #ea0000;
   background-color: #480000;
@@ -229,21 +277,34 @@ div.validation-error {
   background-color: rgba(0, 0, 0, 0.5);
 }
 
-.fullctl {
-  color: #D1FF27;
-}
-
 
 a[data-action].prefixctl,
 a[data-action].prefixctl:hover,
 a.prefixctl,
 .prefixctl {
-  color: #F1F2F2;
+  color: var(--foreground);
 }
 
 /**
  * main
  */
+
+  /**
+  * searchbar
+  */
+.input-group.searchbar input,
+.input-group.searchbar .btn {
+  border-color: var(--clr-border-200);
+  background-color: var(--background);
+}
+
+.input-group.searchbar input:focus {
+  outline: none;
+}
+
+.searchbar .select2-container--default .select2-selection--single {
+  background-color: transparent;
+}
 
  /**
   * lists
@@ -254,22 +315,31 @@ a.prefixctl,
 }
 
 .list-table .btn[data-btn-type="secondary"]{
-  background: var(--clr-bg-800);
-  border-color: transparent;
+  background: var(--secondary-list-btn-bg);
+  border-color: var(--theme-secondary-border-color);
 }
 
-.list-table tr:hover {
+.list-table .dropdown button {
+  border-color: transparent;
+  background: var(--clr-bg-800);
+}
+
+.list-table select option:checked {
+  background-color: var(--foreground);
+  color: var(--background);
+}
+
+.list-table:not(.no-hover) tr:hover {
   background-color: var(--list-table-hover);
 }
 
-.list-table tr:hover .options .btn {
+.list-table tr:hover .btn {
  border-color: var(--theme-secondary-border-color);
 }
 
 
-
 .heading-preposition {
-  opacity: 0.2;
+  color: var(--clr-primary-700);
 }
 
 select.borderless {
@@ -290,6 +360,31 @@ div.controls select.form-control {
   border-color: var(--theme-secondary-border-color);
   color: inherit;
 }
+
+div.controls select.form-control option {
+  color: var(--clr-primary-900);
+}
+
+div.controls textarea.form-control,
+div.controls textarea.form-control:is(:focus, :active){
+  color: var(--foreground);
+  background-color: var(--background);
+  border-color: var(--clr-border-400);
+}
+
+.secondary .property .field {
+  background-color: var(--th-bg);
+  color: var(--th-clr);
+}
+
+.secondary .property .field select {
+  background-color: var(--th-bg);
+}
+
+.secondary .property .field [data-field] {
+  color: var(--foreground);
+}
+
 
 .list-body div.secondary input[type="text"]:disabled,
 div.toolbar-field input[type="text"]:disabled {
@@ -330,10 +425,28 @@ table thead th.selected-order-header-desc,
   opacity: 1;
 }
 
-
 .keep-list-open {
   display: flex;
   align-content: center;
+}
+
+button.solid-active,
+button.solid-inactive {
+  background-color: var(--clr-primary-500);
+  color: var(--primary-btn-clr);
+  border: none;
+}
+
+button.solid-active {
+  background-color: var(--clr-accent-400);
+}
+
+.border-active {
+  border-color: var(--clr-accent-400);
+}
+
+.border-inactive {
+  border-color: var(--clr-primary-500);
 }
 
 div.controls button.generic:disabled {
@@ -344,12 +457,26 @@ div.modal-body div.border-top-seperator {
   border-color: var(--clr-border-400);
 }
 
+.controls .select2-container--default .select2-selection--single {
+  background-color: var(--background);
+  border: 1px solid var(--clr-border-400);
+}
+
+.controls .select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: var(--foreground);
+}
+
 span.select2-dropdown {
-  border-color: rgba(188, 190, 192, 0.5);
+  border-color: var(--clr-border-400);
+  background-color: var(--background);
 }
 
 div.controls label {
   color: var(--th-clr);
+}
+
+div.menu div.menu-deco-border {
+  background-color: var(--clr-border-400);
 }
 
 /*
@@ -419,6 +546,16 @@ tbody.list-footer button {
 .status-badge.error {
   background-color: #662020 !important;
   border-color: #d10f0f !important;
+}
+
+span.tag {
+  background-color: var(--th-bg);
+  color: var(--foreground);
+}
+
+span.tag .tag-name {
+  font-weight: bold;
+  margin-right: 1ch;
 }
 
 
@@ -547,5 +684,13 @@ footer {
 
 footer .help-box {
   color: var(--clr-primary-100);
-  background: var(--clr-bg-800);
+  background: var(--box-bg);
+}
+
+/**
+ * sidebar
+ */
+.sidebar[data-element="menu"] .button {
+  color: var(--foreground);
+  background: transparent;
 }

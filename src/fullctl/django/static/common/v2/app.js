@@ -40,6 +40,17 @@ fullctl.formatters.monitor_status = (value) => {
   return value
 }
 
+fullctl.formatters.meta_data = (value) => {
+  if(!value)
+    return;
+
+  var k, node = $('<div>');
+  for(k in value) {
+    node.append($('<div>').addClass("badge").text(k+": "+value[k]));
+  }
+  return node;
+}
+
 
 fullctl.loading_animation = () => {
   var anim = $('<div class="spinner loadingio-spinner-bars-k879i8bcs9"><div class="ldio-a9ruqenne8l"><div></div><div></div><div></div><div></div></div></div>');
@@ -130,6 +141,7 @@ fullctl.widget.OrganizationSelect = $tc.extend(
   twentyc.rest.Select
 );
 
+// v2 - list witch checkboxes and a delete selected button
 fullctl.widget.SelectionList = $tc.extend(
   "SelectionList",
   {
@@ -137,25 +149,26 @@ fullctl.widget.SelectionList = $tc.extend(
       this.List(jq);
       this.delete_selected_button = jq_delete_selected_button;
 
-      this.list_head.find('tr').first().prepend('<th><input type="checkbox" value="all"></th>');
+      this.list_head.find('tr').first().prepend('<th class="center"><input type="checkbox" value="all"></th>');
 
       $(this).on("load:after", () => {
         this.set_delete_selected_button();
         this.unselect_select_all_checkbox();
       });
 
-      $(this).on("api-delete:success", () => {
-        this.set_delete_selected_button();
-      });
-
-      this.list_head.find('th input[type="checkbox"][value="all"]').click(() => {
-        this.select_all();
-        this.set_delete_selected_button();
+      let selection_list = this;
+      this.list_head.find('th input[type="checkbox"][value="all"]').click(function() {
+        if ($(this).prop("checked")) {
+          selection_list.select_all();
+        } else {
+          selection_list.unselect_all();
+        }
+        selection_list.set_delete_selected_button();
       });
     },
 
     build_row : function(data) {
-      return this.template('row').prepend('<td class="select-checkbox"><input type="checkbox" class="row-chbx" name="list-row"></td>');
+      return this.template('row').prepend('<td class="select-checkbox center"><input type="checkbox" class="row-chbx" name="list-row"></td>');
     },
 
     insert : function(data) {
@@ -171,7 +184,6 @@ fullctl.widget.SelectionList = $tc.extend(
       row_element.find('.row-chbx').click(() => {
         this.set_delete_selected_button();
         this.unselect_select_all_checkbox();
-        console.log("here")
       });
 
       row_element.data("apiobject", data);
@@ -192,7 +204,6 @@ fullctl.widget.SelectionList = $tc.extend(
     set_delete_selected_button : function() {
       if(this.get_selected_rows().length > 0) {
         this.show_delete_selected_button();
-        console.log("and here")
       } else {
         this.hide_delete_selected_button();
       }
@@ -210,15 +221,34 @@ fullctl.widget.SelectionList = $tc.extend(
       this.list_body.find('td.select-checkbox input.row-chbx').prop('checked', true);
     },
 
+    unselect_all : function() {
+      this.list_body.find('td.select-checkbox input.row-chbx').prop('checked', false);
+    },
+
     delete_selected_list : function(endpoint="id") {
       let selected_rows = this.get_selected_rows();
       let list = this;
+      let promises = new Array();
+      let apiobj;
       selected_rows.each(function() {
         apiobj = $(this).data("apiobject");
-        list.delete(apiobj[endpoint], apiobj).then(() => {
-          list.remove(apiobj);
-        });
+        promises.push(
+          list.delete_api_obj(apiobj, endpoint).then((request) => {
+            list.remove(request.content.data[0]);
+          })
+        );
       });
+      Promise.all(promises).then(() => {list.set_delete_selected_button()});
+    },
+
+    delete_api_obj : function(apiobj, endpoint) {
+      let delete_url = this.element.data('api-delete-url');
+      if (delete_url) {
+        delete_url = delete_url.replace(/0\//, apiobj[endpoint]);
+        return this.write(null, apiobj, "delete", delete_url);
+      }
+
+      return this.delete(apiobj[endpoint], apiobj);
     },
 
     get_selected_rows : function() {
@@ -307,6 +337,9 @@ fullctl.application.Tool = $tc.extend(
       this.Component(name);
       this.init();
       this.menu();
+      if (this.$t["bottom-menu"]) {
+        this.bottom_menu();
+      };
       this.active = false;
     },
 
@@ -326,11 +359,16 @@ fullctl.application.Tool = $tc.extend(
     },
 
     menu : function() {
-      var menu = this.template("menu")
-      console.log(menu);
-      console.log(this);
+      let menu = this.template("menu")
       this.$e.menu.append(menu);
       return menu
+    },
+
+    // v2 - add bottom menu
+    bottom_menu : function() {
+      let bottom_menu = this.template("bottom-menu");
+      this.$e.bottom_menu.append(bottom_menu);
+      return bottom_menu
     },
 
     activate : function() {
@@ -502,6 +540,18 @@ fullctl.application.Toolbar = $tc.extend(
   fullctl.application.Component
 );
 
+fullctl.application.TrialButton = $tc.extend(
+  "TrialButton",
+  {
+    payload : function() {
+      return {
+        service_id : fullctl.service_info.id
+      }
+    }
+  },
+  twentyc.rest.Button
+);
+
 
 fullctl.application.Application = $tc.define(
   "Application",
@@ -524,6 +574,17 @@ fullctl.application.Application = $tc.define(
         window.history.replaceState({}, document.title, $(this).attr("href"));
       });
 
+      fullctl[id] = this;
+
+      var trial_button_element = $('[data-element=btn_start_trial]')
+      if(trial_button_element.length) {
+        var trial_button = new fullctl.application.TrialButton(trial_button_element);
+        $(trial_button).on("api-write:success", () => {
+          window.location.reload();
+        });
+      }
+
+      this.application_access_granted = grainy.check("service."+this.id+"."+fullctl.org.id, "r");
 
     },
 
@@ -531,10 +592,27 @@ fullctl.application.Application = $tc.define(
       var hash = window.location.hash;
       if(hash) {
         hash = hash.substr(1);
+
+        parts = hash.split(";");
+        hash = parts[0];
+
+        this.autoload_args = parts;
+
         if(this.get_page(hash)) {
           this.page(hash);
         }
       }
+    },
+
+    autoload_arg : function(idx) {
+      if(this.autoload_args) {
+        var value = this.autoload_args[idx];
+        if(value) {
+          this.autoload_args[idx] = null;
+        }
+        return value;
+      }
+      return null;
     },
 
     tool : function(name, fn) {
@@ -593,7 +671,6 @@ fullctl.application.ContainerApplication = $tc.extend(
 	"ContainerApplication",
 	{
     init_container : function(ref_tag, ref_tag_p) {
-      /*
       this[ref_tag_p] = this.containers = {}
       this[ref_tag+"_slugs"] = this.container_slugs = {}
 
@@ -603,7 +680,6 @@ fullctl.application.ContainerApplication = $tc.extend(
       this.title_base = window.document.title;
 
       this.$c.toolbar.widget(selector_name, ($e) => {
-        console.log($e);
         var e = $e[selector_name];
         var w = new twentyc.rest.Select(e);
         $(w).on("load:after", (event, element, data) => {
@@ -627,7 +703,7 @@ fullctl.application.ContainerApplication = $tc.extend(
 
       $(this.$c.toolbar.$w[selector_name]).one("load:after", () => {
 
-        if(this.preselect_container) {
+        if(this["preselect_"+ref_tag]) {
           this[selector_name](this["preselect_"+ref_tag])
         } else {
           this.sync();
@@ -648,7 +724,6 @@ fullctl.application.ContainerApplication = $tc.extend(
       this["unload_"+ref_tag] = function() { return this.unload_container(); }.bind(this);
       this["select_"+ref_tag] = function(id){ return this.select_container(id); }.bind(this);
       this["refresh_select_"+ref_tag] = function() { return this.refresh_select_container(); }.bind(this);
-      */
     },
 
     permission_ui : function () { return; },
@@ -813,6 +888,50 @@ fullctl.TemplatePreview = $tc.extend(
     TemplatePreview: function(jq, select_widget, type) {
       this.Form(jq);
       this.select = new select_widget(this.element.find('select'));
+      this.editor = this.element.find('textarea');
+      this.type = type;
+
+      if(type) {
+        this.select.filter = (tmpl) => {
+          return tmpl.type == type;
+        };
+      }
+
+      $(this.select).on("load:after", ()=>{ this.preview();});
+      $(this.select.element).on("change", ()=>{ this.preview();});
+      $(this).on("api-write:success", (ev,ep,data,response) => {
+          this.editor.val(response.first().body);
+      });
+
+      this.select.load();
+    },
+
+    payload : function() {
+      return { type: this.type }
+    },
+
+    preview : function() {
+      var tmpl_id = parseInt(this.select.element.val())
+      if(tmpl_id)
+        var url = this.editor.data("api-preview").replace("tmpl_id", tmpl_id);
+      else
+        var url = this.editor.data("api-preview-default").replace("type", this.type);
+
+      this.base_url = url;
+
+      this.submit();
+    }
+  },
+  twentyc.rest.Form
+);
+
+// v2 - Preview with codeblock with alternating colors
+fullctl.ConfigPreview = $tc.extend(
+  "ConfigPreview",
+  {
+    ConfigPreview: function(jq, select_widget, type) {
+      this.Form(jq);
+      this.select = new select_widget(this.element.find('select'));
       this.codeblock = this.element.find('pre.codeblock');
       this.type = type;
 
@@ -830,7 +949,7 @@ fullctl.TemplatePreview = $tc.extend(
           let lines = response.first().body.split(/\r?\n/);
           lines.forEach(line => {
             let code_line = document.createElement("code");
-            code_line.innerText = line;
+            code_line.innerText = line || " ";
             this.codeblock.append(code_line);
           });
       });

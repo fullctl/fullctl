@@ -1,4 +1,5 @@
 from django import template
+from django.conf import settings
 
 from fullctl.django.context import current_request
 
@@ -30,8 +31,18 @@ def can_delete(request, namespace):
 
 
 @register.filter
-def themed_path(path):
+def can_access(request, namespace):
+    namespace = namespace.format(org=request.org)
+    return (
+        request.perms.check(namespace, "c")
+        or request.perms.check(namespace, "r")
+        or request.perms.check(namespace, "u")
+        or request.perms.check(namespace, "d")
+    )
 
+
+@register.filter
+def themed_path(path):
     """
     Takes a template file path and re-routes
     it to a theme if the the requesting user
@@ -42,6 +53,7 @@ def themed_path(path):
     """
 
     with current_request() as request:
+        default_theme = getattr(settings, "DEFAULT_THEME", None)
 
         # no request in context, return path as is
         if not request:
@@ -54,10 +66,16 @@ def themed_path(path):
         except AttributeError:
             # request.user.settings is not specified, meaning
             # user currently has no settings, return path as is
-            return path
+            if not default_theme:
+                return path
+            else:
+                theme = default_theme
+
+        # v1 switches back to original theme
+        if theme == "v1":
+            theme = None
 
         if theme:
-
             # theme override was found
 
             # keep reference to original path

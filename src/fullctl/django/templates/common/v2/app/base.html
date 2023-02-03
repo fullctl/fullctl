@@ -1,5 +1,5 @@
 {% extends "common/v2/base.html" %}
-{% load static i18n %}
+{% load static i18n fullctl_util %}
 {% block "title" %}fullctl / {{ service_name }}{% endblock %}
 
 {% block "js" %}
@@ -39,6 +39,8 @@ fullctl.org = {
   slug : "{{ request.org.slug }}",
   name : "{{ request.org.name }}"
 }
+
+fullctl.service_info = {{ service_info.json|safe }};
 
 fullctl.aaactl_urls = {{ account_service.urls|safe }}
 
@@ -143,8 +145,7 @@ fullctl.permissions = {{ permissions|safe }}
             <div class="list-body"></div>
             <div class="templates">
               <a data-template="row" class="dropdown-item action">
-                <span class="icon icon-solid">
-                  <img src="{% static "common/icons/icon/org.svg" %}">
+                <span class="icon icon-org">
                 </span>
                 <span data-field="name"></span>
                 {% if permissions.update_instance and oauth_manages_org %}
@@ -173,7 +174,7 @@ fullctl.permissions = {{ permissions|safe }}
       </div>
 
       <!-- user menu -->
-      <div class="header-control d-flex align-items-center h-100 w-100">
+      <div class="header-control d-flex align-items-center h-100">
         <div
           class="d-flex align-items-center px-3 ms-2 h-100"
           data-element="button_account"
@@ -210,7 +211,42 @@ fullctl.permissions = {{ permissions|safe }}
 <main>
 {% block "error_content" %}{% endblock %}
 
-{% if not permissions.read_instance and request.org %}
+{% if not request|can_access:service_info.org_namespace %}
+
+<div class="row">
+  <div class="col-4"></div>
+  <div class="col-4">
+    {% if service_info.org_can_trial and not service_info.org_has_access and permissions.billing %}
+    <div class="alert alert-info center">
+      <p>
+      {% blocktrans trimmed with app_id=request.app_id app_slug=service_info.slug app_name=service_info.name org_name=request.org.display_name_verbose %}
+      Start your <b>{{ app_name }}</b> trial for {{ org_name }}
+      {% endblocktrans %}
+      </p>
+      <div>
+        <button data-element="btn_start_trial" data-api-base="{% url "proxies-api-aaactl-start-trial" org_tag=request.org.slug %}" class="primary btn">
+          <div class="row align-items-center">
+            <div class="col label pe-0">{% trans "Start trial" %}</div>
+            <div class="col-auto">
+              <span class="icon icon-add"></span>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+    {% else %}
+    <div class="alert alert-danger marg-top-lg">
+{% blocktrans trimmed with app_id=request.app_id app_slug=service_info.slug app_name=service_info.name org_name=request.org.display_name_verbose %}
+You do not have access to {{ app_name }} for {{ org_name }}.
+{% endblocktrans %}
+    </div>
+    {% endif %}
+  </div>
+  <div class="col-4"></div>
+</div>
+<div style="display:none">
+
+{% elif not permissions.read_instance and request.org %}
 <div class="row">
   <div class="col-4"></div>
   <div class="col-4">
@@ -262,7 +298,6 @@ You do not have the permissions to view the {{ app_id }} workspace for the {{ or
 
 <footer class="center app-footer">
 {% block "footer" %}
-<!--TODO: make links functional-->
 <div class="container-fluid">
   <div class="row align-items-center">
     <div class="col footer-left">
@@ -270,21 +305,24 @@ You do not have the permissions to view the {{ app_id }} workspace for the {{ or
         <div class="col-sm-auto theme-switcher" type="button">
           <span class="icon icon-lg icon-theme-switcher"></span>
         </div>
-        <div class="col-auto">Contact Us | Make a Wish</div>
+        <div class="col-auto">
+          <a href="mailto:hello@fullctl.com">Contact Us</a> |
+          <div type="button" data-bs-toggle="modal" data-bs-target="#featureRequestModal">
+            Feature Request
+          </div>
+        </div>
       </div>
     </div>
     <div class="col-auto footer-center">Copyright © 2014 - 2022 20C, LLC</div>
     <div class="col footer-right">
       <div class="row align-items-center">
-        <div class="ms-auto col-auto">{{ version }} | Private Cloud Stackscale</div>
+        <div class="ms-auto col-auto">{{ version }}</div>
         <div class="help-box js-hide">
           <div class="banner-img">
             <img src="{% static "common/v2/imgs/help.png" %}" alt="">
           </div>
-          <div>Help Center</div>
-          <div>Tutorials</div>
-          <div>Contact Support</div>
-          <div>Submit Feedback</div>
+          <a href="https://docs.fullctl.com" target="_blank">Help Center</a>
+          <a href="mailto:support@fullct.com">Contact Support</a>
           <div>Legal Notes</div>
         </div>
         <div class="col-sm-auto help-btn" type="button">
@@ -295,6 +333,30 @@ You do not have the permissions to view the {{ app_id }} workspace for the {{ or
   </div>
 </div>
 {% endblock %}
+<!-- Modal -->
+<div class="modal fade" id="featureRequestModal" tabindex="-1" aria-labelledby="featureRequestModal" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" data-element="title">Feature Request</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <iframe
+          class="clickup-embed clickup-dynamic-height"
+          src="https://forms.clickup.com/14289126/f/dm276-5327/E6NH3HHIK1GCM0S3B5"
+          onwheel=""
+          width="100%"
+          height="100%"
+          style="background:
+          transparent; border: 1px solid #ccc;"
+        >
+        </iframe>
+        <script async src="https://app-cdn.clickup.com/assets/js/forms-embed/v1.js"></script>
+      </div>
+    </div>
+  </div>
+</div>
 </footer>
 {% endblock %}
 </div>
