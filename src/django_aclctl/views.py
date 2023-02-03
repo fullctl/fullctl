@@ -19,7 +19,7 @@ def make_env(request, **kwargs):
 @load_instance()
 def view_instance(request, instance, **kwargs):
     env = make_env(request, instance=instance, org=instance.org)
-    return render(request, "aclctl/index.html", env)
+    return render(request, "theme-select.html", env)
 
 
 @require_auth()
@@ -35,7 +35,7 @@ def view_instance_load_acl(request, instance, acl_tag, **kwargs):
     env = make_env(request, instance=instance, org=instance.org)
     env["select_access_control_list"] = access_control_list
 
-    return render(request, "aclctl/index.html", env)
+    return render(request, "theme-select.html", env)
 
 
 @require_auth()

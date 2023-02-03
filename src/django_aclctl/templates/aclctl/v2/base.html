@@ -1,0 +1,142 @@
+{% extends "common/v2/app/base.html" %}
+{% load static i18n %}
+{% block "title" %}fullctl / acl{% endblock %}
+
+{% block "js" %}
+{{ block.super }}
+<script src="{% static "aclctl/v2/aclctl.js" %}" type="text/javascript"></script>
+<script src="{% static "aclctl/v2/aclctl.access-control-lists.js" %}" type="text/javascript"></script>
+<script src="{% static "aclctl/v2/aclctl.settings.js" %}" type="text/javascript"></script>
+<script>
+{% if select_access_control_list %}
+$(fullctl.application).on("initialized", function(e, aclctl, id) {
+  aclctl.preselect_acl = {{ select_access_control_list.id }};
+});
+{% endif %}
+</script>
+{% endblock %}
+
+{% block "css" %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static "aclctl/aclctl.css" %}" />
+{% endblock %}
+
+{% block "header_middle" %}
+<div class="app-pages-nav nav h-100" data-component="pages">
+    <a class="nav-link"
+      id="tab-access-control-lists"
+      data-bs-toggle="tab"
+      role="tab"
+      aria-controls="access-control-lists"
+      aria-selected="true"
+      href="#access-control-lists">
+      {% trans "Access Control Lists" %}
+    </a>
+
+    <a class="nav-link active"
+      id="tab-filter-rules"
+      data-bs-toggle="tab"
+      role="tab"
+      aria-controls="filter-rules"
+      aria-selected="true"
+      href="#filter-rules">
+      {% trans "Traffic Filters" %}
+    </a>
+
+    <a class="nav-link"
+      id="tab-settings"
+      data-bs-toggle="tab"
+      role="tab"
+      aria-controls="settings"
+      aria-selected="false"
+      href="#settings">
+      {% trans "Settings" %}
+    </a>
+</div>
+{% endblock %}
+
+{% block "header_right" %}
+{% with app_id="aclctl" %}
+{{ block.super }}
+{% endwith %}
+{% endblock %}
+
+
+{% block "header_account_panel" %}
+{% with app_id="aclctl" %}
+
+        <div
+          class="dropdown org-select header-control d-flex align-items-center h-100"
+          data-api-base="{% url "aclctl_api:access_control_list-list" org_tag=request.org.slug %}"
+          data-element="select_access_control_list"
+          >
+          <div class="custom-divider h-100">
+            <div
+              class="d-flex align-items-center px-3 ms-2 h-100 list-header"
+              id="dropdownMenuLink"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              <span class="icon icon-list"></span>
+              <span class="ps-2 pe-4 acl-dropdown-label"></span>
+              <span class="icon icon-caret-down"></span>
+            </div>
+            <div
+              class="dropdown-menu org-select-menu dd-box-shadow"
+              aria-labelledby="dropdownMenuLink"
+            >
+              <div class="list-body">
+
+              </div>
+              <div
+                class="dropdown-item text-body"
+                type="button"
+                data-element="button_create_acl"
+              >
+                <span class="icon icon-add"></span> {% trans "Create Access Control List" %}
+              </div>
+            </div>
+          </div>
+          <div class="templates" style="display:none">
+              <div data-template="row" class="dropdown-item acl-item" type="button">
+                <span data-field="name"></span>
+              </div>
+          </div>
+       </div>
+
+{{ block.super }}
+{% endwith %}
+{% endblock %}
+{% block "app_content_toolbar" %}
+{% endblock %}
+
+
+{% block "app_show_config" %}
+{% endblock %}
+
+{% block "app_content_menu" %}
+<div class="menu-deco-border"></div>
+{% endblock %}
+
+{% block "app_content_main" %}
+<div class="tab-content" id="app-pages">
+  <div class="tab-pane" id="access-control-lists" role="tabpanel" aria-labelledby="tab-access-control-lists">
+		{% include "aclctl/v2/tool/access_control_lists/main.html" %}
+  </div>
+
+  <div class="tab-pane show active" id="filter-rules" role="tabpanel" aria-labelledby="tab-filter-rules">
+		{% include "aclctl/v2/tool/filter_rules/main.html" %}
+    {% include "aclctl/v2/tool/filter_rules/show-config.html" %}
+  </div>
+
+  <div class="tab-pane" id="settings" role="tabpanel" aria-labelledby="tab-settings">
+		{% include "aclctl/v2/tool/settings/main.html" %}
+  </div>
+</div>
+{% endblock %}
+
+{% block "templates" %}
+{{ block.super }}
+{% endblock %}

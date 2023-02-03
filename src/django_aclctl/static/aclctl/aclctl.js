@@ -231,6 +231,7 @@ $ctl.application.Aclctl.ModalFilterRuleConfig = $tc.extend(
   "ModalFilterRuleConfig",
   {
     ModalFilterRuleConfig: function() {
+      console.log($ctl.template('filter_rule_config'));
       var form = new $ctl.application.Aclctl.FilterRuleTemplatePreview(
         $ctl.template('filter_rule_config'),
         $('[data-element="filter_rule_config_template"]').val(),
@@ -253,6 +254,7 @@ $ctl.application.Aclctl.FilterRuleTemplatePreview = $tc.extend(
   {
     FilterRuleTemplatePreview: function(jq, type) {
       this.type = type;
+      console.log(type);
       this.TemplatePreview(jq, $ctl.application.Aclctl.ModalFilterTemplateSelect, type);
     },
 

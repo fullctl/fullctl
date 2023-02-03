@@ -10,9 +10,15 @@ Serializers, register = serializer_registry()
 
 @register
 class AccessControlList(ModelSerializer):
+
+    num_filters = serializers.SerializerMethodField()
+
     class Meta:
         model = models.AccessControlList
-        fields = ["instance", "name", "slug", "id"]
+        fields = ["instance", "name", "slug", "id", "num_filters"]
+
+    def get_num_filters(self, obj):
+        return obj.filter_rules.count()
 
 
 @register

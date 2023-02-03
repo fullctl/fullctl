@@ -1,0 +1,68 @@
+{% load static i18n %}
+<table
+  class="table list-table center"
+  data-api-base="{% url "aclctl_api:filter_rule-list" org_tag=request.org.slug %}"
+  data-template="list">
+  <thead>
+    <tr>
+      <th>{% trans "Priority" %}</th>
+      <th>{% trans "Source Type" %}</th>
+      <th>{% trans "Source" %}</th>
+      <th>{% trans "Source Port" %}</th>
+      <th>{% trans "Destination Type" %}</th>
+      <th>{% trans "Destination" %}</th>
+      <th>{% trans "Destination Port" %}</th>
+      <th class="right">{% trans "Options" %}</th>
+    </tr>
+  </thead>
+
+  <tbody class="list-body">
+  </tbody>
+
+  <tbody class="templates">
+    <tr data-template="row">
+      <td data-field="priority"></td>
+      <td data-field="src_type"></td>
+      <td data-field="src_prefix"></td>
+      <td data-field="src_port"></td>
+      <td data-field="dest_type"></td>
+      <td data-field="dest_prefix"></td>
+      <td data-field="dest_port"></td>
+
+      <td data-field="controls" class="options | right">
+        <a class="button col btn"
+          data-action="edit_filter_rule"
+          data-hover="show"
+        >
+          <span class="icon icon-edit"></span>
+        </a>
+        <a class="button col btn delete"
+          data-api-action="{id}"
+          data-api-callback="remove"
+          data-confirm="Remove Filter Rule?"
+          data-api-method="DELETE"
+          data-hover="show"
+        >
+          <span class="icon ixctl icon-delete"></span>
+        </a>
+        <button class="btn">
+          <span class="icon icon-options"></span>
+        </button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div data-template="priority_inline_edit">
+  <input
+    type="text"
+    class="slim"
+    data-api-action
+    data-api-method="PUT"
+    data-api-base="{% url "aclctl_api:filter_rule-detail" org_tag=request.org.slug pk=0 %}"
+  >
+</div>
+
+
+{% block "filter-rule-addon-template" %}
+{% endblock %}
