@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.core.management.color import no_style
 from django.db import connection
 from django.test import Client
+from django.conf import settings
 from rest_framework.test import APIClient
 
 from fullctl.django.auth import permissions
@@ -68,6 +69,14 @@ class AccountObjects:
         user.grainy_permissions.add_permission(self.orgs[1], "r")
         user.grainy_permissions.add_permission(f"*.{self.orgs[1].id}", "r")
 
+
+        user.grainy_permissions.add_permission(
+            f"service.{settings.SERVICE_TAG}.{self.orgs[0].id}", "crud"
+        )
+        user.grainy_permissions.add_permission(
+            f"service.{settings.SERVICE_TAG}.{self.orgs[1].id}", "crud"
+        )
+
         self.org = self.orgs[0]
 
         OrganizationUser.objects.create(org=self.org, user=self.other_user)
@@ -77,6 +86,14 @@ class AccountObjects:
             slug="other",
             id=3,
         )
+
+        self.other_user.grainy_permissions.add_permission(
+            f"service.{settings.SERVICE_TAG}.{self.orgs[0].id}", "crud"
+        )
+        self.other_user.grainy_permissions.add_permission(
+            f"service.{settings.SERVICE_TAG}.{self.orgs[1].id}", "crud"
+        )
+
 
         self.api_client = APIClient()
         self.api_client.login(username=user.username, password="test")
