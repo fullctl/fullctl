@@ -20,6 +20,30 @@
 })(jQuery);
 
 /**
+ * takes a jquery result and replaces all plain text occurences
+ * of email addresses and urls with links
+ *
+ * @method replace_urls_with_links
+ */
+
+function replace_urls_with_links(jQueryResult) {
+  jQueryResult.contents().filter(function() {
+    return this.nodeName != "A";
+  }).each(function() {
+    const text = $(this).text();
+    const urlRegex = /((https?:\/\/[^\s]+)|(\S+@\S+))/g;
+    const html = text.replace(urlRegex, (match) => {
+      const emailRegex = /\S+@\S+/;
+      if (emailRegex.test(match)) {
+        return `<a href="mailto:${match}">${match}</a>`;
+      }
+      return `<a href="${match}">${match}</a>`;
+    });
+    $(this).replaceWith(html);
+  });
+}
+
+/**
  * namespace for twentyc.rest
  */
 
@@ -762,9 +786,12 @@ twentyc.rest.Widget = twentyc.cls.extend(
       for(i = 0; i < errors.length; i++) {
         $(twentyc.rest).trigger("non-field-error", [errors[i], errors, i, error_node, this]);
         if(errors[i])
-          error_node.append($('<div>').addClass("non-field-error").text(errors[i]))
+          error_node.append($('<div>').addClass("non-field-error").text(errors[i]));
       }
-      this.element.prepend(error_node)
+
+      replace_urls_with_links(error_node);
+
+      this.element.prepend(error_node);
     },
 
     /**

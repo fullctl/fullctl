@@ -31,6 +31,7 @@
   --theme-alert-info-bg: #7747FF;
   --theme-alert-info-color: #fff;
   --theme-alert-info-border: rgba(255, 255, 255, 0.12);
+  --theme-alert-info-link-color: #d1ff27;
 
 
 
@@ -490,6 +491,10 @@ div.menu div.menu-deco-border {
   color: var(--theme-alert-info-color);
   background: var(--theme-alert-info-bg);
   border-color: var(--theme-alert-info-border);
+}
+
+.alert-info a {
+  color: var(--theme-alert-info-link-color);
 }
 
 .dropdown-item,

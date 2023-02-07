@@ -234,6 +234,17 @@ fullctl.permissions = {{ permissions|safe }}
         </button>
       </div>
     </div>
+
+    {% elif not service_info.org_can_trial and not service_info.org_has_access %}
+    <div class="alert alert-info center">
+      <p>
+      {% blocktrans trimmed with app_id=request.app_id app_slug=service_info.slug app_name=service_info.name org_name=request.org.display_name_verbose %}
+      Your trial period for <b>{{ app_name }}</b> has ended. To upgrade your subscription please contact us at <a href="mailto:{{ support_email }}">{{ support_email }}</a>
+      {% endblocktrans %}
+      </p>
+    </div>
+
+
     {% else %}
     <div class="alert alert-danger marg-top-lg">
 {% blocktrans trimmed with app_id=request.app_id app_slug=service_info.slug app_name=service_info.name org_name=request.org.display_name_verbose %}
