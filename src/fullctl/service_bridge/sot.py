@@ -205,3 +205,18 @@ class ASSet(SourceOfTruth):
                 asn_map[net.asn] = net
 
         return filtered
+
+
+class Network(SourceOfTruth):
+    sources = [(peerctl.Network, {"has_overrides": 1}), (pdbctl.Network, {})]
+
+    def filter_source_of_truth(self, networks):
+        asn_map = {}
+        filtered = []
+
+        for net in networks:
+            if net.asn not in asn_map:
+                filtered.append(net)
+                asn_map[net.asn] = net
+
+        return filtered

@@ -150,8 +150,12 @@ class DataViewSet(viewsets.ModelViewSet):
         for url_param, django_field in self.valid_filters:
             value = request.GET.get(url_param)
 
-            if isinstance(django_field, Exclude):
-                qset = qset.exclude(django_field.filters)
+            if value is not None and isinstance(django_field, Exclude):
+                if isinstance(django_field.filters, tuple):
+                    qset = qset.exclude(*django_field.filters)
+                else:
+                    qset = qset.exclude(django_field.filters)
+
             elif value is not None and isinstance(django_field, MethodFilter):
                 qset = getattr(self, f"filter_{django_field.name}")(qset, value)
                 self._filtered = True
