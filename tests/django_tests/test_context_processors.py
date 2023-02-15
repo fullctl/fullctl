@@ -99,6 +99,10 @@ def test_conf(db, dj_account_objects, settings):
         "cloudflare_analytics_id": "asdf",
         "support_email": "support@localhost",
         "no_reply_email": "noreply@localhost",
+        "contact_us_email": "hello@localhost",
+        "post_feature_request_url": "test://new-feature",
+        "docs_url": "test://docs",
+        "legal_url": "test://legal",
     }
 
     conf = context_processors.conf(request)

@@ -1,0 +1,12 @@
+{% load static i18n %}
+<form data-template="form_feature_request"
+  data-api-base="{{ post_feature_request_url }}"
+  data-api-action=""
+  data-api-method="POST"
+  class="container-fluid"
+>
+  <div class="form-group" data-api-submit="yes">
+    <label for="message">{% trans "Message" %}:</label>
+    <textarea class="form-control" placeholder="Message" id="message" name="message" style="height: 132px"></textarea>
+  </div>
+</form>
