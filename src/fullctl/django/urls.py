@@ -11,7 +11,6 @@ from fullctl.django.views.api_schema import api_schema
 urlpatterns = []
 
 if getattr(settings, "PDBCTL_URL", None):
-
     import fullctl.django.autocomplete.pdb
 
     urlpatterns += [
@@ -23,6 +22,11 @@ if getattr(settings, "PDBCTL_URL", None):
         path(
             "autocomplete/pdb/asn",
             fullctl.django.autocomplete.pdb.peeringdb_asn.as_view(),
+            name="pdb asn autocomplete",
+        ),
+        path(
+            "autocomplete/pdb/net",
+            fullctl.django.autocomplete.pdb.peeringdb_net.as_view(),
             name="pdb asn autocomplete",
         ),
         path(

@@ -5,7 +5,9 @@ sourced from third party sources.
 import json
 from datetime import timedelta
 
+import confu.schema
 import requests
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -16,6 +18,30 @@ __all__ = [
     "Response",
     "Data",
 ]
+
+
+class DataMixin:
+    def clean_data(self):
+        """
+        If the model has a DataSchema confu schema
+        defined, the schema will be used to validate the data
+        in self.data
+        """
+
+        if not hasattr(self, "DataSchema"):
+            return
+
+        for name in dir(self.DataSchema):
+            if name.startswith("_"):
+                continue
+
+            data = getattr(self, name)
+            schema = getattr(self.DataSchema, name)
+
+            try:
+                confu.schema.validate(schema(), data, raise_errors=True)
+            except confu.schema.ValidationError as exc:
+                raise ValidationError(f"Invalid meta-data in {name}: {exc}")
 
 
 class Data(HandleRefModel):
@@ -64,7 +90,6 @@ class Request(HandleRefModel):
 
     @classmethod
     def prepare_request(cls, targets):
-
         """
         will make sure targets are always converted
         into a list object
@@ -87,7 +112,6 @@ class Request(HandleRefModel):
 
     @classmethod
     def request(cls, targets):
-
         """
         Requests data for one or more targets
 
@@ -104,7 +128,6 @@ class Request(HandleRefModel):
 
     @classmethod
     def request_target(cls, target, ignore_cache=False):
-
         """
         Requests data for the specified target
 
@@ -129,7 +152,6 @@ class Request(HandleRefModel):
         request = cls.get_cache(target)
 
         if request:
-
             try:
                 return request.response
             except Exception:
@@ -139,7 +161,6 @@ class Request(HandleRefModel):
 
     @classmethod
     def target_to_url(cls, target):
-
         """
         override this to handle converting a target to a requestable url
         """
@@ -148,7 +169,6 @@ class Request(HandleRefModel):
 
     @classmethod
     def send(cls, target):
-
         """
         Send request to third party api to retrieve data for target.
 
@@ -172,7 +192,6 @@ class Request(HandleRefModel):
 
     @classmethod
     def process(cls, target, url, http_status, getdata, payload=None):
-
         """
         processes a response and return the `Request` object created for it
         """
@@ -235,7 +254,6 @@ class Request(HandleRefModel):
 
     @classmethod
     def config(cls, config_name, default=None):
-
         value = getattr(cls.Config, config_name, default)
 
         if value is None:
@@ -245,7 +263,6 @@ class Request(HandleRefModel):
 
     @classmethod
     def get_cache(cls, target):
-
         qset = cls.get_cache_queryset(target)
         qset = qset.filter(updated__gte=cls.valid_cache_datetime())
 
@@ -293,7 +310,6 @@ class Response(HandleRefModel):
 
     @classmethod
     def config(cls, config_name, default=None):
-
         value = getattr(cls.Config, config_name, default)
 
         if value is None:
@@ -302,7 +318,6 @@ class Response(HandleRefModel):
         return value
 
     def write_meta_data(self, req):
-
         meta_data_cls = self.config("meta_data_cls")
         target_field = self.config("target_field", req.config("target_field"))
 

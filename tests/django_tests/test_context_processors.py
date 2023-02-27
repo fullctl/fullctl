@@ -6,7 +6,6 @@ from fullctl.django.auth import RemotePermissionsError
 
 # Settings fixture allows for safe manipulations of settings inside test
 def test_account_service(db, dj_account_objects, settings):
-
     request = HttpRequest()
     request.org = dj_account_objects.org
 
@@ -24,7 +23,6 @@ def test_account_service(db, dj_account_objects, settings):
 
 
 def test_account_service_no_org(db, dj_account_objects, settings):
-
     request = HttpRequest()
 
     expected = {
@@ -47,6 +45,7 @@ def test_permissions_crud(db, dj_account_objects, settings):
     request.perms = dj_account_objects.perms
 
     full_perms = {
+        "billing": False,
         "create_instance": True,
         "read_instance": True,
         "update_instance": True,
@@ -81,6 +80,7 @@ def test_permissions_readonly(db, dj_account_objects, settings):
     request.perms = dj_account_objects.perms
 
     readonly_perms = {
+        "billing": False,
         "create_instance": False,
         "read_instance": True,
         "update_instance": False,
@@ -98,6 +98,11 @@ def test_conf(db, dj_account_objects, settings):
         "google_analytics_id": None,
         "cloudflare_analytics_id": "asdf",
         "support_email": "support@localhost",
+        "no_reply_email": "noreply@localhost",
+        "contact_us_email": "hello@localhost",
+        "post_feature_request_url": "test://new-feature",
+        "docs_url": "test://docs",
+        "legal_url": "test://legal",
     }
 
     conf = context_processors.conf(request)

@@ -12,6 +12,7 @@ from fullctl.django.models.concrete import (
     OrganizationUser,
     Task,
     TaskSchedule,
+    UserSettings,
 )
 from fullctl.django.models.concrete.service_bridge import ServiceBridgeAction
 
@@ -115,7 +116,7 @@ class AuditLogAdmin(admin.ModelAdmin):
     list_filter = ("action", "object_type")
 
     def log_object(self, obj=None):
-        if obj and obj.log_object:
+        if obj and getattr(obj, "log_object", None):
             return f"{obj.log_object}"
         elif obj and obj.object_id:
             return "<deleted>"
@@ -175,3 +176,8 @@ class ServiceBridgeAction(admin.ModelAdmin):
         "created",
         "updated",
     )
+
+
+@admin.register(UserSettings)
+class UserSettingsAdmin(BaseAdmin):
+    list_display = ("user", "theme", "color_scheme")

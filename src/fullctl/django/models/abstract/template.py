@@ -22,7 +22,6 @@ def make_variable_name(value):
 
 
 class TemplateModel(HandleRefModel):
-
     name = models.CharField(max_length=255)
     body = models.TextField()
 
@@ -60,12 +59,10 @@ class TemplateModel(HandleRefModel):
         """
 
         if self.body:
-
             # if body is not empty, we use a dict loader
             # to make jinja load it as the template
             loader = DictLoader({self.template_path: self.body})
         else:
-
             # if body is empty we will load the default
             # template from file
             #
@@ -73,7 +70,7 @@ class TemplateModel(HandleRefModel):
             # templates/peerctl/<handle_ref_tag>
             loader = FileSystemLoader(self.template_loader_paths)
 
-        env = Environment(trim_blocks=True, loader=loader)
+        env = Environment(trim_blocks=True, loader=loader, autoescape=True)
 
         env.filters["make_variable_name"] = make_variable_name
 

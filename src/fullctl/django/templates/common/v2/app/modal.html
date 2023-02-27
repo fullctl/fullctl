@@ -1,0 +1,177 @@
+{% load i18n %}
+<div class="modal fade in modal-right" role="dialog" data-component="modal_continue">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" data-element="title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+        </button>
+      </div>
+      <div class="modal-body controls" data-element="body">
+      </div>
+      <div class="modal-footer" data-element="footer">
+        <button type="button" data-element="button_submit" class="btn-submit submit primary col btn">
+          <span class="label">{% trans "Continue" %}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" role="dialog" data-component="modal_no_button">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" data-element="title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true"></span>
+        </button>
+      </div>
+      <div class="modal-body controls" data-element="body">
+      </div>
+      <div class="modal-footer" data-element="footer">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" role="dialog" data-component="modal_no_button_lg">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" data-element="title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body controls" data-element="body">
+      </div>
+      <div class="modal-footer" data-element="footer">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" role="dialog" data-component="modal_no_button_xl">
+  <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" data-element="title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true"></span>
+        </button>
+      </div>
+      <div class="modal-body controls" data-element="body">
+      </div>
+      <div class="modal-footer" data-element="footer">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" role="dialog" data-component="modal_no_button_fullscreen">
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" data-element="title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true"></span>
+        </button>
+      </div>
+      <div class="modal-body controls" data-element="body">
+      </div>
+      <div class="modal-footer" data-element="footer">
+        <button class="edit-toggled btn secondary" type="button" data-bs-dismiss="modal">
+          <div class="row align-items-center">
+            <div class="col label pe-0">Close</div>
+            <div class="col-auto">
+              <span class="icon icon-cancel"></span>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="modal" role="dialog" data-component="modal_save">
+  <div class="modal-dialog  modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" data-element="title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body controls" data-element="body">
+      </div>
+      <div class="modal-footer row" data-element="footer">
+        <button type="button" data-element="button_submit" class="btn-submit submit primary col btn">
+          <span class="label">{% trans "Save" %}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade in modal-right" role="dialog" data-component="modal_save_right">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" data-element="title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+        </button>
+      </div>
+      <div class="modal-body controls d-flex p-0" data-element="body">
+      </div>
+      <div class="modal-footer row" data-element="footer">
+        <button type="button" data-element="button_submit" class="btn-submit submit primary col btn">
+          <span class="label">{% trans "Save" %}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" role="dialog" data-component="modal_save_lg">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" data-element="title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+        </button>
+      </div>
+      <div class="modal-body controls" data-element="body">
+      </div>
+      <div class="modal-footer" data-element="footer">
+        <span class="modal-action-note"></span>
+
+        <button type="button" data-element="button_submit" class="btn-submit submit btn primary col">
+          <span class="label">{% trans "Save" %}</span>
+        </button>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal" role="dialog" id="modal-manage" data-component="modal_manage">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body controls">
+      </div>
+      <div class="modal-footer">
+      </div>
+    </div>
+  </div>
+</div>
+
+

@@ -107,7 +107,6 @@ class ServiceBridgeReferenceModel(HandleRefModel):
         return r
 
     def reverse_field_map(self, service_name=None):
-
         """
         Returns the field mapping from fullctl to reference fields
         as a dict
@@ -117,7 +116,6 @@ class ServiceBridgeReferenceModel(HandleRefModel):
         return {[(v, k) for k, v in self.field_map(service_name).items()]}
 
     def field_map(self, service_name=None):
-
         """
         Returns the field mapping from reference to fullctl fields
         as a dict
@@ -129,7 +127,6 @@ class ServiceBridgeReferenceModel(HandleRefModel):
         return getattr(self.ServiceBridge, f"map_{service_name}")
 
     def sync_from_reference(self, ref_obj=None, if_sot=False, save=False):
-
         """
         Updates the instance from the reference using the field map (only fields
         in the field map will be updated) specified in the ServiceBridge meta
@@ -201,8 +198,16 @@ class ServiceBridgeReferenceModel(HandleRefModel):
             if action.action == "pull":
                 action.run(self)
 
-    def service_bridge_data(self, service_name, field_map=None):
+    def finalize_service_bridge_data(self, service_name, data):
+        """
+        Override to make final adjustments to the data generated
+        through `service_bridge_data`.
 
+        This function is called automatically by `service_bridge_data`
+        """
+        pass
+
+    def service_bridge_data(self, service_name, field_map=None):
         """
         Returns a dict of fields and values according to the field map
 
@@ -241,5 +246,7 @@ class ServiceBridgeReferenceModel(HandleRefModel):
                 data[dest_field] = getattr(
                     ref, src_field, getattr(self, src_field, None)
                 )
+
+        self.finalize_service_bridge_data(service_name, data)
 
         return data

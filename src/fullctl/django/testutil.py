@@ -2,6 +2,7 @@
 Utilities functions and classes for fullctl unit-testing
 """
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.color import no_style
 from django.db import connection
@@ -13,7 +14,6 @@ from fullctl.django.models.concrete import Organization, OrganizationUser
 
 
 def reset_auto_fields():
-
     """
     Resets the primary key field on Organization instances
     """
@@ -69,6 +69,13 @@ class AccountObjects:
         user.grainy_permissions.add_permission(self.orgs[1], "r")
         user.grainy_permissions.add_permission(f"*.{self.orgs[1].id}", "r")
 
+        user.grainy_permissions.add_permission(
+            f"service.{settings.SERVICE_TAG}.{self.orgs[0].id}", "crud"
+        )
+        user.grainy_permissions.add_permission(
+            f"service.{settings.SERVICE_TAG}.{self.orgs[1].id}", "crud"
+        )
+
         self.org = self.orgs[0]
 
         OrganizationUser.objects.create(org=self.org, user=self.other_user)
@@ -77,6 +84,13 @@ class AccountObjects:
             name="Other",
             slug="other",
             id=3,
+        )
+
+        self.other_user.grainy_permissions.add_permission(
+            f"service.{settings.SERVICE_TAG}.{self.orgs[0].id}", "crud"
+        )
+        self.other_user.grainy_permissions.add_permission(
+            f"service.{settings.SERVICE_TAG}.{self.orgs[1].id}", "crud"
         )
 
         self.api_client = APIClient()

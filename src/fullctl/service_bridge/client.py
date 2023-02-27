@@ -14,7 +14,12 @@ TEST_DATA_PATH = "."
 
 class ServiceBridgeError(IOError):
     def __init__(self, bridge, status, data=None):
-        super().__init__(f"Service bridge error: {bridge} [{status}]")
+        if data:
+            super().__init__(
+                f"Service bridge error: {bridge} [{status}] - response data: {data}"
+            )
+        else:
+            super().__init__(f"Service bridge error: {bridge} [{status}]")
         self.data = data
         self.status = status
 
@@ -35,7 +40,6 @@ class AuthError(ServiceBridgeError):
 
 
 class Bridge:
-
     # set to > 0 if you want the bridge to cache GET
     # responses for the specified duration (seconds)
     cache_duration = 0
@@ -75,10 +79,8 @@ class Bridge:
         elif status in [401, 403]:
             raise AuthError(self, status)
         elif status in [400]:
-            print(response.json())
             raise ServiceBridgeError(self, 400, data=response.json())
         else:
-            # print(response.content)
             raise ServiceBridgeError(self, status)
 
     def _requests_kwargs(self, **kwargs):
@@ -197,7 +199,6 @@ class Bridge:
         return data
 
     def update_if_changed(self, obj, data):
-
         diff = {}
 
         for field, value in data.items():
@@ -240,7 +241,6 @@ class AaaCtl(Bridge):
     """
 
     def requires_billing(self, product_name):
-
         subscription = self.require_subscription(product_name)
 
         if not subscription:

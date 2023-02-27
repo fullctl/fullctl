@@ -74,3 +74,7 @@ class NetworkIXLan(Pdbctl):
 
 class NetworkContact(Pdbctl):
     ref_tag = "poc"
+
+
+class IXLanPrefix(Pdbctl):
+    ref_tag = "ixpfx"

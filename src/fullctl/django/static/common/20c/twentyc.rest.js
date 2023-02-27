@@ -20,6 +20,30 @@
 })(jQuery);
 
 /**
+ * takes a jquery result and replaces all plain text occurences
+ * of email addresses and urls with links
+ *
+ * @method replace_urls_with_links
+ */
+
+function replace_urls_with_links(jQueryResult) {
+  jQueryResult.contents().filter(function() {
+    return this.nodeName != "A";
+  }).each(function() {
+    const text = $(this).text();
+    const urlRegex = /((https?:\/\/[^\s]+)|(\S+@\S+))/g;
+    const html = text.replace(urlRegex, (match) => {
+      const emailRegex = /\S+@\S+/;
+      if (emailRegex.test(match)) {
+        return `<a href="mailto:${match}">${match}</a>`;
+      }
+      return `<a href="${match}">${match}</a>`;
+    });
+    $(this).replaceWith(html);
+  });
+}
+
+/**
  * namespace for twentyc.rest
  */
 
@@ -467,8 +491,10 @@ twentyc.rest.Client = twentyc.cls.define(
      * @returns {Promise}
      */
 
-    write : function(endpoint, data, method) {
+    write : function(endpoint, data, method, url = null) {
+      url = url || this.endpoint_url(endpoint);
       method = method.toLowerCase();
+
       $(this).trigger("api-request:before", [endpoint,data,method])
       $(this).trigger("api-write:before", [endpoint,data,method])
       $(this).trigger("api-"+method+":before", [endpoint,data])
@@ -476,7 +502,7 @@ twentyc.rest.Client = twentyc.cls.define(
         $.ajax({
           dataType : "json",
           method : method.toUpperCase(),
-          url : this.format_request_url(this.endpoint_url(endpoint), method),
+          url : this.format_request_url(url, method),
           data : this.encode(data),
           headers : {
             "Content-Type" : "application/json",
@@ -760,9 +786,12 @@ twentyc.rest.Widget = twentyc.cls.extend(
       for(i = 0; i < errors.length; i++) {
         $(twentyc.rest).trigger("non-field-error", [errors[i], errors, i, error_node, this]);
         if(errors[i])
-          error_node.append($('<div>').addClass("non-field-error").text(errors[i]))
+          error_node.append($('<div>').addClass("non-field-error").text(errors[i]));
       }
-      this.element.prepend(error_node)
+
+      replace_urls_with_links(error_node);
+
+      this.element.prepend(error_node);
     },
 
     /**
@@ -792,6 +821,12 @@ twentyc.rest.Widget = twentyc.cls.extend(
             } else {
               data[input.attr("name")] = input.val();
             }
+          }
+
+          // treat blank values as null where necessary
+
+          if(input.data("blank-as-null") == "yes" && input.val() == "") {
+            data[input.attr("name")] = null;
           }
         });
       });
@@ -1173,6 +1208,59 @@ twentyc.rest.Input = twentyc.cls.extend(
 );
 
 /**
+ * Checkbox widget
+ *
+ * Wires a html element (input type="checkbox") to the API
+ *
+ * The select element should have the following attributes set
+ *
+ * # required
+ *
+ * - data-api-base: api root or full path to endpoint
+ *
+ * @class Button
+ * @extends twentyc.rest.Input
+ * @namespace twentyc.rest
+ * @param {jQuery result} jq jquery result holding the button element
+ */
+
+
+twentyc.rest.Checkbox = twentyc.cls.extend(
+  "Checkbox",
+  {
+    payload : function() {
+      var pl = {};
+      pl[this.element.attr('name')] = (this.element.prop("checked") ? true : false);
+      return pl;
+    },
+    bind : function(jq) {
+      this.Widget_bind(jq);
+      this.method = jq.data("api-method") || "POST";
+
+      this.element.on("change", function(ev) {
+
+        var confirm_required = this.element.data("confirm");
+        if(confirm_required && !confirm(confirm_required))
+          return;
+
+        this.clear_errors();
+
+        var action = this.action;
+        var fn = this[this.method.toLowerCase()].bind(this);
+
+        fn(action, this.payload()).then(
+          this.post_success.bind(this),
+          this.post_failure.bind(this)
+        );
+      }.bind(this));
+
+    }
+  },
+  twentyc.rest.Input
+);
+
+
+/**
  * Button widget
  *
  * Wires a html element (typically `<a>` or `<button>` to the API
@@ -1361,6 +1449,8 @@ twentyc.rest.Select = twentyc.cls.extend(
         var selected_field = this.selected_field
         var widget = this;
 
+        var old_val = select.val();
+
         select.empty();
 
         if(this.null_option) {
@@ -1379,8 +1469,11 @@ twentyc.rest.Select = twentyc.cls.extend(
           select.append(opt);
         });
 
-        if(select_this)
+        if(select_this) {
           select.val(select_this);
+          if(select_this != old_val)
+            select.trigger("change", []);
+        }
 
         $(this).trigger("load:after", [select, response.content.data, this]);
       }.bind(this));
@@ -1587,7 +1680,7 @@ twentyc.rest.List = twentyc.cls.extend(
         response.rows(function(row, idx) {
           this.insert(row);
         }.bind(this));
-        $(this).trigger("load:after");
+        $(this).trigger("load:after", [response]);
         return
       }.bind(this));
     },

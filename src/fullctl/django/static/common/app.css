@@ -503,10 +503,13 @@ div.toolbar-field input[type="text"] {
 
 .list-body .secondary select,
 div.toolbar-field select,
+div.toolbar input[type=text],
+.select2-container--default .select2-selection--single,
 div.toolbar select {
   border: none;
   border-radius: 0px;
 }
+.select2-container--default .select2-selection--single,
 div.toolbar select {
   font-size: 20px;
   font-weight: bold;
@@ -516,6 +519,15 @@ div.toolbar select {
   -moz-appearance: none;
   appearance: none;
   margin-left: 16px;
+}
+
+
+div.toolbar .select2-container .select2-selection--single {
+  height: 35px;
+}
+
+div.toolbar input[type=text] {
+  margin: 7px;
 }
 
 div.toolbar div.toolbar-control-group {

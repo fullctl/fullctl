@@ -36,7 +36,6 @@ def read_file(name):
 
 # TODO : add dict access and logging
 class SettingsManager(confu.util.SettingsManager):
-
     # settings manager extensions
 
     def get(self, name):
@@ -111,6 +110,9 @@ class SettingsManager(confu.util.SettingsManager):
 
         # Contact email, from address, support email
         self.set_from_env("SERVER_EMAIL")
+
+        # No-reply email
+        self.set_from_env("NO_REPLY_EMAIL", self.scope["SERVER_EMAIL"])
 
         # django secret key
         self.set_from_env("SECRET_KEY")
@@ -355,8 +357,6 @@ class SettingsManager(confu.util.SettingsManager):
         self.set_service_bridges()
         self.set_twentyc_oauth()
 
-        self.set_option("SUPPORT_EMAIL", self.get("SERVER_EMAIL"))
-
         # allow propagation of user field changes during oauth process
         # with exception of id fields
         if propagate_user_fields:
@@ -369,6 +369,25 @@ class SettingsManager(confu.util.SettingsManager):
 
         # terminate session on browser close
         self.set_option("SESSION_EXPIRE_AT_BROWSER_CLOSE", True)
+        self.set_support()
+
+    def set_support(self):
+        """
+        Sets up variables required for support related functionality
+        """
+        self.set_option("SUPPORT_EMAIL", self.get("SERVER_EMAIL"))
+
+        # Contact Us email
+        self.set_from_env("CONTACT_US_EMAIL", self.get("SUPPORT_EMAIL"))
+
+        # URL to POST Feature Request form to
+        self.set_option("POST_FEATURE_REQUEST_URL", "")
+
+        # Docs URL
+        self.set_option("DOCS_URL", "https://docs.fullctl.com")
+
+        # Legal URL
+        self.set_option("LEGAL_URL", "https://www.fullctl.com/legal")
 
     # TODO: review implementation
     def set_languages_docs(self):
