@@ -1,22 +1,24 @@
 import django_peeringdb.models.concrete as models
 from django.db.models import Q
-from django.utils.translation import gettext_lazy as _
-from fullctl.django.rest.core import BadRequest
-from fullctl.django.rest.decorators import load_object
+
+# from django.utils.translation import gettext_lazy as _
+# from fullctl.django.rest.core import BadRequest
+# from fullctl.django.rest.decorators import load_object
 from fullctl.django.rest.route.service_bridge import route
 from fullctl.django.rest.views.service_bridge import (
     DataViewSet,
     Exclude,
-    MethodFilter,
     HeartbeatViewSet,
+    MethodFilter,
     StatusViewSet,
 )
-from rest_framework import viewsets
-from rest_framework.decorators import action
-from rest_framework.response import Response
 
-from django_pdbctl.rest.decorators import grainy_endpoint
+# from django_pdbctl.rest.decorators import grainy_endpoint
 from django_pdbctl.rest.serializers.service_bridge import Serializers
+
+# from rest_framework import viewsets
+# from rest_framework.decorators import action
+# from rest_framework.response import Response
 
 
 @route
@@ -36,6 +38,7 @@ class InternetExchange(DataViewSet):
     valid_filters = [
         ("org", "org_id"),
         ("q", "name__icontains"),
+        ("ids", "id__in"),
     ]
     autocomplete = "name"
     allow_unfiltered = True
@@ -48,17 +51,31 @@ class InternetExchange(DataViewSet):
 class Network(DataViewSet):
 
     allowed_http_methods = ["GET"]
-    valid_filters = [("org", "org_id"), ("asn", "asn"), ("asns", "asn__in")]
+    valid_filters = [
+        ("org", "org_id"),
+        ("asn", "asn"),
+        ("asns", "asn__in"),
+        ("q", MethodFilter("search")),
+        ("q_asn", "asn__startswith"),
+    ]
 
     queryset = models.Network.objects.filter(status="ok")
     serializer_class = Serializers.net
+
+    def filter_search(self, qset, value):
+        return qset.filter(Q(name__icontains=value) | Q(asn__startswith=value))
 
 
 @route
 class Facility(DataViewSet):
 
     allowed_http_methods = ["GET"]
-    valid_filters = [("org", "org_id"), ("country", "country"), ("city", "city")]
+    valid_filters = [
+        ("org", "org_id"),
+        ("country", "country"),
+        ("city", "city"),
+        ("q", "name__icontains"),
+    ]
 
     queryset = models.Facility.objects.filter(status="ok")
     serializer_class = Serializers.fac

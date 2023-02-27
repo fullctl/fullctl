@@ -6,7 +6,7 @@ class AccountObjects:
         from django.contrib.auth import get_user_model
         from django.test import Client
         from fullctl.django.auth import permissions
-        from fullctl.django.models.concrete import Organization, OrganizationUser
+        from fullctl.django.models.concrete import Organization
         from rest_framework.test import APIClient
 
         self.user = user = get_user_model().objects.create_user(
@@ -46,6 +46,8 @@ def make_account_objects(handle="test"):
 
 @pytest.fixture
 def client_anon():
+    from django.test import Client
+
     return Client()
 
 
@@ -70,4 +72,4 @@ def pdb_data():
     fac = Facility.objects.create(name="Fac", status="ok", org=org)
     ix = InternetExchange.objects.create(name="Exchange", status="ok", org=org)
 
-    return {"org": org, "net": net, "ix": ix, "fac": fac}
+    return {"org": org, "net": net, "net_2": net_2, "ix": ix, "fac": fac}

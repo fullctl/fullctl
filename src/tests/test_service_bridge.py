@@ -1,8 +1,4 @@
-import json
-
 from django.urls import reverse
-
-import django_pdbctl.models as models
 
 
 def test_net_list(db, pdb_data, account_objects):

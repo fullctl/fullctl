@@ -1,3 +1,3 @@
-from fullctl.django.rest.usage import UsageMetric, register
+# from fullctl.django.rest.usage import UsageMetric, register
 
-import django_pdbctl.models as models
+# import django_pdbctl.models as models

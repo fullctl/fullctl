@@ -1,5 +1,5 @@
 import fullctl.django.rest.urls.service_bridge_proxy as service_bridge
-from django.urls import include, path
+from django.urls import path
 
 import django_pdbctl.views as views
 

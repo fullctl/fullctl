@@ -33,7 +33,8 @@ case "$@" in
     source venv/bin/activate
     cd main
     export DJANGO_SETTINGS_MODULE=pdbctl.settings
-    pytest tests/ -vv --cov-report=term-missing --cov-report=xml --cov={$COVERAGE_REPOS}
+    export RELEASE_ENV=run_tests
+    pytest tests/ -vv --cov-report=term-missing --cov-report=xml --cov=django_pdbctl --cov=pdbctl
     ;;
   "test_mode" )
     source venv/bin/activate

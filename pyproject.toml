@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pdbctl"
-version = "1.0.0-rc1"
+version = "1.0.0-rc11"
 description = "allows other fullctl services to facilitate updates to and from PeeringDB"
 readme = "README.md"
 repository = "https://github.com/fullctl/pbctl"
@@ -23,27 +23,35 @@ classifiers = [
 python = "^3.9"
 fullctl = { git = "https://github.com/fullctl/fullctl.git", branch = "prep-release" }
 
+django-peeringdb = "^2.8"
+peeringdb = "^1"
+
 [tool.poetry.dev-dependencies]
-docker-compose = "^1.29.1"
-# tests
+# testing
 codecov = ">=2"
 coverage = ">=5"
-pytest = ">=6.0.1"
-pytest-django = ">=3.8.0"
+pytest = ">=6"
+pytest-django = ">=3.8"
 pytest-cov = "*"
 
 # linting
-bandit = "^1.6.2"
-black = {version = ">=20", allow-prereleases = true}
-isort = "^5.7.0"
-flake8 = "^3.8.4"
-pre-commit = "^2.13.0"
-pyupgrade = "^2.19.4"
+# bandit = ">=1.6.2"
+black = ">=20"
+isort = ">=5.7"
+flake8 = ">=3.8"
+mypy = ">=0.950"
+pre-commit = ">=2.13"
+pyupgrade = ">=2.19"
 
-#ctl
-ctl = "^1.0.0"
-jinja2 = "^2.11.2"
-tmpl = "^1"
+# docs
+markdown = "*"
+markdown-include = ">=0.5,<1"
+mkdocs = "^1.2.3"
+
+# ctl
+ctl = ">=1"
+jinja2 = ">=2"
+tmpl = ">=1"
 
 [tool.isort]
 profile = "black"
