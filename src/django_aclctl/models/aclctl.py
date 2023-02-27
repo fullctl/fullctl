@@ -184,7 +184,6 @@ class FilterRule(HandleRefModel):
 
     @classmethod
     def new_rule_priority(cls, access_control_list):
-
         last = (
             cls.objects.filter(access_control_list=access_control_list)
             .order_by("priority")
@@ -238,7 +237,6 @@ class FilterRule(HandleRefModel):
 )
 @reversion.register
 class FilterRuleTemplate(TemplateModel):
-
     type = models.CharField(
         max_length=255,
         choices=DEVICE_TYPES,
@@ -263,7 +261,6 @@ class FilterRuleTemplate(TemplateModel):
         unique_together = (("instance", "name"),)
 
     def get_data(self):
-
         qset = self.context["access_control_list"].filter_rules.all()
 
         return {

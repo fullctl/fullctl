@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("django_aclctl", "0002_filterrule_src_prefix_set"),
     ]

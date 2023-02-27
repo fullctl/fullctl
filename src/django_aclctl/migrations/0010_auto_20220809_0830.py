@@ -10,7 +10,6 @@ from django.db import migrations, models
 
 
 def create_initial_lists(apps, schema_editor):
-
     AccessControlList = apps.get_model("django_aclctl", "AccessControlList")
     Instance = apps.get_model("django_fullctl", "Instance")
 
@@ -22,7 +21,6 @@ def create_initial_lists(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("django_fullctl", "0019_default_org"),
         ("django_aclctl", "0009_filterruletemplate_body"),

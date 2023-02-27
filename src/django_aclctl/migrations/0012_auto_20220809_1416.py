@@ -6,7 +6,6 @@ import django_aclctl.models.aclctl
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("django_aclctl", "0011_auto_20220809_0904"),
     ]

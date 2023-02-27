@@ -29,7 +29,6 @@ class AccessControlList(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVie
 
     @grainy_endpoint(namespace="access_control_list.{request.org.permission_id}")
     def list(self, request, org, instance, *args, **kwargs):
-
         """
         List all access-control-lists for the specified organization
         """
@@ -46,7 +45,6 @@ class AccessControlList(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVie
     @auditlog()
     @grainy_endpoint(namespace="access_control_list.{request.org.permission_id}")
     def create(self, request, org, instance, auditlog=None, *args, **kwargs):
-
         """
         Creates a new access-control-list
         """
@@ -72,7 +70,6 @@ class AccessControlList(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVie
         namespace="access_control_list.{request.org.permission_id}.{access_control_list.pk}"
     )
     def retrieve(self, request, org, access_control_list, instance, *args, **kwargs):
-
         """
         Retrieve the specified access-control-list
         """
@@ -103,7 +100,6 @@ class AccessControlList(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVie
         *args,
         **kwargs
     ):
-
         """
         Update the specified access-control-list
         """
@@ -143,7 +139,6 @@ class AccessControlList(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVie
         *args,
         **kwargs
     ):
-
         """
         Delete the specified access-control-list
         """
@@ -165,7 +160,6 @@ class AccessControlList(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVie
     def filter_rules(
         self, request, org, instance, access_control_list, *args, **kwargs
     ):
-
         """
         List all filter rules defined in the specified access-control-list
         """
@@ -182,14 +176,12 @@ class AccessControlList(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVie
 
 @route
 class FilterRule(CachedObjectMixin, viewsets.GenericViewSet):
-
     serializer_class = Serializers.filter_rule
     queryset = models.FilterRule.objects.all()
     ref_tag = "filter_rule"
 
     @grainy_endpoint(namespace="filter_rule.{request.org.permission_id}")
     def list(self, request, org, instance, *args, **kwargs):
-
         queryset = models.FilterRule.objects.filter(
             access_control_list__instance=instance
         )
@@ -211,7 +203,6 @@ class FilterRule(CachedObjectMixin, viewsets.GenericViewSet):
     @auditlog()
     @grainy_endpoint(namespace="filter_rule.{request.org.permission_id}")
     def create(self, request, org, instance, auditlog=None, *args, **kwargs):
-
         data = request.data
 
         access_control_list = models.AccessControlList.objects.get(
@@ -257,7 +248,6 @@ class FilterRule(CachedObjectMixin, viewsets.GenericViewSet):
     def update(
         self, request, org, filter_rule, instance, auditlog=None, *args, **kwargs
     ):
-
         data = request.data
         serializer = Serializers.filter_rule(
             filter_rule,
@@ -312,7 +302,6 @@ class FilterRuleTemplate(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVi
     @auditlog()
     @grainy_endpoint(namespace="filter_rule.{request.org.permission_id}")
     def create(self, request, org, instance, auditlog=None, *args, **kwargs):
-
         data = request.data
         data["instance"] = instance.id
 
@@ -336,7 +325,6 @@ class FilterRuleTemplate(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVi
     @auditlog()
     @grainy_endpoint(namespace="filter_rule.{request.org.permission_id}.{tmpl.pk}")
     def update(self, request, org, tmpl, instance, auditlog=None, *args, **kwargs):
-
         data = request.data
         data["instance"] = instance.id
 

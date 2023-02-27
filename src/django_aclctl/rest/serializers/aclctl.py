@@ -10,7 +10,6 @@ Serializers, register = serializer_registry()
 
 @register
 class AccessControlList(ModelSerializer):
-
     num_filters = serializers.SerializerMethodField()
 
     class Meta:
@@ -23,7 +22,6 @@ class AccessControlList(ModelSerializer):
 
 @register
 class FilterRule(ModelSerializer):
-
     src_prefix_set_name = serializers.SerializerMethodField()
     dest_prefix_set_name = serializers.SerializerMethodField()
 
@@ -45,21 +43,18 @@ class FilterRule(ModelSerializer):
         ]
 
     def get_src_prefix_set_name(self, obj):
-
         if not obj.src_prefix_set or not hasattr(obj.src_prefix_set, "object"):
             return None
 
         return obj.src_prefix_set.object.name
 
     def get_dest_prefix_set_name(self, obj):
-
         if not obj.dest_prefix_set or not hasattr(obj.dest_prefix_set, "object"):
             return None
 
         return obj.dest_prefix_set.object.name
 
     def validate(self, data):
-
         if (
             not data["src_prefix"]
             and not data["dest_prefix"]
@@ -72,7 +67,6 @@ class FilterRule(ModelSerializer):
 
 @register
 class FilterRuleTemplate(ModelSerializer):
-
     ref_tag = "filter_rule_template"
 
     class Meta(TemplateSerializer.Meta):
@@ -82,7 +76,6 @@ class FilterRuleTemplate(ModelSerializer):
 
 @register
 class FilterRuleConfig(TemplateSerializer):
-
     ref_tag = "filter_rule_config"
 
     class Meta(TemplateSerializer.Meta):

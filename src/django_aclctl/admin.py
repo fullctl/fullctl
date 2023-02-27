@@ -10,7 +10,6 @@ class FilterRuleInlineAdmin(admin.TabularInline):
 
 @admin.register(AccessControlList)
 class AccessControlListAdmin(BaseAdmin):
-
     list_display = ("instance", "org", "name", "created", "updated")
     readonly_fields = ("org",)
     inlines = (FilterRuleInlineAdmin,)
@@ -21,7 +20,6 @@ class AccessControlListAdmin(BaseAdmin):
 
 @admin.register(FilterRule)
 class FilterRuleAdmin(BaseAdmin):
-
     list_display = (
         "access_control_list",
         "org",
@@ -62,7 +60,6 @@ class FilterRuleAdmin(BaseAdmin):
 
 @admin.register(FilterRuleTemplate)
 class FilterRuleTemplateAdmin(BaseAdmin):
-
     list_display = ["instance", "org", "name", "type", "created", "updated"]
 
     def org(self, obj):
