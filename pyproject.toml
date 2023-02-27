@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "fullctl"
 repository = "https://github.com/fullctl/fullctl"
-version = "1.0.0-rc24"
+version = "1.0.0"
 description = "Core classes and functions for service applications"
 authors = ["20C <code@20c.com>"]
 license = "Apache-2.0"
@@ -14,6 +14,7 @@ classifiers = [
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
 ]
 
 #packages = [
@@ -77,7 +78,7 @@ mkdocs = "^1.2.3"
 uritemplate = "*"
 
 # ctl
-ctl = "^1"
+ctl = { git = "https://github.com/20c/ctl.git", branch = "prep-release" }
 jinja2 = "^3"
 tmpl = "^1"
 
