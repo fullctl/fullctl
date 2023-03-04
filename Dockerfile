@@ -2,11 +2,12 @@
 ARG virtual_env=/venv
 ARG install_to=/srv/service
 ARG build_deps=""
+ARG extra_pip_install_dir=""
+
 ARG run_deps=" \
     libgcc \
     postgresql-libs \
     "
-# XXX ARG extra_pip_install
 ARG uid=6300
 ARG user=fullctl
 
@@ -14,8 +15,6 @@ FROM python:3.9-alpine as base
 
 ARG virtual_env
 ARG install_to
-ARG build_deps
-ARG run_deps
 
 ENV SERVICE_HOME=$install_to
 ENV VIRTUAL_ENV=$virtual_env
@@ -27,13 +26,15 @@ FROM ghcr.io/fullctl/fullctl-builder-alpine:prep-release as builder
 
 ARG extra_pip_install_dir
 
-# individual files here instead of COPY . . for caching
-COPY pyproject.toml poetry.lock $extra_pip_install_dir ./
+# only these two individual files before install instead for caching
+COPY pyproject.toml poetry.lock ./
 
 # Need to upgrade pip and wheel within Poetry for all its installs
 RUN poetry install --no-root
 
-RUN test -z "$extra_pip_install_dir" || pip install *.tar.gz
+# gitignore is just a placeholder for if extra is empty
+COPY .gitignore $extra_pip_install_dir ./plugins/
+RUN test -z "$extra_pip_install_dir" || pip install plugins/*.tar.gz
 
 COPY Ctl/VERSION Ctl/
 
