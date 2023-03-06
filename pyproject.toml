@@ -36,6 +36,8 @@ django-recaptcha = "^2"
 djangorestframework = "^3"
 django-reversion = "^5"
 django-structlog = "^2.1.3"
+
+# can't release to pypi with git reference
 social-auth-app-django = { git = "https://github.com/python-social-auth/social-app-django.git", branch="master" }
 
 setuptools = "*"
