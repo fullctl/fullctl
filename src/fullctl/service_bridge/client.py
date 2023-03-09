@@ -8,6 +8,15 @@ import requests.exceptions
 
 from fullctl.service_bridge.data import DataObject
 
+
+def trim_endpoint(endpoint):
+    """
+    urljoin is not guaranteed to strip trailing double slashes on
+    either side of the endpoint, so we do it manually
+    """
+    return endpoint.strip("/")
+
+
 # Location of test data
 TEST_DATA_PATH = "."
 
@@ -65,7 +74,7 @@ class Bridge:
         return self.Meta.data_object_cls
 
     def __init__(self, host, key, org_slug, **kwargs):
-        self.url = f"{host}/api"
+        self.url = urllib.parse.urljoin(host, "/api/")
         self.org = org_slug
         self.key = key
         self.host = host
@@ -131,19 +140,19 @@ class Bridge:
         return data
 
     def post(self, endpoint, **kwargs):
-        url = f"{self.url}/{endpoint}/"
+        url = urllib.parse.urljoin(self.url, f"{trim_endpoint(endpoint)}/")
         return self._data(requests.post(url, **self._requests_kwargs(**kwargs)))
 
     def put(self, endpoint, **kwargs):
-        url = f"{self.url}/{endpoint}/"
+        url = urllib.parse.urljoin(self.url, f"{trim_endpoint(endpoint)}/")
         return self._data(requests.put(url, **self._requests_kwargs(**kwargs)))
 
     def patch(self, endpoint, **kwargs):
-        url = f"{self.url}/{endpoint}/"
+        url = urllib.parse.urljoin(self.url, f"{trim_endpoint(endpoint)}/")
         return self._data(requests.patch(url, **self._requests_kwargs(**kwargs)))
 
     def delete(self, endpoint, **kwargs):
-        url = f"{self.url}/{endpoint}/"
+        url = urllib.parse.urljoin(self.url, f"{trim_endpoint(endpoint)}/")
         try:
             return self._data(requests.delete(url, **self._requests_kwargs(**kwargs)))
         except ServiceBridgeError as exc:

@@ -1,3 +1,5 @@
+from urllib.parse import urljoin
+
 try:
     from django.conf import settings
 
@@ -35,7 +37,7 @@ class Devicectl(Bridge):
         kwargs.setdefault("cache", CACHE)
 
         super().__init__(settings.DEVICECTL_URL, key, org, **kwargs)
-        self.url = f"{self.url}/service-bridge"
+        self.url = urljoin(self.url, "service-bridge/")
 
 
 class Device(Devicectl):

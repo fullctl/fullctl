@@ -1,3 +1,5 @@
+from urllib.parse import urljoin
+
 try:
     from django.conf import settings
 
@@ -34,7 +36,7 @@ class Peerctl(Bridge):
         kwargs.setdefault("cache", CACHE)
 
         super().__init__(settings.PEERCTL_URL, key, org, **kwargs)
-        self.url = f"{self.url}/service-bridge"
+        self.url = urljoin(self.url, "service-bridge/")
 
 
 class NetworkObject(PeerctlEntity):
