@@ -135,8 +135,6 @@ a.btn:hover {
   display: inline-flex;
 }
 
-
-
 .templates,
 .hidden,
 div[data-element="templates"],
@@ -165,6 +163,17 @@ button:focus {
   bottom: 0px;
   right: 0px;
   z-index: 10;
+  display: flex;
+  align-items: center;
+}
+
+.loading-shim:after {
+  content: '';
+  display: block;
+  background: url("imgs/loading-shim.png") center/contain no-repeat;
+  height: 84%;
+  width: 100%;
+  max-height: 84px;
 }
 
 .nowrap {
