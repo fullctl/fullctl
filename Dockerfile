@@ -1,5 +1,5 @@
 ARG base_repo=python
-ARG base_tag=3.9-alpine
+ARG base_tag=3.11-alpine
 
 ARG virtual_env=/venv
 ARG install_to=/srv/service
