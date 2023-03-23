@@ -324,6 +324,11 @@ div.loading-anim {
   border-radius: var(--size-100);
 }
 
+.alert-warning .btn-warning {
+  border: none;
+  font-weight: 800;
+}
+
 /**
  * page
  */
