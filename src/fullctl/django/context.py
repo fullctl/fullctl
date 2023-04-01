@@ -7,6 +7,27 @@ _current_request = contextvars.ContextVar("current_request")
 
 _service_bridge_sync = contextvars.ContextVar("service_bridge_sync")
 
+_historic = contextvars.ContextVar("historic")
+
+
+@contextmanager
+def historic(start_dt=None, end_dt=None):
+    """
+    Will yield a date range
+    """
+
+    if start_dt and end_dt:
+        token = _historic.set((start_dt, end_dt))
+    else:
+        token = None
+    try:
+        yield _historic.get()
+    except LookupError:
+        yield None
+    finally:
+        if token:
+            _historic.reset(token)
+
 
 @contextmanager
 def current_request(request=None):

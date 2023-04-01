@@ -27,7 +27,6 @@
   --theme-secondary-border-color: rgba(255, 255, 255, 0.15);
   --theme-toolbar-color: #fff;
 
-
   --theme-alert-info-bg: #7747FF;
   --theme-alert-info-color: #fff;
   --theme-alert-info-border: rgba(255, 255, 255, 0.12);
@@ -61,6 +60,8 @@
   --bs-body-color-rgb: var(--foreground);
   --bs-body-bg: var(--background);
 
+  --source-of-truth-icon: url("../logos/ctl-mark-dark.png");
+
   color-scheme: dark;
 }
 
@@ -77,7 +78,7 @@
   /* need to manually find this */
   --clr-filter-black-to-foreground: invert(7%) sepia(12%) saturate(1104%) hue-rotate(189deg) brightness(99%) contrast(93%);
 
-  --footer-clr: var(--clr-primary-300);
+  --footer-clr: var(--clr-primary-700);
   --th-clr: var(--clr-primary-500);
   --th-bg: var(--clr-bg-200);
   --card-header-bg: var(--clr-bg-300);
@@ -91,6 +92,8 @@
   --modal-bg: var(--clr-bg-200);
   --modal-clr: var(--clr-primary-800);
 
+  --source-of-truth-icon: url("../logos/ctl-mark-light.png");
+
   color-scheme: light;
 }
 
@@ -101,6 +104,10 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
+}
+
+input[type="checkbox"] {
+  accent-color: var(--background);
 }
 
 .btn {
@@ -176,12 +183,34 @@ div.modal .list-group-item {
   color: var(--foreground);
 }
 
+main .dropdown-menu,
+main .dropdown-item,
+main .dropdown-item:hover {
+  background-color: var(--modal-bg);
+  color: var(--foreground);
+}
+
+.no-color {
+  color: inherit !important;
+}
+
 /**
  * Bootstrap overrides
  */
 .form-select {
   color: var(--foreground);
   background-image: var(--dropdown-svg-url);
+}
+
+.alert-warning {
+  --bs-alert-color: var(--foreground);
+  --bs-alert-bg: var(--box-bg);
+  --bs-alert-border-color: var(--clr-accent-600);
+}
+
+.alert-warning .btn-warning {
+  background-color: var(--primary-btn-bg);
+  color: var(--primary-btn-clr);
 }
 
 /**
@@ -205,6 +234,10 @@ header .icon {
   background-color: var(--theme-toolbar-color);
 }
 
+header .dropdown-item.selected .icon-org {
+  background-color: var(--clr-accent-400);
+}
+
 div.header .app-switcher .selected.prefixctl.expanded {
   background-color: #244145;
 }
@@ -216,6 +249,26 @@ div.header .app-switcher .others {
 
 div.header .app-switcher .others a {
   border: 1px solid var(--theme-secondary-border-color);
+}
+
+header .dropdown-item,
+header .dropdown-item:hover,
+header .dropdown-item:focus,
+header .dropdown-menu {
+  background-color: #0F1317;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.5);
+  color: var(--theme-toolbar-color);
+}
+
+header .dropdown-item.selected:hover,
+header .dropdown-item.selected {
+  background-color: #000;
+}
+
+header .dropdown-item:focus,
+header .dropdown-item:hover,
+header .dropdown-item {
+  color: var(--clr-accent-400);
 }
 
 /**
@@ -334,6 +387,10 @@ a.prefixctl,
   background-color: var(--list-table-hover);
 }
 
+.list-table:not(.no-hover) tr:hover input[type="checkbox"] {
+  accent-color: var(--list-table-hover);
+}
+
 .list-table tr:hover .btn {
  border-color: var(--theme-secondary-border-color);
 }
@@ -404,6 +461,10 @@ div.menu div.section.tabs h5 {
 .table th {
   background-color: var(--th-bg);
   color: var(--th-clr);
+}
+
+.table th input[type="checkbox"] {
+  accent-color: var(--th-bg);
 }
 
 .table .table {
@@ -495,30 +556,6 @@ div.menu div.menu-deco-border {
 
 .alert-info a {
   color: var(--theme-alert-info-link-color);
-}
-
-.dropdown-item,
-.dropdown-menu {
-  background-color: #0F1317 !important;
-}
-
-.dropdown-item.selected:hover,
-.dropdown-item.selected {
-  background-color: #000;
-}
-
-.dropdown-menu {
-  color: #BCBEC0;
-  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.5);
-}
-
-.dropdown-item {
-  color: #D1FF27;
-}
-
-.dropdown-item:hover {
-  color: #D1FF27;
-  background-color: #0F1317;
 }
 
 tbody.list-footer button {

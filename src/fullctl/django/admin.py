@@ -7,9 +7,12 @@ from django_handleref.admin import VersionAdmin
 
 import fullctl.django.auditlog as auditlog
 from fullctl.django.models.concrete import (
+    Attachment,
     AuditLog,
     Organization,
     OrganizationUser,
+    Request,
+    Response,
     Task,
     TaskSchedule,
     UserSettings,
@@ -181,3 +184,50 @@ class ServiceBridgeAction(admin.ModelAdmin):
 @admin.register(UserSettings)
 class UserSettingsAdmin(BaseAdmin):
     list_display = ("user", "theme", "color_scheme")
+
+
+class ResponseInline(admin.TabularInline):
+    model = Response
+    extra = 0
+    show_change_link = True
+
+
+class AttachmentInline(admin.TabularInline):
+    model = Attachment
+    extra = 0
+    readonly_fields = ["size"]
+
+
+@admin.register(Request)
+class RequestAdmin(BaseAdmin):
+    list_display = [
+        "identifier",
+        "source",
+        "type",
+        "http_status",
+        "count",
+        "created",
+        "updated",
+    ]
+    list_filter = ["http_status", "source", "type"]
+    inlines = [
+        ResponseInline,
+    ]
+    search_fields = [
+        "identifier",
+    ]
+
+
+@admin.register(Response)
+class ResponseAdmin(BaseAdmin):
+    list_display = [
+        "request",
+        "created",
+        "updated",
+    ]
+    inlines = [
+        AttachmentInline,
+    ]
+    search_fields = [
+        "request__identifier",
+    ]

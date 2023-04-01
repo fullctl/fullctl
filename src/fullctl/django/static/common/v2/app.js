@@ -16,9 +16,22 @@ fullctl.formatters = {}
 fullctl.modals = {}
 fullctl.util = {}
 fullctl.help_box = {}
+fullctl.static_path = "/s/0.0.0-dev/"
+
 
 fullctl.util.slugify = (txt) => {
   return txt.toLowerCase().replace(/\s/g, "-").replace(/_/g, "-").replace(/[^a-zA-Z0-9-]/g,"").replace(/-+/g, '-');
+};
+
+/**
+ * Works similarly to the django `static` template tag and will
+ * return the full path to a static file
+ * @param {String} path path to file
+ * @returns {String} full path to file
+ */
+
+fullctl.util.static = (path) => {
+  return fullctl.static_path+path;
 };
 
 fullctl.formatters.pretty_speed = (value) => {
@@ -51,6 +64,23 @@ fullctl.formatters.meta_data = (value) => {
   return node;
 }
 
+/**
+ * Formats `True` and `False` as checkmark and cross
+ * @method pretty_bool
+ * @param {String} value value of cell
+ * @param {Object} data object literal of row data
+ * @param {Object} cell jQuery object for container
+ */
+
+fullctl.formatters.yesno = (value, data, cell) => {
+  var path;
+  if(value && value !== "") {
+    path = fullctl.util.static("common/icons/Indicator/Check-Ind/Check.svg");
+  } else {
+    path = fullctl.util.static("common/icons/Indicator/X-Ind/X.svg");
+  }
+  return $('<img>').attr("src", path).addClass("indicator");
+}
 
 fullctl.loading_animation = () => {
   var anim = $('<div class="spinner loadingio-spinner-bars-k879i8bcs9"><div class="ldio-a9ruqenne8l"><div></div><div></div><div></div><div></div></div></div>');
@@ -149,15 +179,27 @@ fullctl.widget.SelectionList = $tc.extend(
       this.List(jq);
       this.delete_selected_button = jq_delete_selected_button;
 
-      this.list_head.find('tr').first().prepend('<th class="center"><input type="checkbox" value="all"></th>');
+      this.list_head.find('tr').first().prepend(
+        '<th class="center checkbox-cell">'+
+          '<input type="checkbox" value="all">'+
+        '</th>'
+      );
 
       $(this).on("load:after", () => {
         this.set_delete_selected_button();
         this.unselect_select_all_checkbox();
       });
 
+      // select checkbox by clicking on th
+      this.list_head.find('th.checkbox-cell ').click(function(e) {
+        let checkbox = $(this).find('input[type="checkbox"][value="all"]');
+        if(!$(e.target).is(checkbox)) {
+          checkbox.prop('checked', !checkbox.prop('checked')).change();
+        }
+      })
+
       let selection_list = this;
-      this.list_head.find('th input[type="checkbox"][value="all"]').click(function() {
+      this.list_head.find('th input[type="checkbox"][value="all"]').change(function() {
         if ($(this).prop("checked")) {
           selection_list.select_all();
         } else {
@@ -168,7 +210,10 @@ fullctl.widget.SelectionList = $tc.extend(
     },
 
     build_row : function(data) {
-      return this.template('row').prepend('<td class="select-checkbox center"><input type="checkbox" class="row-chbx" name="list-row"></td>');
+      return this.template('row').prepend(
+        '<td class="select-checkbox checkbox-cell center">'+
+          '<input type="checkbox" class="row-chbx" name="list-row">'+
+        '</td>');
     },
 
     insert : function(data) {
@@ -178,10 +223,19 @@ fullctl.widget.SelectionList = $tc.extend(
 
       this.apply_data(data, row_element);
 
-      if(this.formatters.row)
+      if(this.formatters.row) {
         this.formatters.row(row_element, data)
+      }
 
-      row_element.find('.row-chbx').click(() => {
+      // select checkbox by clicking on td
+      row_element.find('.checkbox-cell').click(function(e) {
+        let checkbox = row_element.find('.row-chbx');
+        if(!$(e.target).is(checkbox)) {
+          checkbox.prop('checked', !checkbox.prop('checked')).change();
+        }
+      });
+
+      row_element.find('.row-chbx').change(() => {
         this.set_delete_selected_button();
         this.unselect_select_all_checkbox();
       });
@@ -493,7 +547,7 @@ fullctl.application.Header = $tc.extend(
           if(org == data.slug) {
             row.addClass('selected')
             row.find('.manage').click(() => {
-              new fullctl.application.Orgctl.PermissionsModal();
+              window.location = fullctl.aaactl_urls.manage_org;
             });
           } else {
             row.find('.manage').hide();
@@ -505,28 +559,58 @@ fullctl.application.Header = $tc.extend(
         w.load()
 
         this.wire_app_switcher();
+        this.wire_stop_impersonation();
 
         return w;
       });
     },
 
+    /**
+     * wires the service application switcher in the header
+     * @method wire_app_switcher
+     * @return {void}
+     */
+
     wire_app_switcher : function() {
       this.widget("app_switcher", ($e) => {
         var others = $e.app_switcher.find('.others')
-        var selected = $e.app_switcher.find('.selected')
+        const selected = $e.app_switcher.find('.selected')
         selected.click(() => {
           others.show();
           selected.addClass('app_bg muted');
         });
         $(document.body).click(function(e) {
-          if( !$(e.target).parent().hasClass('selected') ) {
+          if (
+            !( $(e.target).is(selected) || $(e.target).parent().hasClass('selected') )
+          ) {
             others.hide();
             selected.removeClass('app_bg muted');
           }
         });
         return {};
       });
+    },
+
+    /**
+     * wires the stop impersonation button in the header
+     * @method wire_stop_impersonation
+     */
+
+    wire_stop_impersonation : function() {
+
+      var stop_impersonation = $('[data-element="stop_impersonation"]')
+      if(!stop_impersonation.length)
+        return;
+
+      this.widget("stop_impersonation", ($e) => {
+        var button = new twentyc.rest.Button(stop_impersonation);
+        $(button).on("api-write:success", (event, endpoint, payload, response) => {
+          window.location.href = "/";
+        });
+      });
     }
+
+
   },
   fullctl.application.Component
 );
@@ -1042,43 +1126,26 @@ fullctl.help_box = document.addEventListener("DOMContentLoaded", () => {
 });
 
 fullctl.theme_switching = document.addEventListener("DOMContentLoaded", () => {
-  function get_system_theme() {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }
-
-  matchMedia('(prefers-color-scheme: dark)').onchange = (e) => {
-    let system_theme = get_system_theme();
-    // Update the theme, as long as there's no theme override
-    if (localStorage.getItem('theme') === null) {
-      set_theme(system_theme)
-    }
-  }
-
   function toggle_theme() {
-      if (detect_theme() === 'dark')
-          set_theme('light');
-      else
-          set_theme('dark');
+    if (detect_theme() === 'dark')
+      set_theme('light');
+    else
+      set_theme('dark');
   }
 
   function set_theme(newTheme) {
     document.documentElement.setAttribute('data-theme', newTheme)
-    if (newTheme === get_system_theme()) {
-      // Remove override if the user sets the theme to match the system theme
-      localStorage.removeItem('theme')
-    } else {
-      localStorage.setItem('theme', newTheme)
-    }
+    localStorage.setItem('theme', newTheme)
   }
 
   function detect_theme() {
       var theme_override = localStorage.getItem('theme')
       if (theme_override == 'dark' || theme_override === 'light') {
-          // Override the system theme
-          return theme_override
+        // Override the system theme
+        return theme_override
       }
-      // Use system theme
-      return get_system_theme();
+      // Use dark theme by default
+      return 'dark';
   }
 
   document.documentElement.setAttribute('data-theme', detect_theme())

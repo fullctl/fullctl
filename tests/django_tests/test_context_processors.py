@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.http import HttpRequest
 
 from fullctl.django import context_processors
@@ -13,6 +15,7 @@ def test_account_service(db, dj_account_objects, settings):
         "urls": {
             "create_org": "localhost/account/",
             "manage_org": "localhost/account/?org=test",
+            "manage_account": "localhost/account/?edit=account",
             "billing_setup": "localhost/billing/setup?org=test",
         }
     }
@@ -29,6 +32,7 @@ def test_account_service_no_org(db, dj_account_objects, settings):
         "urls": {
             "create_org": "localhost/account/",
             "manage_org": "localhost/account/?org=",
+            "manage_account": "localhost/account/?edit=account",
             "billing_setup": "localhost/billing/setup?org=",
         }
     }
@@ -103,6 +107,7 @@ def test_conf(db, dj_account_objects, settings):
         "post_feature_request_url": "test://new-feature",
         "docs_url": "test://docs",
         "legal_url": "test://legal",
+        "current_year": datetime.now().year,
     }
 
     conf = context_processors.conf(request)

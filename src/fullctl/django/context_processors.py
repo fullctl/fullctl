@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.conf import settings
 
 from fullctl.django.auth import RemotePermissionsError
@@ -14,6 +16,7 @@ def conf(request):
         "post_feature_request_url": settings.POST_FEATURE_REQUEST_URL,
         "docs_url": settings.DOCS_URL,
         "legal_url": settings.LEGAL_URL,
+        "current_year": datetime.now().year,
     }
 
 
@@ -32,6 +35,7 @@ def account_service(request):
         account_service={
             "urls": {
                 "billing_setup": f"{settings.OAUTH_TWENTYC_URL}/billing/setup?org={org_slug}",
+                "manage_account": f"{settings.OAUTH_TWENTYC_URL}/account/?edit=account",
                 # TODO: flesh out to redirect to org/create
                 "create_org": f"{settings.OAUTH_TWENTYC_URL}/account/",
                 "manage_org": f"{settings.OAUTH_TWENTYC_URL}/account/?org={org_slug}",

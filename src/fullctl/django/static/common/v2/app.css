@@ -97,6 +97,11 @@ svg {
   width: 100%;
 }
 
+:root[data-theme="light"] img.img-dark,
+:root:not([data-theme="light"]) img.img-light {
+  display: none !important;
+}
+
 main {
   flex: 1;
 }
@@ -127,6 +132,14 @@ main {
   --bs-btn-padding-y: var(--size-100);
 }
 
+.btn-expand {
+  border-radius: 100vmax;
+  display: inline-flex;
+  border: 1px solid;
+  padding: var(--size-100);
+  border-color: var(--theme-secondary-border-color);
+}
+
 a.btn:hover {
   text-decoration: none;
 }
@@ -134,8 +147,6 @@ a.btn:hover {
 .btn div {
   display: inline-flex;
 }
-
-
 
 .templates,
 .hidden,
@@ -165,6 +176,17 @@ button:focus {
   bottom: 0px;
   right: 0px;
   z-index: 10;
+  display: flex;
+  align-items: center;
+}
+
+.loading-shim:after {
+  content: '';
+  display: block;
+  background: url("imgs/loading-shim.png") center/contain no-repeat;
+  height: 84%;
+  width: 100%;
+  max-height: 84px;
 }
 
 .nowrap {
@@ -276,6 +298,10 @@ div.loading-anim {
   margin-top: 24px;
 }
 
+.marg-bottom-lg {
+  margin-bottom: 24px;
+}
+
 .marg-bot-sm {
   margin-bottom: 5px;
 }
@@ -310,6 +336,11 @@ div.loading-anim {
   border-radius: var(--size-100);
 }
 
+.alert-warning .btn-warning {
+  border: none;
+  font-weight: 800;
+}
+
 /**
  * page
  */
@@ -342,6 +373,10 @@ div.header-left a {
 div.header-middle {
   text-align: center;
   border-left: solid 1px;
+}
+
+header .header-right {
+  padding-right: 0;
 }
 
 div.header select {
@@ -400,13 +435,31 @@ div.header .app-switcher .others a:hover .icon {
   visibility: visible;
 }
 
-div.dropdown-meny.show,
+div.dropdown-menu.show,
 span.dropdown.show {
   display: inline-block !important;
 }
 
 div.header-control {
   border-left: solid 1px;
+}
+
+header .dropdown-item {
+  display: flex;
+  align-items: center;
+}
+
+header .dropdown-item [data-field="name"],
+header .dropdown-item .label {
+  margin: 0 0.25rem;
+}
+
+header .dropdown-item .manage-org {
+  margin-left: auto;
+}
+
+header h4 {
+  margin-bottom: 0;
 }
 
 /**
@@ -745,6 +798,11 @@ span.icon-report {
   mask-image: url(icons/file-earmark-text.svg);
 }
 
+span.icon-as {
+  -webkit-mask-image: url(icons/database.svg);
+  mask-image: url(icons/database.svg);
+}
+
 [data-true] {
   display: none;
 }
@@ -829,6 +887,11 @@ div.menu .button {
   border-top-right-radius: var(--size-200);
   border-bottom-right-radius: var(--size-200);
   padding: var(--size-200);
+}
+
+.input-group.searchbar .btn.curved {
+  border-top-right-radius: var(--size-200) !important;
+  border-bottom-right-radius: var(--size-200) !important;
 }
 
 /**
@@ -990,6 +1053,16 @@ div.list-th {
   border-left: 1px transparent solid;
 }
 
+.compact-row img.indicator {
+  display: inline-block;
+  margin-left: 5px;
+  vertical-align: bottom;
+}
+
+.secondary .property .field img.indicator {
+  display: inline-block;
+}
+
 div.list-body .secondary .property {
   margin-left: calc(var(--bs-gutter-x) * -0.5);
 }
@@ -1046,11 +1119,11 @@ div.list-body div.secondary {
 }
 
 div.list-body .primary-row-name {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: bold;
   letter-spacing: 0;
   line-height: 24px;
-  margin: 16px 0px 16px 8px;
+  margin: 16px 0px;
 }
 
 tbody.list-footer {
@@ -1061,6 +1134,13 @@ tbody.list-footer td {
   text-align: center;
 }
 
+div.grid-col-3 {
+  padding: 5px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  row-gap: 0.5rem;
+}
+
 div.column-list-3 {
   column-count: 3;
 }
@@ -1068,7 +1148,6 @@ div.column-list-3 {
 div.inner-list {
   padding: 5px;
 }
-
 
 td.inner-list-container {
   padding-left: 0px;
@@ -1372,16 +1451,21 @@ span.tag {
  */
 
 .btn-oauth {
-  width: 210px;
+  min-width: 240px;
+}
+
+.btn-oauth img {
+  height: 40px;
+  display: inline-block;
 }
 
 img.login-twentyc,
 img.login-peeringdb {
-  height: 40px;
+  max-height: 40px;
 }
 
 img.login-google {
-  width: 40px;
+  max-width: 40px;
 }
 
 
@@ -1472,4 +1556,18 @@ div.wizard.wiz-step-3 .wiz-step.wiz-step-3,
 div.wizard.wiz-step-2 .wiz-step.wiz-step-2,
 div.wizard.wiz-step-1 .wiz-step.wiz-step-1 {
   display: block;
+}
+
+/*
+ * source of truth indication
+ */
+
+span.fullctl-sot {
+  background-image: var(--source-of-truth-icon);
+  background-repeat: no-repeat;
+  height: 20px;
+  width: 20px;
+  background-size: 20px;
+  display: inline-block;
+  margin-left: 5px;
 }
