@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 import fullctl.django.models as models
+import fullctl.service_bridge.aaactl as aaactl
 from fullctl.django.rest.decorators import grainy_endpoint
 from fullctl.django.rest.route.account import route
 from fullctl.django.rest.serializers.account import Serializers
@@ -47,3 +48,23 @@ class User(viewsets.GenericViewSet):
 
         serializer = Serializers.asn(verified_asns(request.perms), many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["POST"])
+    def stop_impersonation(self, request, *args, **kwargs):
+        """
+        Stop impersonating a user via the aaactl service bridge
+        """
+
+        if not getattr(request, "impersonating", None):
+            return Response({})
+
+        try:
+            del request.session["impersonating"]
+        except KeyError:
+            pass
+
+        aaactl.Impersonation().stop(
+            request.impersonating["superuser"].social_auth.first().uid
+        )
+
+        return Response({})

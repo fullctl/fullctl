@@ -3,21 +3,23 @@ Abstract classes to facilitate the fetching, caching and retrieving of meta data
 sourced from third party sources.
 """
 import json
+import re
 from datetime import timedelta
 
 import confu.schema
 import requests
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
 from fullctl.django.models.abstract import HandleRefModel
 
-__all__ = [
-    "Request",
-    "Response",
-    "Data",
-]
+__all__ = ["Request", "Response", "Data", "NoMetaClassDefined"]
+
+
+class NoMetaClassDefined(ValueError):
+    pass
 
 
 class DataMixin:
@@ -50,13 +52,40 @@ class Data(HandleRefModel):
     Normalized object meta data
     """
 
+    source_name = models.CharField(max_length=255, null=True, blank=True)
+    type = models.CharField(max_length=255, default="info")
     data = models.JSONField()
+    date = models.DateTimeField(help_text="Data validity start date")
 
     class Meta:
         abstract = True
 
     class HandleRef:
         tag = "meta_data"
+
+    class Config:
+        # historic period in seconds
+        period = 12 * 3600
+        type = "info"
+
+    @classmethod
+    def cleanup(cls, target=None, age=None):
+        return
+
+    @classmethod
+    def config(cls, config_name, default=None):
+        value = getattr(cls.Config, config_name, default)
+
+        if value is None:
+            raise ValueError(f"`{cls}.Config.{config_name}` property not specified")
+
+        return value
+
+    def update(self, data):
+        self.data = data
+
+    def __str__(self):
+        return f"{self.type}:{self.source_name}:{self.date}"
 
 
 class Request(HandleRefModel):
@@ -66,9 +95,10 @@ class Request(HandleRefModel):
     """
 
     source = models.CharField(max_length=255)
+    type = models.CharField(max_length=255, null=True, blank=True)
     url = models.URLField()
     http_status = models.PositiveIntegerField()
-    payload = models.JSONField(null=True)
+    payload = models.JSONField(null=True, blank=True)
     count = models.PositiveIntegerField(default=1)
 
     processing_error = models.CharField(
@@ -152,10 +182,14 @@ class Request(HandleRefModel):
         request = cls.get_cache(target)
 
         if request:
-            try:
-                return request.response
-            except Exception:
-                return request
+            return cls.process(
+                target,
+                request.url,
+                request.http_status,
+                request.response.data,
+                cached=True,
+                content=request.response.content,
+            )
 
         return cls.send(target)
 
@@ -166,6 +200,13 @@ class Request(HandleRefModel):
         """
 
         raise NotImplementedError()
+
+    @classmethod
+    def target_to_type(cls, target):
+        """
+        override this to handle converting a target to a requestable url
+        """
+        return None
 
     @classmethod
     def send(cls, target):
@@ -191,7 +232,9 @@ class Request(HandleRefModel):
         return requests.get(url)
 
     @classmethod
-    def process(cls, target, url, http_status, getdata, payload=None):
+    def process(
+        cls, target, url, http_status, getdata, payload=None, cached=False, content=None
+    ):
         """
         processes a response and return the `Request` object created for it
         """
@@ -200,7 +243,12 @@ class Request(HandleRefModel):
         target_field = cls.config("target_field")
         response_cls = cls._meta.get_field("response").related_model
 
-        params = {target_field: target, "url": url, "source": source}
+        params = {
+            target_field: target,
+            "url": url,
+            "source": source,
+            "type": cls.target_to_type(target),
+        }
 
         if payload:
             params.update(payload=json.dumps(payload))
@@ -224,10 +272,12 @@ class Request(HandleRefModel):
                 data = getdata()
             else:
                 data = getdata
+            req.processing_error = None
         except Exception as exc:
             req.processing_error = f"{exc}"
 
-        req.save()
+        if not cached:
+            req.save()
 
         if data is not None:
             try:
@@ -238,15 +288,23 @@ class Request(HandleRefModel):
 
             if not create_response:
                 req.response.data = data
+                req.response.content = content
                 req.response.save()
             else:
                 response_cls.objects.create(
                     source=source,
                     data=data,
+                    content=content,
                     request=req,
                 )
 
-            req.response.write_meta_data(req)
+            # if a meta data class is defined for this request
+            # we will write the meta data from the response
+
+            try:
+                req.response.write_meta_data(req)
+            except NoMetaClassDefined:
+                pass
 
             return req
 
@@ -264,7 +322,7 @@ class Request(HandleRefModel):
     @classmethod
     def get_cache(cls, target):
         qset = cls.get_cache_queryset(target)
-        qset = qset.filter(updated__gte=cls.valid_cache_datetime())
+        qset = qset.filter(updated__gte=cls.valid_cache_datetime(target))
 
         if qset.exists():
             return qset.first()
@@ -274,20 +332,50 @@ class Request(HandleRefModel):
     @classmethod
     def get_cache_queryset(cls, target):
         target_field = cls.config("target_field")
-        filters = {target_field: target}
+        typ = cls.target_to_type(target)
+        filters = {target_field: target, "source": cls.config("source_name")}
+
+        if typ:
+            filters.update(type=typ)
+        else:
+            filters.update(type__isnull=True)
+
         return cls.objects.filter(**filters)
 
     @classmethod
-    def cache_expiry(cls):
-        return cls.config("cache_expiry")
+    def cache_expiry_from_settings(cls, target):
+        """
+        returns the cache expiry for the specified target from the settings
+        """
+        setting_name = f"{cls.config('source_name')}_cache_expiry".upper()
+
+        # replace dash and spaces with underscore
+        setting_name = re.sub(r"[\s-]", "_", setting_name)
+
+        return getattr(settings, setting_name)
 
     @classmethod
-    def valid_cache_datetime(cls):
-        expiry = cls.cache_expiry()
+    def cache_expiry(cls, target):
+        # try to get the expiry from the settings
+        try:
+            expiry = cls.cache_expiry_from_settings(target)
+        except AttributeError:
+            expiry = cls.config("cache_expiry")
+        return expiry
+
+    @classmethod
+    def valid_cache_datetime(cls, target):
+        expiry = cls.cache_expiry(target)
+        if expiry is None:
+            # no cache expiry, return a date far in the past (100 years)
+            return timezone.now() - timedelta(days=365 * 100)
         return timezone.now() - timedelta(seconds=expiry)
 
-    def process_response(self, response):
-        return response.data
+    def process_response(self, response, target, date):
+        yield date, target, response.data
+
+    def prepare_data(self, data):
+        return data
 
 
 class Response(HandleRefModel):
@@ -298,9 +386,15 @@ class Response(HandleRefModel):
 
     source = models.CharField(max_length=255)
     data = models.JSONField(null=True)
+    content = models.TextField(
+        help_text="raw content of response - may not be set if data and content are equal.",
+        null=True,
+        blank=True,
+    )
 
     class Config:
         meta_data_cls = None
+        attachment_cls = None
 
     class Meta:
         abstract = True
@@ -317,18 +411,86 @@ class Response(HandleRefModel):
 
         return value
 
-    def write_meta_data(self, req):
-        meta_data_cls = self.config("meta_data_cls")
-        target_field = self.config("target_field", req.config("target_field"))
+    @property
+    def meta_data_cls(self):
+        try:
+            return self.request.config("meta_data_cls", self.config("meta_data_cls"))
+        except ValueError:
+            raise NoMetaClassDefined()
 
+    def write_meta_data(self, req):
+        target_field = self.config("target_field", req.config("target_field"))
+        source_name = req.config("source_name")
         target = getattr(req, target_field)
 
-        try:
-            filters = {target_field: target}
-            meta_data = meta_data_cls.objects.get(**filters)
-        except meta_data_cls.DoesNotExist:
-            meta_data = meta_data_cls(data={})
+        for date, _target, data in req.process_response(self, target, timezone.now()):
+            self._write_meta_data(
+                req, date, req.prepare_data(data), _target, target_field, source_name
+            )
+
+    def _write_meta_data(self, request, date, data, target, target_field, source_name):
+        meta_data_cls = self.meta_data_cls
+
+        meta_data_type = meta_data_cls.config("type")
+        period = meta_data_cls.config("period")
+        start = date - timedelta(seconds=period)
+        end = date + timedelta(seconds=period)
+
+        filters = {target_field: target, "source_name": source_name}
+        meta_data = (
+            meta_data_cls.objects.filter(date__gte=start, date__lte=end)
+            .filter(**filters)
+            .first()
+        )
+
+        if not meta_data:
+            meta_data_recent = (
+                meta_data_cls.objects.filter(**filters).order_by("-date").first()
+            )
+            if meta_data_recent and meta_data_recent.data == data:
+                # while a meta data entry does not exist close to the date, the data is the same as the most recent entry
+
+                # update the `updated` field of the most recent entry
+                meta_data_recent.save()
+                return
+
+            # otherwise we create a new entry
+            meta_data = meta_data_cls(data={}, source_name=source_name, date=date)
             setattr(meta_data, target_field, target)
 
-        meta_data.data.update({req.config("source_name"): req.process_response(self)})
+        meta_data.data = data
+        meta_data.type = meta_data_type
+
         meta_data.save()
+
+    def add_attachment(self, file_name, file_data, content_type):
+        attachment_cls = self.config("attachment_cls")
+
+        return attachment_cls.objects.create(
+            response=self,
+            file_name=file_name,
+            file_data=file_data,
+            content_type=content_type,
+        )
+
+
+class Attachment(HandleRefModel):
+    """
+    File attachmnent for meta data response
+
+    Needs to implement a `response` foreign key relationship to a `Response` class
+    """
+
+    content_type = models.CharField(max_length=255)
+    file_data = models.BinaryField()
+    file_name = models.CharField(max_length=255)
+
+    class Meta:
+        abstract = True
+
+    class HandleRef:
+        tag = "meta_attachment"
+
+    @property
+    def size(self):
+        return len(self.file_data)

@@ -132,6 +132,14 @@ main {
   --bs-btn-padding-y: var(--size-100);
 }
 
+.btn-expand {
+  border-radius: 100vmax;
+  display: inline-flex;
+  border: 1px solid;
+  padding: var(--size-100);
+  border-color: var(--theme-secondary-border-color);
+}
+
 a.btn:hover {
   text-decoration: none;
 }
@@ -881,6 +889,11 @@ div.menu .button {
   padding: var(--size-200);
 }
 
+.input-group.searchbar .btn.curved {
+  border-top-right-radius: var(--size-200) !important;
+  border-bottom-right-radius: var(--size-200) !important;
+}
+
 /**
   * lists
   */
@@ -1040,6 +1053,16 @@ div.list-th {
   border-left: 1px transparent solid;
 }
 
+.compact-row img.indicator {
+  display: inline-block;
+  margin-left: 5px;
+  vertical-align: bottom;
+}
+
+.secondary .property .field img.indicator {
+  display: inline-block;
+}
+
 div.list-body .secondary .property {
   margin-left: calc(var(--bs-gutter-x) * -0.5);
 }
@@ -1111,6 +1134,13 @@ tbody.list-footer td {
   text-align: center;
 }
 
+div.grid-col-3 {
+  padding: 5px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  row-gap: 0.5rem;
+}
+
 div.column-list-3 {
   column-count: 3;
 }
@@ -1118,7 +1148,6 @@ div.column-list-3 {
 div.inner-list {
   padding: 5px;
 }
-
 
 td.inner-list-container {
   padding-left: 0px;
@@ -1527,4 +1556,18 @@ div.wizard.wiz-step-3 .wiz-step.wiz-step-3,
 div.wizard.wiz-step-2 .wiz-step.wiz-step-2,
 div.wizard.wiz-step-1 .wiz-step.wiz-step-1 {
   display: block;
+}
+
+/*
+ * source of truth indication
+ */
+
+span.fullctl-sot {
+  background-image: var(--source-of-truth-icon);
+  background-repeat: no-repeat;
+  height: 20px;
+  width: 20px;
+  background-size: 20px;
+  display: inline-block;
+  margin-left: 5px;
 }
