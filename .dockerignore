@@ -1,0 +1,13 @@
+*
+
+!poetry.lock
+!pyproject.toml
+!mkdocs.yml
+!README.md
+!docs/
+!src/
+!tests/
+!Ctl/VERSION
+!Ctl/docker
+
+!ars_config/
