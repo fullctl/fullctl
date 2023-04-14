@@ -24,10 +24,10 @@ import django_auditctl.models as models
 Serializers, register = serializer_registry()
 
 @register
-class AuditEntry(ModelSerializer):
+class Event(ModelSerializer):
 
     class Meta:
-        model = models.AuditEntry
+        model = models.Event
         fields = [
             "id",
             "object_id",

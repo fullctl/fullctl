@@ -12,13 +12,13 @@ import django_auditctl.models.tasks
 from django_auditctl.enum import STATUS
 
 __all__ = [
-    "AuditEntry",
+    "Event",
     "Instance",
 ]
 
 
 @grainy_model("audit")
-class AuditEntry(HandleRefModel):
+class Event(HandleRefModel):
 
     """
     Describes an audit entry
@@ -38,15 +38,15 @@ class AuditEntry(HandleRefModel):
     user = models.ForeignKey(get_user_model(), related_name="auditctl_entries", on_delete=models.PROTECT, null=True, blank=True)
 
     class Meta:
-        verbose_name = _("Entry")
-        verbose_name_plural = _("Entries")
+        verbose_name = _("Event")
+        verbose_name_plural = _("Events")
         db_table = "auditctl_entry"
 
         # index object id
         indexes = [models.Index(fields=["object_id"])]
 
     class HandleRef:
-        tag = "audit"
+        tag = "event"
 
     def __str__(self):
         return self.handle

@@ -21,9 +21,9 @@ from django_auditctl.util import parts_to_object_id
 
 
 @route
-class AuditEntry(CachedObjectMixin, viewsets.GenericViewSet):
-    serializer_class = Serializers.audit
-    queryset = models.AuditEntry.objects.all()
+class Event(CachedObjectMixin, viewsets.GenericViewSet):
+    serializer_class = Serializers.event
+    queryset = models.Event.objects.all()
 
     @grainy_endpoint(
         namespace="audit.{request.org.permission_id}",
@@ -36,7 +36,7 @@ class AuditEntry(CachedObjectMixin, viewsets.GenericViewSet):
             ref_id=kwargs.get("ref_id"),
         )
         queryset = self.get_queryset().filter(object_id=object_id).order_by("-created")
-        serializer = Serializers.audit(queryset, many=True)
+        serializer = Serializers.event(queryset, many=True)
         return Response(serializer.data)
 
 
