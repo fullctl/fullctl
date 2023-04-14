@@ -16,12 +16,12 @@
 {% block "header_middle" %}
 <div class="app-pages-nav | nav h-100" data-component="pages">
     <a class="nav-link active"
-      id="tab-overview"
+      id="tab-events"
       data-bs-toggle="tab"
       role="tab"
-      aria-controls="overview"
+      aria-controls="events"
       aria-selected="true"
-      href="#overview">{% trans "Home" %}</a>
+      href="#events">{% trans "Events" %}</a>
 </div>
 {% endblock %}
 
@@ -50,10 +50,8 @@
 {% block "app_content_main" %}
 
 <div class="tab-content" id="app-pages">
-  <div class="tab-pane show active" id="overview" role="tabpanel" aria-labelledby="tab-overview">
-  </div>
-
-  <div class="tab-pane" id="settings" role="tabpanel" aria-labelledby="tab-settings">
+  <div class="tab-pane show active" id="events" role="tabpanel" aria-labelledby="tab-events">
+    {% include "auditctl/v2/tool/viewer/main.html" %}
   </div>
 </div>
 
@@ -63,5 +61,5 @@
 
 {% block "templates" %}
 {{ block.super }}
-{% include "auditctl/v2/tool/viewer/main.html" %}
+
 {% endblock %}

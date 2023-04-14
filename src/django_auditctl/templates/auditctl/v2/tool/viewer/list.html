@@ -8,9 +8,8 @@
     <tr>
       <th>{% trans "Object" %}</th>
       <th>{% trans "Status" %}</th>
-      <th>{% trans "Data" %}</th>
+      <th>{% trans "Source" %}</th>
       <th>{% trans "Time" %}</th>
-      <th class="right">Options</th>
     </tr>
   </thead>
   <tbody class="list-body">
@@ -19,13 +18,19 @@
     <tr data-template="row">
       <td data-field="object_id"></td>
       <td data-field="status"></td>
-      <td data-field="data"></td>
+      <td data-field="source"></td>
       <td data-field="created"></td>
+      <!--
       <td data-field="controls" class="right">
         <button class="btn">
           <span class="icon icon-options"></span>
         </button>
       </td>
+      -->
+    </tr>
+    <tr data-template="row" class="secondary">
+      <td data-field="data" colspan="2"></td>
+      <td data-field="error" colspan="2"></td>
     </tr>
   </tbody>
 </table>
