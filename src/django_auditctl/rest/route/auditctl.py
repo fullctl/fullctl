@@ -4,15 +4,26 @@ router = routers.DefaultRouter()
 
 
 def route(viewset):
-    if hasattr(viewset, "ref_tag"):
-        ref_tag = viewset.ref_tag
-    else:
-        ref_tag = viewset.serializer_class.ref_tag
+   
+    # route api / id version
 
-    if getattr(viewset, "ix_tag_needed", None):
-        prefix = f"{ref_tag}/(?P<org_tag>[^/]+)/(?P<ix_tag>[^/]+)"
-    else:
-        prefix = f"{ref_tag}/(?P<org_tag>[^/]+)"
+    version = r"v(?P<version>[^/]+)"
 
-    router.register(prefix, viewset, basename=ref_tag)
+    # route org slug
+
+    org_slug = r"(?P<org_tag>[^/]+)"
+
+    # route object tag
+
+    object_tag = r"(?P<ref_tag>.+)"
+
+    # route object id
+
+    object_id = r"(?P<ref_id>[^/]+)"
+
+    # join all into a regex string
+
+    prefix = f"{version}/{org_slug}/{object_tag}/{object_id}"
+
+    router.register(prefix, viewset, basename="audit")
     return viewset

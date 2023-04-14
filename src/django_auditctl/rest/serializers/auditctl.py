@@ -22,3 +22,17 @@ from rest_framework.validators import UniqueTogetherValidator
 import django_auditctl.models as models
 
 Serializers, register = serializer_registry()
+
+@register
+class AuditEntry(ModelSerializer):
+
+    class Meta:
+        model = models.AuditEntry
+        fields = [
+            "id",
+            "object_id",
+            "data",
+            "org",
+            "user",
+            "status",
+        ]

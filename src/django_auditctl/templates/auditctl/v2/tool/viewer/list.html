@@ -1,0 +1,32 @@
+{% load static i18n %}
+<table
+  class="table table-borderless list-table"
+  data-api-base="{% url "auditctl_api:audit-list" version="version" org_tag="org_tag" ref_tag="ref_tag" ref_id="ref_id" %}"
+  data-api-action=""
+  data-template="list">
+  <thead>
+    <tr>
+      <th>{% trans "Object" %}</th>
+      <th>{% trans "Status" %}</th>
+      <th>{% trans "Data" %}</th>
+      <th>{% trans "Time" %}</th>
+      <th class="right">Options</th>
+    </tr>
+  </thead>
+  <tbody class="list-body">
+  </tbody>
+  <tbody class="templates">
+    <tr data-template="row">
+      <td data-field="object_id"></td>
+      <td data-field="status"></td>
+      <td data-field="data"></td>
+      <td data-field="created"></td>
+      <td data-field="controls" class="right">
+        <button class="btn">
+          <span class="icon icon-options"></span>
+        </button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
