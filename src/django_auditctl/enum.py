@@ -5,5 +5,4 @@ __all__ = ["STATUS"]
 STATUS = (
     ("ok", _("OK")),
     ("error", _("Error")),
-    ("warning", _("Warning")),
 )

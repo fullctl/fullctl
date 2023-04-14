@@ -21,7 +21,7 @@ __all__ = [
 class Event(HandleRefModel):
 
     """
-    Describes an audit entry
+    Describes an audit event entry
     
     It defines an object id, a status and a data field
     """
@@ -30,9 +30,12 @@ class Event(HandleRefModel):
         max_length=255, help_text=_("Object ID")
     )
     status = models.CharField(
-        max_length=255, choices=STATUS, help_text=_("Status")
+        max_length=255, choices=STATUS, help_text=_("Status"), default="ok"
     )
+
+    source = models.CharField(null=True, blank=True, max_length=255, help_text=_("Source"))
     data = models.JSONField(null=True, blank=True, help_text=_("Data"))
+    error = models.JSONField(null=True, blank=True, help_text=_("Errors"))
 
     org = models.ForeignKey(Organization, related_name="auditctl_entries", on_delete=models.PROTECT, null=True, blank=True)
     user = models.ForeignKey(get_user_model(), related_name="auditctl_entries", on_delete=models.PROTECT, null=True, blank=True)

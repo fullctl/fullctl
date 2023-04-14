@@ -32,6 +32,7 @@ class Event(ModelSerializer):
             "id",
             "object_id",
             "data",
+            "error",
             "org",
             "user",
             "status",
