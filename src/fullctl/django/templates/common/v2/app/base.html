@@ -85,7 +85,7 @@ fullctl.permissions = {{ permissions|safe }}
           {% for service_app in service_applications %}
           {%   if service_app.slug != service_tag %}
           {%     with "common/logos/"|add:service_app.slug|add:"-dark.svg" as other_app_logo %}
-            <a data-grainy-remove="{{ service_app.grainy }}.{{ request.org.remote_id}}" href="{{ service_app.org_redirect }}">
+            <a {% if not service_app.always_show_dashboard %}data-grainy-remove="{{ service_app.grainy }}.{{ request.org.remote_id}}"{% endif %} href="{{ service_app.org_redirect }}">
               {% if not service_app.logo %}
                 <img class="app-logo" src="{% static other_app_logo %}" alt="{{ service_app.slug }}">
               {% else %}
