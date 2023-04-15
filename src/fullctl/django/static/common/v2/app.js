@@ -1110,22 +1110,42 @@ fullctl.ConfigPreview = $tc.extend(
  * @extends fullctl.application.Modal
  * @namespace fullctl.application
  * @constructor
+ * @param {String} title
+ * @param {String} message_type - the message type to use for example "support"
  */
 
 fullctl.application.ModalFeatureRequest = $tc.extend(
   "ModalFeatureRequest",
   {
-    ModalFeatureRequest: function () {
+    ModalFeatureRequest: function (title, message_type) {
       var modal = this;
+
+      // init form
+
       var form = this.form = new twentyc.rest.Form(
         fullctl.template("form_feature_request")
       );
+
+      // close the model if the form is submitted successfully
 
       $(this.form).on("api-write:success", (ev, e, payload, response) => {
         modal.hide();
       });
 
-      this.Modal("save", "Feature Request", form.element);
+      // append the message type to the payload
+      // convert the messsage itself to dict containing `content`
+
+      $(this.form).on("payload:after", (ev, payload) => {
+        payload.type = message_type;
+        payload.message = { content: payload.message };
+      });
+
+      // construct modal
+
+      this.Modal("save", (!title ? "Feature Request" : title), form.element);
+
+      // wire form to modal's submit button
+
       form.wire_submit(this.$e.button_submit);
     }
   },
@@ -1133,10 +1153,11 @@ fullctl.application.ModalFeatureRequest = $tc.extend(
 );
 
 fullctl.feature_request = document.addEventListener("DOMContentLoaded", () => {
-  const feature_request_button = document.querySelector('[data-element="feature_request_btn"]');
+  const feature_request_button = $('[data-element="feature_request_btn"]');
 
-  feature_request_button.addEventListener('click', () => {
-    new fullctl.application.ModalFeatureRequest();
+  feature_request_button.on('click', function() {
+    let message_type = $(this).data("message-type");
+    new fullctl.application.ModalFeatureRequest($(this).attr("title"), message_type);
   })
 });
 
