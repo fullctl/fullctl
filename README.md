@@ -1,4 +1,4 @@
-# fullctl
+# FullCtl
 
 [![PyPI](https://img.shields.io/pypi/v/fullctl.svg?maxAge=60)](https://pypi.python.org/pypi/fullctl)
 [![PyPI](https://img.shields.io/pypi/pyversions/fullctl.svg?maxAge=600)](https://pypi.python.org/pypi/fullctl)
