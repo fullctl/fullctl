@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "fullctl"
 repository = "https://github.com/fullctl/fullctl"
-version = "1.1.0"
+version = "1.2.0"
 description = "Core classes and functions for service applications"
 authors = ["20C <code@20c.com>"]
 license = "Apache-2.0"
@@ -60,7 +60,6 @@ pyyaml = ">=5"
 
 [tool.poetry.dev-dependencies]
 # tests
-codecov = ">=2"
 coverage = ">=5"
 pytest = ">=6"
 pytest-django = ">=3.8"
