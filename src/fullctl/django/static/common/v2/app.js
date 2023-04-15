@@ -636,12 +636,29 @@ fullctl.application.Toolbar = $tc.extend(
   fullctl.application.Component
 );
 
+/**
+ * Start-Trial button widget
+ *
+ * @class TrialButton
+ * @extends twentyc.rest.Button
+ * @constructor
+ * @param {Object} element - the element to attach the widget to
+ */
+
 fullctl.application.TrialButton = $tc.extend(
   "TrialButton",
   {
+    TrialButton : function(element) {
+      this.Button(element);
+      // set service id from data-service-id attribute, if present
+      // otherwise use fullctl.service.id
+
+      this.service_id = this.element.data("service-id") || fullctl.service_info.id;
+    },
+
     payload : function() {
       return {
-        service_id : fullctl.service_info.id
+        service_id : this.service_id
       }
     }
   },
@@ -672,6 +689,8 @@ fullctl.application.Application = $tc.define(
 
       fullctl[id] = this;
 
+      // wire start trial button for current service
+
       var trial_button_element = $('[data-element=btn_start_trial]')
       if(trial_button_element.length) {
         var trial_button = new fullctl.application.TrialButton(trial_button_element);
@@ -679,6 +698,18 @@ fullctl.application.Application = $tc.define(
           window.location.reload();
         });
       }
+
+      // wire start trial buttons for cross promoted services
+
+      var crosspromo_trial_button_element = $('[data-element=btn_start_trial_crosspromo]');
+      crosspromo_trial_button_element.each(function(idx,button) {
+        var trial_button = new fullctl.application.TrialButton($(button));
+        $(trial_button).on("api-write:success", () => {
+          $(button).parents(".alert").find('.msg-start-trial').hide();
+          $(button).parents(".alert").find('.msg-trial-started').show();
+        });
+      });
+
 
       this.application_access_granted = grainy.check("service."+this.id+"."+fullctl.org.id, "r");
 
