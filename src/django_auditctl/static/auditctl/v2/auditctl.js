@@ -85,6 +85,8 @@ $ctl.application.Auditctl.EventViewer = $tc.extend(
         this.sync_url();
       });
 
+      // format request url for list loads based on search input
+
       this.$w.list.format_request_url = (url) => {
 
         // get text input [data-element="event_search"]
@@ -105,6 +107,8 @@ $ctl.application.Auditctl.EventViewer = $tc.extend(
         return url.replace("version", version).replace("org_tag", org_tag).replace("ref_tag", ref_tag).replace("ref_id", ref_id);
       };
 
+      // general row formatting
+
       this.$w.list.formatters.row = (row, data) => {
 
         // find data-element=toggle_info and wire it up to show hide the 
@@ -118,6 +122,8 @@ $ctl.application.Auditctl.EventViewer = $tc.extend(
       
       };
 
+      // format data / error content
+
       this.$w.list.formatters.data = (value, data) => {
         let content;
         if(data.status=="ok") {
@@ -127,6 +133,18 @@ $ctl.application.Auditctl.EventViewer = $tc.extend(
           content = JSON.stringify(data.error, null, 2)
         }
         return $("<div>").text(content);
+      };
+
+      // format status to be a badge
+
+      this.$w.list.formatters.status = (value, data) => {
+        let badge = $("<span>").addClass("badge");
+        if(data.status=="ok") {
+          badge.addClass("bg-success");
+        } else if(data.status=="error") {
+          badge.addClass("bg-danger");
+        } 
+        return badge.text(data.status);
       };
 
       this.$w.list.load();
