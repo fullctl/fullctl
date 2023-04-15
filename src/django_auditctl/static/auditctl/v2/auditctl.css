@@ -1,0 +1,5 @@
+.event-data > div {
+    padding: 10px;
+    font-size: 12px;
+    white-space: pre-wrap;
+}

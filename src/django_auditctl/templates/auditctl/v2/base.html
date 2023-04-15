@@ -10,6 +10,7 @@
 
 {% block "css" %}
 {{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static "auditctl/v2/auditctl.css" %}" />
 {% endblock %}
 
 
@@ -41,6 +42,13 @@
 
 
 {% block "app_content_toolbar" %}
+
+<div class="tab-content" id="app-pages">
+  <div class="tab-pane show active" id="events" role="tabpanel" aria-labelledby="tab-events">
+    {% include "auditctl/v2/tool/viewer/search-form.html" %}
+  </div>
+</div>
+
 {% endblock %}
 
 {% block "app_content_menu" %}

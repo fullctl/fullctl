@@ -7,7 +7,7 @@ def route(viewset):
    
     # route api / id version
 
-    version = r"v(?P<version>[^/]+)"
+    version = r"(?P<version>[^/]+)"
 
     # route org slug
 

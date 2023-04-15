@@ -1,0 +1,11 @@
+{% load i18n %}
+<div class="row">
+  <div class="col-md-5 controls">
+    <div class="col-md-auto">
+      <div class="toolbar-control input-group searchbar">
+        <input type="text" class="form-control" data-element="event_search" value="{{ request.GET.q }}">
+        <button class="btn" data-element="button_refresh"><span class="icon fullctl icon-refresh"></span></button>
+      </div>
+    </div>
+  </div>
+</div>

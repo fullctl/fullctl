@@ -16,7 +16,10 @@
   </tbody>
   <tbody class="templates">
     <tr data-template="row">
-      <td data-field="object_id"></td>
+      <td class="primary action">
+        <span class="icon fullctl icon-report action" data-element="toggle_info"></span>
+        <span data-field="object_id"></span>
+      </td>
       <td data-field="status"></td>
       <td data-field="source"></td>
       <td data-field="created"></td>
@@ -28,9 +31,10 @@
       </td>
       -->
     </tr>
-    <tr data-template="row" class="secondary">
-      <td data-field="data" colspan="2"></td>
-      <td data-field="error" colspan="2"></td>
+    <tr data-template="row" class="secondary" style="display:none;">
+      <td colspan="4">
+        <div data-field="data" class="event-data"></div>
+      </td>
     </tr>
   </tbody>
 </table>
