@@ -24,7 +24,6 @@ fullctl = { git = "https://github.com/fullctl/fullctl.git", branch = "prep-relea
 
 [tool.poetry.dev-dependencies]
 # testing
-codecov = ">=2"
 coverage = ">=5"
 pytest = ">=6"
 pytest-django = ">=3.8"
