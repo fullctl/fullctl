@@ -14,6 +14,7 @@ from django_auditctl.enum import STATUS
 __all__ = [
     "Event",
     "Instance",
+    "Organization",
 ]
 
 
@@ -56,3 +57,4 @@ class Event(HandleRefModel):
 
     def __repr__(self):
         return f"<Entry {self.handle}>"
+    

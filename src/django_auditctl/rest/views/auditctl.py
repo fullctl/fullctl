@@ -36,7 +36,7 @@ class Event(CachedObjectMixin, viewsets.GenericViewSet):
             ref_id=kwargs.get("ref_id"),
         )
         queryset = self.get_queryset().filter(object_id=object_id).order_by("-created")
-        serializer = Serializers.event(queryset, many=True)
+        serializer = Serializers.event(queryset, many=True, context={"object_id": object_id})
         return Response(serializer.data)
 
 
@@ -52,9 +52,16 @@ class Event(CachedObjectMixin, viewsets.GenericViewSet):
         )
         data = request.data
         data["object_id"] = object_id
-        data["user"] = request.user.id
+        if hasattr(request, "api_key"):
+            if hasattr(request.api_key, "user"):
+                data["user"] = request.api_key.user.id
+            else:
+                data["user"] = None
+        else:
+            data["user"] = request.user.id
+
         data["org"] = org.id
-        serializer = Serializers.audit(data=data)
+        serializer = Serializers.event(data=data, context={"object_id": object_id})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
