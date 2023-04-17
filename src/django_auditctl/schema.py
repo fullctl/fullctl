@@ -67,13 +67,13 @@ class Component(BaseModel):
 
     Attributes:
         name (str): The name of the component.
-        link (HttpUrl): The URL associated with the component.
+        url (HttpUrl): The URL associated with the component.
         type (str): The type of the component.
         error (str): The error associated with the component.
     """
 
     name: str
-    link: HttpUrl
+    url: HttpUrl
     type: str
     error: str
 
