@@ -1,6 +1,6 @@
 # pdbctl 
 
-[![Tests](https://github.com/fullctl/pdbctl/workflows/tests/badge.svg)](https://github.com/fullctl/pdbctl)
+[![Tests](https://github.com/fullctl/pdbctl/workflows/tests/badge.svg)](https://github.com/fullctl/pdbctl/actions/workflows/tests.yml)
 [![Codecov](https://img.shields.io/codecov/c/github/fullctl/pdbctl/master.svg?maxAge=60)](https://codecov.io/github/fullctl/pdbctl)
 
 ## License

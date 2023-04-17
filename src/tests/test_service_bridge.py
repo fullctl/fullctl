@@ -2,7 +2,6 @@ from django.urls import reverse
 
 
 def test_net_list(db, pdb_data, account_objects):
-
     net = pdb_data.get("net")
 
     client = account_objects.api_client
@@ -19,7 +18,6 @@ def test_net_list(db, pdb_data, account_objects):
 
 
 def test_ix_list(db, pdb_data, account_objects):
-
     ix = pdb_data.get("ix")
 
     client = account_objects.api_client

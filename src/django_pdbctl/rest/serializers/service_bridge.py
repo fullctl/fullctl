@@ -43,6 +43,8 @@ class Network(ModelSerializer):
 
 @register
 class InternetExchange(ModelSerializer):
+    mtu = serializers.SerializerMethodField()
+
     class Meta:
         model = models.InternetExchange
         fields = [
@@ -63,7 +65,11 @@ class InternetExchange(ModelSerializer):
             "media",
             "url_stats",
             "website",
+            "mtu",
         ]
+
+    def get_mtu(self, ix):
+        return ix.ixlan_set.first().mtu
 
 
 @register

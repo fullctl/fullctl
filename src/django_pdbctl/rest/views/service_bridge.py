@@ -33,12 +33,13 @@ class Status(StatusViewSet):
 
 @route
 class InternetExchange(DataViewSet):
-
     allowed_http_methods = ["GET"]
     valid_filters = [
+        ("ids", "id__in"),
         ("org", "org_id"),
         ("q", "name__icontains"),
         ("ids", "id__in"),
+        ("asn", MethodFilter("asn")),
     ]
     autocomplete = "name"
     allow_unfiltered = True
@@ -46,10 +47,21 @@ class InternetExchange(DataViewSet):
     queryset = models.InternetExchange.objects.filter(status="ok")
     serializer_class = Serializers.ix
 
+    def filter_asn(self, qset, value):
+        """
+        Returns all exchanges that network specified by asn is peering at
+
+        Arguments:
+
+            qset - queryset
+            value - asn
+        """
+
+        return qset.filter(ixlan_set__netixlan_set__asn=value).distinct("id")
+
 
 @route
 class Network(DataViewSet):
-
     allowed_http_methods = ["GET"]
     valid_filters = [
         ("org", "org_id"),
@@ -68,22 +80,33 @@ class Network(DataViewSet):
 
 @route
 class Facility(DataViewSet):
-
     allowed_http_methods = ["GET"]
     valid_filters = [
         ("org", "org_id"),
         ("country", "country"),
         ("city", "city"),
         ("q", "name__icontains"),
+        ("asn", MethodFilter("asn")),
     ]
 
     queryset = models.Facility.objects.filter(status="ok")
     serializer_class = Serializers.fac
 
+    def filter_asn(self, qset, value):
+        """
+        Returns all facilities that network specified by asn is peering at
+
+        Arguments:
+
+            qset - queryset
+            value - asn
+        """
+
+        return qset.filter(netfac_set__net__asn=value).distinct("id")
+
 
 @route
 class NetworkIXLan(DataViewSet):
-
     allowed_http_methods = ["GET"]
     valid_filters = [
         ("ix", "ixlan_id"),
@@ -112,7 +135,6 @@ class NetworkIXLan(DataViewSet):
 
 @route
 class NetworkContact(DataViewSet):
-
     allowed_http_methods = ["GET"]
     valid_filters = [
         ("net", "net_id"),
@@ -131,7 +153,6 @@ class NetworkContact(DataViewSet):
 
 @route
 class IXLanPrefix(DataViewSet):
-
     allowed_http_methods = ["GET"]
     valid_filters = [("ix", "ixlan_id"), ("prefix", "prefix")]
 
@@ -141,7 +162,6 @@ class IXLanPrefix(DataViewSet):
 
 @route
 class InternetExchangeFacility(DataViewSet):
-
     allowed_http_methods = ["GET"]
     valid_filters = [
         ("ix", "ix_id"),
@@ -154,7 +174,6 @@ class InternetExchangeFacility(DataViewSet):
 
 @route
 class NetworkFacility(DataViewSet):
-
     allowed_http_methods = ["GET"]
     valid_filters = [
         ("net", "net_id"),

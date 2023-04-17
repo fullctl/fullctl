@@ -7,14 +7,12 @@ def count(model):
 
 
 def last_sync():
-
     qset = AuditLog.objects.filter(action="command", info__contains="peeringdb_sync")
     cmd = qset.order_by("-created").first()
     return cmd
 
 
 def stats():
-
     r = {}
     r.update(count(pdb_models.Organization))
     r.update(count(pdb_models.Network))
