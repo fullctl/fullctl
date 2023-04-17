@@ -31,10 +31,10 @@ $ctl.application.Auditctl = $tc.extend(
           if(!this.autoload_args || this.autoload_args[0] != page) {
             return null;
           }
-    
+
           var valid = false;
           var arg, autoload = {}
-    
+
           for(var i = 1; i < this.autoload_args.length; i++) {
             arg = this.autoload_arg(i);
             if(validate_arg(arg,i)) {
@@ -46,14 +46,14 @@ $ctl.application.Auditctl = $tc.extend(
             return null;
           return autoload;
         }
-    
+
   },
   $ctl.application.Application
 );
 
 /**
  * Event viewer tool
- * 
+ *
  * @class
  * @extends $ctl.application.Tool
  * @memberOf $ctl.application
@@ -111,7 +111,7 @@ $ctl.application.Auditctl.EventViewer = $tc.extend(
 
       this.$w.list.formatters.row = (row, data) => {
 
-        // find data-element=toggle_info and wire it up to show hide the 
+        // find data-element=toggle_info and wire it up to show hide the
         // next tr element
 
         let toggle = row.find("[data-element=toggle_info]");
@@ -119,7 +119,7 @@ $ctl.application.Auditctl.EventViewer = $tc.extend(
         row.find(".primary").click(() => {
           $(row[1]).toggle();
         });
-      
+
       };
 
       // format data / error content
@@ -128,7 +128,7 @@ $ctl.application.Auditctl.EventViewer = $tc.extend(
         let content;
         if(data.status=="ok") {
           content = JSON.stringify(data.data, null, 2);
-          
+
         } else {
           content = JSON.stringify(data.error, null, 2)
         }
@@ -143,7 +143,7 @@ $ctl.application.Auditctl.EventViewer = $tc.extend(
           badge.addClass("bg-success");
         } else if(data.status=="error") {
           badge.addClass("bg-danger");
-        } 
+        }
         return badge.text(data.status);
       };
 

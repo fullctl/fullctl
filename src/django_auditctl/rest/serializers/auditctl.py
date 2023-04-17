@@ -1,17 +1,15 @@
+import pydantic
 from django.utils.translation import ugettext_lazy as _
 from fullctl.django.rest.decorators import serializer_registry
-from fullctl.django.rest.serializers import (
-    ModelSerializer,
-)
+from fullctl.django.rest.serializers import ModelSerializer
 from rest_framework import serializers
 
 import django_auditctl.enum as enum
 import django_auditctl.models as models
 import django_auditctl.schema as schema
 
-import pydantic
-
 Serializers, register = serializer_registry()
+
 
 # TODO move to fullctl/fullctl
 class PydanticSerializer(serializers.Serializer):
@@ -40,6 +38,7 @@ class PydanticSerializer(serializers.Serializer):
     def to_representation(self, instance):
         return instance
 
+
 # TODO move to fullctl/fullctl
 class DynamicPydanticSerializer(PydanticSerializer):
 
@@ -53,7 +52,6 @@ class DynamicPydanticSerializer(PydanticSerializer):
         pass
 
     def __init__(self, schema_id="default", *args, **kwargs):
-
         # Get the Pydantic model from the registry
         print("GETTING SCHEMA", schema_id, schema.get_model_from_registry(schema_id))
         self.Meta.model = schema.get_model_from_registry(schema_id)
@@ -63,6 +61,7 @@ class DynamicPydanticSerializer(PydanticSerializer):
 
         # Call the parent constructor
         super().__init__(*args, **kwargs)
+
 
 # TODO move to fullctl/fullctl
 class DynamicPydanticField(serializers.Field):
@@ -130,6 +129,6 @@ class Event(ModelSerializer):
     def __init__(self, *args, **kwargs):
         # Retrieve the schema_id, e.g., from the request or any other source
         schema_id = kwargs.get("context", {}).get("object_id", "default")
-        self.fields['data'].schema_id = schema_id
+        self.fields["data"].schema_id = schema_id
 
         super().__init__(*args, **kwargs)

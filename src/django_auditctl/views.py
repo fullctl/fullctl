@@ -5,10 +5,12 @@ from fullctl.django.decorators import load_instance, require_auth
 
 # Create your views here.
 
+
 def make_env(request, **kwargs):
     r = {"env": settings.RELEASE_ENV, "version": settings.PACKAGE_VERSION}
     r.update(**kwargs)
     return r
+
 
 @require_auth()
 @load_instance()

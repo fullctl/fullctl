@@ -4,7 +4,6 @@ router = routers.DefaultRouter()
 
 
 def route(viewset):
-   
     # route api / id version
 
     version = r"(?P<version>[^/]+)"

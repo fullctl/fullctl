@@ -2,11 +2,12 @@
 pydantic schema for audictl api posts
 """
 
-from typing import List, Union
-from pydantic import BaseModel, HttpUrl
-from functools import wraps
-import re
 import ipaddress
+import re
+from functools import wraps
+from typing import List, Union
+
+from pydantic import BaseModel, HttpUrl
 
 __all__ = [
     "Component",
@@ -17,6 +18,7 @@ __all__ = [
 
 # Dictionary to store registered Pydantic models
 MODEL_REGISTRY = {}
+
 
 def register_model(pattern):
     """
@@ -29,16 +31,19 @@ def register_model(pattern):
         Callable: The decorated class.
     """
     compiled_pattern = re.compile(pattern)
-    
+
     def decorator(cls):
         # Add the compiled pattern and the model class to the registry
         MODEL_REGISTRY[compiled_pattern] = cls
-        
+
         @wraps(cls)
         def wrapped(*args, **kwargs):
             return cls(*args, **kwargs)
+
         return wrapped
+
     return decorator
+
 
 def get_model_from_registry(unique_id):
     """
@@ -55,6 +60,7 @@ def get_model_from_registry(unique_id):
             return model_cls
     return None
 
+
 class Component(BaseModel):
     """
     Pydantic model for a Component.
@@ -65,10 +71,12 @@ class Component(BaseModel):
         type (str): The type of the component.
         error (str): The error associated with the component.
     """
+
     name: str
     link: HttpUrl
     type: str
     error: str
+
 
 class ErrorDetails(BaseModel):
     """
@@ -78,6 +86,7 @@ class ErrorDetails(BaseModel):
         message (str): The error message.
         components (List[Component]): A list of related components, default is an empty list.
     """
+
     message: str
     components: List[Component] = list()
 
@@ -85,6 +94,7 @@ class ErrorDetails(BaseModel):
 @register_model(r"^default$")
 class NoData(BaseModel):
     pass
+
 
 @register_model(r"^v0.1-[^-]+-config-routeserver-.+$")
 class ConfigRouteServerData(BaseModel):

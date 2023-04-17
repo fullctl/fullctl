@@ -9,7 +9,10 @@ urlpatterns = proxy.urlpatterns(["aaactl", "devicectl"])
 urlpatterns += [
     path(
         "api/",
-        include(("django_auditctl.rest.urls.auditctl", "auditctl_api"), namespace="auditctl_api"),
+        include(
+            ("django_auditctl.rest.urls.auditctl", "auditctl_api"),
+            namespace="auditctl_api",
+        ),
     ),
     path("<str:org_tag>/", views.view_instance, name="auditctl-home"),
     path("", views.org_redirect),
