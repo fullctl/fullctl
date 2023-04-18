@@ -99,7 +99,7 @@ class ConcurrencyLimit(Base):
     def check(self, task):
         return (
             task.__class__.objects.filter(
-                status="pending", queue_id__isnull=False
+                status="pending", queue_id__isnull=False, op=task.op
             ).count()
             < self.limit
         )
