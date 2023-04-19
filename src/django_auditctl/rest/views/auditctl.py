@@ -49,6 +49,7 @@ class Event(CachedObjectMixin, viewsets.GenericViewSet):
         )
         return Response(serializer.data)
 
+
     @grainy_endpoint(
         namespace="audit.{request.org.permission_id}",
     )
@@ -70,6 +71,7 @@ class Event(CachedObjectMixin, viewsets.GenericViewSet):
             data["user"] = request.user.id
 
         data["org"] = org.id
+        print(data)
         serializer = Serializers.event(data=data, context={"object_id": object_id})
         serializer.is_valid(raise_exception=True)
         serializer.save()

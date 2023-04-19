@@ -72,9 +72,9 @@ class Component(BaseModel):
         error (str): The error associated with the component.
     """
 
-    name: str
+    name: Union[str, None] = None
     id: Union[str, int]
-    url: HttpUrl
+    url: Union[HttpUrl, None] = None
     type: str
     error: str
 

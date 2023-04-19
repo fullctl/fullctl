@@ -6,7 +6,6 @@ from django_grainy.decorators import grainy_model
 from fullctl.django.models.abstract.base import HandleRefModel
 from fullctl.django.models.concrete import Instance, Organization, Task
 
-import django_auditctl.models.tasks
 from django_auditctl.enum import STATUS
 import uuid
 
@@ -104,3 +103,32 @@ class EventTask(HandleRefModel):
 
     def __repr__(self):
         return f"EventTask({self.id})"
+
+
+class OrganizationEmailAlert(models.Model):
+    """
+    Defines an email alert setup for an organization
+
+    TODO: probably should be in fullctl/fullctl - but should
+    clarify details first
+    """
+
+    org = models.ForeignKey(
+        Organization,
+        related_name="auditctl_email_alerts",
+        on_delete=models.CASCADE,
+    )
+    email = models.EmailField()
+
+    enabled = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = _("Organization Email Alert")
+        verbose_name_plural = _("Organization Email Alerts")
+        db_table = "auditctl_organization_email_alert"
+
+    def __str__(self):
+        return f"OrganizationEmailAlert({self.id})"
+
+    def __repr__(self):
+        return f"OrganizationEmailAlert({self.id})"

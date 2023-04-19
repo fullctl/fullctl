@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.forms import ModelForm
 from fullctl.django.admin import BaseAdmin, BaseTabularAdmin
 
-from django_auditctl.models.auditctl import Event, EventTask
+from django_auditctl.models.auditctl import Event, EventTask, OrganizationEmailAlert
 
 class EventTaskInline(BaseTabularAdmin):
     model = EventTask
@@ -25,3 +25,8 @@ class EntryAdmin(BaseAdmin):
     )
     list_filter = ("status",)
     inlines = [EventTaskInline]
+
+@admin.register(OrganizationEmailAlert)
+class OrganizationEmailAlertAdmin(admin.ModelAdmin):
+    list_display = ("id", "org", "email", "enabled")
+    search_fields = ("org__name", "org__slug", "email")
