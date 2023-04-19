@@ -96,11 +96,6 @@ class NoData(BaseModel):
     pass
 
 
-@register_model(r"^v0.1-[^-]+-config-routeserver-.+$")
-class ConfigRouteServerData(BaseModel):
-    ip: Union[ipaddress.IPv4Address, ipaddress.IPv6Address]
-
-    def dict(self, *args, **kwargs):
-        r = super().dict(*args, **kwargs)
-        r["ip"] = str(self.ip)
-        return r
+@register_model(r"^v0.1-[^-]+-config-.+$")
+class DeviceConfigData(BaseModel):
+    diff: str
