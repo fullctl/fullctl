@@ -1,8 +1,8 @@
 from django.contrib import admin
-from django.forms import ModelForm
 from fullctl.django.admin import BaseAdmin, BaseTabularAdmin
 
 from django_auditctl.models.auditctl import Event, EventTask, OrganizationEmailAlert
+
 
 class EventTaskInline(BaseTabularAdmin):
     model = EventTask
@@ -12,6 +12,7 @@ class EventTaskInline(BaseTabularAdmin):
 
     def task_status(self, obj):
         return obj.task.status
+
 
 @admin.register(Event)
 class EntryAdmin(BaseAdmin):
@@ -25,6 +26,7 @@ class EntryAdmin(BaseAdmin):
     )
     list_filter = ("status",)
     inlines = [EventTaskInline]
+
 
 @admin.register(OrganizationEmailAlert)
 class OrganizationEmailAlertAdmin(admin.ModelAdmin):

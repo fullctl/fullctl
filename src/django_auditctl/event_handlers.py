@@ -1,20 +1,22 @@
-from functools import wraps
-import fullctl.service_bridge.devicectl as devicectl
-import re
-from fullctl.django.mail import send_plain
 import json
+import re
+from functools import wraps
+
+import fullctl.service_bridge.devicectl as devicectl
 from django.conf import settings
-import  django_auditctl.models.auditctl as models
+from fullctl.django.mail import send_plain
+
+import django_auditctl.models.auditctl as models
 
 __all__ = [
     "register_handler",
     "get_handlers",
     "get_handler_by_tag",
-
 ]
 
 # Dictionary to store event handlers
 HANDLER_REGISTRY = {}
+
 
 def register_handler(pattern):
     """
@@ -55,6 +57,7 @@ def get_handlers(event):
         if pattern.match(event.object_id):
             yield handler_cls(event)
 
+
 def get_handler_by_tag(tag):
     """
     A function that searches the HANDLER_REGISTRY for a matching event handler class by tag.
@@ -65,10 +68,10 @@ def get_handler_by_tag(tag):
     Returns:
     - handler_cls (object): The matching event handler class.
     """
-    for pattern, handler_cls in HANDLER_REGISTRY.items():
+    for handler_cls in HANDLER_REGISTRY.values():
         if handler_cls.HandleRef.tag == tag:
             return handler_cls
-    return Nonedevice
+    return None
 
 
 class BaseHandler:
@@ -84,7 +87,7 @@ class BaseHandler:
 
     def __call__(self):
         raise NotImplementedError
-    
+
 
 @register_handler(r"^v0.1-[^-]+-.+$")
 class EmailAlert(BaseHandler):
@@ -94,7 +97,7 @@ class EmailAlert(BaseHandler):
 
     Recipient addresses will be grabbed from the OrganizationEmailAlert model.
     """
-    
+
     class HandleRef:
         tag = "email_alert"
 
@@ -104,25 +107,30 @@ class EmailAlert(BaseHandler):
         """
 
         if self.event.status == "error":
-
             error_message = self.event.error.get("message")
             org_slug = self.event.object_id.split("-")[1]
-            components = json.dumps(self.event.error.get("components",[]), indent=2)
-            email_addresses = [alert.email for alert in models.OrganizationEmailAlert.objects.filter(org__slug=org_slug) if alert.enabled]
+            components = json.dumps(self.event.error.get("components", []), indent=2)
+            email_addresses = [
+                alert.email
+                for alert in models.OrganizationEmailAlert.objects.filter(
+                    org__slug=org_slug
+                )
+                if alert.enabled
+            ]
 
             send_plain(
                 f"Error: {self.event.object_id}",
                 f"{error_message}\n\n{components}",
                 settings.DEFAULT_FROM_EMAIL,
-                email_addresses
+                email_addresses,
             )
-    
 
 
 class ForwardToService(BaseHandler):
     """
     A class that inherits from the BaseHandler class and forwards events to a service.
     """
+
     pass
 
 
@@ -140,10 +148,10 @@ class DeviceOperationalStatus(ForwardToService):
         Calls the set_operational_status method of the devicectl Device class for each component in the event.
         """
         if self.event.status == "ok":
-            components = self.event.data.get("components",[])
+            components = self.event.data.get("components", [])
             error_message = None
         elif self.event.status == "error":
-            components = self.event.error.get("components",[])
+            components = self.event.error.get("components", [])
             error_message = self.event.error.get("message")
         else:
             return
@@ -151,7 +159,6 @@ class DeviceOperationalStatus(ForwardToService):
         device = devicectl.Device()
 
         for _device in components:
-
             if self.event.status == "error":
                 device_error_message = f"{error_message}\n\n{_device['error']}"
             else:

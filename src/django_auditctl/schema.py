@@ -2,19 +2,13 @@
 pydantic schema for audictl api posts
 """
 
-import ipaddress
 import re
 from functools import wraps
 from typing import List, Union
 
 from pydantic import BaseModel, HttpUrl
 
-__all__ = [
-    "Component",
-    "ErrorDetails",
-    "NoData",
-    "DeviceConfigData"
-]
+__all__ = ["Component", "ErrorDetails", "NoData", "DeviceConfigData"]
 
 # Dictionary to store registered Pydantic models
 MODEL_REGISTRY = {}
@@ -95,7 +89,6 @@ class ErrorDetails(BaseModel):
 @register_model(r"^default$")
 class NoData(BaseModel):
     pass
-
 
 
 @register_model(r"^v0.1-[^-]+-config-.+$")

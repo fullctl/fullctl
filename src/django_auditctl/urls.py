@@ -1,5 +1,4 @@
 import fullctl.django.rest.urls.service_bridge_proxy as proxy
-from django.conf import settings
 from django.urls import include, path
 
 import django_auditctl.views as views

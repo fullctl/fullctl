@@ -1,4 +1,5 @@
-from django.conf import settings
+import uuid
+
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -7,12 +8,12 @@ from fullctl.django.models.abstract.base import HandleRefModel
 from fullctl.django.models.concrete import Instance, Organization, Task
 
 from django_auditctl.enum import STATUS
-import uuid
 
 __all__ = [
     "Event",
     "Instance",
     "Organization",
+    "OrganizationEmailAlert",
 ]
 
 

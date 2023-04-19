@@ -1,12 +1,12 @@
 from fullctl.django.models import Task
 from fullctl.django.tasks import register
-from django_auditctl.event_handlers import get_handlers, get_handler_by_tag
 
 import django_auditctl.models.auditctl as models
+from django_auditctl.event_handlers import get_handler_by_tag, get_handlers
+
 
 @register
 class ExecuteEventHandler(Task):
-
     class Meta:
         proxy = True
 
@@ -26,7 +26,7 @@ class ExecuteEventHandler(Task):
     @property
     def handler_tag(self):
         return self.param["args"][1]
-    
+
     @property
     def event(self):
         return models.Event.objects.get(id=self.param["args"][0])
@@ -38,5 +38,3 @@ class ExecuteEventHandler(Task):
             raise KeyError(f"handler {self.handler_tag} not found")
         handler = handler(self.event)
         handler()
-
-
