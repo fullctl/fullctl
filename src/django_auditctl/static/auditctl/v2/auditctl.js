@@ -27,25 +27,25 @@ $ctl.application.Auditctl = $tc.extend(
      * @param {Array} names attribute names
      */
 
-        autoload_enabled : function(page, validate_arg, names) {
-          if(!this.autoload_args || this.autoload_args[0] != page) {
-            return null;
-          }
+    autoload_enabled : function(page, validate_arg, names) {
+      if(!this.autoload_args || this.autoload_args[0] != page) {
+        return null;
+      }
 
-          var valid = false;
-          var arg, autoload = {}
+      var valid = false;
+      var arg, autoload = {}
 
-          for(var i = 1; i < this.autoload_args.length; i++) {
-            arg = this.autoload_arg(i);
-            if(validate_arg(arg,i)) {
-              valid = true;
-              autoload[names[i-1]] = arg;
-            }
-          }
-          if(!valid)
-            return null;
-          return autoload;
+      for(var i = 1; i < this.autoload_args.length; i++) {
+        arg = this.autoload_arg(i);
+        if(validate_arg(arg,i)) {
+          valid = true;
+          autoload[names[i-1]] = arg;
         }
+      }
+      if(!valid)
+        return null;
+      return autoload;
+    }
 
   },
   $ctl.application.Application
@@ -91,12 +91,12 @@ $ctl.application.Auditctl.EventViewer = $tc.extend(
 
         // get text input [data-element="event_search"]
 
-        let search = $("[data-element=event_search]").val();
+        let search = $("[data-element=event_search]").val().replace(/-/g, "/");
 
         // split by / and take the first 3 elements as version, org_tag, ref_tag
         // then re-combine the remaining elements into ref_id
 
-        let parts = search.split("/");
+        let parts = search.split("/");;
         let version = parts[0];
         let org_tag = parts[1];
         let ref_tag = parts[2];

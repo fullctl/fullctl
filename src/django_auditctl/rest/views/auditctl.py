@@ -35,6 +35,15 @@ class Event(CachedObjectMixin, viewsets.GenericViewSet):
             ref_id=kwargs.get("ref_id"),
         )
         queryset = self.get_queryset().filter(object_id=object_id).order_by("-created")
+
+
+        # apply status filter
+
+        status = request.query_params.get("status", None)
+
+        if status:
+            queryset = queryset.filter(status=status)
+
         serializer = Serializers.event(
             queryset, many=True, context={"object_id": object_id}
         )

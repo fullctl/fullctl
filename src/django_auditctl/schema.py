@@ -13,7 +13,7 @@ __all__ = [
     "Component",
     "ErrorDetails",
     "NoData",
-    "ConfigRouteServerData",
+    "DeviceConfigData"
 ]
 
 # Dictionary to store registered Pydantic models
@@ -73,6 +73,7 @@ class Component(BaseModel):
     """
 
     name: str
+    id: Union[str, int]
     url: HttpUrl
     type: str
     error: str
@@ -96,6 +97,8 @@ class NoData(BaseModel):
     pass
 
 
+
 @register_model(r"^v0.1-[^-]+-config-.+$")
 class DeviceConfigData(BaseModel):
-    diff: str
+    diff: Union[str, None] = None
+    components: List[Component] = list()
