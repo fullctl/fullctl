@@ -59,6 +59,28 @@ class Device(Devicectl):
 
         return device[0]
 
+    def set_operational_status(self, device_id, status, error_message=None, event=None):
+        """
+        Updates the device's operational status
+
+        Arguments:
+            device_id {`int`) -- device id
+            status (`str`) -- operational status (`ok` or `error`)
+
+        Keyword Arguments:
+            error_message (`str`) -- error message (default: {None})
+            event (`str`) -- auditCtl event id (default: {None})
+        """
+
+        return self.post(
+            f"data/device/{device_id}/set_operational_status",
+            json={
+                "status": status,
+                "error_message": error_message,
+                "event": event,
+            },
+        )
+
 
 class Facility(Devicectl):
     class Meta(Devicectl.Meta):
