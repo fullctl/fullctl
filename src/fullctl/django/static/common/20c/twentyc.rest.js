@@ -97,7 +97,7 @@ twentyc.rest = {
      *
      * @method url_join
      * @param {String} left - The leftmost URL part.
-     * @param {...String} args - The remaining URL parts.
+     * @param {...(String|Number)} args - The remaining URL parts.
      * @return {String} The joined URL string with removed extra slashes.
      */
     url_join: function (left, ...args) {
@@ -108,12 +108,12 @@ twentyc.rest = {
       let trailing_slash = !twentyc.rest.no_end_slash;
 
       // trim left
-
       left = left.replace(/\/+$/g, "");
 
       for (const parts of args) {
         right = right.concat(
           parts
+            .toString()
             .split("/")
             .filter((part) => part)
             .map((part) => this.trim_endpoint(part))
