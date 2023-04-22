@@ -155,6 +155,7 @@ class SettingsManager(confu.util.SettingsManager):
         self.set_from_env("EMAIL_HOST_USER")
         self.set_from_env("EMAIL_HOST_PASSWORD")
         self.set_bool("EMAIL_USE_TLS", True)
+        self.set_option("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 
         # Application definition
 
@@ -315,6 +316,7 @@ class SettingsManager(confu.util.SettingsManager):
         self.set_option("PREFIXCTL_URL", "")
         self.set_option("IXCTL_URL", "")
         self.set_option("DEVICECTL_URL", "")
+        self.set_option("AUDITCTL_URL", "")
 
     def set_twentyc_social_oauth(self, AAACTL_URL=None):
         """

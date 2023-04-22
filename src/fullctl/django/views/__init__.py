@@ -3,6 +3,7 @@ import re
 import sys
 
 from django.conf import settings
+from django.db import connection
 
 # from django.conf import settings
 from django.http import Http404, HttpResponse
@@ -31,6 +32,17 @@ def diag(request):
         txt += f"{k}: {v}\n"
 
     return HttpResponse(mark_safe(f"<div><pre>Meta:\n{escape(txt)}</pre></div>"))
+
+
+def healthcheck(request):
+    """
+    Performs a simple database version query
+    """
+
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT version()")
+
+    return HttpResponse("")
 
 
 @require_auth()

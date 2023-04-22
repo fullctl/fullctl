@@ -423,9 +423,18 @@ class Response(HandleRefModel):
         source_name = req.config("source_name")
         target = getattr(req, target_field)
 
+        had_entries = False
+
         for date, _target, data in req.process_response(self, target, timezone.now()):
+            had_entries = True
             self._write_meta_data(
                 req, date, req.prepare_data(data), _target, target_field, source_name
+            )
+
+        if not had_entries:
+            # no entries were written, write an empty entry
+            self._write_meta_data(
+                req, timezone.now(), {}, target, target_field, source_name
             )
 
     def _write_meta_data(self, request, date, data, target, target_field, source_name):
