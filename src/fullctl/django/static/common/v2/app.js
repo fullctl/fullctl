@@ -558,6 +558,7 @@ fullctl.application.Header = $tc.extend(
         });
         w.load()
 
+        this.order_app_switcher();
         this.wire_app_switcher();
         this.wire_stop_impersonation();
 
@@ -573,7 +574,7 @@ fullctl.application.Header = $tc.extend(
 
     wire_app_switcher : function() {
       this.widget("app_switcher", ($e) => {
-        var others = $e.app_switcher.find('.others')
+        const others = $e.app_switcher.find('.others')
         const selected = $e.app_switcher.find('.selected')
         selected.click(() => {
           others.show();
@@ -588,6 +589,23 @@ fullctl.application.Header = $tc.extend(
           }
         });
         return {};
+      });
+    },
+
+    /**
+     * order elements within the service application switcher in the header
+     * @method order_app_switcher
+     */
+
+    order_app_switcher : function() {
+      const service_list_order = ["ixctl", "peerctl", "devicectl", "prefixctl", "pdbctl", "aclctl", "aaactl"];
+      const service_list = {};
+      $(this.$e.app_switcher).find(".others .list-item").each(function() {
+        service_list[$(this).attr("data-slug")] = $(this);
+      })
+
+      service_list_order.reverse().forEach((value, index) => {
+        $(this.$e.app_switcher).find(".others").prepend(service_list[value]);
       });
     },
 
