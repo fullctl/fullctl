@@ -35,6 +35,8 @@ def proxy_api_endpoint(service, host, endpoint):
 
         if method in ["post", "put", "patch"]:
             _kwargs.update(json=json.loads(request.body))
+        elif method == "get":
+            _kwargs.update(params=request.GET)
 
         endpoint_remote = endpoint["remote"].format(org_tag=org_tag, **kwargs)
 

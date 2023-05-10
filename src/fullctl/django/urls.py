@@ -56,6 +56,18 @@ if getattr(settings, "PDBCTL_URL", None):
         ),
     ]
 
+if getattr(settings, "DEVICECTL_URL", None):
+    import fullctl.django.autocomplete.devicectl
+
+    urlpatterns += [
+        path(
+            "autocomplete/device/port",
+            fullctl.django.autocomplete.devicectl.devicectl_port.as_view(),
+            name="devicectl port autocomplete",
+        ),
+    ]
+
+
 if settings.DEBUG:
     # support version ignorant serving of static files
     urlpatterns += [
