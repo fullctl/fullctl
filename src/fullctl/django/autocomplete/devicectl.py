@@ -29,7 +29,7 @@ class devicectl_port(autocomplete.Select2QuerySetView):
 
         display_name = html.escape(display_name)
         virtual_port_name = html.escape(port.virtual_port_name)
-        
+
         try:
             device_name = html.escape(port.device_name)
         except AttributeError:
