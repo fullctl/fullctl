@@ -189,6 +189,45 @@ fullctl.formatters.datetime = (value) => {
 }
 
 /**
+ * Formats seconds as XwXd if its higher than 48 hours
+ * and hh:mm:ss otherwise
+ */
+fullctl.formatters.seconds_to_wdhms = (seconds) => {
+  seconds = Number(seconds);
+  const w = Math.floor(seconds / (3600*24*7));
+  const d = Math.floor(seconds % (3600*24*7) / (3600*24));
+
+  const wDisplay = w > 0 ? w + "w" : "";
+  const dDisplay = d > 0 ? d + "d" : "";
+  if (w>0 || d>2) {
+    return (wDisplay + dDisplay).replace(/,\s*$/, "");
+  }
+
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor(seconds % 3600 / 60);
+  const s = Math.floor(seconds % 60);
+
+  return (`${h}:${m}:${s}`);
+}
+
+/**
+ * Shortens numbers by prefixing K for thousands and M for millions
+ */
+fullctl.formatters.shorten_number = (value) => {
+  value = Number(value);
+  const millions = (value / 1000000).toPrecision(3);
+  if (millions>1) {
+    return millions+"M";
+  }
+
+  const thousands = (value / 1000).toPrecision(3);
+  if (thousands>1)
+    return thousands+"K";
+
+  return String(value);
+}
+
+/**
  * Formats `True` and `False` as checkmark and cross
  * @method pretty_bool
  * @param {String} value value of cell

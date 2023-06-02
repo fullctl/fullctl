@@ -269,6 +269,12 @@ button {
   cursor: pointer;
 }
 
+.label-oneline {
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
 @media (min-width: 1900px) {
   .container {
     max-width: 1400px;
@@ -338,6 +344,52 @@ div.loading-anim {
 
 .indent-on .indent-toggled {
   padding-left: 20px;
+}
+
+/* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  -webkit-transition: .4s;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  border-radius: 50%;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
 }
 
 /**
@@ -500,7 +552,7 @@ input.slim {
 }
 
 .list-body label {
-  font-size: 11px;
+  font-size: var(--fs-400);
   margin: 0px;
 }
 
@@ -561,9 +613,6 @@ div.toolbar span.toolbar-control>img.caret {
   position: absolute;
   right: 18px;
   top: 19px;
-}
-
-div.toolbar span.toolbar-control div.input-group {
 }
 
 div.toolbar span.toolbar-control .btn {
@@ -826,6 +875,17 @@ span.icon-as {
   mask-image: url(icons/database.svg);
 }
 
+span.icon-triangle-fill-up {
+  -webkit-mask-image: url(icons/triangle-fill.svg);
+  mask-image: url(icons/triangle-fill.svg);
+}
+
+span.icon-triangle-fill-down {
+  -webkit-mask-image: url(icons/triangle-fill.svg);
+  mask-image: url(icons/triangle-fill.svg);
+  rotate: 180deg;
+}
+
 [data-true] {
   display: none;
 }
@@ -921,6 +981,7 @@ div.menu .button {
   border-bottom-left-radius: var(--size-200);
   flex: 1;
   border: 1px solid;
+  width: 100%;
 }
 
 .input-group.searchbar .btn {
@@ -1171,7 +1232,6 @@ div.list-body div.secondary {
 
 div.list-body .primary-row-name {
   font-size: 24px;
-  font-weight: bold;
   letter-spacing: 0;
   line-height: 24px;
   margin: 16px 0px;
@@ -1711,6 +1771,19 @@ div.autocomplete-item .autocomplete-extra {
 .modal .controls input.select2-search__field {
   border: none;
   border-bottom: 1px solid transparent;
+}
+
+/* table display */
+.table-disp {
+  display: table;
+}
+
+.table-row-disp {
+  display: table-row;
+}
+
+.table-cell-disp {
+  display: table-cell;
 }
 
 div.notifications {
