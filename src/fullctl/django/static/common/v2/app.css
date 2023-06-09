@@ -213,6 +213,15 @@ button:focus {
   max-height: 84px;
 }
 
+.loading-indicator-container.fixed {
+  height: 24px;
+  display: inline-block;
+  width: 24px;
+  position: absolute;
+  left: 5px;
+  top: 5px;
+}
+
 .nowrap {
   white-space: nowrap;
 }
@@ -1815,4 +1824,105 @@ div.notifications .badge.notification {
 div.notifications .badge.notification.bg-info {
   border-width: 1px;
   border-style: solid;
+}
+
+/** DropdownBtn */
+
+.dropdown-btn {
+  display: inline-flex;
+  position: relative;
+}
+
+.dropdown-btn > button:not(.active) {
+  display: none;
+}
+
+.dropdown-btn > button {
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
+}
+
+.dropdown-btn details[open]::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 98;
+}
+
+.dropdown-btn summary {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.dropdown-btn summary::marker {
+  content: '';
+}
+
+.dropdown-btn summary::before {
+  content: '';
+  display: inline-block;
+  height: var(--size-425);
+  width: var(--size-425);
+  vertical-align: bottom;
+  mask-position: center;
+  -webkit-mask-position: center;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-image: url(icons/ui-caret/down.svg);
+  mask-image: url(icons/ui-caret/down.svg);
+}
+
+.dropdown-btn summary {
+  border-left: 1px solid;
+  border-top-right-radius: var(--bs-border-radius);
+  border-bottom-right-radius: var(--bs-border-radius);
+}
+
+.dropdown-btn .dropdown-btn-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  z-index: 99;
+  min-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px 0;
+}
+
+.dropdown-btn.single-option > button{
+  border-top-right-radius: var(--bs-border-radius);
+  border-bottom-right-radius: var(--bs-border-radius);
+}
+
+.dropdown-btn.single-option details {
+  display: none;
+}
+
+
+/*
+ * badges
+ */
+
+.badge-btn .label {
+  vertical-align: super;
+  text-transform: uppercase;
+}
+
+.badge-btn .icon {
+  vertical-align: baseline;
+}
+
+button.badge-btn {
+  border: none;
+}
+
+button.badge-btn:disabled {
+  opacity: 0.5;
 }

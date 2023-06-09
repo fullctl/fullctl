@@ -125,10 +125,17 @@ input[type="checkbox"] {
   --bs-btn-hover-bg: var(--primary-btn-bg);
   --bs-btn-active-color: var(--primary-btn-clr);
   --bs-btn-active-bg: var(--primary-btn-bg);
+  --bs-btn-active-border-color: var(--primary-btn-bg);
 }
 
+.bg-primary .icon,
 .btn.primary .icon {
   background-color: var(--primary-btn-clr);
+}
+
+.bg-primary {
+  background-color: var(--primary-btn-bg) !important;
+  color: var(--primary-btn-clr) !important;
 }
 
 .btn.secondary {
@@ -232,6 +239,8 @@ input:focus + .slider {
 .form-select {
   color: var(--foreground);
   background-image: var(--dropdown-svg-url);
+  background-color: transparent;
+  border-color: var(--theme-secondary-border-color);
 }
 
 
@@ -374,6 +383,10 @@ div.validation-error {
 .loading-indicator-container {
   background-color: var(--clr-bg-loading-indicator);
   border-color: var(--theme-secondary-border-color);
+}
+
+table td .loading-indicator-container {
+  background-color: transparent;
 }
 
 a[data-action].prefixctl,
@@ -829,4 +842,18 @@ div.autocomplete-item .autocomplete-primary {
 */
 .syntax-highlight-transparent-bg pre {
   background-color: transparent !important;
+}
+
+/** DropdownBtn */
+.dropdown-btn summary::before {
+  background-color: var(--primary-btn-clr);
+}
+
+.dropdown-btn summary {
+  background-color: var(--primary-btn-bg);
+  border-left-color: var(--primary-btn-clr);
+}
+
+.legend {
+  color: var(--clr-primary-300);
 }

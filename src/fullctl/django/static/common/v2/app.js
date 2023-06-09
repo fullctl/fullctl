@@ -1447,6 +1447,126 @@ fullctl.theme_switching = document.addEventListener("DOMContentLoaded", () => {
 });
 
 /**
+ * Dropdown button widget for selecting options.
+ * should follow a strcuture as follows:
+ *
+ *      <div class="dropdown-btn">
+ *        <button data-option-text="Option 1 text">
+ *          Option 1
+ *        </button>
+ *
+ *        <button data-option-text="Option 2 text">
+ *          Option 1
+ *        </button>
+ *
+ *        <details>
+ *          <summary><span class="visually-hidden">Description of choice</span></summary>
+ *        </details>
+ *      </div>
+ *
+ * @class DropdownBtn
+ * @namespace fullctl.application
+ * @constructor
+ * @param {jQuery} jq - the element to use as the dropdown button
+ */
+
+fullctl.application.DropdownBtn = $tc.define(
+  "DropdownBtn",
+  {
+    DropdownBtn : function(jq) {
+      this.jq = jq;
+      const element = jq[0];
+      this.dropdown_expand_btn = element.querySelector('details');
+
+      this.menu = $('<div class="dropdown-btn-menu">');
+      this.dropdown_expand_btn.append(this.menu.get(0));
+      this.dropdown_buttons = this.get_dropdown_buttons();
+
+      this.render_dropdown();
+
+      // close dropdown button logic
+      const on_dropdown_btn_open = (event) => {
+        if (event.target.closest(".dropdown-btn-menu")) return;
+        this.close_dropdown();
+        document.removeEventListener('click', on_dropdown_btn_open);
+      }
+      this.dropdown_expand_btn.addEventListener("toggle", (event) => {
+        if (this.dropdown_expand_btn.open) {
+          document.addEventListener("click", on_dropdown_btn_open);
+        }
+      });
+    },
+
+    get_dropdown_buttons: function() {
+      return this.jq.find('> button');
+    },
+
+    close_dropdown: function() {
+      this.dropdown_expand_btn.removeAttribute("open");
+    },
+
+    render_dropdown: function() {
+      this.dropdown_buttons = this.get_dropdown_buttons();
+
+      // add class active to first option if no active
+      if (!this.dropdown_buttons.hasClass('active')) {
+        this.dropdown_buttons.first().addClass('active');
+      }
+
+      // only show first active if multiple actives
+      this.dropdown_buttons.filter('.active:not(:first)').removeClass('active')
+
+
+      const menu = this.menu
+      menu.empty();
+
+      if (this.dropdown_buttons.length == 1) {
+        this.jq.addClass('single-option');
+
+        return;
+      } else {
+        this.jq.removeClass('single-option');
+      }
+
+      this.dropdown_buttons.each(function() {
+        menu.append(
+          $('<button>').text($(this).data('option-text')).data( "element-for", $(this))
+        )
+      });
+
+      this.dropdown_options = menu.children();
+
+      // select option from dropdown
+      const dropdown_btn = this;
+      this.dropdown_options.click(function(event) {
+        dropdown_btn.select_option(this);
+      });
+
+    },
+
+    select_option: function (option_element) {
+      this.jq.find('.active').removeClass('active');
+      $(option_element).data('element-for').addClass('active');
+      this.close_dropdown();
+    },
+
+    add_option: function (elem) {
+      this.jq.prepend(elem);
+      this.render_dropdown();
+    },
+
+    remove_option: function(index) {
+      this.dropdown_buttons.eq(index).remove();
+      this.dropdown_buttons = this.get_dropdown_buttons();
+      if (!this.dropdown_buttons.hasClass('active')) {
+        this.dropdown_buttons.first().addClass('active');
+      }
+      this.render_dropdown();
+    },
+  }
+);
+
+/**
  * Holds extension functions and classes that deal
  * with third party library quality of life utilities
  * @class fullctl.ext

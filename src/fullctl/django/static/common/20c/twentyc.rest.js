@@ -1797,8 +1797,27 @@ twentyc.rest.List = twentyc.cls.extend(
       var row = this.find_row(id);
       if(row) {
         return this.get(id, this.payload()).then(function(response) {
+
+          // build new row
           var new_row = this.insert(response.first())
-          new_row.insertAfter(row);
+
+          // find siblings surrounding current row, which we can then
+          // use the insert the new row at the correct location
+          //
+          // note, we can't use the old row itself because it introduces
+          // weird behaviour in the DOM rendering, to investigate at a later
+          // point if necessary
+          var next = row.next();
+          var prev = row.prev();
+
+          if(next.length) {
+            new_row.insertBefore(next);
+          } else if(prev.length) {
+            new_row.insertAfter(prev);
+          } else {
+            new_row.appendTo(this.list_body);
+          }
+
           row.detach();
         }.bind(this));
       }
