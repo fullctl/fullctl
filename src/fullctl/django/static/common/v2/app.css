@@ -148,6 +148,12 @@ main {
   border-color: var(--theme-secondary-border-color);
 }
 
+.btn.filter {
+  border-radius: 30px / 100%;
+  border: 1px solid;
+  font-size: 12px;
+}
+
 a.btn:hover {
   text-decoration: none;
 }
@@ -404,6 +410,10 @@ input:checked + .slider:before {
 .alert-warning .btn-warning {
   border: none;
   font-weight: 800;
+}
+
+.filter-hidden {
+  display: none;
 }
 
 /**
@@ -873,6 +883,11 @@ span.icon-report {
 span.icon-as {
   -webkit-mask-image: url(icons/database.svg);
   mask-image: url(icons/database.svg);
+}
+
+span.icon-filter {
+  -webkit-mask-image: url(icons/funnel.svg);
+  mask-image: url(icons/funnel.svg);
 }
 
 span.icon-triangle-fill-up {

@@ -160,6 +160,17 @@ input[type="checkbox"] {
   --bs-modal-color: var(--modal-clr);
 }
 
+.btn.filter {
+  border-color: var(--clr-border-400);
+}
+
+.btn.filter.active {
+  border-color: var(--clr-accent-400);
+}
+.btn.filter.active .icon {
+  background-color: var(--clr-accent-400);
+}
+
 .modal .modal-content div.controls,
 .modal .modal-content div label {
   color : var(--modal-clr);
