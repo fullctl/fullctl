@@ -183,6 +183,11 @@ button:focus {
   outline: none;
 }
 
+/* to make loading shim cover entire area */
+.loading {
+  position: relative;
+}
+
 .loading-shim {
   position: absolute;
   top: 0px;
@@ -222,6 +227,11 @@ button:focus {
 
 .bold {
   font-weight: bold;
+}
+
+.dotted-underline {
+  text-decoration: underline;
+  text-decoration-style: dotted;
 }
 
 .sortable-button {
@@ -1432,23 +1442,6 @@ div.controls label {
   line-height: 16px;
   letter-spacing: 2.4px;
   margin-bottom: 12px;
-}
-
-div.controls input[type="checkbox"] {
-  outline: none;
-  box-sizing: border-box;
-  height: 16px;
-  width: 16px;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-}
-
-div.controls input[type="checkbox"]:checked:before {
-  content: '\2713';
-  position: relative;
-  top: -5px;
-  left: 2px;
 }
 
 div.controls .form-check {
