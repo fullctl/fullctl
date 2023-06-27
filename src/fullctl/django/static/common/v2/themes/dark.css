@@ -62,6 +62,8 @@
   --clr-bg-loading-indicator: #0c0e14;
   --default-input-bg: #3b3b3b;
 
+  --graph-placeholder-bg: rgba(0,0,0,0.5);
+
   color-scheme: dark;
 }
 
@@ -97,6 +99,8 @@
   --bs-link-hover-color: rgb(13, 110, 253);
 
   --clr-bg-loading-indicator: #d5d5d5;
+
+  --graph-placeholder-bg: rgba(0,0,0,0.2);
 
   color-scheme: light;
 }
@@ -856,4 +860,11 @@ div.autocomplete-item .autocomplete-primary {
 
 .legend {
   color: var(--clr-primary-300);
+}
+
+/*
+ * graphs
+ */
+.graph-placeholder {
+  background-color: var(--graph-placeholder-bg);
 }
