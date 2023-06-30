@@ -56,6 +56,18 @@ if getattr(settings, "PDBCTL_URL", None):
         ),
     ]
 
+if getattr(settings, "DEVICECTL_URL", None):
+    import fullctl.django.autocomplete.devicectl
+
+    urlpatterns += [
+        path(
+            "autocomplete/device/port",
+            fullctl.django.autocomplete.devicectl.devicectl_port.as_view(),
+            name="devicectl port autocomplete",
+        ),
+    ]
+
+
 if settings.DEBUG:
     # support version ignorant serving of static files
     urlpatterns += [
@@ -69,6 +81,7 @@ for import_path, namespace in getattr(settings, "FULLCTL_ADDON_URLS", []):
 urlpatterns += [
     path("_diag", fullctl.django.views.diag),
     path("health/", fullctl.django.views.healthcheck),
+    path("authcheck/", fullctl.django.views.authcheck),
     path("apidocs/schema.json", api_schema, name="api_schema"),
     path(
         "api/account/",

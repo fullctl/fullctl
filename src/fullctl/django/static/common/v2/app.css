@@ -56,6 +56,10 @@ body {
 body {
   text-rendering: optimizeSpeed;
   line-height: 1.5;
+  /* always show body scroll bar so we dont get jittery widths between cotent
+   * that overflows and content that doesn't
+   */
+  overflow-y: scroll;
 }
 
 /* A elements that don't have a class get default styles */
@@ -106,6 +110,10 @@ main {
   flex: 1;
 }
 
+.nowrap {
+  white-space: nowrap;
+}
+
 .btn.primary,
 .btn[data-btn-type="delete"] {
   text-transform: uppercase;
@@ -140,6 +148,12 @@ main {
   border-color: var(--theme-secondary-border-color);
 }
 
+.btn.filter {
+  border-radius: 30px / 100%;
+  border: 1px solid;
+  font-size: 12px;
+}
+
 a.btn:hover {
   text-decoration: none;
 }
@@ -169,6 +183,11 @@ button:focus {
   outline: none;
 }
 
+/* to make loading shim cover entire area */
+.loading {
+  position: relative;
+}
+
 .loading-shim {
   position: absolute;
   top: 0px;
@@ -180,6 +199,11 @@ button:focus {
   align-items: center;
 }
 
+.input-group-text.loading-indicator-container {
+  width: 50px;
+}
+
+.loading-indicator,
 .loading-shim:after {
   content: '';
   display: block;
@@ -187,6 +211,15 @@ button:focus {
   height: 84%;
   width: 100%;
   max-height: 84px;
+}
+
+.loading-indicator-container.fixed {
+  height: 24px;
+  display: inline-block;
+  width: 24px;
+  position: absolute;
+  left: 5px;
+  top: 5px;
 }
 
 .nowrap {
@@ -203,6 +236,11 @@ button:focus {
 
 .bold {
   font-weight: bold;
+}
+
+.dotted-underline {
+  text-decoration: underline;
+  text-decoration-style: dotted;
 }
 
 .sortable-button {
@@ -254,6 +292,12 @@ a.button span.label:hover {
 
 button {
   cursor: pointer;
+}
+
+.label-oneline {
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
 }
 
 @media (min-width: 1900px) {
@@ -327,6 +371,52 @@ div.loading-anim {
   padding-left: 20px;
 }
 
+/* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  -webkit-transition: .4s;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  border-radius: 50%;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked ~ .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
 /**
  * bootstrap overrides
  */
@@ -339,6 +429,10 @@ div.loading-anim {
 .alert-warning .btn-warning {
   border: none;
   font-weight: 800;
+}
+
+.filter-hidden {
+  display: none;
 }
 
 /**
@@ -487,7 +581,7 @@ input.slim {
 }
 
 .list-body label {
-  font-size: 11px;
+  font-size: var(--fs-400);
   margin: 0px;
 }
 
@@ -548,6 +642,13 @@ div.toolbar span.toolbar-control>img.caret {
   position: absolute;
   right: 18px;
   top: 19px;
+}
+
+div.toolbar span.toolbar-control .btn {
+  padding: 8px;
+  margin-left: 5px;
+  margin-right: 5px;
+  display: inline-block;
 }
 
 div.toolbar-field {
@@ -803,6 +904,22 @@ span.icon-as {
   mask-image: url(icons/database.svg);
 }
 
+span.icon-filter {
+  -webkit-mask-image: url(icons/funnel.svg);
+  mask-image: url(icons/funnel.svg);
+}
+
+span.icon-triangle-fill-up {
+  -webkit-mask-image: url(icons/triangle-fill.svg);
+  mask-image: url(icons/triangle-fill.svg);
+}
+
+span.icon-triangle-fill-down {
+  -webkit-mask-image: url(icons/triangle-fill.svg);
+  mask-image: url(icons/triangle-fill.svg);
+  rotate: 180deg;
+}
+
 [data-true] {
   display: none;
 }
@@ -832,6 +949,23 @@ a.nav-link {
 a.nav-link.active {
   border-bottom: 2px solid;
 }
+
+.fullctl-inner-tabs .nav .nav-item {
+  margin-right: 10px;
+}
+
+.fullctl-inner-tabs .nav {
+  border: none;
+  margin-bottom: 25px;
+}
+
+.fullctl-inner-tabs .nav .nav-link {
+  border: 0px;
+  border-bottom: 1px solid;
+  border-radius: 0px;
+}
+
+
 
 /**
  * menu
@@ -874,12 +1008,14 @@ div.menu .button {
   flex-wrap: nowrap;
 }
 
+.input-group.searchbar select.form-select,
 .input-group.searchbar input {
   padding: var(--size-200);
   border-top-left-radius: var(--size-200);
   border-bottom-left-radius: var(--size-200);
   flex: 1;
   border: 1px solid;
+  width: 100%;
 }
 
 .input-group.searchbar .btn {
@@ -892,6 +1028,16 @@ div.menu .button {
 .input-group.searchbar .btn.curved {
   border-top-right-radius: var(--size-200) !important;
   border-bottom-right-radius: var(--size-200) !important;
+}
+
+.input-group span.static-label {
+  background-color: var(--background);
+  color: var(--foreground);
+  border-color: var(--theme-secondary-border-color);
+}
+
+.input-group.searchbar select.form-select {
+  margin-left: 0px;
 }
 
 /**
@@ -1120,7 +1266,6 @@ div.list-body div.secondary {
 
 div.list-body .primary-row-name {
   font-size: 24px;
-  font-weight: bold;
   letter-spacing: 0;
   line-height: 24px;
   margin: 16px 0px;
@@ -1308,23 +1453,6 @@ div.controls label {
   margin-bottom: 12px;
 }
 
-div.controls input[type="checkbox"] {
-  outline: none;
-  box-sizing: border-box;
-  height: 16px;
-  width: 16px;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-}
-
-div.controls input[type="checkbox"]:checked:before {
-  content: '\2713';
-  position: relative;
-  top: -5px;
-  left: 2px;
-}
-
 div.controls .form-check {
   margin-bottom: 15px;
 }
@@ -1479,7 +1607,7 @@ textarea.template-editor {
  */
 
 footer {
-  margin: 2rem .5rem;
+  padding: 2rem .5rem;
   text-align: center;
 }
 
@@ -1590,8 +1718,9 @@ span.fullctl-sot {
   padding-left: 5px;
 }
 
+.notification.bg-info,
 .cross-promotion .alert-info {
-  background-color: #2b2e39;
+  background-color: #2b2e39 !important;
   border-color: #d1ff27;
 }
 
@@ -1603,4 +1732,218 @@ span.fullctl-sot {
 .cross-promotion img.app-logo {
   height: 18px;
   display: inline;
+}
+
+img.service-link {
+  height: 25px;
+  border: none;
+  display: inline;
+  vertical-align: middle;
+}
+
+img.service-link ~ span.icon {
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+/*
+ * autocomplete stylings
+ */
+
+div.autocomplete-item {
+  position: relative;
+  margin: -5px;
+  padding: 5px;
+  border-bottom: 1px solid var(--secondary-list-btn-bg);
+}
+
+div.autocomplete-item .autocomplete-secondary {
+  font-size: 12px;
+}
+
+div.autocomplete-item .autocomplete-extra {
+  font-size: 11px;
+}
+
+div.autocomplete-controls {
+  font-size: 11px;
+  text-align: right;
+}
+
+.modal-control .select2-selection.select2-selection--single {
+  height: 60px;
+  padding: 5px;
+}
+
+.modal-control .select2-selection.select2-selection--single .select2-selection__placeholder {
+  white-space: normal;
+}
+
+.modal-control .autocomplete-primary {
+  height: auto;
+  line-height: initial;
+}
+
+.modal .controls input.select2-search__field {
+  border: none;
+  border-bottom: 1px solid transparent;
+}
+
+.select2-selection.select2-selection--single {
+  height: 42px;
+  padding-left: var(--size-100);
+  display: flex;
+  align-items: center;
+  background-color: transparent;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  right: 4px;
+  top: initial;
+}
+
+/* table display */
+.table-disp {
+  display: table;
+}
+
+.table-row-disp {
+  display: table-row;
+}
+
+.table-cell-disp {
+  display: table-cell;
+}
+
+div.notifications {
+  position: fixed;
+  top: 75px;
+  left: 50%;
+  transform: translate(-50%);
+  padding: 5px;
+  z-index: 100;
+}
+
+div.notifications .badge.notification {
+  padding: 10px;
+  display: block;
+  margin-bottom: 10px;
+  cursor: pointer;
+  min-width: 200px;
+  max-width: 600px;
+}
+
+div.notifications .badge.notification.bg-info {
+  border-width: 1px;
+  border-style: solid;
+}
+
+/** DropdownBtn */
+
+.dropdown-btn {
+  display: inline-flex;
+  position: relative;
+}
+
+.dropdown-btn > button:not(.active) {
+  display: none;
+}
+
+.dropdown-btn > button {
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
+}
+
+.dropdown-btn details[open]::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 98;
+}
+
+.dropdown-btn summary {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.dropdown-btn summary::marker {
+  content: '';
+}
+
+.dropdown-btn summary::before {
+  content: '';
+  display: inline-block;
+  height: var(--size-425);
+  width: var(--size-425);
+  vertical-align: bottom;
+  mask-position: center;
+  -webkit-mask-position: center;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-image: url(icons/ui-caret/down.svg);
+  mask-image: url(icons/ui-caret/down.svg);
+}
+
+.dropdown-btn summary {
+  border-left: 1px solid;
+  border-top-right-radius: var(--bs-border-radius);
+  border-bottom-right-radius: var(--bs-border-radius);
+}
+
+.dropdown-btn .dropdown-btn-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  z-index: 99;
+  min-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px 0;
+}
+
+.dropdown-btn.single-option > button{
+  border-top-right-radius: var(--bs-border-radius);
+  border-bottom-right-radius: var(--bs-border-radius);
+}
+
+.dropdown-btn.single-option details {
+  display: none;
+}
+
+
+/*
+ * badges
+ */
+
+.badge-btn .label {
+  vertical-align: super;
+  text-transform: uppercase;
+}
+
+.badge-btn .icon {
+  vertical-align: baseline;
+}
+
+button.badge-btn {
+  border: none;
+}
+
+button.badge-btn:disabled {
+  opacity: 0.5;
+}
+
+/*
+ * graphs
+ */
+.graph-placeholder {
+  height: 256px;
+  display: block;
+  position: relative;
 }

@@ -11,6 +11,7 @@
   --clr-accent-400: #D1FF27;
   --clr-accent-500: #FD7E14;
   --clr-accent-600: red;
+  --clr-accent-700: #1E90FF;
 
   --clr-bg-200: rgba(246, 248, 250, 1);
   --clr-bg-210: hsl(210, 14%, 95%);
@@ -26,12 +27,6 @@
 
   --theme-secondary-border-color: rgba(255, 255, 255, 0.15);
   --theme-toolbar-color: #fff;
-
-  --theme-alert-info-bg: #7747FF;
-  --theme-alert-info-color: #fff;
-  --theme-alert-info-border: rgba(255, 255, 255, 0.12);
-  --theme-alert-info-link-color: #d1ff27;
-
 
 
   --foreground: var(--clr-primary-100);
@@ -55,12 +50,21 @@
   --codeblock-even-bg: var(--clr-bg-800);
   --modal-clr: var(--clr-primary-200);
   --modal-bg: var(--clr-bg-700);
+  --switch-bg: var(--clr-bg-850);
+  --switch-active-clr: var(--clr-accent-400);
 
   --bs-body-color: var(--foreground);
   --bs-body-color-rgb: var(--foreground);
   --bs-body-bg: var(--background);
+  --bs-link-color: var(--foreground);
+  --bs-link-hover-color: var(--foreground);
 
   --source-of-truth-icon: url("../logos/ctl-mark-dark.png");
+
+  --clr-bg-loading-indicator: #0c0e14;
+  --default-input-bg: #3b3b3b;
+
+  --graph-placeholder-bg: rgba(0,0,0,0.5);
 
   color-scheme: dark;
 }
@@ -69,8 +73,6 @@
   --theme-bg-secondary: #3E464F;
   --clr-border-400: var(--clr-primary-500);
   --theme-secondary-border-color: rgba(25, 27, 34, 0.15);
-
-
 
   --foreground: var(--clr-primary-900);
   --background: var(--clr-bg-300);
@@ -91,8 +93,16 @@
   --codeblock-even-bg: var(--clr-bg-200);
   --modal-bg: var(--clr-bg-200);
   --modal-clr: var(--clr-primary-800);
+  --switch-bg: var(--clr-bg-210);
 
   --source-of-truth-icon: url("../logos/ctl-mark-light.png");
+
+  --bs-link-color: rgb(13, 110, 253);
+  --bs-link-hover-color: rgb(13, 110, 253);
+
+  --clr-bg-loading-indicator: #d5d5d5;
+
+  --graph-placeholder-bg: rgba(0,0,0,0.2);
 
   color-scheme: light;
 }
@@ -121,10 +131,17 @@ input[type="checkbox"] {
   --bs-btn-hover-bg: var(--primary-btn-bg);
   --bs-btn-active-color: var(--primary-btn-clr);
   --bs-btn-active-bg: var(--primary-btn-bg);
+  --bs-btn-active-border-color: var(--primary-btn-bg);
 }
 
+.bg-primary .icon,
 .btn.primary .icon {
   background-color: var(--primary-btn-clr);
+}
+
+.bg-primary {
+  background-color: var(--primary-btn-bg) !important;
+  color: var(--primary-btn-clr) !important;
 }
 
 .btn.secondary {
@@ -154,6 +171,17 @@ input[type="checkbox"] {
 .modal {
   --bs-modal-bg: var(--modal-bg);
   --bs-modal-color: var(--modal-clr);
+}
+
+.btn.filter {
+  border-color: var(--clr-border-400);
+}
+
+.btn.filter.active {
+  border-color: var(--clr-accent-400);
+}
+.btn.filter.active .icon {
+  background-color: var(--clr-accent-400);
 }
 
 .modal .modal-content div.controls,
@@ -194,23 +222,50 @@ main .dropdown-item:hover {
   color: inherit !important;
 }
 
+.slider {
+  border: 1px solid var(--clr-border-400);
+  background-color: var(--switch-bg);
+}
+
+.slider:before {
+  background-color: var(--clr-primary-500);
+}
+
+input:checked ~ .slider:before {
+  background-color: var(--switch-active-clr);
+}
+
+input:focus ~ .slider {
+  box-shadow: 0 0 1px var(--switch-active-clr);
+}
+
 /**
  * Bootstrap overrides
  */
 .form-select {
   color: var(--foreground);
   background-image: var(--dropdown-svg-url);
+  background-color: transparent;
+  border-color: var(--theme-secondary-border-color);
 }
 
-.alert-warning {
-  --bs-alert-color: var(--foreground);
-  --bs-alert-bg: var(--box-bg);
-  --bs-alert-border-color: var(--clr-accent-600);
+
+.toolbar-control .form-select {
+  color: var(--foreground);
+  background-image: url(../../icons/ui-caret-caret/down.svg);
+  background-color: var(--default-input-bg);
+  background-position: right 0.5rem center; /* Adjust these values for horizontal and vertical position */
+  background-repeat: no-repeat;
+  background-size:  0.5rem; /* Adjust this value for the size of the caret */
+  -webkit-appearance: none; /* Remove default caret in Webkit browsers */
+  -moz-appearance: none; /* Remove default caret in Mozilla browsers */
+  appearance: none; /* Remove default caret for other browsers */
+  padding-right: 2rem; /* Add extra padding to the right to make space for the caret */
 }
 
-.alert-warning .btn-warning {
-  background-color: var(--primary-btn-bg);
-  color: var(--primary-btn-clr);
+
+.toolbar-control .form-select:disabled {
+  opacity: 0.5;
 }
 
 /**
@@ -331,6 +386,14 @@ div.validation-error {
   background-color: rgba(0, 0, 0, 0.5);
 }
 
+.loading-indicator-container {
+  background-color: var(--clr-bg-loading-indicator);
+  border-color: var(--theme-secondary-border-color);
+}
+
+table td .loading-indicator-container {
+  background-color: transparent;
+}
 
 a[data-action].prefixctl,
 a[data-action].prefixctl:hover,
@@ -413,6 +476,7 @@ select.secondary {
 }
 
 div.controls input[type="text"],
+.input-group.searchbar select.form-select,
 div.controls select.form-control {
   background: transparent;
   border-color: var(--theme-secondary-border-color);
@@ -524,6 +588,24 @@ div.modal-body div.border-top-seperator {
   border: 1px solid var(--clr-border-400);
 }
 
+.modal-control .select2-container--default .select2-selection--single {
+  background-color: var(--modal-bg);
+  border: 1px solid var(--theme-secondary-border-color);
+}
+
+.modal-control .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
+  border-color: transparent transparent var(--foreground) transparent;
+}
+.modal-control .select2-container--default .select2-selection--single .select2-selection__arrow b {
+  border-color: var(--foreground) transparent transparent transparent;
+}
+
+.modal .controls input.select2-search__field {
+  background-color: transparent;
+  border-bottom: 1px solid var(--theme-secondary-border-color);
+  outline: 0;
+}
+
 .controls .select2-container--default .select2-selection--single .select2-selection__rendered {
   color: var(--foreground);
 }
@@ -531,6 +613,13 @@ div.modal-body div.border-top-seperator {
 span.select2-dropdown {
   border-color: var(--clr-border-400);
   background-color: var(--background);
+  box-shadow: 5px 5px #0000004d;
+}
+
+.modal span.select2-dropdown {
+  border-color: var(--clr-border-400);
+  background-color: var(--modal-bg);
+  box-shadow: 5px 5px #0000004d;
 }
 
 div.controls label {
@@ -545,18 +634,24 @@ div.menu div.menu-deco-border {
  * bootstrap alerts
  */
 
-.alert-info {
-  font-family: 'Space Mono';
-  font-size: 12px;
-  line-height: 16px;
-  color: var(--theme-alert-info-color);
-  background: var(--theme-alert-info-bg);
-  border-color: var(--theme-alert-info-border);
+.alert {
+  --bs-alert-color: var(--foreground);
+  --bs-alert-bg: var(--box-bg);
 }
 
-.alert-info a {
-  color: var(--theme-alert-info-link-color);
+.alert-warning {
+  --bs-alert-border-color: var(--clr-accent-600);
 }
+
+.alert-info {
+  --bs-alert-border-color: var(--clr-accent-400);
+}
+
+.alert-warning .btn-warning {
+  background-color: var(--primary-btn-bg);
+  color: var(--primary-btn-clr);
+}
+
 
 tbody.list-footer button {
   border-color: transparent;
@@ -641,6 +736,11 @@ div.oauth-backend.twentyc>a.btn {
   opacity: 1;
 }
 
+
+.fullctl-inner-tabs .nav .nav-link.active {
+  background-color: transparent;
+  color: var(--foreground);
+}
 
 /* loading spinner */
 
@@ -735,4 +835,38 @@ footer .help-box {
 .sidebar[data-element="menu"] .button {
   color: var(--foreground);
   background: transparent;
+}
+
+
+div.autocomplete-item .autocomplete-primary {
+  color: var(--foreground);
+}
+
+
+/**
+ * syntax hl
+*/
+.syntax-highlight-transparent-bg pre {
+  background-color: transparent !important;
+}
+
+/** DropdownBtn */
+.dropdown-btn summary::before {
+  background-color: var(--primary-btn-clr);
+}
+
+.dropdown-btn summary {
+  background-color: var(--primary-btn-bg);
+  border-left-color: var(--primary-btn-clr);
+}
+
+.legend {
+  color: var(--clr-primary-300);
+}
+
+/*
+ * graphs
+ */
+.graph-placeholder {
+  background-color: var(--graph-placeholder-bg);
 }

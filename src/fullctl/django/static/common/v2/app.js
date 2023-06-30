@@ -16,7 +16,105 @@ fullctl.formatters = {}
 fullctl.modals = {}
 fullctl.util = {}
 fullctl.help_box = {}
+fullctl.auth = {};
 fullctl.static_path = "/s/0.0.0-dev/"
+fullctl.session_expired = false;
+
+class NotificationManager {
+  constructor() {
+    this.notifications = [];
+    this.max_notifications = 3;
+  }
+
+  /**
+   * Add a new notification
+   * @param {string} type - notification type (danger, info, success)
+   * @param {string} message - HTML message content
+   * @param {function} [click_handler] - custom click handler (optional)
+   * @param {number} [auto_close_seconds] - auto close in seconds (optional)
+   */
+  add_notification(type, message, click_handler, auto_close_seconds) {
+    // Remove old notification if needed
+    if (this.notifications.length === this.max_notifications) {
+      this.notifications.shift().remove();
+    }
+
+    // Create new notification element
+    const notification = $(`<div class="notification badge bg-${type}">${message}</div>`);
+
+    // Append the notification to the .notifications element
+    $('.notifications').append(notification);
+
+    // Add click listener for custom click handler (if provided) and removing the notification
+    notification.on('click', () => {
+      if (click_handler) {
+        click_handler();
+      }
+      notification.remove();
+    });
+
+    // Auto close the notification after n seconds (if provided)
+    if (auto_close_seconds) {
+      setTimeout(() => {
+        notification.remove();
+      }, auto_close_seconds * 1000);
+    }
+
+    // Add to the notifications array
+    this.notifications.push(notification);
+  }
+
+  danger(html_message, click_handler, auto_close_seconds) {
+    this.add_notification("danger", html_message, click_handler, auto_close_seconds);
+  }
+
+  info(html_message, click_handler, auto_close_seconds) {
+    this.add_notification("info",	html_message, click_handler, auto_close_seconds);
+  }
+
+  success(html_message, click_handler, auto_close_seconds) {
+    this.add_notification("success", html_message, click_handler, auto_close_seconds);
+  }
+
+}
+
+// Create a NotificationManager instance in the window.fullctl namespace
+fullctl.notification_manager = new NotificationManager();
+
+/**
+ * starts periodically checking the /authcheck endpoint
+ * and will display an alert if the user is no longer
+ * authenticated
+ *
+ * interval is set to 15 seconds.
+ *
+ * @method start_check
+ */
+fullctl.auth.start_check = function() {
+  this.auth_check_timer = setInterval(() => {
+    $.get("/authcheck/").fail(() => {
+      clearInterval(this.auth_check_timer);
+      if(!fullctl.session_expired) {
+        $(fullctl).trigger("session-expired");
+        fullctl.notification_manager.danger("Your session has expired. <a href=\"\">Reconnect</a>.", ()=>{
+          window.location.href = "";
+        });
+      }
+      fullctl.session_expired = true;
+
+    });
+  }, 15000);
+}
+
+/**
+ * stops the periodic auth check
+ *
+ * @method stop_check
+ */
+
+fullctl.auth.stop_check = function() {
+  clearInterval(this.auth_check_timer);
+}
 
 
 fullctl.util.slugify = (txt) => {
@@ -34,6 +132,16 @@ fullctl.util.static = (path) => {
   return fullctl.static_path+path;
 };
 
+fullctl.util.is_valid_ip4 = (ip) => {
+  // Regular expression to match IPv4 addresses with optional prefix length
+  const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\/([1-9]|[1-2][0-9]|3[0-2]))?$/;
+
+  // Test the input against the regular expression
+  const isValid = ipv4Regex.test(ip);
+
+  return isValid;
+}
+
 fullctl.formatters.pretty_speed = (value) => {
   if(value >= 1000000)
     value = parseInt(value / 1000000)+"T";
@@ -41,6 +149,20 @@ fullctl.formatters.pretty_speed = (value) => {
     value = parseInt(value / 1000)+"G";
   else
     value = value+"M";
+  return value
+}
+
+fullctl.formatters.pretty_speed_bits = (value) => {
+  if(value >= 1000000000000)
+    value = parseInt(value / 1000000000000)+"T";
+  else if(value >= 1000000000)
+    value = parseInt(value / 1000000000)+"G";
+  else if(value >= 1000000)
+    value = parseInt(value / 1000000)+"M";
+  else if(value >= 1000)
+    value = parseInt(value / 1000)+"K";
+  else
+    value = value+"";
   return value
 }
 
@@ -62,6 +184,61 @@ fullctl.formatters.meta_data = (value) => {
     node.append($('<div>').addClass("badge").text(k+": "+value[k]));
   }
   return node;
+}
+
+/**
+ * Formats a datetime string into a human readable format
+ */
+fullctl.formatters.datetime = (value) => {
+  const date = new Date(value);
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+/**
+ * Formats seconds as XwXd if its higher than 48 hours
+ * and hh:mm:ss otherwise
+ */
+fullctl.formatters.seconds_to_wdhms = (seconds) => {
+  seconds = Number(seconds);
+  const w = Math.floor(seconds / (3600*24*7));
+  const d = Math.floor(seconds % (3600*24*7) / (3600*24));
+
+  const wDisplay = w > 0 ? w + "w" : "";
+  const dDisplay = d > 0 ? d + "d" : "";
+  if (w>0 || d>2) {
+    return (wDisplay + dDisplay).replace(/,\s*$/, "");
+  }
+
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor(seconds % 3600 / 60);
+  const s = Math.floor(seconds % 60);
+
+  return (`${h}:${m}:${s}`);
+}
+
+/**
+ * Shortens numbers by prefixing K for thousands and M for millions
+ */
+fullctl.formatters.shorten_number = (value) => {
+  value = Number(value);
+  const millions = (value / 1000000).toPrecision(3);
+  if (millions>1) {
+    return millions+"M";
+  }
+
+  const thousands = (value / 1000).toPrecision(3);
+  if (thousands>1)
+    return thousands+"K";
+
+  return String(value);
 }
 
 /**
@@ -131,6 +308,11 @@ fullctl.widget.StatusBadge = $tc.extend(
     },
 
     load : function() {
+      // stop refreshing if the element is no longer in the DOM
+      if (!document.body.contains(this.element[0])) {
+        this.refresh_timer.cancel();
+        return
+      }
       return this.get().then((response) => {
         response.rows((row) => {
           if(row.id == this.row_id) {
@@ -152,8 +334,8 @@ fullctl.widget.StatusBadge = $tc.extend(
       this.element.removeClass().addClass("status-badge "+value)
       this.element.empty().append($('<span>').text(value));
       if(this.refresh_values && $.inArray(value, this.refresh_values) == -1) {
-          this.element.append(this.spinner());
-          this.refresh();
+        this.element.append(this.spinner());
+        this.refresh();
       }
 
     }
@@ -372,25 +554,60 @@ fullctl.application.Modal = $tc.extend(
       this.set_title(title);
       this.set_content(content);
 
-      var modal = this;
+      const modal = this;
 
       content.find('.modal-action-note-text').each(function() {
         $(this).appendTo(modal.jquery.find('.modal-action-note'))
       });
 
       this.show();
+
+      const on_modal_close = (e) => {
+        if(modal.jquery.find('form').attr('data-submitted') == 'true') {
+          modal.jquery.find('form').attr('data-submitted', 'false');
+        } else if (this.changed) {
+          const conrimation = confirm("Are you sure you want to close this modal? Any unsaved changes will be lost.");
+          if (!conrimation) {
+            e.preventDefault();
+            return;
+          }
+        }
+        this.jquery.off('hide.bs.modal', on_modal_close);
+      }
+      this.jquery.on('hide.bs.modal', on_modal_close);
     },
+
     show : function() {
       this.jquery.modal('show');
     },
+
     hide : function() {
       this.jquery.modal('hide');
     },
+
     set_title : function(title) {
       this.jquery.find('.modal-title').text(title);
     },
+
     set_content : function(content) {
       this.jquery.find('.modal-body').empty().append(content);
+      this.track_form_changes();
+    },
+
+    track_form_changes : function() {
+      const modal = this;
+      modal.changed = false;
+
+      const form_inputs = this.jquery.find('form :input');
+      const change_setter = function(e, info) {
+        if (info === "on_load_change") {
+          return
+        }
+
+        modal.changed = true;
+        form_inputs.off('change', change_setter);
+      }
+      form_inputs.on('change', change_setter);
     }
   },
   fullctl.application.Component
@@ -447,11 +664,15 @@ fullctl.application.Tool = $tc.extend(
 
     apply_ordering: function() {
       //deprecated
+      console.warn("use of Tool.apply_ordering is deprecated")
+
       return;
     },
 
     initialize_sortable_headers: function() {
       //deprecated
+      console.warn("use of Tool.initialize_sortable_headers is deprecated")
+
       return;
     },
 
@@ -558,6 +779,7 @@ fullctl.application.Header = $tc.extend(
         });
         w.load()
 
+        this.order_app_switcher();
         this.wire_app_switcher();
         this.wire_stop_impersonation();
 
@@ -573,7 +795,7 @@ fullctl.application.Header = $tc.extend(
 
     wire_app_switcher : function() {
       this.widget("app_switcher", ($e) => {
-        var others = $e.app_switcher.find('.others')
+        const others = $e.app_switcher.find('.others')
         const selected = $e.app_switcher.find('.selected')
         selected.click(() => {
           others.show();
@@ -588,6 +810,23 @@ fullctl.application.Header = $tc.extend(
           }
         });
         return {};
+      });
+    },
+
+    /**
+     * order elements within the service application switcher in the header
+     * @method order_app_switcher
+     */
+
+    order_app_switcher : function() {
+      const service_list_order = ["ixctl", "peerctl", "devicectl", "prefixctl", "pdbctl", "aclctl", "aaactl"];
+      const service_list = {};
+      $(this.$e.app_switcher).find(".others .list-item").each(function() {
+        service_list[$(this).attr("data-slug")] = $(this);
+      })
+
+      service_list_order.reverse().forEach((value, index) => {
+        $(this.$e.app_switcher).find(".others").prepend(service_list[value]);
       });
     },
 
@@ -713,6 +952,8 @@ fullctl.application.Application = $tc.define(
 
       this.application_access_granted = grainy.check("service."+this.id+"."+fullctl.org.id, "r");
 
+      fullctl.auth.start_check();
+
     },
 
     autoload_page : function() {
@@ -749,13 +990,11 @@ fullctl.application.Application = $tc.define(
     },
 
     sync : function() {
-      var i, app = this;
-      for(i in this.$t) {
+      for(let i in this.$t) {
         if(this.$t[i].active) {
-          this.$t[i].sync(app);
+          this.$t[i].sync();
         }
       }
-
     },
 
     /**
@@ -829,7 +1068,6 @@ fullctl.application.ContainerApplication = $tc.extend(
       });
 
       $(this.$c.toolbar.$w[selector_name]).one("load:after", () => {
-
         if(this["preselect_"+ref_tag]) {
           this[selector_name](this["preselect_"+ref_tag])
         } else {
@@ -842,6 +1080,7 @@ fullctl.application.ContainerApplication = $tc.extend(
       $(this.$c.toolbar.$e[selector_name]).on("change", () => {
         this.sync();
         this.sync_url(this.$c.toolbar.$e[selector_name].val())
+        this.sync_title(this.$c.toolbar.$e[selector_name].val())
         if(this.$t.settings) { this.$t.settings.sync(); }
       });
 
@@ -1177,6 +1416,87 @@ fullctl.help_box = document.addEventListener("DOMContentLoaded", () => {
   })
 });
 
+/**
+ * Searchbar component for filtering elements
+ *
+ * @param {*} jq searchbar element
+ * @class Searchbar
+ * @namespace fullctl.application
+ * @constructor
+ * @param {(str) => undefined} filter_function function to call when filtering
+ * @param {() => undefined} clear_filter_function function to reverse what happens in the `filter_function`
+ */
+
+fullctl.application.Searchbar = $tc.define(
+  "Searchbar",
+  {
+    Searchbar : function(jq, filter_function, clear_filter_function) {
+      const filter_input =
+      this.filter_input =
+      this.element =
+        jq.find('[data-role="filter"]') ||
+        jq.find('[data-element="filter"]');
+
+      const search_btn =
+      this.search_btn =
+        jq.find('[data-role="filter_submit"]') ||
+        jq.find('[data-element="filter_submit"]');
+
+      const clear_search_btn =
+      this.clear_search_btn =
+        jq.find('[data-role="filter_clear"]') ||
+        jq.find('[data-element="filter_clear"]');
+
+      this.filter_function = filter_function;
+      this.clear_filter_function = clear_filter_function;
+
+      const searchbar = this;
+      filter_input.on("keyup", function(event) {
+        if (event.key === "Enter") {
+          if ($(this).val() != "") {
+            searchbar.search($(this).val())
+          } else {
+            searchbar.clear_search();
+          }
+        }
+      });
+
+      search_btn.on("click", () => {
+        if (filter_input.val() != "") {
+          this.search(filter_input.val())
+        } else {
+          this.clear_search();
+        }
+      });
+
+      clear_search_btn.on("click", () => {
+        this.clear_search();
+      });
+    },
+
+    search : function(prefix) {
+      this.filter_function(prefix);
+      this.show_clear_button();
+    },
+
+    clear_search : function() {
+      this.filter_input.val("");
+      this.clear_filter_function();
+      this.hide_clear_button();
+    },
+
+    show_clear_button : function() {
+      this.search_btn.removeClass("curved");
+      this.clear_search_btn.show();
+    },
+
+    hide_clear_button : function() {
+      this.search_btn.addClass("curved");
+      this.clear_search_btn.hide();
+    }
+  }
+);
+
 fullctl.theme_switching = document.addEventListener("DOMContentLoaded", () => {
   function toggle_theme() {
     if (detect_theme() === 'dark')
@@ -1207,6 +1527,356 @@ fullctl.theme_switching = document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+/**
+ * Dropdown button widget for selecting options.
+ * should follow a strcuture as follows:
+ *
+ *      <div class="dropdown-btn">
+ *        <button data-option-text="Option 1 text">
+ *          Option 1
+ *        </button>
+ *
+ *        <button data-option-text="Option 2 text">
+ *          Option 1
+ *        </button>
+ *
+ *        <details>
+ *          <summary><span class="visually-hidden">Description of choice</span></summary>
+ *        </details>
+ *      </div>
+ *
+ * @class DropdownBtn
+ * @namespace fullctl.application
+ * @constructor
+ * @param {jQuery} jq - the element to use as the dropdown button
+ */
+
+fullctl.application.DropdownBtn = $tc.define(
+  "DropdownBtn",
+  {
+    DropdownBtn : function(jq) {
+      this.jq = jq;
+      const element = jq[0];
+      this.dropdown_expand_btn = element.querySelector('details');
+
+      this.menu = $('<div class="dropdown-btn-menu">');
+      this.dropdown_expand_btn.append(this.menu.get(0));
+      this.dropdown_buttons = this.get_dropdown_buttons();
+
+      this.render_dropdown();
+
+      // close dropdown button logic
+      const on_dropdown_btn_open = (event) => {
+        if (event.target.closest(".dropdown-btn-menu")) return;
+        this.close_dropdown();
+        document.removeEventListener('click', on_dropdown_btn_open);
+      }
+      this.dropdown_expand_btn.addEventListener("toggle", (event) => {
+        if (this.dropdown_expand_btn.open) {
+          document.addEventListener("click", on_dropdown_btn_open);
+        }
+      });
+    },
+
+    get_dropdown_buttons: function() {
+      return this.jq.find('> button');
+    },
+
+    close_dropdown: function() {
+      this.dropdown_expand_btn.removeAttribute("open");
+    },
+
+    render_dropdown: function() {
+      this.dropdown_buttons = this.get_dropdown_buttons();
+
+      // add class active to first option if no active
+      if (!this.dropdown_buttons.hasClass('active')) {
+        this.dropdown_buttons.first().addClass('active');
+      }
+
+      // only show first active if multiple actives
+      this.dropdown_buttons.filter('.active:not(:first)').removeClass('active')
+
+
+      const menu = this.menu
+      menu.empty();
+
+      if (this.dropdown_buttons.length == 1) {
+        this.jq.addClass('single-option');
+
+        return;
+      } else {
+        this.jq.removeClass('single-option');
+      }
+
+      this.dropdown_buttons.each(function() {
+        menu.append(
+          $('<button>').text($(this).data('option-text')).data( "element-for", $(this))
+        )
+      });
+
+      this.dropdown_options = menu.children();
+
+      // select option from dropdown
+      const dropdown_btn = this;
+      this.dropdown_options.click(function(event) {
+        dropdown_btn.select_option(this);
+      });
+
+    },
+
+    select_option: function (option_element) {
+      this.jq.find('.active').removeClass('active');
+      $(option_element).data('element-for').addClass('active');
+      this.close_dropdown();
+    },
+
+    add_option: function (elem) {
+      this.jq.prepend(elem);
+      this.render_dropdown();
+    },
+
+    remove_option: function(index) {
+      this.dropdown_buttons.eq(index).remove();
+      this.dropdown_buttons = this.get_dropdown_buttons();
+      if (!this.dropdown_buttons.hasClass('active')) {
+        this.dropdown_buttons.first().addClass('active');
+      }
+      this.render_dropdown();
+    },
+  }
+);
+
+/**
+ * Holds extension functions and classes that deal
+ * with third party library quality of life utilities
+ * @class fullctl.ext
+ *
+ */
+
+fullctl.ext = {}
+
+/**
+ * Select2 extension utilities
+ * @class fullctl.ext.select2
+ */
+
+fullctl.ext.select2 = {
+
+
+  /**
+   * Initializes autocomplete on a select2 element using
+   * the fullctl autocomplete response schema which contains
+   * a `results` array of objects with the following structure:
+   *
+   * {
+   *   id,
+   *   primary, # primary text (name etc.)
+   *   secondary, # Secondary text (second row, description etc.)
+   *   extra, # Extra text (third row, additional info etc.)
+   * }
+   *
+   * @method init_autocomplete
+   * @param {jQuery} jq - the select2 element
+   * @param {jQuery} parent - the parent element to attach the dropdown to
+   * @param {Object} opt - options
+   * @param {Boolean} opt.controls - whether to show controls to remove the selected element
+   * @param {String} opt.url - the url to fetch the autocomplete data from
+   * @param {String} opt.placeholder - the placeholder text
+   * @param {Function} opt.process - a function to process the autocomplete data
+   * @param {Object} opt.initial - the initial value (object containing id,primary,secondary and extra)
+   * @param {Object} opt.localstorage_key - the key that is used to store the selected value in localstorage
+   */
+
+  init_autocomplete: function(jq, parent, opt) {
+
+    this.element = jq;
+
+    jq.select2({
+      dropdownParent : parent,
+      allowClear: false,
+      ajax: {
+        url: opt.url,
+        dataType: 'json',
+        processResults : function(data, params) {
+          if(opt.process)
+            opt.process(data, params.term, params);
+          return {
+            results: data.results
+          }
+        },
+
+      },
+      width: '20em',
+      placeholder: opt.placeholder,
+
+      templateResult: function(state) {
+
+        // overrides the template used when an item is rendered into
+        // the results list
+
+        if(!state.id) {
+          return state.text;
+        }
+
+        return $('<div>').addClass('autocomplete-item').append(
+          $('<div>').addClass('autocomplete-primary').text(state.text.primary)
+        ).append(
+          $('<div>').addClass('autocomplete-secondary').text(state.text.secondary)
+        ).append(
+          $('<div>').addClass('autocomplete-extra').text(state.text.extra)
+        )
+      },
+      templateSelection: function(state) {
+
+        // overrides the template used when an item is selected
+
+        if(!state.id) {
+          return state.text;
+        }
+
+        if(!state.selected_text)
+          state.selected_text = $(state.element).data('selection_data')
+
+        return $('<div>').addClass('autocomplete-item').append(
+          $('<div>').addClass('autocomplete-primary').text(state.selected_text.primary)
+        ).append(
+          $('<div>').addClass('autocomplete-secondary').text(state.selected_text.secondary)
+        ).append(
+          $('<div>').addClass('autocomplete-extra').text(state.selected_text.extra)
+        )
+      }
+    });
+
+    // if initial is set, select the initial value
+
+    if(opt.initial) {
+
+      // check if initial is callable
+      if(typeof opt.initial === "function") {
+        opt.initial((initial) => {
+          let option = $(new Option(initial.primary, initial.id, true, true))
+          option.data("selection_data", initial)
+          jq.append(option.get(0)).trigger("change")
+        })
+      } else {
+        let initial = opt.initial;
+        let option = $(new Option(initial.primary, initial.id, true, true))
+        option.data("selection_data", initial)
+        jq.append(option.get(0)).trigger("change")
+      }
+
+    }
+
+    if (opt.controls !== false)
+      this.setup_controls();
+
+    if (opt.localstorage_key)
+      this.localstorage_key = opt.localstorage_key;
+
+    return this
+  },
+
+  setup_controls: function() {
+    // controls that allow removal of selected autocomplete element.
+    let controls = $('<div>').addClass('autocomplete-controls').append(
+      $('<a>').addClass('action').text('remove')
+    ).hide().on("click", () => {
+      this.element.val(null).trigger("change");
+      controls.hide();
+    });
+
+    this.element.on("change", function(e) {
+      if($(this).val()) {
+        controls.show();
+      } else {
+        controls.hide();
+      }
+    });
+
+    // add autocomplete controls to bottom
+    this.element.parent().append(controls);
+  },
+
+  /**
+   *
+   * if there is a localstorage_key applies values stored in localstorage on
+   * inital load and attaches change listener to update localstorage.
+   *
+   * @method init_localstorage
+   */
+
+  init_localstorage : function() {
+    if(!this.localstorage_key)
+      return;
+
+    this.element.on("change", () => {
+      this.localstorage_set(this.element.val());
+    });
+  },
+
+  /**
+   * if localstorage_key is set, sets localstorage of localstorage_key to
+   * data
+   *
+   * @method localstorage_set
+   * @param {String} data
+   */
+  localstorage_set : function(data) {
+    if(!this.localstorage_key)
+      return;
+
+    if (this.localstorage_get() == data)
+      return;
+
+    localStorage.setItem(this.localstorage_key, data);
+  },
+
+  /**
+   * if localstorage_key is set, returns localstorage of localstorage_key
+   *
+   * @method localstorage_get
+   * @returns {String}
+   */
+
+  localstorage_get : function() {
+    if(!this.localstorage_key)
+      return;
+
+    return localStorage.getItem(this.localstorage_key);
+  },
+
+  /**
+   * if localstorage_key is set, removes localstorage_key from localstorage
+   *
+   * @method localstorage_remove
+   */
+
+  localstorage_remove : function() {
+    if(!this.localstorage_key)
+      return;
+
+    localStorage.removeItem(this.localstorage_key);
+  },
+
+  /**
+   * if localstorage_key is set, sets the option with the same value as
+   * localstorage as the selected option if the option exists.
+   *
+   * @method localstorage_apply
+   */
+
+  localstorage_apply : function() {
+    if(!this.localstorage_key)
+      return;
+
+    const val = this.localstorage_get();
+    if(val && this.element.find("option[value='" + val + "']").length > 0)
+      this.element.val(val);
+  },
+}
+
+
 $.fn.grainy_toggle = function(namespace, level) {
   if(grainy.check(namespace, level)) {
     this.show();
@@ -1214,5 +1884,9 @@ $.fn.grainy_toggle = function(namespace, level) {
     this.hide();
   }
 };
+
+$(document).on('select2:open', () => {
+  document.querySelector('.select2-search__field').focus();
+});
 
 })(jQuery, twentyc.cls);
