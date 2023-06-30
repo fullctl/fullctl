@@ -4,6 +4,7 @@ sourced from third party sources.
 """
 import json
 import re
+import time
 from datetime import timedelta
 
 import confu.schema
@@ -100,6 +101,16 @@ class Request(HandleRefModel):
     http_status = models.PositiveIntegerField()
     payload = models.JSONField(null=True, blank=True)
     count = models.PositiveIntegerField(default=1)
+
+    valid_http_status = [200]
+
+    # what to do on too many requests
+
+    # how long to wait before retrying
+    retry_429_interval = 1
+
+    # how many times to try before giving up
+    retry_429_tries = 2
 
     processing_error = models.CharField(
         max_length=255,
@@ -222,8 +233,24 @@ class Request(HandleRefModel):
 
         url = cls.target_to_url(target)
 
-        print("seding request to", url, " - target - ", target)
-        _resp = cls.send_request(url)
+        _resp = None
+
+        tries = 0
+        while not _resp or _resp.status_code == 429:
+            print("seding request to", url, " - target - ", target)
+            tries += 1
+            _resp = cls.send_request(url)
+
+            # if we get a 429, sleep for a bit and try again
+            if _resp.status_code == 429 and cls.retry_429_tries > tries:
+                print(
+                    cls,
+                    target,
+                    f"got 429, sleeping for {cls.retry_429_interval} seconds",
+                )
+                time.sleep(cls.retry_429_interval)
+            else:
+                break
 
         return cls.process(target, url, _resp.status_code, lambda: _resp.json())
 
@@ -322,12 +349,20 @@ class Request(HandleRefModel):
     @classmethod
     def get_cache(cls, target):
         qset = cls.get_cache_queryset(target)
-        qset = qset.filter(updated__gte=cls.valid_cache_datetime(target))
+        cached = qset.filter(updated__gte=cls.valid_cache_datetime(target)).first()
 
-        if qset.exists():
-            return qset.first()
+        if not cached:
+            return None
 
-        return None
+        tdiff = time.time() - cached.updated.timestamp()
+
+        if cached.http_status == 429:
+            if tdiff > 300:
+                # if the cached request is a 429 and it's older than 5 minutes
+                # we will ignore it and send a new request
+                return None
+
+        return cached
 
     @classmethod
     def get_cache_queryset(cls, target):
@@ -361,6 +396,7 @@ class Request(HandleRefModel):
             expiry = cls.cache_expiry_from_settings(target)
         except AttributeError:
             expiry = cls.config("cache_expiry")
+
         return expiry
 
     @classmethod
