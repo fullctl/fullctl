@@ -308,6 +308,11 @@ fullctl.widget.StatusBadge = $tc.extend(
     },
 
     load : function() {
+      // stop refreshing if the element is no longer in the DOM
+      if (!document.body.contains(this.element[0])) {
+        this.refresh_timer.cancel();
+        return
+      }
       return this.get().then((response) => {
         response.rows((row) => {
           if(row.id == this.row_id) {
@@ -329,8 +334,8 @@ fullctl.widget.StatusBadge = $tc.extend(
       this.element.removeClass().addClass("status-badge "+value)
       this.element.empty().append($('<span>').text(value));
       if(this.refresh_values && $.inArray(value, this.refresh_values) == -1) {
-          this.element.append(this.spinner());
-          this.refresh();
+        this.element.append(this.spinner());
+        this.refresh();
       }
 
     }
@@ -549,25 +554,60 @@ fullctl.application.Modal = $tc.extend(
       this.set_title(title);
       this.set_content(content);
 
-      var modal = this;
+      const modal = this;
 
       content.find('.modal-action-note-text').each(function() {
         $(this).appendTo(modal.jquery.find('.modal-action-note'))
       });
 
       this.show();
+
+      const on_modal_close = (e) => {
+        if(modal.jquery.find('form').attr('data-submitted') == 'true') {
+          modal.jquery.find('form').attr('data-submitted', 'false');
+        } else if (this.changed) {
+          const conrimation = confirm("Are you sure you want to close this modal? Any unsaved changes will be lost.");
+          if (!conrimation) {
+            e.preventDefault();
+            return;
+          }
+        }
+        this.jquery.off('hide.bs.modal', on_modal_close);
+      }
+      this.jquery.on('hide.bs.modal', on_modal_close);
     },
+
     show : function() {
       this.jquery.modal('show');
     },
+
     hide : function() {
       this.jquery.modal('hide');
     },
+
     set_title : function(title) {
       this.jquery.find('.modal-title').text(title);
     },
+
     set_content : function(content) {
       this.jquery.find('.modal-body').empty().append(content);
+      this.track_form_changes();
+    },
+
+    track_form_changes : function() {
+      const modal = this;
+      modal.changed = false;
+
+      const form_inputs = this.jquery.find('form :input');
+      const change_setter = function(e, info) {
+        if (info === "on_load_change") {
+          return
+        }
+
+        modal.changed = true;
+        form_inputs.off('change', change_setter);
+      }
+      form_inputs.on('change', change_setter);
     }
   },
   fullctl.application.Component
@@ -950,13 +990,11 @@ fullctl.application.Application = $tc.define(
     },
 
     sync : function() {
-      var i, app = this;
-      for(i in this.$t) {
+      for(let i in this.$t) {
         if(this.$t[i].active) {
-          this.$t[i].sync(app);
+          this.$t[i].sync();
         }
       }
-
     },
 
     /**
@@ -1386,49 +1424,78 @@ fullctl.help_box = document.addEventListener("DOMContentLoaded", () => {
  * @namespace fullctl.application
  * @constructor
  * @param {(str) => undefined} filter_function function to call when filtering
- * @param {(str) => undefined} clear_filter_function function to reverse what happens in the `filter_function`
+ * @param {() => undefined} clear_filter_function function to reverse what happens in the `filter_function`
  */
 
-fullctl.application.Searchbar = function(jq, filter_function, clear_filter_function) {
-  const filter_input = jq.find('[data-element="filter"]');
-  const search_btn = jq.find('[data-element="filter_submit"]');
-  const clear_search_btn = jq.find('[data-element="filter_clear"]');
+fullctl.application.Searchbar = $tc.define(
+  "Searchbar",
+  {
+    Searchbar : function(jq, filter_function, clear_filter_function) {
+      const filter_input =
+      this.filter_input =
+      this.element =
+        jq.find('[data-role="filter"]') ||
+        jq.find('[data-element="filter"]');
 
-  const search_prefix = (prefix) => {
-    filter_function(prefix.toLowerCase());
-    search_btn.removeClass("curved");
-    clear_search_btn.show();
-  }
+      const search_btn =
+      this.search_btn =
+        jq.find('[data-role="filter_submit"]') ||
+        jq.find('[data-element="filter_submit"]');
 
-  const clear_search = () => {
-    clear_filter_function();
-    search_btn.addClass("curved");
-    clear_search_btn.hide();
-    filter_input.val("")
-  }
+      const clear_search_btn =
+      this.clear_search_btn =
+        jq.find('[data-role="filter_clear"]') ||
+        jq.find('[data-element="filter_clear"]');
 
-  filter_input.on("keyup", function(event) {
-    if (event.key === "Enter") {
-      if ($(this).val() != "") {
-        search_prefix($(this).val())
-      } else {
-        clear_search();
-      }
+      this.filter_function = filter_function;
+      this.clear_filter_function = clear_filter_function;
+
+      const searchbar = this;
+      filter_input.on("keyup", function(event) {
+        if (event.key === "Enter") {
+          if ($(this).val() != "") {
+            searchbar.search($(this).val())
+          } else {
+            searchbar.clear_search();
+          }
+        }
+      });
+
+      search_btn.on("click", () => {
+        if (filter_input.val() != "") {
+          this.search(filter_input.val())
+        } else {
+          this.clear_search();
+        }
+      });
+
+      clear_search_btn.on("click", () => {
+        this.clear_search();
+      });
+    },
+
+    search : function(prefix) {
+      this.filter_function(prefix);
+      this.show_clear_button();
+    },
+
+    clear_search : function() {
+      this.filter_input.val("");
+      this.clear_filter_function();
+      this.hide_clear_button();
+    },
+
+    show_clear_button : function() {
+      this.search_btn.removeClass("curved");
+      this.clear_search_btn.show();
+    },
+
+    hide_clear_button : function() {
+      this.search_btn.addClass("curved");
+      this.clear_search_btn.hide();
     }
-  });
-
-  search_btn.click(() => {
-    if (filter_input.val() != "") {
-      search_prefix(filter_input.val())
-    } else {
-      clear_search();
-    }
-  });
-
-  clear_search_btn.click(() => {
-    clear_search();
-  })
-}
+  }
+);
 
 fullctl.theme_switching = document.addEventListener("DOMContentLoaded", () => {
   function toggle_theme() {
@@ -1613,35 +1680,21 @@ fullctl.ext.select2 = {
    * @param {jQuery} jq - the select2 element
    * @param {jQuery} parent - the parent element to attach the dropdown to
    * @param {Object} opt - options
+   * @param {Boolean} opt.controls - whether to show controls to remove the selected element
    * @param {String} opt.url - the url to fetch the autocomplete data from
    * @param {String} opt.placeholder - the placeholder text
    * @param {Function} opt.process - a function to process the autocomplete data
    * @param {Object} opt.initial - the initial value (object containing id,primary,secondary and extra)
+   * @param {Object} opt.localstorage_key - the key that is used to store the selected value in localstorage
    */
 
   init_autocomplete: function(jq, parent, opt) {
 
-
-    // controls that allow removal of selected autocomplete element.
-
-    let controls = $('<div>').addClass('autocomplete-controls').append(
-      $('<a>').addClass('action').text('remove')
-    ).hide().click(() => {
-      jq.val(null).trigger("change");
-      controls.hide();
-    })
-
-    jq.on("change", function(e) {
-      if($(this).val()) {
-        controls.show();
-      } else {
-        controls.hide();
-      }
-    });
-
+    this.element = jq;
 
     jq.select2({
       dropdownParent : parent,
+      allowClear: false,
       ajax: {
         url: opt.url,
         dataType: 'json',
@@ -1715,10 +1768,112 @@ fullctl.ext.select2 = {
 
     }
 
-    // add autocomplete controls to bottom
-    jq.parent().append(controls);
+    if (opt.controls !== false)
+      this.setup_controls();
 
-  }
+    if (opt.localstorage_key)
+      this.localstorage_key = opt.localstorage_key;
+
+    return this
+  },
+
+  setup_controls: function() {
+    // controls that allow removal of selected autocomplete element.
+    let controls = $('<div>').addClass('autocomplete-controls').append(
+      $('<a>').addClass('action').text('remove')
+    ).hide().on("click", () => {
+      this.element.val(null).trigger("change");
+      controls.hide();
+    });
+
+    this.element.on("change", function(e) {
+      if($(this).val()) {
+        controls.show();
+      } else {
+        controls.hide();
+      }
+    });
+
+    // add autocomplete controls to bottom
+    this.element.parent().append(controls);
+  },
+
+  /**
+   *
+   * if there is a localstorage_key applies values stored in localstorage on
+   * inital load and attaches change listener to update localstorage.
+   *
+   * @method init_localstorage
+   */
+
+  init_localstorage : function() {
+    if(!this.localstorage_key)
+      return;
+
+    this.element.on("change", () => {
+      this.localstorage_set(this.element.val());
+    });
+  },
+
+  /**
+   * if localstorage_key is set, sets localstorage of localstorage_key to
+   * data
+   *
+   * @method localstorage_set
+   * @param {String} data
+   */
+  localstorage_set : function(data) {
+    if(!this.localstorage_key)
+      return;
+
+    if (this.localstorage_get() == data)
+      return;
+
+    localStorage.setItem(this.localstorage_key, data);
+  },
+
+  /**
+   * if localstorage_key is set, returns localstorage of localstorage_key
+   *
+   * @method localstorage_get
+   * @returns {String}
+   */
+
+  localstorage_get : function() {
+    if(!this.localstorage_key)
+      return;
+
+    return localStorage.getItem(this.localstorage_key);
+  },
+
+  /**
+   * if localstorage_key is set, removes localstorage_key from localstorage
+   *
+   * @method localstorage_remove
+   */
+
+  localstorage_remove : function() {
+    if(!this.localstorage_key)
+      return;
+
+    localStorage.removeItem(this.localstorage_key);
+  },
+
+  /**
+   * if localstorage_key is set, sets the option with the same value as
+   * localstorage as the selected option if the option exists.
+   *
+   * @method localstorage_apply
+   */
+
+  localstorage_apply : function() {
+    if(!this.localstorage_key)
+      return;
+
+    const val = this.localstorage_get();
+    if(val && this.element.find("option[value='" + val + "']").length > 0)
+      this.element.val(val);
+  },
 }
 
 

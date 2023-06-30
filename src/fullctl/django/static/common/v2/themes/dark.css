@@ -11,6 +11,7 @@
   --clr-accent-400: #D1FF27;
   --clr-accent-500: #FD7E14;
   --clr-accent-600: red;
+  --clr-accent-700: #1E90FF;
 
   --clr-bg-200: rgba(246, 248, 250, 1);
   --clr-bg-210: hsl(210, 14%, 95%);
@@ -50,6 +51,7 @@
   --modal-clr: var(--clr-primary-200);
   --modal-bg: var(--clr-bg-700);
   --switch-bg: var(--clr-bg-850);
+  --switch-active-clr: var(--clr-accent-400);
 
   --bs-body-color: var(--foreground);
   --bs-body-color-rgb: var(--foreground);
@@ -229,12 +231,12 @@ main .dropdown-item:hover {
   background-color: var(--clr-primary-500);
 }
 
-input:checked + .slider:before {
-  background-color: var(--clr-accent-400);
+input:checked ~ .slider:before {
+  background-color: var(--switch-active-clr);
 }
 
-input:focus + .slider {
-  box-shadow: 0 0 1px var(--clr-accent-400);
+input:focus ~ .slider {
+  box-shadow: 0 0 1px var(--switch-active-clr);
 }
 
 /**

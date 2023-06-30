@@ -852,9 +852,8 @@ twentyc.rest.Widget = twentyc.cls.extend(
      */
 
     render_non_field_errors : function(errors) {
-      var error_node = $('<div>').addClass("alert alert-danger validation-error non-field-errors");
-      let i;
-      for(i = 0; i < errors.length; i++) {
+      error_node = $('<div>').addClass("alert alert-danger validation-error non-field-errors");
+      for(let i = 0; i < errors.length; i++) {
         $(twentyc.rest).trigger("non-field-error", [errors[i], errors, i, error_node, this]);
         if(errors[i])
           error_node.append($('<div>').addClass("non-field-error").text(errors[i]));
@@ -1066,7 +1065,7 @@ twentyc.rest.Form = twentyc.cls.extend(
     },
 
     post_success : function(result) {
-
+      this.element.attr("data-submitted", "true")
     },
 
     post_failure : function(response) {
@@ -1249,7 +1248,6 @@ twentyc.rest.Input = twentyc.cls.extend(
     },
 
     post_failure : function(response) {
-      console.error(response);
       response.field_errors(this.render_error.bind(this));
       response.non_field_errors(this.render_non_field_errors.bind(this))
     },
@@ -1309,6 +1307,7 @@ twentyc.rest.Checkbox = twentyc.cls.extend(
       pl[this.element.attr('name')] = (this.element.prop("checked") ? true : false);
       return pl;
     },
+
     bind : function(jq) {
       this.Widget_bind(jq);
       this.method = jq.data("api-method") || "POST";
@@ -1330,7 +1329,15 @@ twentyc.rest.Checkbox = twentyc.cls.extend(
         );
       }.bind(this));
 
-    }
+    },
+
+    post_failure : function(field, error) {
+      this.Input_post_failure(field, error);
+
+      // reset checkbox to previous state
+      this.element.prop("checked", !this.element.prop("checked"));
+    },
+
   },
   twentyc.rest.Input
 );
@@ -1415,6 +1422,7 @@ twentyc.rest.Button = twentyc.cls.extend(
  * - data-drf-name: relevant if load type is "drf-choices". Specifies the
  *   serializer field name, will default to "name" attribute if not specified.
  * - data-null-option: specify to add a "empty" value option with a label
+ * - data-localstorage-key: specify where to store the selected data in localstorage
  *
  * @class Select
  * @extends twentyc.rest.Input
@@ -1435,6 +1443,7 @@ twentyc.rest.Select = twentyc.cls.extend(
       this.drf_name = jq.data("drf-name") || jq.attr("name");
       this.null_option = jq.data("null-option")
       this.proxy_data = jq.data("proxy-data")
+      this.localstorage_key = jq.data("localstorage-key")
       this.Input(jq);
     },
 
@@ -1547,8 +1556,11 @@ twentyc.rest.Select = twentyc.cls.extend(
 
         if(select_this) {
           select.val(select_this);
-          if(select_this != old_val)
-            select.trigger("change", []);
+          if(select_this != old_val) {
+            // on_load_change is used to identify that this change event is
+            // being triggered by the load method, and not by the user
+            select.trigger("change", ["on_load_change"]);
+          }
         }
 
         $(this).trigger("load:after", [select, response.content.data, this]);
@@ -1613,6 +1625,85 @@ twentyc.rest.Select = twentyc.cls.extend(
       return url;
     },
 
+    /**
+     * if there is a localstorage_key applies values stored in localstorage on
+     * inital load and attaches change listener to update localstorage.
+     *
+     * @method init_localstorage
+     */
+
+    init_localstorage : function() {
+      if(!this.localstorage_key)
+        return;
+
+      this.element.on("change", () => {
+        this.localstorage_set(this.element.val());
+      });
+
+      $(this).one("load:after", () => {
+        this.localstorage_apply();
+      });
+    },
+
+    /**
+     * if localstorage_key is set, sets localstorage of localstorage_key to
+     * data
+     *
+     * @method localstorage_set
+     * @param {String} data
+     */
+    localstorage_set : function(data) {
+      if(!this.localstorage_key)
+        return;
+
+      if (this.localstorage_get() == data)
+        return;
+
+      localStorage.setItem(this.localstorage_key, data);
+    },
+
+    /**
+     * if localstorage_key is set, returns localstorage of localstorage_key
+     *
+     * @method localstorage_get
+     * @returns {String}
+     */
+
+    localstorage_get : function() {
+      if(!this.localstorage_key)
+        return;
+
+      return localStorage.getItem(this.localstorage_key);
+    },
+
+    /**
+     * if localstorage_key is set, removes localstorage_key from localstorage
+     *
+     * @method localstorage_remove
+     */
+
+    localstorage_remove : function() {
+      if(!this.localstorage_key)
+        return;
+
+      localStorage.removeItem(this.localstorage_key);
+    },
+
+    /**
+     * if localstorage_key is set, sets the option with the same value as
+     * localstorage as the selected option if the option exists.
+     *
+     * @method localstorage_apply
+     */
+
+    localstorage_apply : function() {
+      if(!this.localstorage_key)
+        return;
+
+      const val = this.localstorage_get();
+      if(val && this.element.find("option[value='" + val + "']").length > 0)
+        this.element.val(val);
+    },
 
     bind : function(jq) {
       this.Widget_bind(jq);
