@@ -1433,19 +1433,13 @@ fullctl.application.Searchbar = $tc.define(
     Searchbar : function(jq, filter_function, clear_filter_function) {
       const filter_input =
       this.filter_input =
-      this.element =
-        jq.find('[data-role="filter"]') ||
-        jq.find('[data-element="filter"]');
+      this.element = jq.find('[data-role="filter"]');
 
       const search_btn =
-      this.search_btn =
-        jq.find('[data-role="filter_submit"]') ||
-        jq.find('[data-element="filter_submit"]');
+      this.search_btn = jq.find('[data-role="filter_submit"]');
 
       const clear_search_btn =
-      this.clear_search_btn =
-        jq.find('[data-role="filter_clear"]') ||
-        jq.find('[data-element="filter_clear"]');
+      this.clear_search_btn = jq.find('[data-role="filter_clear"]');
 
       this.filter_function = filter_function;
       this.clear_filter_function = clear_filter_function;

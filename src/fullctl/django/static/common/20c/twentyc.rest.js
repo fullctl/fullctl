@@ -560,6 +560,7 @@ twentyc.rest.Client = twentyc.cls.define(
     write : function(endpoint, data, method, url = null) {
       url = url || this.endpoint_url(endpoint);
       method = method.toLowerCase();
+      const client = this;
 
       $(this).trigger("api-request:before", [endpoint,data,method])
       $(this).trigger("api-write:before", [endpoint,data,method])
@@ -575,13 +576,14 @@ twentyc.rest.Client = twentyc.cls.define(
             "X-CSRFToken" : twentyc.rest.config.csrf
           },
         }).done(function(result) {
-          var response = new twentyc.rest.Response(result);
+          const response = new twentyc.rest.Response(result);
+          client.on_write_success(endpoint, data, response, method);
           $(this).trigger("api-request:success", [endpoint, data, response, method]);
           $(this).trigger("api-write:success", [endpoint, data, response, method]);
           $(this).trigger("api-"+method+":success", [endpoint, data, response]);
           resolve(response);
         }.bind(this)).fail(function(e) {
-          var response = new twentyc.rest.Response(e.responseJSON, e.status);
+          const response = new twentyc.rest.Response(e.responseJSON, e.status);
           $(this).trigger("api-request:error", [endpoint, data, response, method]);
           $(this).trigger("api-write:error", [endpoint, data, response, method]);
           $(this).trigger("api-"+method+":error", [endpoint, data, response]);
@@ -595,6 +597,19 @@ twentyc.rest.Client = twentyc.cls.define(
 
       return request;
     },
+
+    /**
+     * executed before hte `api-write:success` event if the POST, PUT or DELETE
+     * request returned with a succesful http status
+     *
+     * @method on_write_success
+     * @param {string} endpoint the api endpoint to be requested
+     * @param {object} data request payload
+     * @param {twentyc.rest.response} response
+     * @param {string} method request method
+     */
+
+    on_write_success : function(endpoint, data, response, method) {},
 
     /**
      * Wrapper to perform a `GET` request on the api
@@ -1064,8 +1079,11 @@ twentyc.rest.Form = twentyc.cls.extend(
       this.fill(empty);
     },
 
-    post_success : function(result) {
+    on_write_success : function() {
       this.element.attr("data-submitted", "true")
+    },
+
+    post_success : function(response) {
     },
 
     post_failure : function(response) {
