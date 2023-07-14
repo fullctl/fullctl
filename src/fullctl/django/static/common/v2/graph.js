@@ -28,25 +28,27 @@
         return {bps_in_peak, bps_out_peak};
     }
 
-    fullctl.graphs.init_controls = function(container, tool, callback_reload = (end_date,duration) => {}) {
+    fullctl.graphs.init_controls = function(container, tool, callback_reload = (end_date,duration) => {}, dp_id_prefix = "custom_") {
 
         container.find('.graph-controls').show();
         // Refresh traffic graph when clicked
         container.find('[data-element=refresh_traffic_graph]').click(function() {
-            let { end_date, duration } = fullctl.graphs.calculate_end_date_and_duration(container);
+            let { end_date, duration } = fullctl.graphs.calculate_end_date_and_duration(container, dp_id_prefix);
             callback_reload(end_date,duration);
         });
+
+        console.log("DATEPICKERS", container, container.find(".datepicker"))
 
         // Initialize the datepicker
         container.find('.datepicker').datepicker({
             dateFormat: 'yy-mm-dd',
             onSelect: function() {
-            // When a date is selected, check if both dates are selected
-            if (container.find('#custom_start_date').val() && container.find('#custom_end_date').val()) {
-                // If both dates are selected, calculate the end date and duration and show the graphs
-                let { end_date, duration } = fullctl.graphs.calculate_end_date_and_duration(container);
-                callback_reload(end_date,duration);
-            }
+                // When a date is selected, check if both dates are selected
+                if (container.find(`#${dp_id_prefix}start_date`).val() && container.find(`#${dp_id_prefix}end_date`).val()) {
+                    // If both dates are selected, calculate the end date and duration and show the graphs
+                    let { end_date, duration } = fullctl.graphs.calculate_end_date_and_duration(container, dp_id_prefix);
+                    callback_reload(end_date,duration);
+                }
             }
         });
 
@@ -56,26 +58,26 @@
 
             if (selected_value === 'custom') {
                 // Show the date input fields
-                container.find('#custom_date_range').show();
+                container.find(`#${dp_id_prefix}date_range`).show();
             } else {
                 // Hide the date input fields
-                container.find('#custom_date_range').hide();
+                container.find(`#${dp_id_prefix}date_range`).hide();
 
-                let { end_date, duration } = fullctl.graphs.calculate_end_date_and_duration(container);
+                let { end_date, duration } = fullctl.graphs.calculate_end_date_and_duration(container, dp_id_prefix);
                 callback_reload(end_date,duration);
             }
         });
 
-    },
+    }
 
-    fullctl.graphs.calculate_end_date_and_duration = function(container) {
+    fullctl.graphs.calculate_end_date_and_duration = function(container, dp_id_prefix = "custom_") {
       let end_date = Math.floor(new Date().getTime() / 1000);
       let duration;
       let selected_value = container.find('#date_range_select').val();
 
       if (selected_value === 'custom') {
-        let start_date = new Date(container.find('#custom_start_date').val()).getTime() / 1000;
-        end_date = new Date(container.find('#custom_end_date').val()).getTime() / 1000;
+        let start_date = new Date(container.find(`#${dp_id_prefix}start_date`).val()).getTime() / 1000;
+        end_date = new Date(container.find(`#${dp_id_prefix}end_date`).val()).getTime() / 1000;
         duration = end_date - start_date;
       } else if (selected_value === 'current_month') {
         let now = new Date();
@@ -92,7 +94,7 @@
       }
 
       return { end_date, duration };
-    },
+    }
 
     fullctl.graphs.render_graph = function(data, selector="#graph", titleLabel = "") {
 
@@ -335,11 +337,12 @@
                 .text(titleLabel);
         }
 
-    },
+    }
 
     fullctl.graphs.render_graph_from_file = function(path, selector="#graph", titleLabel = "") {
         return d3.json(path).then(function(data) {
             $(selector).empty();
+            console.log($(selector))
             fullctl.graphs.render_graph(data.data, selector=selector, titleLabel);
         });
     }

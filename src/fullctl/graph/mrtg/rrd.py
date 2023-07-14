@@ -200,15 +200,86 @@ def update_rrd(file_path, log_line, last_update_time=None):
 
     # Check if the timestamp is newer than the most recent data in the RRD file
     if last_update_time is None or timestamp > last_update_time:
-        print(
-            f"Updating RRD file with data from {timestamp}, avg_bytes_in={avg_bytes_in}, avg_bytes_out={avg_bytes_out}, max_bytes_in={max_bytes_in}, max_bytes_out={max_bytes_out}"
-        )
-        # Update RRD file with parsed data
         rrdtool.update(
             file_path,
             f"{timestamp}:{avg_bytes_in}:{avg_bytes_out}:{max_bytes_in}:{max_bytes_out}",
         )
-    else:
-        print(
-            f"Skipping RRD update for {timestamp} as it is older than the most recent data in the RRD file ({last_update_time})"
+
+
+def aggregate_rrd_files(rrd_files, output_file):
+    """
+    Aggregate multiple RRD files into one.
+
+    :param rrd_files: A list of paths to the RRD files to be aggregated.
+    :param output_file: Path to the output RRD file.
+    """
+    # Define the durations for each RRA in descending order
+    durations = [86400 * 365 * 19, 86400 * 335, 86400 * 30, 86400 * 6, 86400]
+
+    # Initialize an empty dictionary to store the aggregated data
+    aggregated_data = {}
+
+    # Loop through each RRD file
+    for rrd_file in rrd_files:
+        start_time = None
+        idx = 0
+
+        # Loop through each duration
+        for duration in durations:
+            try:
+                start_time = int(time.time()) - durations[idx + 1]
+            except IndexError:
+                start_time = None
+
+            # Load the RRD file data for the current duration
+            rrd_data = load_rrd_file(rrd_file, start_time=start_time, duration=duration)
+
+            # Add the RRD data to the aggregated data
+            for data in rrd_data:
+                if data["bps_in"] is None:
+                    continue
+
+                timestamp = data["timestamp"]
+
+                if timestamp not in aggregated_data:
+                    aggregated_data[timestamp] = data
+                else:
+                    # Merge data points with the same timestamp by adding the values
+                    for key in data:
+                        if key in ["bps_in", "bps_out"]:
+                            aggregated_data[timestamp][key] += data[key]
+                        elif key == "bps_in_max":
+                            aggregated_data[timestamp][key] = max(
+                                aggregated_data[timestamp][key],
+                                aggregated_data[timestamp]["bps_in"] + data["bps_in"],
+                            )
+                        elif key == "bps_out_max":
+                            aggregated_data[timestamp][key] = max(
+                                aggregated_data[timestamp][key],
+                                aggregated_data[timestamp]["bps_out"] + data["bps_out"],
+                            )
+
+            # Update the last update time for the next duration
+            last_update_time = start_time
+
+            idx += 1
+
+    # print(f"Aggregated {len(rrd_files)} RRD files into {len(aggregated_data)} data points.")
+
+    # Sort the aggregated data by timestamp
+    aggregated_data = sorted(aggregated_data.values(), key=lambda x: x["timestamp"])
+
+    # Create the output RRD file
+    if not os.path.exists(output_file):
+        create_rrd_file(output_file, aggregated_data[0]["timestamp"] + 1)
+
+    # Fetch the most recent timestamp in the RRD file if not provided
+    last_update_time = get_last_update_time(output_file)
+
+    # Update the output RRD file with the aggregated data
+    for data in aggregated_data:
+        update_rrd(
+            output_file,
+            f"{data['timestamp']} {int(data['bps_in'])} {int(data['bps_out'])} {int(data['bps_in_max'])} {int(data['bps_out_max'])}",
+            last_update_time,
         )
