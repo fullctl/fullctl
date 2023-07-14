@@ -1213,13 +1213,11 @@ twentyc.rest.Form = twentyc.cls.extend(
  *
  * - data-api-base: api root or full path to endpoint
  *
- * @class Button
+ * @class Input
  * @extends twentyc.rest.Widget
  * @namespace twentyc.rest
  * @param {jQuery result} jq jquery result holding the target element
  */
-
-
 
 twentyc.rest.Input = twentyc.cls.extend(
   "Input",
@@ -1310,7 +1308,13 @@ twentyc.rest.Input = twentyc.cls.extend(
  *
  * - data-api-base: api root or full path to endpoint
  *
- * @class Button
+ * # optional
+ *
+ * - data-confirm: text to show to confirm confirm changing state of checkbox
+ * - data-confirm-off: text to show to confirm changing state of checkbox
+ * to unchecked
+ *
+ * @class Checkbox
  * @extends twentyc.rest.Input
  * @namespace twentyc.rest
  * @param {jQuery result} jq jquery result holding the button element
@@ -1330,9 +1334,16 @@ twentyc.rest.Checkbox = twentyc.cls.extend(
       this.Widget_bind(jq);
       this.method = jq.data("api-method") || "POST";
 
-      this.element.on("change", function(ev) {
+      this.element.on("change", (ev) => {
 
-        var confirm_required = this.element.data("confirm");
+        // use data-confirm-off to get confirmation when unchecking
+        const confirm_off_required = this.element.data("confirm-off");
+        if (confirm_off_required && !$(this.element).prop("checked") && !confirm(confirm_off_required)) {
+          this.element.prop("checked", true);
+          return;
+        }
+
+        const confirm_required = this.element.data("confirm");
         if(confirm_required && !confirm(confirm_required))
           return;
 
@@ -1345,7 +1356,7 @@ twentyc.rest.Checkbox = twentyc.cls.extend(
           this.post_success.bind(this),
           this.post_failure.bind(this)
         );
-      }.bind(this));
+      });
 
     },
 
