@@ -8,7 +8,7 @@ import os
 import time
 
 
-def load_rrd_file(file_path, start_time=None, duration=86400):
+def load_rrd_file(file_path, start_time=None, duration=86400, resolution=300):
     """
     Load RRD file and return data as a list of dictionaries.
 
@@ -25,10 +25,24 @@ def load_rrd_file(file_path, start_time=None, duration=86400):
 
     # Fetch data from the RRD file for the specified time range
     data_avg = rrdtool.fetch(
-        file_path, "AVERAGE", "-s", str(end_time), "-e", str(start_time)
+        file_path,
+        "AVERAGE",
+        "-s",
+        str(end_time),
+        "-e",
+        str(start_time),
+        "-r",
+        str(resolution),
     )
     data_max = rrdtool.fetch(
-        file_path, "MAX", "-s", str(end_time), "-e", str(start_time)
+        file_path,
+        "MAX",
+        "-s",
+        str(end_time),
+        "-e",
+        str(start_time),
+        "-r",
+        str(resolution),
     )
 
     start_avg, end_avg, step_avg = data_avg[0]
@@ -151,10 +165,14 @@ def create_rrd_file(file_path, start_time, heartbeat=90000):
     - Round Robin Archives:
         - AVERAGE, XFF 0.5, 1 PDP per CDP, 288 CDPs (1 day of data with 5-minute resolution).
         - AVERAGE, XFF 0.5, 3 PDPs per CDP, 672 CDPs (7 days of data with 15-minute resolution).
+        - AVERAGE, XFF 0.5, 6 PDPs per CDP, 336 CDPs (7 days of data with 30-minute resolution).
+        - AVERAGE, XFF 0.5, 24 PDPs per CDP, 720 CDPs (30 days of data with 2-hour resolution).
         - AVERAGE, XFF 0.5, 12 PDPs per CDP, 744 CDPs (31 days of data with 1-hour resolution).
         - AVERAGE, XFF 0.5, 72 PDPs per CDP, 1460 CDPs (365 days of data with 6-hour resolution).
         - MAX, XFF 0.5, 1 PDP per CDP, 288 CDPs (1 day of data with 5-minute resolution).
         - MAX, XFF 0.5, 3 PDPs per CDP, 672 CDPs (7 days of data with 15-minute resolution).
+        - MAX, XFF 0.5, 6 PDPs per CDP, 336 CDPs (7 days of data with 30-minute resolution).
+        - MAX, XFF 0.5, 24 PDPs per CDP, 720 CDPs (30 days of data with 2-hour resolution).
         - MAX, XFF 0.5, 12 PDPs per CDP, 744 CDPs (31 days of data with 1-hour resolution).
         - MAX, XFF 0.5, 72 PDPs per CDP, 1460 CDPs (365 days of data with 6-hour resolution).
         - MAX, XFF 0.5, 72 PDPs per CDP, 1460 CDPs (365 days of data with 6-hour resolution).
@@ -174,14 +192,18 @@ def create_rrd_file(file_path, start_time, heartbeat=90000):
         f"DS:bps_out_max:GAUGE:{heartbeat}:0:U",  # Add bps_out_max data source
         "RRA:AVERAGE:0.5:1:288",
         "RRA:AVERAGE:0.5:3:672",
+        "RRA:AVERAGE:0.5:6:336",
+        "RRA:AVERAGE:0.5:24:720",
         "RRA:AVERAGE:0.5:12:744",
         "RRA:AVERAGE:0.5:72:1460",
-        "RRA:AVERAGE:0.5:288:7300",  # 20 years of data with 1-day resolution
-        "RRA:MAX:0.5:1:288",  # Add MAX Round Robin Archives
+        "RRA:AVERAGE:0.5:288:7300",
+        "RRA:MAX:0.5:1:288",
         "RRA:MAX:0.5:3:672",
+        "RRA:MAX:0.5:6:336",
+        "RRA:MAX:0.5:24:720",
         "RRA:MAX:0.5:12:744",
         "RRA:MAX:0.5:72:1460",
-        "RRA:MAX:0.5:288:7300",  # 20 years of data with 1-day resolution
+        "RRA:MAX:0.5:288:7300",
     )
 
 
