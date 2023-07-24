@@ -70,14 +70,22 @@ ctl:
             plugin: python_template
 
 
+    - name: this_repo
+      type: git
+      config:
+        branch: main
+        repo_url: git@github.com:fullctl/fullctl.git
+
+    - name: version
+      type: semver2
+      config:
+        branch_dev: main
+        branch_release: main
+        repositories:
+          - this_repo
+
     - type: changelog
       name: changelog
-    - name: version
-      type: version
-    - type: venv
-      name: venv
-      config:
-        python_version: "3.7"
 
   permissions:
     - namespace: "ctl"

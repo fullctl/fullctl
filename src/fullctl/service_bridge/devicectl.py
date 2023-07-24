@@ -128,6 +128,19 @@ class VirtualPort(Devicectl):
     class Meta(Devicectl.Meta):
         ref_tag = "virtual_port"
 
+    def traffic(self, pk, start_time=None, duration=None):
+        params = {}
+        if start_time:
+            params["start_time"] = start_time
+
+        if duration:
+            params["duration"] = duration
+
+        return self.get(
+            f"data/virtual_port/{pk}/traffic",
+            params=params,
+        )
+
 
 class IPAddress(Devicectl):
     class Meta(Devicectl.Meta):

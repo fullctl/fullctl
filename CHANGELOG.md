@@ -4,6 +4,16 @@
 ## Unreleased
 
 
+## 1.5.0
+### Added
+- rrd support
+- image graphs
+### Fixed
+- UI fixes
+### Changed
+- bring dockerfile in line with tasks
+
+
 ## 1.4.0
 ### Removed
 - support for python 3.7

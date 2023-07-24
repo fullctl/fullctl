@@ -82,6 +82,19 @@ class InternetExchangeMember(Ixctl):
 
         self.put(f"data/member/sync/{asn}/{member_ip}/{router_ip}/md5", data=data)
 
+    def traffic(self, pk, start_time=None, duration=None):
+        params = {}
+        if start_time:
+            params["start_time"] = start_time
+
+        if duration:
+            params["duration"] = duration
+
+        return self.get(
+            f"data/member/{pk}/traffic",
+            params=params,
+        )
+
 
 class RouteserverObject(IxctlEntity):
     description = "Ixctl Route Server"

@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from social_django.models import UserSocialAuth
 
 import fullctl.django.models as models
 from fullctl.django.rest.decorators import serializer_registry
@@ -22,6 +23,37 @@ class User(ModelSerializer):
             "is_superuser",
             "is_staff",
         ]
+
+    def save(self):
+        if self.instance and self.instance.id:
+            # for updates we can just call super
+            return super().save()
+
+        # create new user
+
+        remote_id = self.context["remote_id"]
+
+        user = get_user_model().objects.create_user(
+            username=self.validated_data["username"],
+            email=self.validated_data["email"],
+            first_name=self.validated_data["first_name"],
+            last_name=self.validated_data["last_name"],
+            is_superuser=self.validated_data["is_superuser"],
+            is_staff=self.validated_data["is_staff"],
+        )
+
+        # create social auth entry for aaactl (this is not
+        # a valid auth at this point and the user will
+        # be prompted to login with aaactl - this just
+        # allows us to link the user to aaactl
+
+        UserSocialAuth.objects.create(
+            user=user,
+            uid=remote_id,
+            provider="twentyc",
+        )
+
+        return user
 
 
 @register

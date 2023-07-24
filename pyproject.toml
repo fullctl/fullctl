@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "fullctl"
 repository = "https://github.com/fullctl/fullctl"
-version = "1.4.0"
+version = "1.5.0"
 description = "Core classes and functions for service applications"
 authors = ["FullCtl <code@fullctl.com>"]
 readme = "README.md"
@@ -51,13 +51,14 @@ django-netfields = "<2"
 django-peeringdb = "^2.8"
 
 # prod serving
-whitenoise = "^6"
-pyuwsgi = "^2.0.19"
+whitenoise = ">=6"
+pyuwsgi = ">=2.0.19"
 
 confu = "^1.5"
 grainy = "^1.8.1"
 psycopg2-binary = "^2.8"
-# psycopg = {extras = ["binary"], version = "^3.0.14"}
+# psycopg3 requires django 4.2
+# psycopg = {extras = ["binary"], version = "^3.1.8"}
 # force update
 pyyaml = ">=5"
 munge = ">=1.3.0"
@@ -68,6 +69,9 @@ coverage = ">=5"
 pytest = ">=6"
 pytest-django = ">=3.8"
 pytest-cov = "*"
+requests-mock = ">=1.11"
+tox = ">=3.20"
+tox-gh-actions = ">=2.9.1"
 
 # linting
 black = ">=20"
@@ -78,14 +82,14 @@ pyupgrade = ">=2.19"
 
 # docs
 markdown = "*"
-markdown-include = ">=0.5,<1"
-mkdocs = "^1.2.3"
+markdown-include = ">=0.5"
+mkdocs = ">=1.2.3"
 uritemplate = "*"
 
 # ctl
-ctl = { git = "https://github.com/20c/ctl.git", branch = "prep-release" }
-jinja2 = "^3"
-tmpl = "^1"
+ctl = { git = "https://github.com/20c/ctl.git", branch = "main" }
+jinja2 = ">=3"
+tmpl = ">=1"
 
 [build-system]
 requires = ["poetry>=0.12"]

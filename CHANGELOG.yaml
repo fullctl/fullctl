@@ -5,6 +5,14 @@ Unreleased:
   deprecated: []
   removed: []
   security: []
+1.5.0:
+  added:
+  - rrd support
+  - image graphs
+  fixed:
+  - UI fixes
+  changed:
+  - bring dockerfile in line with tasks
 1.4.0:
   removed:
   - support for python 3.7

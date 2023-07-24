@@ -1433,19 +1433,13 @@ fullctl.application.Searchbar = $tc.define(
     Searchbar : function(jq, filter_function, clear_filter_function) {
       const filter_input =
       this.filter_input =
-      this.element =
-        jq.find('[data-role="filter"]') ||
-        jq.find('[data-element="filter"]');
+      this.element = jq.find('[data-role="filter"]');
 
       const search_btn =
-      this.search_btn =
-        jq.find('[data-role="filter_submit"]') ||
-        jq.find('[data-element="filter_submit"]');
+      this.search_btn = jq.find('[data-role="filter_submit"]');
 
       const clear_search_btn =
-      this.clear_search_btn =
-        jq.find('[data-role="filter_clear"]') ||
-        jq.find('[data-element="filter_clear"]');
+      this.clear_search_btn = jq.find('[data-role="filter_clear"]');
 
       this.filter_function = filter_function;
       this.clear_filter_function = clear_filter_function;
@@ -1757,13 +1751,13 @@ fullctl.ext.select2 = {
         opt.initial((initial) => {
           let option = $(new Option(initial.primary, initial.id, true, true))
           option.data("selection_data", initial)
-          jq.append(option.get(0)).trigger("change")
+          jq.append(option.get(0)).trigger("change", ["on_load_change"]);
         })
       } else {
         let initial = opt.initial;
         let option = $(new Option(initial.primary, initial.id, true, true))
         option.data("selection_data", initial)
-        jq.append(option.get(0)).trigger("change")
+        jq.append(option.get(0)).trigger("change", ["on_load_change"]);
       }
 
     }
@@ -1782,7 +1776,7 @@ fullctl.ext.select2 = {
     let controls = $('<div>').addClass('autocomplete-controls').append(
       $('<a>').addClass('action').text('remove')
     ).hide().on("click", () => {
-      this.element.val(null).trigger("change");
+      this.element.val(null).trigger("change", ["on_load_change"]);
       controls.hide();
     });
 

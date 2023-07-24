@@ -661,6 +661,13 @@ div.toolbar-field {
   padding: 8px;
 }
 
+.infobar .toolbar-field {
+  border: 1px solid var(--clr-border-200);
+}
+
+.infobar .toolbar-field span.icon:not(.inactive) {
+  background-color: var(--clr-accent-400);
+}
 
 div.toolbar-field>span.value {
   font-size: 16px;
@@ -1794,7 +1801,6 @@ div.autocomplete-controls {
   padding-left: var(--size-100);
   display: flex;
   align-items: center;
-  background-color: transparent;
 }
 
 .select2-container--default .select2-selection--single .select2-selection__arrow {
