@@ -153,14 +153,14 @@ fullctl.formatters.pretty_speed = (value) => {
 }
 
 fullctl.formatters.pretty_speed_bits = (value) => {
-  if(value >= 1000000000000)
-    value = parseInt(value / 1000000000000)+"T";
-  else if(value >= 1000000000)
-    value = parseInt(value / 1000000000)+"G";
-  else if(value >= 1000000)
-    value = parseInt(value / 1000000)+"M";
-  else if(value >= 1000)
-    value = parseInt(value / 1000)+"K";
+  if(value >= 1e13)
+    value = parseInt(value / 1e12)+"T";
+  else if(value >= 1e10)
+    value = parseInt(value / 1e9)+"G";
+  else if(value >= 1e7)
+    value = parseInt(value / 1e6)+"M";
+  else if(value >= 1e4)
+    value = parseInt(value / 1e3)+"K";
   else
     value = value+"";
   return value
