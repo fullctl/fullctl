@@ -127,8 +127,8 @@ def render_graph(data, selector="#graph", title_label="", service=None, save_pat
 
     # Add legend
     legend_elements = [
-        Line2D([0], [0], color="#d1ff27", lw=2, label="Bps IN"),
-        Line2D([0], [0], color="#0d6efd", lw=2, label="Bps OUT"),
+        Line2D([0], [0], color="#d1ff27", lw=2, label="bps IN"),
+        Line2D([0], [0], color="#0d6efd", lw=2, label="bps OUT"),
         Line2D(
             [0],
             [0],
