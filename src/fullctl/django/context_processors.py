@@ -16,6 +16,7 @@ def conf(request):
         "post_feature_request_url": settings.POST_FEATURE_REQUEST_URL,
         "docs_url": settings.DOCS_URL,
         "legal_url": settings.LEGAL_URL,
+        "terms_of_service_url": settings.TERMS_OF_SERVICE_URL,
         "current_year": datetime.now().year,
     }
 
