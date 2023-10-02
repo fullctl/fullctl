@@ -4,6 +4,14 @@
 ## Unreleased
 
 
+## 1.6.0
+### Added
+- per ix billing
+- Devicectl referee reports (#183)
+### Fixed
+- dont remake aggregated graphs every attempt (#177)
+
+
 ## 1.5.0
 ### Added
 - rrd support

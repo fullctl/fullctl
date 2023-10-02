@@ -145,24 +145,7 @@
         const adjustedBpsInPeak = bps_in_peak <= maxDataValue * 3 ? bps_in_peak : maxDataValue;
         const adjustedBpsOutPeak = bps_out_peak <= maxDataValue * 3 ? bps_out_peak : maxDataValue;
 
-
-        // Calculate the range of the y-axis values
-        const yAxisRange = d3.max([maxDataValue, adjustedBpsInPeak, adjustedBpsOutPeak]) * 1.1;
-
-        // Calculate the minimum increment between ticks based on the range of the y-axis values
-        let minTickIncrement;
-        if (yAxisRange >= 1000000000000) {
-            minTickIncrement = 1000000000000; // 1T
-        } else if (yAxisRange >= 1000000000) {
-            minTickIncrement = 1000000000; // 1G
-        } else if (yAxisRange >= 1000000) {
-            minTickIncrement = 1000000; // 1M
-        } else if (yAxisRange >= 1000) {
-            minTickIncrement = 1000; // 1K
-        } else {
-            minTickIncrement = 1;
-        }
-        const numYTicks = Math.min(Math.floor(yAxisRange / minTickIncrement), 4);
+        const numYTicks = 6;
 
         // Set up SVG container for the graph
         const svg = d3.select(selector).append("svg")
@@ -278,8 +261,8 @@
             .attr("transform", "translate(0," + (height + margin.bottom - 20) + ")") // Move legend to the bottom
             .selectAll("g")
             .data([
-                {key: "bps_in", label: "Bps IN"},
-                {key: "bps_out", label: "Bps OUT"},
+                {key: "bps_in", label: "bps IN"},
+                {key: "bps_out", label: "bps OUT"},
                 {key: "bps_in_peak", label: "IN Peak: " + format_y_axis(bps_in_peak)},
                 {key: "bps_out_peak", label: "OUT Peak: " + format_y_axis(bps_out_peak)}
             ])

@@ -211,6 +211,17 @@ class Task(HandleRefModel):
         return task
 
     @classmethod
+    def create_task_silent_limit(cls, *args, **kwargs):
+        """
+        Creates a task without raising an error if the limit is reached
+        """
+
+        try:
+            return cls.create_task(*args, **kwargs)
+        except TaskLimitError:
+            pass
+
+    @classmethod
     def last_run(cls, limit_id, age=0):
         """
         Returns the last time this task was run with the specified limit id
