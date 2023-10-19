@@ -6,6 +6,11 @@
 - `OAUTH_TWENTYC_KEY` - oauth application client id
 - `OAUTH_TWENTYC_SECRET` - oauth application secret
 
+### Analytics
+
+- `GOOGLE_ANALYTICS_ID` - key for Google analytics
+- `CLOUDFLARE_ANALYTICS_ID` - key for Cloudflare analytics
+
 ### Service Bridge
 
 - `SERVICE_KEY` - api key to use for fullctl service bridge communications
