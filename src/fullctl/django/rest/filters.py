@@ -14,7 +14,7 @@ class CaseInsensitiveOrderingFilter(OrderingFilter):
         field = queryset.model._meta.get_field(name.replace("-", ""))
 
         # For CharacterFields, use case insensitive ordering
-        if type(field) == CharField:
+        if isinstance(field, CharField):
             if name.startswith("-"):
                 return Lower(field.name).desc()
             else:

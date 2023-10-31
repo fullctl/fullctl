@@ -4,6 +4,15 @@
 ## Unreleased
 
 
+## 1.7.0
+### Added
+- python 3.12
+### Fixed
+- css for chrome background
+### Removed
+- python 3.8 support
+
+
 ## 1.6.0
 ### Added
 - per ix billing

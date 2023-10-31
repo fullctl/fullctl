@@ -16,13 +16,13 @@ def format_y_axis(y, pos=None):
     """
     # Format the y-axis values based on their magnitude
     if y >= 1e13:
-        return f"{int(y*1e-12)}T"
+        return f"{int(y * 1e-12)}T"
     elif y >= 1e10:
-        return f"{int(y*1e-9)}G"
+        return f"{int(y * 1e-9)}G"
     elif y >= 1e7:
-        return f"{int(y*1e-6)}M"
+        return f"{int(y * 1e-6)}M"
     elif y >= 1e4:
-        return f"{int(y*1e-3)}K"
+        return f"{int(y * 1e-3)}K"
     else:
         return str(int(y))
 
