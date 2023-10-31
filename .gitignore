@@ -11,3 +11,4 @@
 Ctl/.state/
 Ctl/dev/.env
 build/
+dist/

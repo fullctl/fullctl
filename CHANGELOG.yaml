@@ -1,9 +1,11 @@
 Unreleased:
   added: []
-  fixed: []
+  fixed:
+  - css for chrome background
   changed: []
   deprecated: []
-  removed: []
+  removed:
+  - python 3.8 support
   security: []
 1.6.0:
   added:
