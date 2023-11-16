@@ -427,6 +427,7 @@ input:checked ~ .slider:before {
   border-radius: var(--size-100);
 }
 
+.alert-info .btn,
 .alert-warning .btn-warning {
   border: none;
   font-weight: 800;
@@ -1118,14 +1119,6 @@ main {
 .heading {
   font-size: 32px;
   line-height: 40px;
-}
-
-.heading-preposition {
-  line-height: 20px;
-  font-size: 14px;
-  text-transform: uppercase;
-  margin-left: 1ch;
-  margin-right: 1ch;
 }
 
 div.toolbar-field select.secondary,

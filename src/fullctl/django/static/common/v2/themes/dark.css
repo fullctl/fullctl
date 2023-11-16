@@ -468,8 +468,8 @@ a.prefixctl,
 }
 
 
-.heading-preposition {
-  color: var(--clr-primary-700);
+.secondary-text {
+  color: var(--th-clr);
 }
 
 select.borderless {
@@ -615,6 +615,7 @@ div.modal-body div.border-top-seperator {
   outline: 0;
 }
 
+.select2-container--default .select2-selection--single .select2-selection__rendered,
 .controls .select2-container--default .select2-selection--single .select2-selection__rendered {
   color: var(--foreground);
 }
@@ -635,10 +636,7 @@ span.select2-dropdown {
   background-color: transparent;
 }
 
-.select2-container--default .select2-results__option[aria-selected="true"] {
-  background: transparent;
-}
-
+.select2-container--default .select2-results__option[aria-selected="true"],
 .select2-results__option[aria-selected="true"] .autocomplete-item {
   background-color: var(--select2-selected-bg);
 }
@@ -672,6 +670,7 @@ div.menu div.menu-deco-border {
   --bs-alert-border-color: var(--clr-accent-400);
 }
 
+.alert-info .btn,
 .alert-warning .btn-warning {
   background-color: var(--primary-btn-bg);
   color: var(--primary-btn-clr);
