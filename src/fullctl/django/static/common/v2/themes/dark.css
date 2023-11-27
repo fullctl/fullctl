@@ -277,6 +277,10 @@ input:focus ~ .slider {
   opacity: 0.5;
 }
 
+[data-bs-toggle="tab"] {
+  color: var(--foreground);
+}
+
 /**
  * header
  */
