@@ -4,6 +4,14 @@
 ## Unreleased
 
 
+## 1.8.0
+### Added
+- ux tweaks to improve readability and usability
+### Fixed
+- OpenAPI schema generation issues
+- issues with tab from URL not being selected
+
+
 ## 1.7.0
 ### Added
 - python 3.12

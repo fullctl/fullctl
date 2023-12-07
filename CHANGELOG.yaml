@@ -5,6 +5,12 @@ Unreleased:
   deprecated: []
   removed: []
   security: []
+1.8.0:
+  added:
+  - ux tweaks to improve readability and usability
+  fixed:
+  - OpenAPI schema generation issues
+  - issues with tab from URL not being selected
 1.7.0:
   added:
   - python 3.12

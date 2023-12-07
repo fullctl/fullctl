@@ -4,8 +4,6 @@ from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.schemas.openapi import SchemaGenerator as BaseSchemaGenerator
 from rest_framework.schemas.openapi import is_list_view
 
-from fullctl.django.rest.serializers import ModelSerializer
-
 
 class SchemaGenerator(BaseSchemaGenerator):
     def has_view_permissions(self, path, method, view):
@@ -246,8 +244,8 @@ class PeeringDBImportSchema(AutoSchema):
 
     def _get_responses(self, path, method):
         self.response_media_types = self.map_renderers(path, method)
-        serializer = ModelSerializer()
-        response_schema = self._map_serializer(serializer)
+        serializer = self.get_serializer(path, method)
+        response_schema = self.map_serializer(serializer)
         status_code = "200"
 
         return {

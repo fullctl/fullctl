@@ -29,7 +29,9 @@
           <div class="banner-img">
             <img src="{% static "common/v2/imgs/help.png" %}" alt="">
           </div>
-          <a href="{{ docs_url }}" target="_blank">Help Center</a>
+          <a href="{{ docs_url }}" target="_blank">Documentation</a>
+          <a href="{% url "swagger" %}">Swagger</a>
+          <a href="{% url "redoc" %}">ReDoc</a>
           <a title="Contact support" data-message-type="support" {% if post_feature_request_url == "" %}href="mailto:{{ support_email }}" {% else %}data-element="feature_request_btn"{% endif %}>Contact Support</a>
           <a href="{{ legal_url }}">Legal Notes</a>
         </div>

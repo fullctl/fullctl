@@ -762,29 +762,32 @@ fullctl.application.Header = $tc.extend(
     wire_elements : function() {
 
       this.widget('select_org', ($e) => {
-        var w = new twentyc.rest.List($e.select_org);
-        var org = $e.select_org.data('org')
+        const w = new twentyc.rest.List($e.select_org);
+        const org = $e.select_org.data('org');
         $(w).on("insert:after", (e, row, data) => {
+          row.find('.manage').attr(
+            "href", fullctl.aaactl_urls.manage_org.replace(/org_slug/g, data.slug)
+          );
           if(org == data.slug) {
             row.addClass('selected')
-            row.find('.manage').click(() => {
-              window.location = fullctl.aaactl_urls.manage_org;
-            });
           } else {
-            row.find('.manage').hide();
-            row.click(() => {
-              window.location.href = "/"+data.slug+"/";
-            })
+            row.find("a.dropdown-item").attr("href", '/'+data.slug);
           }
         });
-        w.load()
 
-        this.order_app_switcher();
-        this.wire_app_switcher();
-        this.wire_stop_impersonation();
+        w.load()
 
         return w;
       });
+
+      if (this.$e.manage_current_org) {
+        const href = this.$e.manage_current_org.attr("href");
+        this.$e.manage_current_org.attr("href", href.replace(/org_slug/g, fullctl.org.slug));
+      }
+
+      this.order_app_switcher();
+      this.wire_app_switcher();
+      this.wire_stop_impersonation();
     },
 
     /**
@@ -957,19 +960,43 @@ fullctl.application.Application = $tc.define(
 
     },
 
+    /**
+     * sets bootstrap tab by matching with url hash to aria-controls
+     *
+     * @method autload_page
+     */
     autoload_page : function() {
-      var hash = window.location.hash;
-      if(hash) {
-        hash = hash.substr(1);
-
-        parts = hash.split(";");
-        hash = parts[0];
-
-        this.autoload_args = parts;
-
-        if(this.get_page(hash)) {
-          this.page(hash);
+      let page = this.get_autoload_args().page;
+      if(page) {
+        if(this.get_page(page)) {
+          this.page(page);
         }
+      }
+    },
+
+    /**
+     * returns autoload parameters from the url hash and stores them in
+     * this.autoload_args
+     *
+     * @get_autload_args
+     */
+    get_autoload_args : function() {
+      const hash = window.location.hash;
+      if (!hash) {
+        return {
+          page: null,
+          autoload_args: null
+        };
+      }
+
+      const autoload_args = hash.substr(1).split(";");
+      this.autoload_args = autoload_args;
+
+      const page = autoload_args[0];
+
+      return {
+        page,
+        autoload_args
       }
     },
 
@@ -981,6 +1008,7 @@ fullctl.application.Application = $tc.define(
         }
         return value;
       }
+
       return null;
     },
 
@@ -1879,6 +1907,31 @@ $.fn.grainy_toggle = function(namespace, level) {
     this.hide();
   }
 };
+
+/**
+ * Convert a select element into a simple select2 element
+ *
+ * @param {jQuery} jq select element
+ * @param {Dict} [select2_options={}] options to pass in when initialising select2
+ * @class SimpleSelect2
+ * @namespace fullctl.ext
+ * @constructor
+ */
+fullctl.ext.SimpleSelect2 = $tc.extend(
+  "SimpleSelect2",
+  {
+    SimpleSelect2 : function(jq, select2_options) {
+      this.Select(jq);
+
+      const options = select2_options || {};
+      jq.select2(options);
+      $(this).on("load:after", (e, endpoint, data, response) => {
+        jq.trigger('change.select2');
+      });
+    }
+  },
+  twentyc.rest.Select
+);
 
 $(document).on('select2:open', () => {
   document.querySelector('.select2-search__field').focus();
