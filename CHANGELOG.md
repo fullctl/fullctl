@@ -4,8 +4,9 @@
 ## Unreleased
 ### Fixed
 - OpenAPI schema generation issues
-- ux tweaks to improve readability and usability
 - issues with tab from URL not being selected
+### Changed
+- ux tweaks to improve readability and usability
 
 
 ## 1.7.0
