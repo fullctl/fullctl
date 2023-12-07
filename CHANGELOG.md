@@ -2,11 +2,11 @@
 
 
 ## Unreleased
+### Added
+- ux tweaks to improve readability and usability
 ### Fixed
 - OpenAPI schema generation issues
 - issues with tab from URL not being selected
-### Changed
-- ux tweaks to improve readability and usability
 
 
 ## 1.7.0

@@ -1,10 +1,10 @@
 Unreleased:
-  added: []
+  added:
+  - ux tweaks to improve readability and usability
   fixed:
   - OpenAPI schema generation issues
   - issues with tab from URL not being selected
-  changed:
-  - ux tweaks to improve readability and usability
+  changed: []
   deprecated: []
   removed: []
   security: []
