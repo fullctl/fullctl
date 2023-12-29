@@ -1,9 +1,8 @@
 import reversion
-from django.conf.urls import url
 from django.contrib import admin, messages
 from django.http import FileResponse, HttpResponseForbidden
 from django.shortcuts import redirect
-from django.urls import path, reverse
+from django.urls import path, reverse, re_path
 from django.utils.html import format_html
 from django.utils.translation import ngettext as _
 from django_handleref.admin import VersionAdmin
@@ -227,7 +226,7 @@ class UrlActionMixin:
         info = self.model._meta.app_label, self.model._meta.model_name
 
         urls = [
-            url(
+            re_path(
                 r"^(\d+)/action/([\w]+)/$",
                 self.admin_site.admin_view(self.actions_view),
                 name="%s_%s_actions" % info,

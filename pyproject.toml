@@ -25,14 +25,14 @@ classifiers = [
 python = "^3.9"
 
 # django deps
-Django = "~3.2"
+django = "^4.2"
 # >3.5.1 is not backwards compatible
-django-autocomplete-light = "3.5.1"
+django-autocomplete-light = "3.9.7"
 django-crispy-forms = "^1.8"
-django-grainy = "^1.9"
-django-handleref = "^1"
+django-grainy = ">=2"
+django-handleref = ">=2"
 django-inet = "^1"
-django-recaptcha = "^2"
+django-recaptcha = ">=2"
 djangorestframework = "^3"
 django-reversion = "^5"
 django-structlog = "^2.1.3"
@@ -49,7 +49,7 @@ setuptools = "*"
 django-netfields = "<2"
 
 # needed for verified asns
-django-peeringdb = "^2.8"
+django-peeringdb = "==3.2.0"
 
 # prod serving
 whitenoise = ">=6"
@@ -57,9 +57,7 @@ pyuwsgi = ">=2.0.19"
 
 confu = "^1.5"
 grainy = "^1.8.1"
-psycopg2-binary = "^2.8"
-# psycopg3 requires django 4.2
-# psycopg = {extras = ["binary"], version = "^3.1.8"}
+psycopg = {extras = ["binary"], version = ">=3.1.8"}
 # force update
 pyyaml = ">=5"
 munge = ">=1.3.0"
