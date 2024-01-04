@@ -453,7 +453,7 @@ semver = "<=3"
 type = "git"
 url = "https://github.com/20c/ctl.git"
 reference = "main"
-resolved_reference = "f59b25ea5461a79a6a5f775ffe2c085b1163eef7"
+resolved_reference = "eb127920efc2d65b470dc3497f48a21eda3d392c"
 
 [[package]]
 name = "defusedxml"
