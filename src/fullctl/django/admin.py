@@ -2,7 +2,7 @@ import reversion
 from django.contrib import admin, messages
 from django.http import FileResponse, HttpResponseForbidden
 from django.shortcuts import redirect
-from django.urls import path, reverse, re_path
+from django.urls import path, re_path, reverse
 from django.utils.html import format_html
 from django.utils.translation import ngettext as _
 from django_handleref.admin import VersionAdmin
