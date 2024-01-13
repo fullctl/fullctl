@@ -41,6 +41,10 @@ class ModelSerializer(serializers.ModelSerializer):
         return None
 
 
+class EmptySerializer(serializers.Serializer):
+    pass
+
+
 class RequireContext:
     required_context = []
 

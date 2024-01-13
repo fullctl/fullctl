@@ -438,6 +438,10 @@ description = "the modular source code checker: pep8 pyflakes and co"
 category = "dev"
 optional = false
 python-versions = ">=3.8.1"
+files = [
+    {file = "flake8-7.0.0-py2.py3-none-any.whl", hash = "sha256:a6dfbb75e03252917f2473ea9653f7cd799c3064e54d4c8140044c5c065f53c3"},
+    {file = "flake8-7.0.0.tar.gz", hash = "sha256:33f96621059e65eec474169085dc92bf26e7b2d47366b70be2f67ab80dc25132"},
+]
 
 [package.dependencies]
 mccabe = ">=0.7.0,<0.8.0"
@@ -713,6 +717,10 @@ description = "One API for multiple git forges."
 category = "dev"
 optional = false
 python-versions = ">=3.9"
+files = [
+    {file = "ogr-0.48.1-py3-none-any.whl", hash = "sha256:984aaea377eb7edb2911bd3161a8772f0f75b7b1bfc12f33c9b5da7dd17ef23f"},
+    {file = "ogr-0.48.1.tar.gz", hash = "sha256:87b095622a48b40933e960cd62d87749018cd2cc1a784197bf50a69d473652e3"},
+]
 
 [package.dependencies]
 cryptography = "*"
@@ -872,6 +880,10 @@ description = "passive checker of Python programs"
 category = "dev"
 optional = false
 python-versions = ">=3.8"
+files = [
+    {file = "pyflakes-3.2.0-py2.py3-none-any.whl", hash = "sha256:84b5be138a2dfbb40689ca07e2152deb896a65c3a3e24c251c5c62489568074a"},
+    {file = "pyflakes-3.2.0.tar.gz", hash = "sha256:1c61603ff154621fb2a9172037d84dca3500def8c8b630657d1701f026f8af3f"},
+]
 
 [[package]]
 name = "pygithub"
@@ -1225,6 +1237,10 @@ description = "Structured Logging for Python"
 category = "main"
 optional = false
 python-versions = ">=3.8"
+files = [
+    {file = "structlog-24.1.0-py3-none-any.whl", hash = "sha256:3f6efe7d25fab6e86f277713c218044669906537bb717c1807a09d46bca0714d"},
+    {file = "structlog-24.1.0.tar.gz", hash = "sha256:41a09886e4d55df25bdcb9b5c9674bccfab723ff43e0a86a1b7b236be8e57b16"},
+]
 
 [package.extras]
 dev = ["structlog"]
