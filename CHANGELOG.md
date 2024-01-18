@@ -2,6 +2,9 @@
 
 
 ## Unreleased
+### Fixed
+- task concurrency errors
+- bug with blocking task qualifiers that could cause task execution to happen out of order
 
 
 ## 1.9.0
