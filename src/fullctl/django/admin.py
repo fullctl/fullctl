@@ -18,6 +18,7 @@ from fullctl.django.models.concrete import (
     Request,
     Response,
     Task,
+    TaskClaim,
     TaskSchedule,
     UserSettings,
 )
@@ -101,6 +102,11 @@ class OrganizationFileAdmin(BaseAdmin):
         return custom_urls + urls
 
 
+class TaskClaimInline(BaseTabularAdmin):
+    model = TaskClaim
+    extra = 0
+
+
 @admin.register(Task)
 class TaskAdmin(BaseAdmin):
     list_display = (
@@ -122,6 +128,9 @@ class TaskAdmin(BaseAdmin):
     )
     list_filter = ("status", "op")
     actions = ["requeue_tasks"]
+    # auto complete
+    raw_id_fields = ("parent", "user", "org")
+    inlines = (TaskClaimInline,)
 
     def requeue_tasks(self, request, queryset):
         """
