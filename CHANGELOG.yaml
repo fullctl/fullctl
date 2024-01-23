@@ -1,5 +1,6 @@
 Unreleased:
-  added: []
+  added:
+  - support for django 4.2
   fixed:
   - task concurrency errors
   - bug with blocking task qualifiers that could cause task execution to happen out of order
