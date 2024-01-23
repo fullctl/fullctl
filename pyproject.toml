@@ -25,7 +25,7 @@ classifiers = [
 python = "^3.9"
 
 # django deps
-django = ">=4.2,<4.3"
+django = ">=3.2"
 # >3.5.1 is not backwards compatible
 django-autocomplete-light = ">=3.9.7"
 django-crispy-forms = ">=2.1"
