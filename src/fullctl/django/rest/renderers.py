@@ -3,7 +3,7 @@ import json
 
 import django_countries.fields
 from django.db import connection
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 from rest_framework import renderers
 from rest_framework.utils import encoders
 
@@ -72,4 +72,4 @@ class PlainTextRenderer(renderers.BaseRenderer):
     format = "txt"
 
     def render(self, data, media_type=None, renderer_context=None):
-        return smart_text(data, encoding=self.charset)
+        return smart_str(data, encoding=self.charset)
