@@ -82,6 +82,16 @@ REST_FRAMEWORK = {
 
 settings_manager.set_option("GOOGLE_ANALYTICS_ID", "")
 
+# use wss:// for ssl - used by js side to connect
+settings_manager.set_option("EVENT_STREAM_URL", "")
+
+# server will bind to this host and port
+settings_manager.set_option("EVENT_STREAM_HOST", "0.0.0.0")
+settings_manager.set_option("EVENT_STREAM_PORT", 7148)
+
+# Heartbeat interval - how long before an alert is sent - 15 minutes
+settings_manager.set_option("HEARTBEAT_EXPECTED_INTERVAL", 60 * 15)
+
 # FINALIZE
 
 settings_manager.set_default_append()

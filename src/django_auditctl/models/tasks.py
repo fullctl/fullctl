@@ -21,7 +21,8 @@ class ExecuteEventHandler(Task):
     @classmethod
     def create_tasks(cls, event):
         for handler in get_handlers(event):
-            cls.create_task(event, handler.HandleRef.tag)
+            if handler.qualifies:
+                cls.create_task(event, handler.HandleRef.tag)
 
     @property
     def handler_tag(self):
@@ -30,6 +31,15 @@ class ExecuteEventHandler(Task):
     @property
     def event(self):
         return models.Event.objects.get(id=self.param["args"][0])
+
+    @property
+    def generate_limit_id(self):
+        """
+        We are currently not limiting these types of tasks, but setting
+        the limit id allows us to quickly identify the task type and the
+        related event object id.
+        """
+        return f"{self.event.object_id}:{self.handler_tag}"
 
     def run(self, *args, **kwargs):
         handler = get_handler_by_tag(self.handler_tag)

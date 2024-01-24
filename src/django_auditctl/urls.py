@@ -6,6 +6,7 @@ import django_auditctl.views as views
 urlpatterns = proxy.urlpatterns(["aaactl", "devicectl"])
 
 urlpatterns += [
+    path("event_stream_url/", views.event_stream_url, name="event_stream_url"),
     path(
         "api/",
         include(

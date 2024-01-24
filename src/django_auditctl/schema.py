@@ -62,15 +62,30 @@ class Component(BaseModel):
     Attributes:
         name (str): The name of the component.
         url (HttpUrl): The URL associated with the component.
-        type (str): The type of the component.
+        kind (str): The type of the component.
         error (str): The error associated with the component.
+        type, e.g., "dict", "sequential", "stacked" etc.
     """
 
     name: Union[str, None] = None
     id: Union[str, int]
     url: Union[HttpUrl, None] = None
-    type: str
-    error: str
+    blob: Union[str, None] = None
+    kind: str
+
+
+class ErrorComponent(Component):
+    """
+    Pydantic model for a Component.
+
+    Attributes:
+        name (str): The name of the component.
+        url (HttpUrl): The URL associated with the component.
+        kind (str): The type of the component.
+        error (str): The error associated with the component.
+    """
+
+    error: str = None
 
 
 class ErrorDetails(BaseModel):
@@ -83,7 +98,8 @@ class ErrorDetails(BaseModel):
     """
 
     message: str
-    components: List[Component] = list()
+    components: List[ErrorComponent] = list()
+    url: Union[HttpUrl, None] = None
 
 
 @register_model(r"^default$")
@@ -91,7 +107,8 @@ class NoData(BaseModel):
     pass
 
 
-@register_model(r"^v0.1-[^-]+-config-.+$")
+@register_model(r"^v0.1\/[^\/]+\/config\/.+$")
 class DeviceConfigData(BaseModel):
     diff: Union[str, None] = None
     components: List[Component] = list()
+    url: Union[HttpUrl, None] = None

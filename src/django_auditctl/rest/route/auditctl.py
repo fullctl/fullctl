@@ -4,25 +4,23 @@ router = routers.DefaultRouter()
 
 
 def route(viewset):
-    # route api / id version
+    # route api / id version (make it optional with a '?')
+    version = r"(?P<version>[^/]+)?"
 
-    version = r"(?P<version>[^/]+)"
+    # route org slug (make it optional with a '?')
+    org_slug = r"(?P<org_tag>[^/]+)?"
 
-    # route org slug
+    # route object tag (make it optional with a '?')
+    object_tag = r"(?P<ref_tag>.+)?"
 
-    org_slug = r"(?P<org_tag>[^/]+)"
+    # route object id (make it optional with a '?')
+    object_id = r"(?P<ref_id>[^/]+)?"
 
-    # route object tag
+    # join all into a regex string, making delimiters optional
+    prefix = f"{version}/?{org_slug}/?{object_tag}/?{object_id}"
 
-    object_tag = r"(?P<ref_tag>.+)"
+    # Make trailing slash optional in the regex string
+    prefix_with_optional_trailing_slash = f"{prefix}/?"
 
-    # route object id
-
-    object_id = r"(?P<ref_id>[^/]+)"
-
-    # join all into a regex string
-
-    prefix = f"{version}/{org_slug}/{object_tag}/{object_id}"
-
-    router.register(prefix, viewset, basename="audit")
+    router.register(prefix_with_optional_trailing_slash, viewset, basename="audit")
     return viewset

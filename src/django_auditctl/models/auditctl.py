@@ -65,6 +65,32 @@ class Event(HandleRefModel):
     class HandleRef:
         tag = "event"
 
+    @classmethod
+    def filter_events_by_object_id(cls, org, object_id, delimiter="-"):
+        """
+        Filter Event instances by partial object_id path, matching whole parts only.
+
+        Arguments:
+        - partial_path (`str`): partial object_id path to filter by
+        - delimiter (`str`, optional): delimiter used in the object_id
+
+        Returns:
+        - `QuerySet`: filtered events queryset
+        """
+        events = Event.objects.filter(org=org)
+
+        # Use Q objects to combine __istartswith and __iexact with an OR operator
+        if object_id:
+            events = events.filter(
+                models.Q(object_id__istartswith=f"{object_id}{delimiter}")
+                | models.Q(object_id__iexact=object_id)
+            )
+
+        # order by created date
+        events = events.order_by("-created")
+
+        return events
+
     def __str__(self):
         return f"Event({self.id})"
 
@@ -133,3 +159,29 @@ class OrganizationEmailAlert(models.Model):
 
     def __repr__(self):
         return f"OrganizationEmailAlert({self.id})"
+
+
+class Heartbeat(HandleRefModel):
+    last_notified = models.DateTimeField(
+        null=True, blank=True, help_text="Timestamp of the last notification sent"
+    )
+    """
+    Model to track object IDs for heartbeat checks.
+    """
+
+    object_id = models.CharField(
+        max_length=255,
+        unique=True,
+        help_text=_("Object ID to perform hearbeat checks for"),
+    )
+
+    class Meta:
+        db_table = "auditctl_heartbeat"
+        verbose_name = _("Heartbeat")
+        verbose_name_plural = _("Heartbeats")
+
+    class HandleRef:
+        tag = "heartbeat"
+
+    def __str__(self):
+        return f"HeartbeatCheck for {self.object_id}"

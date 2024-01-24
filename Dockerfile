@@ -69,7 +69,6 @@ COPY --from=builder "$VIRTUAL_ENV" "$VIRTUAL_ENV"
 
 RUN mkdir -p etc $run_dirs
 COPY Ctl/VERSION etc/
-COPY docs/ docs
 
 RUN chown -R $uid:$uid $run_dirs
 

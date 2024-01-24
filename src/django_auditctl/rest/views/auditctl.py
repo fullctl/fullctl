@@ -23,15 +23,29 @@ class Event(CachedObjectMixin, viewsets.GenericViewSet):
             org_tag=kwargs.get("org_tag"),
             ref_tag=kwargs.get("ref_tag"),
             ref_id=kwargs.get("ref_id"),
+            delimiter="/",
         )
-        queryset = self.get_queryset().filter(object_id=object_id).order_by("-created")
 
-        # apply status filter
+        queryset = models.Event.filter_events_by_object_id(
+            org, object_id, delimiter="/"
+        )
 
-        status = request.query_params.get("status", None)
+        # apply status filters
+        status_filters = []
 
-        if status:
-            queryset = queryset.filter(status=status)
+        if request.query_params.get("error", None) == "true":
+            status_filters.append("error")
+        if request.query_params.get("ok", None) == "true":
+            status_filters.append("ok")
+
+        if status_filters:
+            queryset = queryset.filter(status__in=status_filters)
+
+        # apply a limit
+
+        limit = min(int(request.query_params.get("limit", 100)), 1000)
+
+        queryset = queryset[:limit]
 
         serializer = Serializers.event(
             queryset, many=True, context={"object_id": object_id}
@@ -59,7 +73,6 @@ class Event(CachedObjectMixin, viewsets.GenericViewSet):
             data["user"] = request.user.id
 
         data["org"] = org.id
-        print(data)
         serializer = Serializers.event(data=data, context={"object_id": object_id})
         serializer.is_valid(raise_exception=True)
         serializer.save()

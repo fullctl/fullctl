@@ -25,7 +25,6 @@ class PydanticSerializer(serializers.Serializer):
 
     def to_internal_value(self, data):
         try:
-            print(data, type(data))
             if isinstance(data, dict):
                 return self.Meta.model(**data).dict()
             elif isinstance(data, list):
@@ -33,8 +32,26 @@ class PydanticSerializer(serializers.Serializer):
                 # strip all the None and empty dicts before returning the list
                 return [item for item in result if item]
         except pydantic.ValidationError as e:
-            drf_errors = {err["loc"][0]: [err["msg"]] for err in e.errors()}
+            drf_errors = self.transform_pydantic_errors_to_drf(e.errors())
             raise serializers.ValidationError(drf_errors)
+
+    def transform_pydantic_errors_to_drf(self, pydantic_errors):
+        drf_errors = {}
+
+        for error in pydantic_errors:
+            loc = error["loc"]
+            key = loc[0]
+
+            # Handle nested errors in lists and dicts
+            for loc_item in loc[1:]:
+                key += f"[{loc_item}]"
+
+            if key not in drf_errors:
+                drf_errors[key] = []
+
+            drf_errors[key].append(error["msg"])
+
+        return drf_errors
 
     def to_representation(self, instance):
         return instance
@@ -54,7 +71,7 @@ class DynamicPydanticSerializer(PydanticSerializer):
 
     def __init__(self, schema_id="default", *args, **kwargs):
         # Get the Pydantic model from the registry
-        print("GETTING SCHEMA", schema_id, schema.get_model_from_registry(schema_id))
+
         self.Meta.model = schema.get_model_from_registry(schema_id)
 
         if not self.Meta.model:
@@ -133,3 +150,22 @@ class Event(ModelSerializer):
         self.fields["data"].schema_id = schema_id
 
         super().__init__(*args, **kwargs)
+
+    def to_representation(self, instance):
+        out = super().to_representation(instance)
+
+        data = out.get("data", {}) or out.get("error", {})
+
+        if data:
+            for comp in data.get("components", []):
+                self._sanitize_component_output(comp)
+
+        return out
+
+    def _sanitize_component_output(self, comp):
+        """
+        Sanitize the output of a component
+        """
+
+        if comp.get("blob"):
+            comp["blob"] = f"[Blob:{len(comp['blob'])} bytes]"

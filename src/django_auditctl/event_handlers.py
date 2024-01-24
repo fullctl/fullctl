@@ -5,8 +5,11 @@ from functools import wraps
 import fullctl.service_bridge.devicectl as devicectl
 from django.conf import settings
 from fullctl.django.mail import send_plain
+from fullctl.service_bridge.client import url_join
 
 import django_auditctl.models.auditctl as models
+from django_auditctl.rest.serializers.auditctl import Serializers
+from django_auditctl.util import object_id_to_parts
 
 __all__ = [
     "register_handler",
@@ -82,14 +85,40 @@ class BaseHandler:
     class HandleRef:
         tag = "base_handler"
 
+    @property
+    def previous_status(self):
+        """
+        Returns the previous status of the event identified by the object_id.
+        """
+        try:
+            return (
+                models.Event.objects.filter(
+                    object_id=self.event.object_id, created__lt=self.event.created
+                )
+                .latest("created")
+                .status
+            )
+        except models.Event.DoesNotExist:
+            return None
+
+    @property
+    def qualifies(self):
+        return True
+
     def __init__(self, event):
         self.event = event
 
     def __call__(self):
         raise NotImplementedError
 
+    def heartbeat(self):
+        object_id = self.event.object_id
+        heartbeat, created = models.Heartbeat.objects.get_or_create(object_id=object_id)
+        if not created:
+            heartbeat.save()
 
-@register_handler(r"^v0.1-[^-]+-.+$")
+
+@register_handler(r"^v0.1\/[^\/]+\/.+$")
 class EmailAlert(BaseHandler):
 
     """
@@ -101,26 +130,37 @@ class EmailAlert(BaseHandler):
     class HandleRef:
         tag = "email_alert"
 
+    @property
+    def qualifies(self):
+        return self.previous_status in ["ok", None] and self.event.status == "error"
+
     def __call__(self):
         """
-        Sends an email alert if the event status is error
+        Sends an email alert if the event status goes from ok to error
         """
 
-        if self.event.status == "error":
+        if self.qualifies:
             error_message = self.event.error.get("message")
-            org_slug = self.event.object_id.split("-")[1]
-            components = json.dumps(self.event.error.get("components", []), indent=2)
+            id_parts = object_id_to_parts(self.event.object_id)
+            org_tag = id_parts.get("org_tag")
+
+            serializer = Serializers.event(instance=self.event)
+            components = json.dumps(serializer.data, indent=2)
+            event_url = (
+                url_join(settings.AUDITCTL_URL, org_tag)
+                + f"?q={id_parts['ref_tag']}/{id_parts['ref_id']}&error=true"
+            )
             email_addresses = [
                 alert.email
                 for alert in models.OrganizationEmailAlert.objects.filter(
-                    org__slug=org_slug
+                    org__slug=org_tag
                 )
                 if alert.enabled
             ]
 
             send_plain(
                 f"Error: {self.event.object_id}",
-                f"{error_message}\n\n{components}",
+                f"{error_message}\n{event_url}\n\n{components}",
                 settings.DEFAULT_FROM_EMAIL,
                 email_addresses,
             )
@@ -134,8 +174,9 @@ class ForwardToService(BaseHandler):
     pass
 
 
-@register_handler(r"^v0.1-[^-]+-config-device.+$")
+@register_handler(r"^v0.1\/[^\/]+\/config\/device.+$")
 class DeviceOperationalStatus(ForwardToService):
+
     """
     A class that inherits from the ForwardToService class and handles device operational status events.
     """
@@ -147,6 +188,9 @@ class DeviceOperationalStatus(ForwardToService):
         """
         Calls the set_operational_status method of the devicectl Device class for each component in the event.
         """
+
+        self.heartbeat()
+
         if self.event.status == "ok":
             components = self.event.data.get("components", [])
             error_message = None
@@ -158,15 +202,46 @@ class DeviceOperationalStatus(ForwardToService):
 
         device = devicectl.Device()
 
-        for _device in components:
-            if self.event.status == "error":
-                device_error_message = f"{error_message}\n\n{_device['error']}"
-            else:
-                device_error_message = None
+        status_updates = {}
+        reports = []
 
-            device.set_operational_status(
-                device_id=_device["id"],
-                status=self.event.status,
-                event=str(self.event.id),
-                error_message=device_error_message,
-            )
+        for component in components:
+            kind = component.get("kind")
+            id = component.get("id")
+
+            status_updates.setdefault(id, {})
+
+            if kind == "device":
+                if self.event.status == "error":
+                    device_error_message = f"{error_message}\n\n{component['error']}"
+                else:
+                    device_error_message = None
+
+                status_updates[id].update(
+                    error_message=device_error_message,
+                    status=self.event.status,
+                    event=str(self.event.id),
+                    device_id=id,
+                )
+
+            elif kind == "current-config":
+                status_updates[id].update(
+                    url_current=component.get("url"),
+                    config_current=component.get("blob", ""),
+                )
+
+            elif kind == "reference-config":
+                status_updates[id].update(
+                    url_reference=component.get("url"),
+                    config_reference=component.get("blob", ""),
+                )
+            elif kind == "report":
+                reports.append(dict(id=id, report=component.get("blob", "")))
+
+        for _, update in status_updates.items():
+            if not update:
+                continue
+            device.set_operational_status(**update)
+
+        for report in reports:
+            device.push_referee_report(report["id"], report["report"])
