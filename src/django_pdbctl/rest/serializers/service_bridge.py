@@ -44,6 +44,7 @@ class Network(ModelSerializer):
 @register
 class InternetExchange(ModelSerializer):
     mtu = serializers.SerializerMethodField()
+    country = serializers.SerializerMethodField()
 
     class Meta:
         model = models.InternetExchange
@@ -69,7 +70,13 @@ class InternetExchange(ModelSerializer):
         ]
 
     def get_mtu(self, ix):
-        return ix.ixlan_set.first().mtu
+        try:
+            return ix.ixlan_set.all()[0].mtu
+        except IndexError:
+            return 0
+
+    def get_country(self, ix):
+        return str(ix.country)
 
 
 @register
@@ -143,6 +150,7 @@ class NetworkIXLan(ModelSerializer):
     net = serializers.SerializerMethodField()
     ix_id = serializers.IntegerField(source="ixlan_id")
     ix = serializers.SerializerMethodField()
+    ix_name = serializers.SerializerMethodField()
 
     name = serializers.SerializerMethodField()
     as_set = serializers.SerializerMethodField()
@@ -155,6 +163,7 @@ class NetworkIXLan(ModelSerializer):
             "net_id",
             "ixlan_id",
             "ix_id",
+            "ix_name",
             "ix",
             "speed",
             "asn",
@@ -166,6 +175,32 @@ class NetworkIXLan(ModelSerializer):
             "as_set",
         ]
 
+    @property
+    def exchanges(self):
+        # if ix is not set to join into the data, we dont need
+        # to prefetch the exchanges
+        if "ix" not in self.context.get("joins", []):
+            return {}
+
+        if hasattr(self, "_exchanges"):
+            return self._exchanges
+
+        objects = self.instance
+
+        # check if objects is iterable, and if not wrap it in a list
+        if not hasattr(objects, "__iter__"):
+            objects = [objects]
+
+        ids = {netixlan.ixlan_id for netixlan in objects}
+
+        qset = models.InternetExchange.objects.filter(id__in=ids).prefetch_related(
+            "ixlan_set"
+        )
+
+        self._exchanges = {ix.id: ix for ix in qset}
+
+        return self._exchanges
+
     def get_net(self, netixlan):
         if "net" in self.context.get("joins", []):
             return Network(instance=netixlan.net).data
@@ -173,8 +208,15 @@ class NetworkIXLan(ModelSerializer):
 
     def get_ix(self, netixlan):
         if "ix" in self.context.get("joins", []):
-            return InternetExchange(instance=netixlan.ixlan.ix).data
+            return InternetExchange(self.exchanges.get(netixlan.ixlan_id)).data
         return None
+
+    def get_ix_name(self, netixlan):
+        if "ix_name" in self.context.get("joins", []):
+            try:
+                return self.exchanges.get(netixlan.ixlan_id).name
+            except AttributeError:
+                return None
 
     def get_name(self, netixlan):
         return netixlan.net.name

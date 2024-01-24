@@ -109,14 +109,16 @@ class Facility(DataViewSet):
 class NetworkIXLan(DataViewSet):
     allowed_http_methods = ["GET"]
     valid_filters = [
+        ("ids", "id__in"),
         ("ix", "ixlan_id"),
-        ("asn", "net__asn"),
-        ("asns", "net__asn__in"),
+        ("asn", "asn"),
+        ("asns", "asn__in"),
         ("peers", MethodFilter("peers")),
         ("routeserver", MethodFilter("routeserver")),
+        ("mutual", MethodFilter("mutual")),
     ]
 
-    join_xl = {"ix": ("ixlan", "ixlan__ix")}
+    join_xl = {"ix": [], "ix_name": ("ixlan",)}
 
     queryset = models.NetworkIXLan.objects.filter(status="ok").select_related("net")
     serializer_class = Serializers.netixlan
@@ -124,6 +126,15 @@ class NetworkIXLan(DataViewSet):
     def filter_peers(self, qset, value):
         netixlan = self.get_queryset().filter(id=value).first()
         return qset.filter(ixlan_id=netixlan.ixlan_id, status="ok").exclude(id=value)
+
+    def filter_mutual(self, qset, value):
+        asn = value
+        ixlan_ids = set()
+
+        for netixlan in self.get_queryset().filter(asn=asn, status="ok"):
+            ixlan_ids.add(netixlan.ixlan_id)
+
+        return qset.filter(ixlan_id__in=ixlan_ids, status="ok").exclude(asn=asn)
 
     def filter_routeserver(self, qset, value):
         if int(value):
@@ -147,7 +158,7 @@ class NetworkContact(DataViewSet):
         ("require_email", Exclude(Q(email="") | Q(email__isnull=True))),
     ]
 
-    queryset = models.NetworkContact.objects.filter(status="ok")
+    queryset = models.NetworkContact.objects.filter(status="ok").select_related("net")
     serializer_class = Serializers.poc
 
 
