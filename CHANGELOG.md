@@ -2,6 +2,9 @@
 
 
 ## Unreleased
+### Added
+- support for django 4.2
+- service bridge data views now expose a `limit` parameter to the request url
 ### Fixed
 - task concurrency errors
 - bug with blocking task qualifiers that could cause task execution to happen out of order
