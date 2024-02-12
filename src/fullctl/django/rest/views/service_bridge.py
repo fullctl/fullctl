@@ -135,6 +135,13 @@ class DataViewSet(viewsets.ModelViewSet):
 
         qset, joins = self.join_relations(qset, request)
 
+        # set to a positive number to limit the number of results returned from
+        # list, helps with dealing with timeouts
+        limit = request.GET.get("limit", "")
+        limit = int(limit) if limit.isdigit() else 0
+        if limit > 0:
+            qset = qset[:limit]
+
         context = self.serializer_context(request, {"joins": joins})
 
         serializer = self.serializer_class(qset, many=True, context=context)
