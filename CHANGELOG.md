@@ -12,6 +12,11 @@
 - API schema tools
 
 
+## 1.9.0
+### Added
+- API schema tools
+
+
 ## 1.8.0
 ### Added
 - ux tweaks to improve readability and usability
