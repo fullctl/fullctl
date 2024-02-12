@@ -166,7 +166,7 @@ services:
     user: "0:0"
     build:
       context: ../../../prefixctl
-      dockerfile: Dockerfile
+      dockerfile: Ctl/docker/Dockerfile
     command: runserver 0.0.0.0:6001
     env_file:
       - .env
@@ -188,9 +188,46 @@ services:
     volumes:
       - ../../src/fullctl:/srv/service/main/fullctl
       - ../../../prefixctl/src:/srv/service/main:Z
-      - ../../../prefixctl-reputation/src/prefixctl_reputation_check:/srv/service/venv/lib/python3.9/site-packages/prefixctl_reputation_check:Z
-      - ../../../prefixctl-reputation/src/reputation_check:/srv/service/venv/lib/python3.9/site-packages/reputation_check:Z
-      - ../../../prefixctl-meta/src/prefix_meta:/srv/service/venv/lib/python3.9/site-packages/prefix_meta:Z
+      - ../../../prefixctl-reputation/src/prefixctl_reputation_check:/srv/service/venv/lib/python3.11/site-packages/prefixctl_reputation_check:Z
+      - ../../../prefixctl-reputation/src/reputation_check:/srv/service/venv/lib/python3.11/site-packages/reputation_check:Z
+      - ../../../prefixctl-meta/src/prefix_meta:/srv/service/venv/lib/python3.11/site-packages/prefix_meta:Z
+      - ../../../ripestat-data-parser/ripestat:/srv/service/venv/lib/python3.11/site-packages/ripestat:Z
+      - ../../../prefix-meta-sorbs/src/prefix_meta_sorbs:/srv/service/venv/lib/python3.11/site-packages/prefix_meta_sorbs:Z
+      - ../../../prefix-meta-arin/src/prefix_meta_arin:/srv/service/venv/lib/python3.11/site-packages/prefix_meta_arin:Z
+
+  prefixctl_tasks:
+    user: "0:0"
+    build:
+      context: ../../../prefixctl
+      dockerfile: Ctl/docker/Dockerfile.tasks
+    command: runserver 0.0.0.0:6001
+    env_file:
+      - .env
+      - ../../../prefixctl/Ctl/dev/.env
+    environment:
+      DATABASE_PASSWORD: devPASSWORD
+      DATABASE_HOST: postgres
+      # defaults
+      # DATABASE_USER: account_service
+      # DATABASE_NAME: account_service
+      # DATABASE_PORT: 5432
+    logging:
+      options:
+        max-size: 100m
+        max-file: "3"
+    ports:
+      # this needs to be set in the shell, compose env vars aren't read yet
+      - "${PREFIXCTL_PORT:-6001}:6001"
+    volumes:
+      - ../../src/fullctl:/srv/service/main/fullctl
+      - ../../../prefixctl/src:/srv/service/main:Z
+      - ../../../prefixctl-reputation/src/prefixctl_reputation_check:/srv/service/venv/lib/python3.11/site-packages/prefixctl_reputation_check:Z
+      - ../../../prefixctl-reputation/src/reputation_check:/srv/service/venv/lib/python3.11/site-packages/reputation_check:Z
+      - ../../../prefixctl-meta/src/prefix_meta:/srv/service/venv/lib/python3.11/site-packages/prefix_meta:Z
+      - ../../../ripestat-data-parser/ripestat:/srv/service/venv/lib/python3.11/site-packages/ripestat:Z
+      - ../../../prefix-meta-sorbs/src/prefix_meta_sorbs:/srv/service/venv/lib/python3.11/site-packages/prefix_meta_sorbs:Z
+      - ../../../prefix-meta-arin/src/prefix_meta_arin:/srv/service/venv/lib/python3.11/site-packages/prefix_meta_arin:Z
+      - ../../../PDF-File-Generator/playwright:/srv/service/venv/lib/python3.11/site-packages/playwright_pdf_export:Z
 
   aclctl_web:
     user: "0:0"
