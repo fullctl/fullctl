@@ -1,9 +1,8 @@
 import reversion
-from django.conf.urls import url
 from django.contrib import admin, messages
 from django.http import FileResponse, HttpResponseForbidden
 from django.shortcuts import redirect
-from django.urls import path, reverse
+from django.urls import path, re_path, reverse
 from django.utils.html import format_html
 from django.utils.translation import ngettext as _
 from django_handleref.admin import VersionAdmin
@@ -18,6 +17,7 @@ from fullctl.django.models.concrete import (
     Request,
     Response,
     Task,
+    TaskClaim,
     TaskSchedule,
     UserSettings,
 )
@@ -101,6 +101,11 @@ class OrganizationFileAdmin(BaseAdmin):
         return custom_urls + urls
 
 
+class TaskClaimInline(BaseTabularAdmin):
+    model = TaskClaim
+    extra = 0
+
+
 @admin.register(Task)
 class TaskAdmin(BaseAdmin):
     list_display = (
@@ -122,6 +127,9 @@ class TaskAdmin(BaseAdmin):
     )
     list_filter = ("status", "op")
     actions = ["requeue_tasks"]
+    # auto complete
+    raw_id_fields = ("parent", "user", "org")
+    inlines = (TaskClaimInline,)
 
     def requeue_tasks(self, request, queryset):
         """
@@ -227,7 +235,7 @@ class UrlActionMixin:
         info = self.model._meta.app_label, self.model._meta.model_name
 
         urls = [
-            url(
+            re_path(
                 r"^(\d+)/action/([\w]+)/$",
                 self.admin_site.admin_view(self.actions_view),
                 name="%s_%s_actions" % info,
