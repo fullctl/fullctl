@@ -2,6 +2,8 @@
 
 
 ## Unreleased
+### Added
+- django-cors-headers
 
 
 ## 1.10.0
