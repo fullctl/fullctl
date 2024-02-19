@@ -3,7 +3,10 @@
 
 ## Unreleased
 ### Added
-- django-cors-headers
+- adds django-cors-headers to the project and the django default settings
+### Fixed
+- excessive database queries when qualifying tasks
+- visual issues with the org selection menu
 
 
 ## 1.10.0

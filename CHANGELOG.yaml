@@ -1,7 +1,9 @@
 Unreleased:
   added:
-  - django-cors-headers
-  fixed: []
+  - adds django-cors-headers to the project and the django default settings
+  fixed:
+  - excessive database queries when qualifying tasks
+  - visual issues with the org selection menu
   changed: []
   deprecated: []
   removed: []
