@@ -2,6 +2,9 @@
 
 
 ## Unreleased
+
+
+## 1.11.0
 ### Added
 - adds django-cors-headers to the project and the django default settings
 ### Fixed

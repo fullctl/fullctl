@@ -1,13 +1,16 @@
 Unreleased:
+  added: []
+  fixed: []
+  changed: []
+  deprecated: []
+  removed: []
+  security: []
+1.11.0:
   added:
   - adds django-cors-headers to the project and the django default settings
   fixed:
   - excessive database queries when qualifying tasks
   - visual issues with the org selection menu
-  changed: []
-  deprecated: []
-  removed: []
-  security: []
 1.10.0:
   added:
   - support for django 4.2
