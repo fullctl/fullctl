@@ -166,11 +166,13 @@ class SettingsManager(confu.util.SettingsManager):
             "django.contrib.sessions",
             "django.contrib.messages",
             "django.contrib.staticfiles",
+            "corsheaders",
         ]
         self.set_default("INSTALLED_APPS", INSTALLED_APPS)
 
         MIDDLEWARE = [
             "django.middleware.security.SecurityMiddleware",
+            "corsheaders.middleware.CorsMiddleware",
             "whitenoise.middleware.WhiteNoiseMiddleware",
             "django.contrib.sessions.middleware.SessionMiddleware",
             "django.middleware.common.CommonMiddleware",
@@ -192,6 +194,8 @@ class SettingsManager(confu.util.SettingsManager):
             "SERVICE_APP_DIR",
             os.path.join(self.scope["BASE_DIR"], "main", f"django_{service_tag}"),
         )
+
+        self.set_option("TASK_RECHECK_DECAY_MAX", 3600)
 
         # eval from default.py file
         filename = os.path.join(os.path.dirname(__file__), "default.py")
