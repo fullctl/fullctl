@@ -2,6 +2,9 @@
 
 
 ## Unreleased
+
+
+## 1.12.0
 ### Added
 - slug model / serializer mixins
 - extendible health check
