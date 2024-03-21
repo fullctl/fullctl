@@ -10,6 +10,7 @@ from fullctl.django.tasks.orm import (
     claim_task,
     fetch_task,
     progress_schedules,
+    tasks_max_time_reached,
 )
 
 
@@ -139,6 +140,9 @@ class Command(CommandInterface):
 
             if not task or task.queue_id:
                 continue
+
+            # check on stuck tasks and perform requeuing on those that have max times reached
+            await sync_to_async(tasks_max_time_reached)
 
             self.log_info(f"New task {task}")
 

@@ -57,7 +57,15 @@ class TaskLimitError(IOError):
     instances of a task
     """
 
-    pass
+    def __init__(self, task=None):
+        if task is None:
+            message = "Task limit exceeded"
+        else:
+            message = (
+                f"Task limit exceeded for task with limit id: {task.generate_limit_id}"
+            )
+
+        super().__init__(message)
 
 
 class TaskAlreadyStarted(IOError):
@@ -271,6 +279,10 @@ class Task(HandleRefModel):
     @property
     def limit(self):
         return self.task_meta_property("limit")
+
+    @property
+    def max_run_time(self):
+        return self.task_meta_property("max_run_time")
 
     @property
     def limit_action(self):
@@ -574,8 +586,35 @@ class TaskSchedule(HandleRefModel):
         self.schedule = timezone.now() + datetime.timedelta(seconds=self.interval)
         self.save()
 
+    def are_limited_tasks_pending(self):
+        """
+        Checks if there are currently any pending limited tasks
+        """
+        from fullctl.django.tasks.orm import specify_task
+
+        task_configs = self.task_config.get("tasks", [])
+
+        for task_config in task_configs:
+            op = task_config.get("op")
+            limit_id = task_config.get("param").get("args")[0]
+
+            tasks = Task.objects.filter(
+                op=op, limit_id=limit_id, status__in=["pending", "running"]
+            )
+
+            task = specify_task(tasks.first())
+            # if the count of currently pending / running instances of this
+            # task is higher than the limit we return True
+            if tasks and (task.task_meta_property("limit") <= tasks.count()):
+                return True
+
+        return False
+
     def spawn_tasks(self):
         # first check that there isnt currently a task pending on the schedule already
+
+        if self.are_limited_tasks_pending():
+            return []
 
         for task in self.tasks.all():
             if task.status in ["pending", "running"]:

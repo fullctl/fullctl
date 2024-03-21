@@ -3,6 +3,7 @@ ORM based task delegation
 """
 
 import time
+from datetime import timedelta
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
@@ -16,6 +17,7 @@ from fullctl.django.models import (
     WorkerUnqualified,
 )
 from fullctl.django.models.concrete.tasks import TaskClaim, TaskLimitError
+from fullctl.django.tasks import requeue as requeue_task
 from fullctl.django.tasks import specify_task
 from fullctl.django.tasks.util import worker_id
 
@@ -51,6 +53,28 @@ def fetch_task(**filters):
     if tasks:
         return tasks[0]
     return None
+
+
+def tasks_max_time_reached():
+    """
+    Requeues tasks that have reached their max run time
+    """
+    running_tasks = Task.objects.filter(
+        status__in=["running", "pending"], queue_id__isnull=False
+    )
+
+    if not running_tasks.exists():
+        return
+
+    for generic_task in running_tasks:
+        task = specify_task(generic_task)
+        if not task.max_run_time:
+            continue
+
+        time_delta = timedelta(seconds=task.max_run_time)
+        if (task.created + time_delta) < timezone.now():
+            task.cancel("max run time reached")
+            requeue_task(task)
 
 
 def fetch_tasks(limit=1, **filters):
@@ -171,7 +195,6 @@ def work_task(task):
     """
     processes the specified task
     """
-
     task._run()
 
 
