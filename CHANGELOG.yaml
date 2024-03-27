@@ -1,6 +1,8 @@
 Unreleased:
-  added: []
-  fixed: []
+  added:
+  - task queue health checks
+  fixed:
+  - select2 background color issue
   changed: []
   deprecated: []
   removed: []
