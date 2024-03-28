@@ -1,7 +1,8 @@
 # Changelog
 
 ## Unreleased
-
+### Added
+- task queue health checks
 ### Fixed
 
 - select2 background color issue
