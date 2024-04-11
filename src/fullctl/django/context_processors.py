@@ -4,7 +4,7 @@ from django.conf import settings
 from django.forms.models import model_to_dict
 
 from fullctl.django.auth import RemotePermissionsError
-from fullctl.service_bridge.aaactl import ServiceApplication, OrganizationWhiteLabeling
+from fullctl.service_bridge.aaactl import OrganizationWhiteLabeling, ServiceApplication
 
 
 def conf(request):
@@ -34,9 +34,7 @@ def account_service(request):
     local_auth = getattr(settings, "USE_LOCAL_PERMISSIONS", False)
 
     try:
-        org_whitelabel = OrganizationWhiteLabeling().object(
-            id=org_slug
-        )
+        org_whitelabel = OrganizationWhiteLabeling().object(id=org_slug)
         context["org_whitelabel"] = model_to_dict(org_whitelabel)
     except Exception as e:
         print(f"Error fetching org whitelabel: {e}")
@@ -54,10 +52,18 @@ def account_service(request):
             },
         },
         oauth_manages_org=not local_auth,
-        service_logo_dark=context["org_whitelabel"]["logo_url"] if context["org_whitelabel"]["logo_url"] else f"{settings.SERVICE_TAG}/logo-darkbg.svg",
-        service_logo_light=context["org_whitelabel"]["logo_url"] if context["org_whitelabel"]["logo_url"] else f"{settings.SERVICE_TAG}/logo-lightbg.svg",
-        service_tag=context["org_whitelabel"]["org"]["name"] if context["org_whitelabel"]["name"] else settings.SERVICE_TAG,
-        service_name=context["org_whitelabel"]["org"]["name"] if context["org_whitelabel"]["name"] else settings.SERVICE_TAG.replace("ctl", ""),
+        service_logo_dark=context["org_whitelabel"]["logo_url"]
+        if context["org_whitelabel"]["logo_url"]
+        else f"{settings.SERVICE_TAG}/logo-darkbg.svg",
+        service_logo_light=context["org_whitelabel"]["logo_url"]
+        if context["org_whitelabel"]["logo_url"]
+        else f"{settings.SERVICE_TAG}/logo-lightbg.svg",
+        service_tag=context["org_whitelabel"]["org"]["name"]
+        if context["org_whitelabel"]["name"]
+        else settings.SERVICE_TAG,
+        service_name=context["org_whitelabel"]["org"]["name"]
+        if context["org_whitelabel"]["name"]
+        else settings.SERVICE_TAG.replace("ctl", ""),
     )
 
     if settings.OAUTH_TWENTYC_URL:
@@ -82,11 +88,17 @@ def account_service(request):
 
     if local_auth:
         context["service_info"] = {
-            "name": context["org_whitelabel"]["org"]["name"] if context["org_whitelabel"]["name"] else settings.SERVICE_TAG,
-            "slug": context["org_whitelabel"]["org"]["name"] if context["org_whitelabel"]["name"] else settings.SERVICE_TAG,
+            "name": context["org_whitelabel"]["org"]["name"]
+            if context["org_whitelabel"]["name"]
+            else settings.SERVICE_TAG,
+            "slug": context["org_whitelabel"]["org"]["name"]
+            if context["org_whitelabel"]["name"]
+            else settings.SERVICE_TAG,
             "description": "Local permissions",
             "org_has_access": True,
-            "org_namespace": context["org_whitelabel"]["org"]["name"] if context["org_whitelabel"]["name"] else f"{settings.SERVICE_TAG}",
+            "org_namespace": context["org_whitelabel"]["org"]["name"]
+            if context["org_whitelabel"]["name"]
+            else f"{settings.SERVICE_TAG}",
         }
 
     return context

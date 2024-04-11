@@ -137,6 +137,7 @@ class OauthAccessToken(Aaactl):
 class OrganizationWhiteLabelingObject(AaactlEntity):
     description = "Aaactl OrganizationWhiteLabeling"
 
+
 class OrganizationWhiteLabeling(Aaactl):
     class Meta(Aaactl.Meta):
         ref_tag = "org_whitelabeling"
