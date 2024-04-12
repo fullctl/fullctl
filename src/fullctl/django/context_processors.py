@@ -4,8 +4,8 @@ from datetime import datetime
 from django.conf import settings
 
 from fullctl.django.auth import RemotePermissionsError
-from fullctl.service_bridge.aaactl import OrganizationWhiteLabeling, ServiceApplication
 from fullctl.django.models.concrete.account import Organization
+from fullctl.service_bridge.aaactl import OrganizationWhiteLabeling, ServiceApplication
 
 
 def conf(request):
@@ -36,9 +36,7 @@ def account_service(request):
     local_auth = getattr(settings, "USE_LOCAL_PERMISSIONS", False)
 
     try:
-        org_whitelabel = OrganizationWhiteLabeling().first(
-            slug=org_slug
-        )
+        org_whitelabel = OrganizationWhiteLabeling().first(slug=org_slug)
         organization = Organization.objects.get(slug=org_slug)
 
         if org_whitelabel and organization:
@@ -47,9 +45,7 @@ def account_service(request):
                 "name": organization.name,
                 "html_header": org_whitelabel.html_header,
                 "html_footer": org_whitelabel.html_footer,
-                "css": {
-                    "primary_color": css_dict["primary_color"]
-                },
+                "css": {"primary_color": css_dict["primary_color"]},
                 "logo_url": org_whitelabel.logo_url,
             }
     except Exception as e:
@@ -110,7 +106,7 @@ def account_service(request):
             "slug": settings.SERVICE_TAG,
             "description": "Local permissions",
             "org_has_access": True,
-            "org_namespace": settings.SERVICE_TAG
+            "org_namespace": settings.SERVICE_TAG,
         }
 
     return context
