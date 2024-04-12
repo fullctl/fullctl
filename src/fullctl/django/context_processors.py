@@ -1,10 +1,11 @@
+import json
 from datetime import datetime
 
 from django.conf import settings
-from django.forms.models import model_to_dict
 
 from fullctl.django.auth import RemotePermissionsError
 from fullctl.service_bridge.aaactl import OrganizationWhiteLabeling, ServiceApplication
+from fullctl.django.models.concrete.account import Organization
 
 
 def conf(request):
@@ -25,6 +26,7 @@ def conf(request):
 def account_service(request):
     context = {}
     org = getattr(request, "org", None)
+    context["org_whitelabel"] = {}
 
     if org:
         org_slug = org.slug
@@ -34,8 +36,22 @@ def account_service(request):
     local_auth = getattr(settings, "USE_LOCAL_PERMISSIONS", False)
 
     try:
-        org_whitelabel = OrganizationWhiteLabeling().object(id=org_slug)
-        context["org_whitelabel"] = model_to_dict(org_whitelabel)
+        org_whitelabel = OrganizationWhiteLabeling().first(
+            slug=org_slug
+        )
+        organization = Organization.objects.get(slug=org_slug)
+
+        if org_whitelabel and organization:
+            css_dict = json.loads(org_whitelabel.css)
+            context["org_whitelabel"] = {
+                "name": organization.name,
+                "html_header": org_whitelabel.html_header,
+                "html_footer": org_whitelabel.html_footer,
+                "css": {
+                    "primary_color": css_dict["primary_color"]
+                },
+                "logo_url": org_whitelabel.logo_url,
+            }
     except Exception as e:
         print(f"Error fetching org whitelabel: {e}")
 
@@ -53,16 +69,16 @@ def account_service(request):
         },
         oauth_manages_org=not local_auth,
         service_logo_dark=context["org_whitelabel"]["logo_url"]
-        if context["org_whitelabel"]["logo_url"]
+        if context["org_whitelabel"].get("logo_url", None)
         else f"{settings.SERVICE_TAG}/logo-darkbg.svg",
         service_logo_light=context["org_whitelabel"]["logo_url"]
-        if context["org_whitelabel"]["logo_url"]
+        if context["org_whitelabel"].get("logo_url", None)
         else f"{settings.SERVICE_TAG}/logo-lightbg.svg",
-        service_tag=context["org_whitelabel"]["org"]["name"]
-        if context["org_whitelabel"]["name"]
+        service_tag=context["org_whitelabel"]["name"]
+        if context["org_whitelabel"].get("name", None)
         else settings.SERVICE_TAG,
-        service_name=context["org_whitelabel"]["org"]["name"]
-        if context["org_whitelabel"]["name"]
+        service_name=context["org_whitelabel"]["name"]
+        if context["org_whitelabel"].get("name", None)
         else settings.SERVICE_TAG.replace("ctl", ""),
     )
 
@@ -88,17 +104,13 @@ def account_service(request):
 
     if local_auth:
         context["service_info"] = {
-            "name": context["org_whitelabel"]["org"]["name"]
-            if context["org_whitelabel"]["name"]
+            "name": f"{settings.SERVICE_TAG} {context['org_whitelabel']['name']}"
+            if context["org_whitelabel"].get("name", None)
             else settings.SERVICE_TAG,
-            "slug": context["org_whitelabel"]["org"]["name"]
-            if context["org_whitelabel"]["name"]
-            else settings.SERVICE_TAG,
+            "slug": settings.SERVICE_TAG,
             "description": "Local permissions",
             "org_has_access": True,
-            "org_namespace": context["org_whitelabel"]["org"]["name"]
-            if context["org_whitelabel"]["name"]
-            else f"{settings.SERVICE_TAG}",
+            "org_namespace": settings.SERVICE_TAG
         }
 
     return context
