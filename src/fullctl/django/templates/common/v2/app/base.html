@@ -1,6 +1,6 @@
 {% extends "common/v2/base.html" %}
 {% load static i18n fullctl_util %}
-{% block "title" %}fullctl / {{ service_name }}{% endblock %}
+{% block "title" %}{% if org_whitelabel.html_header %}{{org_whitelabel.html_header}}{% else %}fullctl / {{ service_name }}{% endif %}{% endblock %}
 
 {% block "js" %}
 {{ block.super }}
@@ -53,6 +53,10 @@ fullctl.aaactl_urls = {{ account_service.urls|safe }}
 var True = true, False = false;
 
 fullctl.permissions = {{ permissions|safe }}
+
+const root = document.documentElement;
+const primaryColorValue = "{{ org_whitelabel.css.primary_color }}"
+root.style.setProperty('--clr-accent-400', primaryColorValue);
 </script>
 
 {% block "header" %}
