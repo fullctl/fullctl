@@ -56,7 +56,20 @@ fullctl.permissions = {{ permissions|safe }}
 
 const root = document.documentElement;
 const primaryColorValue = "{{ org_whitelabel.css.primary_color }}"
-root.style.setProperty('--clr-accent-400', primaryColorValue);
+if (primaryColorValue) {
+  root.style.setProperty('--clr-accent-400', primaryColorValue);
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    var appLogo = document.querySelector(".app-logo");
+    if (appLogo) {
+        logo_width = "{{ org_whitelabel.css.logo_width }}"
+        if (logo_width) {
+          appLogo.setAttribute("width", logo_width);
+        }
+    }
+});
+
 </script>
 
 {% block "header" %}
@@ -89,7 +102,11 @@ root.style.setProperty('--clr-accent-400', primaryColorValue);
       {% block "header_left" %}
       <div class="app-switcher" data-element="app_switcher">
         <div class="selected {{ request.app_id }} d-flex align-items-center">
+          {% if org_whitelabel.dark_logo_url %}
+          <img class="app-logo" src="{{ service_logo_dark }}" alt="{{ service_tag }}">
+          {% else %}
           <img class="app-logo" src="{% static service_logo_dark %}" alt="{{ service_tag }}">
+          {% endif %}
         <span class="icon {{ request.app_id }} icon-caret-y ms-4"></span>
         <div class="others" style="display:none">
           {% for service_app in service_applications %}

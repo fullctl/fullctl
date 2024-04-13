@@ -4,8 +4,8 @@ from datetime import datetime
 from django.conf import settings
 
 from fullctl.django.auth import RemotePermissionsError
-from fullctl.django.models.concrete.account import Organization
 from fullctl.service_bridge.aaactl import OrganizationWhiteLabeling, ServiceApplication
+from fullctl.django.models.concrete.account import Organization
 
 
 def conf(request):
@@ -36,17 +36,24 @@ def account_service(request):
     local_auth = getattr(settings, "USE_LOCAL_PERMISSIONS", False)
 
     try:
-        org_whitelabel = OrganizationWhiteLabeling().first(slug=org_slug)
-        organization = Organization.objects.get(slug=org_slug)
+        org_whitelabel = OrganizationWhiteLabeling().first(
+            slug=org_slug
+        )
 
+        organization = Organization.objects.get(slug=org_slug)
         if org_whitelabel and organization:
             css_dict = json.loads(org_whitelabel.css)
             context["org_whitelabel"] = {
                 "name": organization.name,
                 "html_header": org_whitelabel.html_header,
                 "html_footer": org_whitelabel.html_footer,
-                "css": {"primary_color": css_dict["primary_color"]},
-                "logo_url": org_whitelabel.logo_url,
+                "css": {
+                    "primary_color": css_dict.get("primary_color", None),
+                    "logo_width": css_dict.get("logo_width", None)
+
+                },
+                "dark_logo_url": org_whitelabel.dark_logo_url,
+                "light_logo_url": org_whitelabel.light_logo_url,
             }
     except Exception as e:
         print(f"Error fetching org whitelabel: {e}")
@@ -64,11 +71,11 @@ def account_service(request):
             },
         },
         oauth_manages_org=not local_auth,
-        service_logo_dark=context["org_whitelabel"]["logo_url"]
-        if context["org_whitelabel"].get("logo_url", None)
+        service_logo_dark=context["org_whitelabel"]["dark_logo_url"]
+        if context["org_whitelabel"].get("dark_logo_url", None)
         else f"{settings.SERVICE_TAG}/logo-darkbg.svg",
-        service_logo_light=context["org_whitelabel"]["logo_url"]
-        if context["org_whitelabel"].get("logo_url", None)
+        service_logo_light=context["org_whitelabel"]["light_logo_url"]
+        if context["org_whitelabel"].get("light_logo_url", None)
         else f"{settings.SERVICE_TAG}/logo-lightbg.svg",
         service_tag=context["org_whitelabel"]["name"]
         if context["org_whitelabel"].get("name", None)
@@ -106,7 +113,7 @@ def account_service(request):
             "slug": settings.SERVICE_TAG,
             "description": "Local permissions",
             "org_has_access": True,
-            "org_namespace": settings.SERVICE_TAG,
+            "org_namespace":settings.SERVICE_TAG
         }
 
     return context
