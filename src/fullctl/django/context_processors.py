@@ -39,8 +39,17 @@ def account_service(request):
         org_whitelabel = OrganizationWhiteLabeling().first(
             slug=org_slug
         )
-
         organization = Organization.objects.get(slug=org_slug)
+        custom_org = True
+
+        if not org_whitelabel:
+            org_whitelabel = OrganizationWhiteLabeling().first(
+                slug="fullctl"
+            )
+            organization = Organization.objects.get(slug="fullctl")
+            custom_org = False
+
+
         if org_whitelabel and organization:
             css_dict = json.loads(org_whitelabel.css)
             context["org_whitelabel"] = {
@@ -54,9 +63,31 @@ def account_service(request):
                 },
                 "dark_logo_url": org_whitelabel.dark_logo_url,
                 "light_logo_url": org_whitelabel.light_logo_url,
+                "custom_org": custom_org,
             }
     except Exception as e:
         print(f"Error fetching org whitelabel: {e}")
+
+
+    if not context["org_whitelabel"].get("dark_logo_url", None):
+        service_logo_dark = f"{settings.SERVICE_TAG}/logo-darkbg.svg"
+    else:
+        service_logo_dark = context["org_whitelabel"].get("dark_logo_url")
+
+
+    if not context["org_whitelabel"].get("light_logo_url", None):
+        service_logo_light = f"{settings.SERVICE_TAG}/logo-lightbg.svg"
+    else:
+        service_logo_light = context["org_whitelabel"].get("light_logo_url")
+
+
+    if not context["org_whitelabel"].get("name", None):
+        service_tag = settings.SERVICE_TAG
+        service_name = settings.SERVICE_TAG.replace("ctl", "")
+    else:
+        service_tag = context["org_whitelabel"].get("name")
+        service_name = context["org_whitelabel"].get("name")
+
 
     # TODO abstract so other auth services can be
     # defined
@@ -71,18 +102,10 @@ def account_service(request):
             },
         },
         oauth_manages_org=not local_auth,
-        service_logo_dark=context["org_whitelabel"]["dark_logo_url"]
-        if context["org_whitelabel"].get("dark_logo_url", None)
-        else f"{settings.SERVICE_TAG}/logo-darkbg.svg",
-        service_logo_light=context["org_whitelabel"]["light_logo_url"]
-        if context["org_whitelabel"].get("light_logo_url", None)
-        else f"{settings.SERVICE_TAG}/logo-lightbg.svg",
-        service_tag=context["org_whitelabel"]["name"]
-        if context["org_whitelabel"].get("name", None)
-        else settings.SERVICE_TAG,
-        service_name=context["org_whitelabel"]["name"]
-        if context["org_whitelabel"].get("name", None)
-        else settings.SERVICE_TAG.replace("ctl", ""),
+        service_logo_dark=service_logo_dark,
+        service_logo_light=service_logo_light,
+        service_tag=service_tag,
+        service_name=service_name,
     )
 
     if settings.OAUTH_TWENTYC_URL:
@@ -93,7 +116,7 @@ def account_service(request):
                     group="fullctl", org=(org_slug or None)
                 )
             ],
-        )
+        ) 
 
     # load this applications information from aaactl
     # into `service_info` variable

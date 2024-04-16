@@ -18,11 +18,7 @@
     </div>
     <div class="col-auto footer-center">
       {% block footer_center %}
-        {% if org_whitelabel.html_footer %}
-          {{ org_whitelabel.html_footer}}
-        {% else %}
-          Copyright © 2014 - {{ current_year }} FullCtl, LLC
-        {% endif %}
+        {{ org_whitelabel.html_footer}}
       {% endblock %}
     </div>
     <div class="col footer-right">
