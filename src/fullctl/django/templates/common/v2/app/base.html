@@ -1,6 +1,6 @@
 {% extends "common/v2/base.html" %}
 {% load static i18n fullctl_util %}
-{% block "title" %}{{org_whitelabel.html_title}} / {{ service_name }}{% endblock %}
+{% block "title" %}{{org_whitelabel.name}} / {{ service_name }}{% endblock %}
 
 {% block "js" %}
 {{ block.super }}
@@ -114,10 +114,10 @@ document.addEventListener("DOMContentLoaded", function() {
           {%     with "common/logos/"|add:service_app.slug|add:"-dark.svg" as other_app_logo %}
             <a class="list-item" {% if not service_app.always_show_dashboard %}data-grainy-remove="{{ service_app.grainy }}.{{ request.org.remote_id}}"{% endif %} href="{{ service_app.org_redirect }}" data-slug="{{ service_app.slug }}">
               {% if org_whitelabel.custom_org %}
-                <span class="text-item">{{ service_app.slug }}</span>
+                <span class="text-item">{{ service_app.name }}</span>
               {% else %}
                 {% if not service_app.logo %}
-                  <img class="app-logo" src="{% static other_app_logo %}" alt="{{ service_app.slug }}">
+                  <img class="app-logo" src="{% static other_app_logo %}" alt="{{ service_app.name }}">
                 {% else %}
                   <img class="app-logo" src="{{ service_app.logo }}" alt="{{ service_app.slug }}">
                 {% endif %}
