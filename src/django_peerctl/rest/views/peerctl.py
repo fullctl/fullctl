@@ -25,7 +25,7 @@ from django_peerctl.peer_session_workflow import (
 from django_peerctl.rest.decorators import grainy_endpoint
 from django_peerctl.rest.route.peerctl import route
 from django_peerctl.rest.serializers.peerctl import Serializers, ValidationError
-from django_peerctl.utils import load_exchanges
+from django_peerctl.utils import load_exchanges, verified_asns
 
 
 @route
@@ -115,6 +115,43 @@ class Network(CachedObjectMixin, viewsets.ModelViewSet):
 
         default_network = serializer.save()
         return Response(Serializers.default_network(default_network).data)
+
+
+@route
+class DefaultNetwork(CachedObjectMixin, viewsets.GenericViewSet):
+    serializer_class = Serializers.default_network
+    require_org_tag = True
+
+    def list(self, request, *args, **kwargs):
+        """
+        returns default Network selected for org
+        """
+        org = request.org
+        default_network = models.Network.get_default_network_for_org(org)
+
+        return Response(Serializers.net(default_network).data)
+
+
+@route
+class Networks(CachedObjectMixin, viewsets.GenericViewSet):
+    """
+    Networks belonging to org view
+    """
+
+    serializer_class = Serializers.net
+    require_org_tag = True
+    ref_tag = "networks"
+
+    def list(self, request, *args, **kwargs):
+        """
+        list of all networks in verified_asns for org
+        """
+        org = request.org
+
+        instances = [net for net in verified_asns(request.perms, org=org)]
+        serializer = self.serializer_class(instances, many=True)
+
+        return Response(serializer.data)
 
 
 # policy view
@@ -1567,7 +1604,11 @@ class EmailTemplate(CachedObjectMixin, viewsets.ModelViewSet):
             # we need to split them and get the ids and then selectively load them from
             # the service bridge.
 
-            exchanges = load_exchanges(request.data["ix_ids"])
+            # filter out empty strings and None values
+            # TODO: serializer for validation
+            ix_ids = [_id for _id in request.data["ix_ids"] if _id]
+
+            exchanges = load_exchanges(ix_ids)
             email_template.context["selected_exchanges"] = list(
                 models.MutualLocation(ix, net, None) for ix in exchanges
             )

@@ -65,7 +65,8 @@ $ctl.application.Peerctl.Networks = $tc.extend(
 
     request_peering : function(type) {
 
-      if(!this.peer) {
+      const peer = this.$w.list.peer;
+      if(!peer) {
         return alert("No network in results");
       }
 
@@ -73,11 +74,18 @@ $ctl.application.Peerctl.Networks = $tc.extend(
       var ix_ids = []
 
       selected.each(function() {
+
+        // exclude the select-all checkbox, by checking
+        // if the ix-id data attribute is not set
+
+        if(!$(this).data("ix-id"))
+          return;
+
         ix_ids.push($(this).data("ix-id"));
       });
 
-      new $peerctl.modals.RequestPeering(
-        this.peer,
+      new $ctl.application.Peerctl.modals.RequestPeering(
+        peer,
         this.peer_request_data,
         ix_ids,
       );
