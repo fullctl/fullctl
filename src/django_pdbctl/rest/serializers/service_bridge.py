@@ -1,6 +1,6 @@
 import django_peeringdb.models.concrete as models
 
-# from django.utils.translation import ugettext_lazy as _
+# from django.utils.translation import gettext_lazy as _
 # from django_inet.rest import IPAddressField
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
@@ -179,7 +179,8 @@ class NetworkIXLan(ModelSerializer):
     def exchanges(self):
         # if ix is not set to join into the data, we dont need
         # to prefetch the exchanges
-        if "ix" not in self.context.get("joins", []):
+        joins = self.context.get("joins", [])
+        if "ix" not in joins and "ix_name" not in joins:
             return {}
 
         if hasattr(self, "_exchanges"):

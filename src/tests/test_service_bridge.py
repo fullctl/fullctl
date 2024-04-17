@@ -6,7 +6,7 @@ def test_net_list(db, pdb_data, account_objects):
 
     client = account_objects.api_client
     response = client.get(
-        reverse("service_bridge_api:service-bridge-net-list") + "?asn=63311"
+        reverse("service_bridge_api:service-bridge-data-net-list") + "?asn=63311"
     )
 
     assert response.status_code == 200
@@ -22,7 +22,7 @@ def test_ix_list(db, pdb_data, account_objects):
 
     client = account_objects.api_client
     response = client.get(
-        reverse("service_bridge_api:service-bridge-ix-list") + "?q=Exchange"
+        reverse("service_bridge_api:service-bridge-data-ix-list") + "?q=Exchange"
     )
 
     assert response.status_code == 200
