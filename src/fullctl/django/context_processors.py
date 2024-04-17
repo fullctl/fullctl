@@ -1,4 +1,5 @@
 import json
+import structlog
 from datetime import datetime
 
 from django.conf import settings
@@ -6,6 +7,8 @@ from django.conf import settings
 from fullctl.django.auth import RemotePermissionsError
 from fullctl.service_bridge.aaactl import OrganizationWhiteLabeling, ServiceApplication
 from fullctl.django.models.concrete.account import Organization
+
+log = structlog.get_logger("django")
 
 
 def conf(request):
@@ -36,15 +39,16 @@ def account_service(request):
     local_auth = getattr(settings, "USE_LOCAL_PERMISSIONS", False)
 
     try:
+        # TODO: Look into appreach to return org specific whitelabel or default whitelabel
         org_whitelabel = OrganizationWhiteLabeling().first(
-            slug=org_slug
+            org=org_slug
         )
         organization = Organization.objects.get(slug=org_slug)
         custom_org = True
 
         if not org_whitelabel:
             org_whitelabel = OrganizationWhiteLabeling().first(
-                slug="fullctl"
+                org="fullctl"
             )
             organization = Organization.objects.get(slug="fullctl")
             custom_org = False
@@ -54,19 +58,15 @@ def account_service(request):
             css_dict = json.loads(org_whitelabel.css)
             context["org_whitelabel"] = {
                 "name": organization.name,
-                "html_header": org_whitelabel.html_header,
+                "html_title": org_whitelabel.html_title,
                 "html_footer": org_whitelabel.html_footer,
-                "css": {
-                    "primary_color": css_dict.get("primary_color", None),
-                    "logo_width": css_dict.get("logo_width", None)
-
-                },
+                "css": css_dict,
                 "dark_logo_url": org_whitelabel.dark_logo_url,
                 "light_logo_url": org_whitelabel.light_logo_url,
                 "custom_org": custom_org,
             }
     except Exception as e:
-        print(f"Error fetching org whitelabel: {e}")
+        log.error("Error fetching org whitelabel: {e}")
 
 
     if not context["org_whitelabel"].get("dark_logo_url", None):
@@ -82,11 +82,13 @@ def account_service(request):
 
 
     if not context["org_whitelabel"].get("name", None):
-        service_tag = settings.SERVICE_TAG
+        logo_alt_text = settings.SERVICE_TAG
         service_name = settings.SERVICE_TAG.replace("ctl", "")
     else:
-        service_tag = context["org_whitelabel"].get("name")
+        logo_alt_text = context["org_whitelabel"].get("name")
         service_name = context["org_whitelabel"].get("name")
+
+    service_tag = settings.SERVICE_TAG
 
 
     # TODO abstract so other auth services can be
@@ -106,6 +108,7 @@ def account_service(request):
         service_logo_light=service_logo_light,
         service_tag=service_tag,
         service_name=service_name,
+        logo_alt_text=logo_alt_text
     )
 
     if settings.OAUTH_TWENTYC_URL:

@@ -1,6 +1,6 @@
 {% extends "common/v2/base.html" %}
 {% load static i18n fullctl_util %}
-{% block "title" %}{{org_whitelabel.html_header}} / {{ service_name }}{% endblock %}
+{% block "title" %}{{org_whitelabel.html_title}} / {{ service_name }}{% endblock %}
 
 {% block "js" %}
 {{ block.super }}
@@ -103,9 +103,9 @@ document.addEventListener("DOMContentLoaded", function() {
       <div class="app-switcher" data-element="app_switcher">
         <div class="selected {{ request.app_id }} d-flex align-items-center">
           {% if org_whitelabel.dark_logo_url %}
-          <img class="app-logo" src="{{ service_logo_dark }}" alt="{{ service_tag }}">
+          <img class="app-logo" src="{{ service_logo_dark }}" alt="{{ logo_alt_text }}">
           {% else %}
-          <img class="app-logo" src="{% static service_logo_dark %}" alt="{{ service_tag }}">
+          <img class="app-logo" src="{% static service_logo_dark %}" alt="{{ logo_alt_text }}">
           {% endif %}
         <span class="icon {{ request.app_id }} icon-caret-y ms-4"></span>
         <div class="others" style="display:none">
