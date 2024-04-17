@@ -1,12 +1,12 @@
 import json
-import structlog
 from datetime import datetime
 
+import structlog
 from django.conf import settings
 
 from fullctl.django.auth import RemotePermissionsError
-from fullctl.service_bridge.aaactl import OrganizationWhiteLabeling, ServiceApplication
 from fullctl.django.models.concrete.account import Organization
+from fullctl.service_bridge.aaactl import OrganizationWhiteLabeling, ServiceApplication
 
 log = structlog.get_logger("django")
 
@@ -62,12 +62,10 @@ def account_service(request):
     except Exception as e:
         log.error(f"Error fetching org whitelabel: {e}")
 
-
     if not context["org_whitelabel"].get("dark_logo_url", None):
         service_logo_dark = f"{settings.SERVICE_TAG}/logo-darkbg.svg"
     else:
         service_logo_dark = context["org_whitelabel"].get("dark_logo_url")
-
 
     if not context["org_whitelabel"].get("light_logo_url", None):
         service_logo_light = f"{settings.SERVICE_TAG}/logo-lightbg.svg"
@@ -111,7 +109,7 @@ def account_service(request):
                     group="fullctl", org=(org_slug or None)
                 )
             ],
-        ) 
+        )
 
     # load this applications information from aaactl
     # into `service_info` variable
@@ -131,7 +129,7 @@ def account_service(request):
             "slug": settings.SERVICE_TAG,
             "description": "Local permissions",
             "org_has_access": True,
-            "org_namespace":settings.SERVICE_TAG
+            "org_namespace": settings.SERVICE_TAG,
         }
 
     return context
