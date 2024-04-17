@@ -61,7 +61,7 @@ def account_service(request):
                 "custom_org": custom_org,
             }
     except Exception as e:
-        log.error("Error fetching org whitelabel: {e}")
+        log.error(f"Error fetching org whitelabel: {e}")
 
     if not context["org_whitelabel"].get("dark_logo_url", None):
         service_logo_dark = f"{settings.SERVICE_TAG}/logo-darkbg.svg"
