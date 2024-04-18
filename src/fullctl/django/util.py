@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.conf import settings
 
 from fullctl.django.context import current_request
@@ -10,7 +11,7 @@ else:
 
 DEFAULT_FULLCTL_BRANDING = {
     "name": "FullCtl",
-    "html_footer": "Copyright © 2014 - 2024 FullCtl, LLC",
+    "html_footer": f"Copyright © 2014 - {datetime.now().year} FullCtl, LLC",
     "css": {"primary_color": "#D1FF27"},
     "dark_logo_url": None,
     "light_logo_url": None,
