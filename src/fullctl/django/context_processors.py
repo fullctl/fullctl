@@ -62,7 +62,6 @@ def account_service(request):
         log.error(f"Error fetching org whitelabel: {e}")
         context["org_whitelabel"] = DEFAULT_FULLCTL_BRANDING
 
-
     if not context["org_whitelabel"].get("dark_logo_url", None):
         service_logo_dark = f"{settings.SERVICE_TAG}/logo-darkbg.svg"
     else:
