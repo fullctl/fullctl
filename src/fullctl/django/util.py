@@ -8,6 +8,19 @@ else:
     pdb_models = None
 
 
+DEFAULT_FULLCTL_BRANDING = {
+    "name": "FullCtl",
+    "html_footer": "Copyright © 2014 - 2024 FullCtl, LLC",
+    "css": {
+        "primary_color": "#D1FF27"
+    },
+    "dark_logo_url": None,
+    "light_logo_url": None,
+    "custom_org": False,
+    "show_logo": True,
+}
+
+
 def host_url():
     """
     Will see if a current request context exist and if it

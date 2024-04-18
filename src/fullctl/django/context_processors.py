@@ -7,6 +7,7 @@ from django.conf import settings
 from fullctl.django.auth import RemotePermissionsError
 from fullctl.django.models.concrete.account import Organization
 from fullctl.service_bridge.aaactl import OrganizationWhiteLabeling, ServiceApplication
+from fullctl.django.util import DEFAULT_FULLCTL_BRANDING
 
 log = structlog.get_logger("django")
 
@@ -45,11 +46,8 @@ def account_service(request):
         custom_org = True
 
         if not org_whitelabel:
-            org_whitelabel = OrganizationWhiteLabeling().first(org="fullctl")
-            organization = Organization.objects.get(slug="fullctl")
-            custom_org = False
-
-        if org_whitelabel and organization:
+            context["org_whitelabel"] = DEFAULT_FULLCTL_BRANDING
+        else:
             css_dict = json.loads(org_whitelabel.css)
             context["org_whitelabel"] = {
                 "name": organization.name,
