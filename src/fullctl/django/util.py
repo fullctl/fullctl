@@ -11,9 +11,7 @@ else:
 DEFAULT_FULLCTL_BRANDING = {
     "name": "FullCtl",
     "html_footer": "Copyright © 2014 - 2024 FullCtl, LLC",
-    "css": {
-        "primary_color": "#D1FF27"
-    },
+    "css": {"primary_color": "#D1FF27"},
     "dark_logo_url": None,
     "light_logo_url": None,
     "custom_org": False,

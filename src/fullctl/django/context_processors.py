@@ -6,8 +6,8 @@ from django.conf import settings
 
 from fullctl.django.auth import RemotePermissionsError
 from fullctl.django.models.concrete.account import Organization
-from fullctl.service_bridge.aaactl import OrganizationWhiteLabeling, ServiceApplication
 from fullctl.django.util import DEFAULT_FULLCTL_BRANDING
+from fullctl.service_bridge.aaactl import OrganizationWhiteLabeling, ServiceApplication
 
 log = structlog.get_logger("django")
 
