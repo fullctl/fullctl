@@ -15,7 +15,7 @@ jobs:
         run: |
              poetry run isort .
              poetry run black --check src/
-             
+
              # github cache issues
              # poetry run pre-commit run --all-files
 
@@ -38,3 +38,4 @@ jobs:
         with:
           file: ./src/coverage.xml
           fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
