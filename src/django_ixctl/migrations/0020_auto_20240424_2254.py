@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('django_ixctl', '0017_internetexchangemember_port'),
+        ('django_ixctl', '0019_alter_internetexchangeprefix_unique_together'),
     ]
 
     operations = [
