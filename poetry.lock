@@ -848,8 +848,8 @@ whitenoise = ">=6"
 [package.source]
 type = "git"
 url = "https://github.com/fullctl/fullctl.git"
-reference = "prep-release"
-resolved_reference = "5cf066310cc20da7655fc105f9417d7208fef744"
+reference = "federation"
+resolved_reference = "f9dc1f70ccfae0f4239d475669ff69539b858376"
 
 [[package]]
 name = "ghp-import"
@@ -2567,4 +2567,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "ad26098b54452b306da84e93d6430b4b8ad44bf2145f277fd1ac2d6d6ab93d43"
+content-hash = "63258da94bb77740e65ad516d8ccf9e5e9854497649d28b468d034c7ebe0506e"
