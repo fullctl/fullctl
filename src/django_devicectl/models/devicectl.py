@@ -14,7 +14,7 @@ from fullctl.django.models.abstract import (
     ServiceBridgeReferenceModel,
 )
 from fullctl.django.models.concrete import Instance
-from fullctl.service_bridge import nautobot
+from fullctl.service_bridge import nautobot, netbox
 from netfields.fields import InetAddressField
 
 import django_devicectl.referee as referee_util
@@ -41,6 +41,9 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
         null=True,
         blank=True,
         help_text=_("Remove reference id"),
+        services=[
+            "fullctl.service_bridge.pdbctl.Facility",
+        ],
     )
     slug = models.SlugField(
         max_length=64,
@@ -83,6 +86,8 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
             "latitude": "latitude_float",
             "longitude": "longitude_float",
         }
+
+        map_netbox = map_nautobot
 
         lookup_nautobot = "cf_devicectl_id"
 
@@ -133,8 +138,14 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
         return f"{self.name} [#{self.id}]"
 
     def finalize_service_bridge_data(self, service_name, data):
-        if service_name == "nautobot":
-            site = nautobot.Site().first(cf_devicectl_id=self.id)
+        if service_name in ["nautobot", "netbox"]:
+
+            if service_name == "nautobot":
+                bridge = nautobot.Site()
+            else:
+                bridge = netbox.Site()
+
+            site = bridge.first(cf_devicectl_id=self.id)
 
             # nautobot requires status to be sent, but we want nautobot to
             # be the SoT for the status, fetch the current status for existing
@@ -184,6 +195,13 @@ class Device(ServiceBridgeReferenceModel):
         null=True,
         blank=True,
         help_text=_("Remote reference id"),
+        services=[
+            # possible services for reference
+            # if org has federation for one of these services
+            # it will be used to resolve the reference
+            "fullctl.service_bridge.nautobot.Device",
+            "fullctl.service_bridge.netbox.Device",
+        ],
     )
 
     meta = models.JSONField(
@@ -203,6 +221,7 @@ class Device(ServiceBridgeReferenceModel):
             "comments": "description",
             "device_type.model": "type",
         }
+        map_netbox = map_nautobot
 
     class Meta:
         db_table = "devicectl_device"
@@ -382,6 +401,9 @@ class DeviceConfigStatus(HandleRefModel):
         null=True,
         blank=True,
         help_text=_("auditCtl event reference"),
+        services=[
+            "fullctl.service_bridge.auditctl.Event",
+        ],
     )  # type: ignore
 
     config_current = models.TextField(
@@ -763,6 +785,10 @@ class VirtualPort(ServiceBridgeReferenceModel):
         null=True,
         blank=True,
         help_text=_("Remote reference id"),
+        services=[
+            "fullctl.service_bridge.nautobot.Interface",
+            "fullctl.service_bridge.netbox.Interface",
+        ],
     )
 
     meta = models.JSONField(
@@ -782,6 +808,8 @@ class VirtualPort(ServiceBridgeReferenceModel):
             "display": "name",
             "description": "description",
         }
+
+        map_netbox = map_nautobot
 
     class Meta:
         db_table = "devicectl_virtual_port"
@@ -988,6 +1016,10 @@ class IPAddress(ServiceBridgeReferenceModel):
         null=True,
         blank=True,
         help_text=_("Remove reference id"),
+        services=[
+            "fullctl.service_bridge.nautobot.IPAddress",
+            "fullctl.service_bridge.netbox.IPAddress",
+        ],
     )
 
     class Meta:
@@ -999,6 +1031,7 @@ class IPAddress(ServiceBridgeReferenceModel):
 
     class ServiceBridge:
         map_nautobot = {"address": "address"}
+        map_netbox = map_nautobot
 
     @property
     def org(self):
