@@ -1,26 +1,11 @@
-from importlib import import_module
 from logging import getLogger
 
-from django.conf import settings
 from django.db.models import CharField, PositiveIntegerField
 
 from fullctl.django.fields import CastOnAssignDescriptor
+from fullctl.service_bridge.context import service_bridge_context
 
 log = getLogger("django")
-
-BRIDGE_MAP = {}
-
-
-for name in dir(settings):
-    if name.startswith("SERVICE_BRIDGE_REF_"):
-        path = getattr(settings, name).split(".")
-        name = name.split("SERVICE_BRIDGE_REF_")[1].lower()
-        print("loading", path, "for", name)
-        if not path or len(path) < 2:
-            BRIDGE_MAP[name] = None
-            continue
-        bridge = getattr(import_module(".".join(path[:-1])), path[-1])
-        BRIDGE_MAP[name] = bridge
 
 
 class ReferencedObject:
@@ -44,11 +29,12 @@ class ReferencedObject:
 
         return self.bridge().api_url(self.id)
 
-    def __init__(self, bridge, id, remote_lookup="id"):
+    def __init__(self, bridge, id, remote_lookup="id", services=None):
         self.bridge = bridge
         self.remote_lookup = remote_lookup
         self.id = id
         self.source = None
+        self.services = services
 
     def __repr__(self):
         return f"{self.bridge.__name__} {self.id}"
@@ -77,7 +63,6 @@ class ReferencedObject:
     def load(self):
         if not self.bridge:
             return None
-
         kwargs = {self.remote_lookup: self.id}
         bridge = self.bridge()
         self.source = f"{bridge.ref_tag}.{self.id}@{bridge.host}"
@@ -94,21 +79,33 @@ class ReferencedObjectFieldMixin:
     base_type = int
 
     def __init__(
-        self, bridge=None, remote_lookup="id", bridge_type=None, *args, **kwargs
+        self,
+        bridge=None,
+        remote_lookup="id",
+        bridge_type=None,
+        services=None,
+        *args,
+        **kwargs,
     ):
         if bridge and bridge_type:
             raise AttributeError("Cannot specify both bridge and bridge_type")
 
-        if bridge_type:
-            try:
-                bridge = BRIDGE_MAP[bridge_type]
-            except KeyError:
-                raise KeyError(
-                    f"settings.SERVICE_BRIDGE_REF_{bridge_type.upper} not set"
-                )
+        if not services:
+            services = []
+
+        def get_bridge():
+
+            if bridge:
+                return bridge()
+
+            ctx = service_bridge_context.get()
+            cls = ctx.get_best_bridge_cls(*services)
+            return cls()
 
         self.bridge_type = bridge_type
-        self.bridge = bridge
+        self.services = services
+        self.bridge_cls = bridge
+        self.bridge = get_bridge
         self.remote_lookup = remote_lookup
 
         super().__init__(*args, **kwargs)
@@ -119,7 +116,9 @@ class ReferencedObjectFieldMixin:
         if self.bridge_type:
             kwargs["bridge_type"] = self.bridge_type
         else:
-            kwargs["bridge"] = self.bridge
+            kwargs["bridge"] = self.bridge_cls
+
+        kwargs["services"] = self.services
 
         if self.remote_lookup != "id":
             kwargs["remote_lookup"] = self.remote_lookup
@@ -130,7 +129,7 @@ class ReferencedObjectFieldMixin:
         if value is None:
             return None
 
-        return ReferencedObject(self.bridge, value, self.remote_lookup)
+        return ReferencedObject(self.bridge, value, self.remote_lookup, self.services)
 
     def to_python(self, value):
         if value is None:
@@ -139,7 +138,7 @@ class ReferencedObjectFieldMixin:
         if isinstance(value, ReferencedObject):
             return value
 
-        return ReferencedObject(self.bridge, value, self.remote_lookup)
+        return ReferencedObject(self.bridge, value, self.remote_lookup, self.services)
 
     def get_prep_value(self, value):
         if value is None:
