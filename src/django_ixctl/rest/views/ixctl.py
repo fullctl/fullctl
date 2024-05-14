@@ -17,7 +17,7 @@ import django_ixctl.models as models
 import django_ixctl.rest.filters as filters
 from django_ixctl.rest.decorators import grainy_endpoint
 from django_ixctl.rest.route.ixctl import route
-from django_ixctl.rest.serializers.ixctl import Serializers
+from django_ixctl.rest.serializers.ixctl import Serializers, OperationalStatusSerializer
 
 
 class IxOrgQuerysetMixin:
@@ -454,6 +454,24 @@ class Routeserver(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet
         r = Response(Serializers.routeserver(instance=routeserver).data)
         routeserver.delete()
         return r
+    
+    @action(detail=True, methods=["POST"])
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @load_object("routeserver", models.Routeserver, ix="ix", id="routeserver_id")
+    @grainy_endpoint(namespace="routeserver.{request.org.permission_id}.{ix.pk}.{routeserver_id}",)
+    def operational_status(self, request, org, instance, ix, routeserver, *args, **kwargs):
+        serializer = OperationalStatusSerializer(data=request.data)
+        if serializer.is_valid():
+            operational_status = serializer.validated_data.get('operational_status')
+            routeserver.operational_status = operational_status
+            routeserver.save()
+            serializer = Serializers.routeserver(
+                instance=routeserver,
+                many=False,
+            )
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors, status=400)
 
 
 @route

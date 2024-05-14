@@ -1,11 +1,13 @@
 from django.conf import settings
 from django.http import Http404, HttpResponse
+from django.db.models import Prefetch
 from django.shortcuts import redirect, render
 from fullctl.django.decorators import load_instance, require_auth
 
 import django_ixctl.exporters.ixf
 from django_ixctl.context_processors import check_trial_available
-from django_ixctl.models import InternetExchange
+from django_ixctl.models import InternetExchange, Routeserver
+from django_ixctl.rest.decorators import require_auth_ix, load_instance_ix
 
 # Create your views here.
 
@@ -28,11 +30,14 @@ def view_instance(request, instance, **kwargs):
     return render(request, "theme-select.html", env)
 
 
-@require_auth()
-@load_instance()
+@require_auth_ix()
+@load_instance_ix()
 def view_instance_load_ix(request, instance, ix_tag, **kwargs):
     try:
-        ix = InternetExchange.objects.get(instance=instance, slug=ix_tag)
+        ix = InternetExchange.objects.prefetch_related(
+            'member_set',
+            Prefetch('rs_set', queryset=Routeserver.objects.select_related('routeserverconfig').all())
+        ).get(instance=instance, slug=ix_tag)
     except InternetExchange.DoesNotExist:
         raise Http404
 
@@ -40,8 +45,26 @@ def view_instance_load_ix(request, instance, ix_tag, **kwargs):
     env["select_ix"] = ix
     env.update(check_trial_available(request.org.slug, ix.slug))
 
+    if ix.public_view and not request.user.is_authenticated:
+        return render(request, "ixctl/v2/tool/information/public_main.html", env)
     return render(request, "theme-select.html", env)
 
+
+@require_auth()
+@load_instance()
+def public_view_redirect(request, instance, ix_tag, **kwargs):
+    try:
+        ix = InternetExchange.objects.prefetch_related(
+            'member_set',
+            Prefetch('rs_set', queryset=Routeserver.objects.select_related('routeserverconfig').all())
+        ).get(instance=instance, slug=ix_tag)
+    except InternetExchange.DoesNotExist:
+        raise Http404
+
+    env = make_env(request, instance=instance, org=instance.org)
+    env["select_ix"] = ix
+
+    return render(request, "ixctl/v2/tool/information/public_main.html", env)
 
 @require_auth()
 def org_redirect(request):

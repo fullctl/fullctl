@@ -15,6 +15,17 @@ $(fullctl.application).on("initialized", function(e, ixctl, id) {
   ixctl.preselect_ix = {{ select_ix.id }};
 });
 {% endif %}
+
+$(document).ready(function() {
+
+  var public_view_share = document.getElementById('public-view-share');
+  public_view_share.value = window.location.href;
+  var text_length = public_view_share.value.length;
+
+  var width = text_length * 8;
+  public_view_share.style.width = width + 'px';
+
+});
 </script>
 {% endblock %}
 
@@ -27,6 +38,7 @@ $(fullctl.application).on("initialized", function(e, ixctl, id) {
 
 {% block "header_middle" %}
 <div class="app-pages-nav | nav h-100" data-component="pages">
+  {% if request.user.is_authenticated %}
     <a class="nav-link active"
       id="tab-overview"
       data-bs-toggle="tab"
@@ -67,6 +79,27 @@ $(fullctl.application).on("initialized", function(e, ixctl, id) {
       aria-selected="false"
       id="traffic-tab"
       href="#traffic">{% trans "Traffic" %}</a>
+
+      <a class="nav-link"
+      data-bs-toggle="tab"
+      role="tab"
+      aria-controls="information"
+      aria-selected="false"
+      id="information-tab"
+      href="#information">{% trans "Information" %}</a>
+  {% else %}    
+    {% if select_ix.public_view %}
+      <a class="nav-link"
+      data-bs-toggle="tab"
+      role="tab"
+      aria-controls="information"
+      aria-selected="false"
+      id="information-tab"
+      href="#information">{% trans "Information" %}</a>
+    {% else %}
+      <span></span>
+    {% endif %}
+  {% endif %}
 </div>
 {% endblock %}
 
@@ -203,6 +236,10 @@ $(fullctl.application).on("initialized", function(e, ixctl, id) {
 
   <div class="tab-pane" id="traffic" role="tabpanel" aria-labelledby="tab-traffic">
     {% include "ixctl/v2/tool/traffic/main.html" %}
+  </div>
+
+  <div class="tab-pane" id="information" role="tabpanel" aria-labelledby="tab-information">
+    {% include "ixctl/v2/tool/information/main.html" %}
   </div>
 </div>
 

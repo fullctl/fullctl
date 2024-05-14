@@ -1,0 +1,79 @@
+{% load static i18n %}
+{% load helpers %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{% static "ixctl/v2/ixctl.css" %}" />
+
+    <title>{{org.name}} / {{select_ix.name}}</title>
+
+</head>
+<body class="body-public">
+    <div class="main_container">
+        <header class="container-fluid">
+            <div class="row header m-0" data-component="header">
+                <div>
+                    {% if org_branding.dark_logo_url %}
+                        <img class="app-logo" src="{{ service_logo_dark}}" alt="{{ logo_alt_text }}">
+                    {% else %}
+                        <img class="app-logo" src="{% static "ixctl/logo-darkbg.svg" %}" alt="ixctl" width="120" height="32">
+                    {% endif %}
+
+                </div>
+            </div>
+        </header>
+        <div>
+            <div class="container">
+                <div class="row">
+                    <div>
+
+                        <br>
+                        <br>
+                        <h4 style="font-size: 16px;color: white;">Participants</h4>
+                        <div class="shaded-box">
+                            <table>
+                                <tr>
+                                    <th><b>Name</b></th>
+                                    <th><b>ASN</b></th>
+                                    <th><b>IPv4</b></th>
+                                    <th><b>IPv6</b></th>
+                                    <th><b>Speed</b></th>
+                                </tr>
+                                {% for member in select_ix.member_set.all %}
+                                <tr>
+                                    <td>{{member.name}}</td>
+                                    <td>{{member.asn}}</td>
+                                    <td>{{member.ipaddr4}}</td>
+                                    <td>{{member.ipaddr6}}</td>
+                                    <td>{{member.speed}}</td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                        <!-- {% block "app_content_main" %}{% endblock %} -->
+                        <div>
+                            {% for route_server in select_ix.rs_set.all %}
+                                <br>
+                                <br>
+                                <h6 style="font-size: 16px;color: white;">Route Server Markdown: {{route_server.name}}</h6>
+                                <div class="shaded-box">
+                                    {{ route_server.routeserverconfig.doc_md|render_markdown }}
+                                </div>
+                                <br>
+                                <div class="shaded-box">
+                                    <u><b><h4>Notes</h4></b></u>
+                                    {{ route_server.ix.notes|render_markdown }}
+                                </div>
+                                
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

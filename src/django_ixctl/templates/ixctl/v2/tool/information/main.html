@@ -1,0 +1,50 @@
+{% load static i18n %}
+{% load helpers %}
+<div class="tool shift-down" data-component="information">
+    <div>
+        <u><a id="public-view-link" style="color: var(--clr-accent-400);" href="public/information" target="_blank">Click to View Public Portal View Page</a></u>
+        <small style="font-size: smaller;">(Open link in new tab)</small>
+    </div>
+    <div>
+        Share Public Information View Link: <input type="text" name="" id="public-view-share" style="background-color: white;color: black;">
+    </div>
+    <br>
+    <br>
+    <h4>Participants</h4>
+    <div class="shaded-box">
+        <table>
+            <tr>
+                <th><b>Name</b></th>
+                <th><b>ASN</b></th>
+                <th><b>IPv4</b></th>
+                <th><b>IPv6</b></th>
+                <th><b>Speed</b></th>
+            </tr>
+            {% for member in select_ix.member_set.all %}
+            <tr>
+                <td>{{member.name}}</td>
+                <td>{{member.asn}}</td>
+                <td>{{member.ipaddr4}}</td>
+                <td>{{member.ipaddr6}}</td>
+                <td>{{member.speed}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+
+    {% for route_server in select_ix.rs_set.all %}
+        <br>
+        <br>
+        <h4>Route Server Markdown: {{route_server.name}}</h4>
+        <div class="shaded-box">
+            {{ route_server.routeserverconfig.doc_md|render_markdown }}
+        </div>
+        <br>
+        <div class="shaded-box">
+            <u><b><h4>Notes</h4></b></u>
+            {{ route_server.ix.notes|render_markdown }}
+        </div>
+        
+    {% endfor %}
+</div>

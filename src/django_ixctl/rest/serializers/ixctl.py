@@ -143,8 +143,8 @@ class InternetExchange(ModelSerializer):
             "slug",
             "source_of_truth",
             "verified",
-            "mtu",
-            "vlan_id",
+            "notes",
+            "public_view",
         ]
 
         read_only_fields = [
@@ -290,6 +290,7 @@ class Routeserver(ModelSerializer):
     router_id = IPAddressField(
         version=4,
     )
+    operational_status = serializers.CharField(read_only=True)
 
     class Meta:
         model = models.Routeserver
@@ -300,6 +301,7 @@ class Routeserver(ModelSerializer):
             "display_name",
             "asn",
             "router_id",
+            "operational_status",
             "ars_type",
             "max_as_path_length",
             "no_export_action",
@@ -311,6 +313,7 @@ class Routeserver(ModelSerializer):
             "routeserver_config_response",
             "routeserver_config_error",
         ]
+
 
     def validate_extra_config(self, value):
         try:
@@ -434,3 +437,12 @@ class NetworkPresence(InternetExchangeMember):
 
     def get_access_pending(self, obj):
         return self.permrequest.get(obj.org.id, False)
+
+
+class OperationalStatusSerializer(serializers.Serializer):
+    operational_status = serializers.CharField()
+
+    class Meta:
+        fields = [
+            "operational_status"
+        ]

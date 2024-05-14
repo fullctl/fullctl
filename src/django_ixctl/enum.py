@@ -32,3 +32,9 @@ IXF_EXPORT_PRIVACY_TYPES = (
     ("public", _("IX-F export feed is public")),
     ("private", _("IX-F export feed requires secret key to view")),
 )
+
+OPERATIONAL_STATUS_CHOICES = (
+    ("operational", _("Operational")),
+    ("maintenance",_('Maintenance')),
+    ("down",_('Down')),
+)
