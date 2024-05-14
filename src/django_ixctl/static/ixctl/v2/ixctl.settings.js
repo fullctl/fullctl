@@ -67,6 +67,9 @@ $ctl.application.Ixctl.Settings = $tc.extend(
       form.format_request_url = this.format_request_url;
       form.fill(ix);
 
+      var information_public_view = $(`#public_view`);
+      information_public_view.val(ix.public_view.toString());
+
       $(form).on("api-write:success", ()=>{
         $ctl.ixctl.refresh().then(()=>{
           $ctl.ixctl.select_ix(ix.id);

@@ -8,3 +8,35 @@
   align-items: center;
   cursor: pointer;
 }
+
+
+.shaded-box {
+  background-color: white; /* Semi-transparent black background */
+  padding: 20px; /* Add some padding */
+  border-radius: 10px; /* Rounded corners */
+  color: black; /* Text color */
+  z-index: 9999; /* Ensure the box appears above other elements */
+}
+
+/* Style for the content inside the shaded box */
+.shaded-box-content {
+  /* Add styles for the content inside the shaded box */
+  /* Example styles: */
+  font-size: 18px;
+  text-align: center;
+}
+
+.body-public {
+ background-color: #191B22;
+ font-family: sans-serif;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+th, td {
+  border: 1px solid black;
+  padding: 8px;
+  text-align: left;
+}

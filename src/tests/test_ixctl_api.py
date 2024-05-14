@@ -512,3 +512,56 @@ def test_retrieve_routeserverconfig(db, pdb_data, account_objects):
         reverse("ixctl_api:config/routeserver-plain", args=(org.slug, ix.slug, rs.name))
     )
     assert response_plain.status_code == 200
+
+
+def test_set_operational_status_for_routeserver(db, pdb_data, account_objects):
+    ix = account_objects.ix
+    rs = account_objects.routeserver
+    client = account_objects.api_client
+    org = account_objects.org
+
+    routeserver = models.Routeserver.objects.filter(id=rs.id).first()
+    assert routeserver.operational_status == "operational"
+
+    payload = {"operational_status": "down"}
+
+    response = client.post(
+        reverse("ixctl_api:routeserver-operational-status", args=(org.slug, ix.slug, rs.id)),
+        json.dumps(payload),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()["data"]
+    assert len(data) == 1
+    assert data[0]["operational_status"] == "down"
+
+    # Changes are persisted to db
+    routeserver = models.Routeserver.objects.filter(id=rs.id).first()
+    assert routeserver.operational_status == "down"
+
+
+def test_send_empty_operational_status_object(db, pdb_data, account_objects):
+    ix = account_objects.ix
+    rs = account_objects.routeserver
+    client = account_objects.api_client
+    org = account_objects.org
+
+    routeserver = models.Routeserver.objects.filter(id=rs.id).first()
+    assert routeserver.operational_status == "operational"
+
+    payload = {} # empty payload with operational_status key
+
+    response = client.post(
+        reverse("ixctl_api:routeserver-operational-status", args=(org.slug, ix.slug, rs.id)),
+        json.dumps(payload),
+        content_type="application/json",
+    )
+    print(response.json())
+    assert response.status_code == 400
+    assert response.json()["errors"]["operational_status"] == ['This field is required.']
+
+    # Changes are persisted to db
+    routeserver = models.Routeserver.objects.filter(id=rs.id).first()
+    assert routeserver.operational_status == "operational"

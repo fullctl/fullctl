@@ -37,6 +37,27 @@
           </span>
         </div>
         <div data-api-submit="yes">
+          <label class="form-label" for="edit_ix_notes">{% trans "Notes" %}:</label>
+          <textarea
+            type="text"
+            rows="10"
+            class="form-control mb-3"
+            name="notes"
+            id="edit_ix_notes"
+            placeholder="Supports Markdown Text">
+          </textarea>
+        </div>
+        <div data-api-submit="yes">
+          <label class="form-label" for="public_view">{% trans "Information Tab: Public View" %}</label>
+          <span class="modal-control">
+            <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+            <select class="form-control mb-3" id="public_view" name="public_view">
+              <option value="true" selected>{% trans "Anyone can view" %}</option>
+              <option value="false">{% trans "Only authenticated users can view" %}</option>
+            <select>
+          </span>
+        </div>
+        <div data-api-submit="yes">
           <label class="form-label" for="urlkey">{% trans "Secret Key" %}*</label>
           <input
             type="text"

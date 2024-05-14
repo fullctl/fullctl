@@ -22,6 +22,20 @@
           name="slug"
           id="edit_ix_slug">
         </input>
+        <label class="form-label" for="edit_ix_notes">{% trans "Notes" %}:</label>
+        <input
+          type="text"
+          class="form-control mb-3"
+          name="notes"
+          id="edit_ix_notes">
+        </input>
+        <label class="form-label" for="edit_ix_public_view">{% trans "Public View" %}:</label>
+        <input
+          type="checkbox"
+          class="form-control mb-3"
+          name="public_view"
+          id="edit_ix_public_view">
+        </input>
         <label class="form-label" for="ixf_export_privacy">{% trans "IX-F Export Privacy Setting" %}</label>
         <span class="modal-control">
           <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">

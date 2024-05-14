@@ -145,6 +145,7 @@ class AccountObjects:
             "rpki_bgp_origin_validation": False,
             "ars_type": "bird",
             "max_as_path_length": 32,
+            "operational_status": "operational",
         }
         if not hasattr(self, "_rs"):
             self._rs = Routeserver.objects.create(**kwargs)
