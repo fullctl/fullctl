@@ -143,6 +143,8 @@ class InternetExchange(ModelSerializer):
             "slug",
             "source_of_truth",
             "verified",
+            "mtu",
+            "vlan_id",
             "notes",
             "public_view",
         ]

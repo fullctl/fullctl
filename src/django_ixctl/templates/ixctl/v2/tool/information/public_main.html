@@ -58,16 +58,19 @@
                             {% for route_server in select_ix.rs_set.all %}
                                 <br>
                                 <br>
+                                {% if route_server.routeserverconfig.doc_md %}
                                 <h6 style="font-size: 16px;color: white;">Route Server Markdown: {{route_server.name}}</h6>
                                 <div class="shaded-box">
                                     {{ route_server.routeserverconfig.doc_md|render_markdown }}
                                 </div>
+                                {% endif %}
                                 <br>
+                                {% if route_server.ix.notes %}
                                 <div class="shaded-box">
                                     <u><b><h4>Notes</h4></b></u>
                                     {{ route_server.ix.notes|render_markdown }}
                                 </div>
-                                
+                                {% endif %}
                             {% endfor %}
                         </div>
                     </div>
