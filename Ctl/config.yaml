@@ -79,7 +79,7 @@ ctl:
 
     # version
 
-    - type: version
+    - type: semver2
       name: version
       config:
         repository: git
