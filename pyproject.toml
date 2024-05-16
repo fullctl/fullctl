@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "aaactl"
 repository = "https://github.com/fullctl/aaactl"
-version = "1.5.0-rc.8"
+version = "1.6.0-rc.1"
 description = "authentication, authorization, and accounting for fullctl"
 authors = ["20C <code@20c.com>"]
 license = "Apache-2.0"

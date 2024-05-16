@@ -122,6 +122,8 @@ BILLING_DEFAULT_CURRENCY = "USD"
 # Auth
 
 AUTHENTICATION_BACKENDS = [
+    # add to support unix crypt
+    # "django_aaactl.backends.UnixCryptBackend",
     "account.backends.EmailOrUsernameModelBackend",
     "django_grainy.backends.GrainyBackend",
 ]
