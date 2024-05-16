@@ -10,4 +10,5 @@
 .pytest-cache
 Ctl/.state/
 Ctl/dev/.env
+Ctl/fci/
 build/
