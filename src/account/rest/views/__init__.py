@@ -578,6 +578,17 @@ class Organization(viewsets.ViewSet):
         serializer = Serializers.auth_federation(auth.auth, many=False, context=ctx)
         return Response(serializer.data)
 
+    @action(detail=True, methods=["POST"])
+    @set_org
+    @auditlog()
+    @grainy_endpoint("org.{org.id}")
+    def regenerate_federated_auth(self, request, pk, org, auditlog=None):
+        auth = federation_models.AuthFederation.objects.get(org=org)
+        info = auth.new_client_secret()
+        ctx = {"client_secret": info.client_secret}
+        serializer = Serializers.auth_federation(auth, many=False, context=ctx)
+        return Response(serializer.data)
+
     @action(detail=True, methods=["GET"])
     @set_org
     @grainy_endpoint("org.{org.id}")
@@ -594,6 +605,26 @@ class Organization(viewsets.ViewSet):
         auth = federation_models.AuthFederation.objects.get(org=org)
         serializer = Serializers.add_federated_service_url(
             data=request.data, many=False, context={"auth": auth}
+        )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+        serializer.save()
+        return Response(serializer.data)
+
+    @action(
+        detail=True,
+        methods=["PUT"],
+        url_path="update_federated_service_url/(?P<url_pk>[^/.]+)",
+    )
+    @set_org
+    @auditlog()
+    @grainy_endpoint("org.{org.id}")
+    def update_federated_service_url(self, request, pk, url_pk, org, auditlog=None):
+        url = federation_models.FederatedServiceURL.objects.get(
+            id=url_pk, auth__org=org
+        )
+        serializer = Serializers.federated_service_url(
+            instance=url, data=request.data, many=False
         )
         if not serializer.is_valid():
             return Response(serializer.errors, status=400)

@@ -270,6 +270,14 @@ $ctl.application.FederatedServiceURLsList = twentyc.cls.define(
       this.elements.federation_auth_setup_btn = $('[data-element="federation_auth_setup_btn"]');
       this.elements.federation_auth_client_id = $('[data-element="federation_client_id_container"]');
 
+      this.elements.federation_generate_client_secret = $('[data-element="federation_generate_client_secret"]');
+
+      this.elements.federation_generate_client_secret.click(() => {
+        this.federation_auth_setup(true);
+      })
+
+
+
       this.rest_api_list = new twentyc.rest.List(this.elements.listing);
 
       this.elements.federation_auth_setup_btn.on("click", () => {
@@ -279,6 +287,13 @@ $ctl.application.FederatedServiceURLsList = twentyc.cls.define(
       this.elements.add_service_url_btn.on("click", () => {
         new $ctl.application.ModalServiceUrl();
       });
+
+      this.rest_api_list.formatters.row = function(row, data) {
+        // wire edit button 
+        row.find('[data-action="edit"]').on("click", function() {
+          new $ctl.application.ModalServiceUrl(data);
+        });
+      }
 
       this.sync();
     },
@@ -310,8 +325,8 @@ $ctl.application.FederatedServiceURLsList = twentyc.cls.define(
       this.elements.federation_auth_client_id.show();
     },
 
-    federation_auth_setup : function() {
-      new $ctl.application.ModalFederationAuthSetup();
+    federation_auth_setup : function(regenerate) {
+      new $ctl.application.ModalFederationAuthSetup(regenerate);
     },
 
     sync : function() {
@@ -332,11 +347,18 @@ $ctl.application.FederatedServiceURLsList = twentyc.cls.define(
 $ctl.application.ModalFederationAuthSetup = $tc.extend(
   "ModalFederationAuthSetup",
   {
-    ModalFederationAuthSetup : function() {
-      this.Modal("continue_center", "Contine with Oauth Set-up?", $ctl.template("federation_auth_step1_modal_content"));
+    ModalFederationAuthSetup : function(regenerate) {
+      let template;
+      if(regenerate) {
+        template = "federation_auth_step1_modal_content_regenerate"
+      } else {
+        template = "federation_auth_step1_modal_content"
+      }
+
+      this.Modal("continue_center", "Contine with Oauth Set-up?", $ctl.template(template));
       this.$e.button_submit.on("click", () => {
         this.hide();
-        new $ctl.application.ModalFederationAuthSetupStep2();
+        new $ctl.application.ModalFederationAuthSetupStep2(regenerate);
       });
     }
   },
@@ -354,7 +376,7 @@ $ctl.application.ModalFederationAuthSetup = $tc.extend(
 $ctl.application.ModalFederationAuthSetupStep2 = $tc.extend(
   "ModalFederationAuthSetupStep2",
   {
-    ModalFederationAuthSetupStep2 : function() {
+    ModalFederationAuthSetupStep2 : function(regenerate) {
       this.Modal("no_button_center", "Oauth Client Secret", $ctl.template("federation_auth_step2_modal_content"));
       const code_container = this.$e.body.find('[data-element="oauth_code_container"]');
       const copy_oauth_code_btn = this.$e.body.find('[data-element="copy_oauth_code_btn"]');
@@ -363,7 +385,15 @@ $ctl.application.ModalFederationAuthSetupStep2 = $tc.extend(
       $(code_container_widget).on("api-write:success", (e, data, method, response) => {
         code_container.text(response.content.data[0].client_secret);
       });
-      code_container_widget.post(code_container.data('api-action'));
+
+     
+      let apiAction;
+      if(regenerate) {
+        apiAction = code_container.data("api-action-regenerate")
+      } else {
+        apiAction = code_container.data("api-action")
+      }
+      code_container_widget.post(apiAction);
 
       copy_oauth_code_btn.on("click", () => {
         // copy the code_container text to clipboard using clipboard api
@@ -397,6 +427,21 @@ $ctl.application.ModalServiceUrl = $tc.extend(
         $ctl.template("form_service_url")
       );
 
+      if(data && data.id) {
+        form.method = "PUT"
+      } else {
+        form.method = "POST"
+      }
+
+      form.format_request_url = (url, method) => {
+        // if method is PUT replace with form.element.data('api-update')
+        console.log({url, method, data})
+        if (method.toUpperCase() == "PUT" && data) {
+          return form.element.data('api-update').replace("/0/", `/${data.id}/`)
+        }
+        return url;
+      }
+
       const select = new twentyc.rest.Select(this.form.element.find('#service_url_service'))
       select.load();
 
@@ -407,7 +452,7 @@ $ctl.application.ModalServiceUrl = $tc.extend(
 
       form.fill(data)
 
-      this.Modal("save_right", title, form.element);
+      this.Modal("save", title, form.element);
       form.wire_submit(this.$e.button_submit);
     }
   },

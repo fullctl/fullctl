@@ -7,13 +7,18 @@
 >
   <div class="templates" style="display:none">
     <table>
-    <tr data-template="row" class="large-table-row">
+    <tr data-template="row" class="large-table-row" data-api-submit="yes">
       <td scope="col" class="name-column table-text-bold dark-grey">
         <span data-field="service_name"></span>
       </td>
       <td scope="col" class="light-grey">
-        <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center" data-api-submit="yes">
           <span data-field="url"></span>
+          {% if  permissions.update_org_org %}
+          <a class="button btn m-1" data-action="edit">
+            <span class="icon icon-edit">Edit</span>
+          </a>
+          {% endif %}
         </div>
       </td>
       <td scope="col" class="manage-column right">
@@ -30,7 +35,7 @@
     </tbody>
   </table>
 </div>
-{% if permissions.create_org_org_key %}
+{% if permissions.update_org_org %}
   <div data-element="federation_auth_setup" style="display: none;">
     <div class="mb-2 text-center light-grey">
       Allow your self-hosted fullctl services to use <code>{{ request.META.HTTP_HOST }}</code> for authentication.
@@ -48,6 +53,9 @@
   <div data-element="federation_client_id_container">
     <div>
       Client ID: <span data-element="federation_auth_client_id"></span>
+    </div>
+    <div>
+      Client Secret: <a class="btn btn-manage btn-slim" data-element="federation_generate_client_secret">Generate new</a>
     </div>
     <div class="light-grey small fst-italic">
       *Please make sure to configure <code>OAUTH_TWENTYC_KEY</code> and <code>OAUTH_TWENTYC_SECRET</code> in the service.
@@ -69,11 +77,19 @@
   </div>
 
   <div
+    data-template="federation_auth_step1_modal_content_regenerate"
+  >
+    This will generate a new client secret for the organization. Make sure to copy it and store this secret securely as it will not be shown again. WARNING: your old secret will be invalidated.
+  </div>
+
+
+  <div
     data-template="federation_auth_step2_modal_content"
   >
     <div
       data-api-base="{% url "account_api:org-detail" pk=request.selected_org.slug %}"
       data-api-action="create_federated_auth"
+      data-api-action-regenerate="regenerate_federated_auth"
       data-element="oauth_code_container"
       class="text-break"
       style="min-height: 100px;"
@@ -88,6 +104,7 @@
   <form data-template="form_service_url"
     data-api-base="{% url "account_api:org-detail" pk=request.selected_org.slug %}"
     data-api-action="add_federated_service_url"
+    data-api-update="{% url "account_api:org-update-federated-service-url" pk=request.selected_org.slug url_pk=0 %}"
     data-api-method="POST"
     class="container-fluid"
     >
