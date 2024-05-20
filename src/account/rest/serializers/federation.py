@@ -25,6 +25,11 @@ class ServiceURLSerializer(serializers.ModelSerializer):
     def get_service_name(self, obj):
         return obj.service.name
 
+    def save(self, **kwargs):
+        result = super().save(**kwargs)
+        self.instance.auth.set_redirect_urls()
+        return result
+
 
 @register
 class AddServiceURLSerializer(serializers.Serializer):
