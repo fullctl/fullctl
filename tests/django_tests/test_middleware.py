@@ -27,18 +27,16 @@ class AutocompleteRequestPermsMiddlewareTest(SimpleTestCase):
             request.perms
 
     @override_settings(USE_LOCAL_PERMISSIONS=False)
+    @override_settings(GRAINY_REMOTE={"url_load": "grainy/load/"})
     def test_autocomplete_path(self):
         request = self.rf.get("/autocomplete/", HTTP_AUTHORIZATION="Bearer test")
 
-        with self.assertRaises(AttributeError) as e:
-            AutocompleteRequestPermsMiddleware(get_response_empty).process_view(
-                request, dummy_view, (), {}
-            )
-
-        self.assertIn(
-            "module 'django.conf.global_settings' has no attribute 'GRAINY_REMOTE'",
-            str(e.exception),
+        AutocompleteRequestPermsMiddleware(get_response_empty).process_view(
+            request, dummy_view, (), {}
         )
+
+        self.assertEqual(request.api_key, "test")
+        self.assertIsNotNone(request.perms)
 
     @override_settings(USE_LOCAL_PERMISSIONS=True)
     def test_autocomplete_path_local_perms(self):
