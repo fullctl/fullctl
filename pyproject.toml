@@ -56,7 +56,7 @@ pyuwsgi = ">=2.0.19"
 
 confu = ">=1.9"
 grainy = ">=1.8.1"
-psycopg = {extras = ["binary"], version = ">=3.1.8"}
+psycopg = {extras = ["binary"], version = ">=3.1.9"}
 # force update
 pyyaml = ">=5"
 munge = ">=1.3.0"
