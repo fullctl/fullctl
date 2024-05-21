@@ -49,6 +49,11 @@ class ServiceApplicationObject(AaactlEntity):
             self.org_namespace = self.grainy
         return self
 
+    def sanitize(self):
+        # config may contain sensitive information, so we remove it
+        delattr(self, "config")
+        return self
+
 
 class ServiceApplication(Aaactl):
     class Meta(Aaactl.Meta):
@@ -132,3 +137,13 @@ class ContactMessage(Aaactl):
 class OauthAccessToken(Aaactl):
     class Meta(Aaactl.Meta):
         ref_tag = "oauth_access_token"
+
+
+class OrganizationBrandingObject(AaactlEntity):
+    description = "Aaactl OrganizationBranding"
+
+
+class OrganizationBranding(Aaactl):
+    class Meta(Aaactl.Meta):
+        ref_tag = "org_branding"
+        data_object_cls = OrganizationBrandingObject
