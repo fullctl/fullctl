@@ -29,6 +29,18 @@
 .body-public {
  background-color: #191B22;
  font-family: sans-serif;
+ --heading-color: white;
+}
+
+body.light-theme {
+ background-color: #E5E5E5;
+ font-family: sans-serif;
+ --heading-color: black;
+}
+
+h4, h6 {
+  color: var(--heading-color);
+  transition: color 0.3s;
 }
 
 table {
@@ -39,4 +51,18 @@ th, td {
   border: 1px solid black;
   padding: 8px;
   text-align: left;
+}
+
+span.icon-theme-switcher {
+  background: url(icons/theme-switcher.svg);
+}
+
+span.icon {
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+span.icon-lg {
+  width: 32px;
+  height: 32px;
 }
