@@ -165,7 +165,6 @@ class Command(CommandInterface):
                 await asyncio.sleep(3)
             except Exception as exc:
                 log.exception("Error polling tasks", exc=exc)
-                await self.handle_task_setup_error(exc, task)
 
     async def _progress_schedules(self):
         while True:
