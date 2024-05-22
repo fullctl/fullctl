@@ -157,6 +157,8 @@ class SettingsManager(confu.util.SettingsManager):
         self.set_bool("EMAIL_USE_TLS", True)
         self.set_option("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 
+        self.set_list("CORS_ALLOWED_ORIGINS", [], envvar_element_type=str)
+
         # Application definition
 
         INSTALLED_APPS = [
@@ -236,6 +238,7 @@ class SettingsManager(confu.util.SettingsManager):
         MIDDLEWARE = self.get("MIDDLEWARE")
 
         MIDDLEWARE += [
+            "fullctl.django.middleware.AutocompleteRequestPermsMiddleware",
             "django_structlog.middlewares.RequestMiddleware",
         ]
 
