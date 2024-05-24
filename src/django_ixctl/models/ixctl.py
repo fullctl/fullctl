@@ -1017,8 +1017,11 @@ class RouteserverConfig(HandleRefModel):
         if ars_type == "bird":
             extra_params += ["--ip-ver", "4"]
         elif ars_type == "bird2":
+            ars_type = "bird"
             extra_params += ["--target-version", "2.0.10"] 
         
+        # no reasonable way found to call an arouteserver
+        # python api - so lets just run the command
         self.run_ars_command(
             ars_type,
             general_config_file,
@@ -1057,15 +1060,8 @@ class RouteserverConfig(HandleRefModel):
             self.ars_clients = as_yaml
             fh.write(as_yaml)
 
-        # no reasonable way found to call an arouteserver
-        # python api - so lets just run the command
-        if routeserver.ars_type in ["bird", "bird2"]:
-            ars_type = "bird"
-        else:
-            ars_type = routeserver.ars_type
-
         # generate device config
-        self.generate_config(ars_type, general_config_file, clients_config_file, outfile_config)
+        self.generate_config(routeserver.ars_type, general_config_file, clients_config_file, outfile_config)
 
         # generate markdown
         self.generate_markdown(general_config_file, clients_config_file, outfile_md)
