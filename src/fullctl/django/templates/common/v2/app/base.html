@@ -55,9 +55,13 @@ var True = true, False = false;
 fullctl.permissions = {{ permissions|safe }}
 
 const root = document.documentElement;
-const primaryColorValue = "{{ org_branding.css.primary_color }}"
+const primaryColorValue = "{{ org_branding.css.primary_color }}";
+const setHeaderColor = "{{ org_branding.css.set_header_color }}";
 if (primaryColorValue) {
   root.style.setProperty('--clr-accent-400', primaryColorValue);
+  if(setHeaderColor){
+    root.style.setProperty('--header-bg', primaryColorValue);
+  }
 }
 
 const default_data_theme = "{{ org_branding.css.default_data_theme }}"
