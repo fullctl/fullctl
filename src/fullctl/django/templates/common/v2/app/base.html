@@ -60,12 +60,23 @@ if (primaryColorValue) {
   root.style.setProperty('--clr-accent-400', primaryColorValue);
 }
 
+const default_data_theme = "{{ org_branding.css.default_data_theme }}"
+if (default_data_theme) {
+  root.setAttribute('data-theme', default_data_theme);
+  localStorage.setItem('theme', default_data_theme);
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     var appLogo = document.querySelector(".app-logo");
     if (appLogo) {
         logo_width = "{{ org_branding.css.logo_width }}"
         if (logo_width) {
           appLogo.setAttribute("width", logo_width);
+        }
+
+        logo_height = "{{ org_branding.css.logo_height }}"
+        if (logo_height) {
+          appLogo.style.height = logo_height;
         }
     }
 });
