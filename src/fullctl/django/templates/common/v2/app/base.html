@@ -54,12 +54,16 @@ var True = true, False = false;
 
 fullctl.permissions = {{ permissions|safe }}
 
+function parseBoolean(str) {
+  return str.toLowerCase() === 'false' ? false : true;
+}
+
 const root = document.documentElement;
 const primaryColorValue = "{{ org_branding.css.primary_color }}";
 const setHeaderColor = "{{ org_branding.css.set_header_color }}";
 if (primaryColorValue) {
   root.style.setProperty('--clr-accent-400', primaryColorValue);
-  if(setHeaderColor){
+  if(parseBoolean(setHeaderColor)){
     root.style.setProperty('--header-bg', primaryColorValue);
   }
 }
