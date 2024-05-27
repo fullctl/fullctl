@@ -5,10 +5,18 @@
 {{ block.super }}
 <script type="text/javascript" src="{% static "account/aaactl.org_dashboard.js" %}"></script>
 <script>
+  function parseBoolean(str) {
+    return str.toLowerCase() === 'false' ? false : true;
+  }
+
   const root = document.documentElement;
   const primaryColorValue = "{{ org_branding.css.primary_color }}"
+  const setHeaderColor = "{{ org_branding.css.set_header_color }}";
   if (primaryColorValue) {
     root.style.setProperty('--clr-accent-400', primaryColorValue);
+    if(parseBoolean(setHeaderColor)){
+      root.style.setProperty('--header-bg', primaryColorValue);
+    }
   }
 
   const default_data_theme = "{{ org_branding.css.default_data_theme }}"
