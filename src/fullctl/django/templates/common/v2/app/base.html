@@ -68,6 +68,11 @@ if (primaryColorValue) {
   }
 }
 
+const button_text_color = "{{ org_branding.css.button_text_color }}"
+if (button_text_color) {
+  root.style.setProperty('--primary-btn-clr', button_text_color);
+}
+
 const default_data_theme = "{{ org_branding.css.default_data_theme }}"
 if (default_data_theme) {
   root.setAttribute('data-theme', default_data_theme);
