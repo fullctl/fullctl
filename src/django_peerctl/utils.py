@@ -98,7 +98,7 @@ def devicectl_create_devices(org, verified_asns):
                 networks[member.asn] = get_network(member.asn, org)
             except ASNClaimed:
                 continue
-
+        
         source, ip4, ip6, ix_id = port_components(member)
         device_id = f"{source}:{ix_id}"
 

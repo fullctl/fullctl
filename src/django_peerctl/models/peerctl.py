@@ -1583,9 +1583,9 @@ class Port(devicectl.Port):
 
                 pdb_ix_id = ix.pdb_id
 
-                if pdb_ix_id:
+                if pdb_ix_id and pdbctl_ix.get(pdb_ix_id):
                     mtu = pdbctl_ix[pdb_ix_id].mtu
-            else:
+            elif ixi_port.source == "pdbctl":
                 # port has SoT in pdbctl
 
                 ix = pdbctl_ix[ixi_port.remote_ix_id]

@@ -85,6 +85,9 @@ settings_manager.set_option("PDB_API_USERNAME", "")
 settings_manager.set_option("PDB_API_PASSWORD", "")
 settings_manager.set_option("PEERINGDB_URL", "https://www.peeringdb.com/")
 
+# Use pdbctl as source of truth for peers and exchanges?
+settings_manager.set_option("PDBCTL_SOT_IX", True)
+
 # add user defined iso code for Kosovo
 COUNTRIES_OVERRIDE = {
     "XK": "Kosovo",
