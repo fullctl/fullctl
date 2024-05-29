@@ -54,45 +54,17 @@ var True = true, False = false;
 
 fullctl.permissions = {{ permissions|safe }}
 
-function parseBoolean(str) {
-  return str.toLowerCase() === 'false' ? false : true;
-}
+// Apply color branding
+const primaryColorValue = "{{ org_branding.css.primary_color }}"; // color
+const setHeaderColor = "{{ org_branding.css.set_header_color }}"; // bool
+const buttonTextColor = "{{ org_branding.css.button_text_color }}"; // color
+const defaultDataTheme = "{{ org_branding.css.default_data_theme }}"; // light / dark
+applyColorBranding(primaryColorValue, setHeaderColor, buttonTextColor, defaultDataTheme);
 
-const root = document.documentElement;
-const primaryColorValue = "{{ org_branding.css.primary_color }}";
-const setHeaderColor = "{{ org_branding.css.set_header_color }}";
-if (primaryColorValue) {
-  root.style.setProperty('--clr-accent-400', primaryColorValue);
-  if(parseBoolean(setHeaderColor)){
-    root.style.setProperty('--header-bg', primaryColorValue);
-  }
-}
-
-const button_text_color = "{{ org_branding.css.button_text_color }}"
-if (button_text_color) {
-  root.style.setProperty('--primary-btn-clr', button_text_color);
-}
-
-const default_data_theme = "{{ org_branding.css.default_data_theme }}"
-if (default_data_theme) {
-  root.setAttribute('data-theme', default_data_theme);
-  localStorage.setItem('theme', default_data_theme);
-}
-
-document.addEventListener("DOMContentLoaded", function() {
-    var appLogo = document.querySelector(".app-logo");
-    if (appLogo) {
-        logo_width = "{{ org_branding.css.logo_width }}"
-        if (logo_width) {
-          appLogo.setAttribute("width", logo_width);
-        }
-
-        logo_height = "{{ org_branding.css.logo_height }}"
-        if (logo_height) {
-          appLogo.style.height = logo_height;
-        }
-    }
-});
+// Apply logo size branding
+const logo_width = "{{ org_branding.css.logo_width }}";
+const logo_height = "{{ org_branding.css.logo_height }}";
+applyLogoBranding(logo_width, logo_height)
 
 </script>
 
