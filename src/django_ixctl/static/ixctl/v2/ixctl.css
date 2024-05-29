@@ -32,12 +32,6 @@
  --heading-color: white;
 }
 
-body.light-theme {
- background-color: #E5E5E5;
- font-family: sans-serif;
- --heading-color: black;
-}
-
 h4, h6 {
   color: var(--heading-color);
   transition: color 0.3s;
