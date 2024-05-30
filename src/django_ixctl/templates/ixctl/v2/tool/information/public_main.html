@@ -7,8 +7,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="{% static "ixctl/v2/ixctl.css" %}" />
+    <link rel="stylesheet" type="text/css" href="{% static "common/v2/themes/light.css" %}" />
 
     <title>{{org.name}} / {{select_ix.name}}</title>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButton = document.getElementById('theme-toggle');
+            const logo = document.querySelector('.app-logo');
+
+            if (localStorage.getItem('theme') === 'light') {
+                document.body.classList.add('light-theme');
+                logo.src = logo.getAttribute('data-light');
+            } else {
+                logo.src = logo.getAttribute('data-dark');
+            }
+
+            toggleButton.addEventListener('click', function() {
+                document.body.classList.toggle('light-theme');
+
+                if (document.body.classList.contains('light-theme')) {
+                    localStorage.setItem('theme', 'light');
+                    logo.src = logo.getAttribute('data-light');
+                } else {
+                    localStorage.removeItem('theme');
+                    logo.src = logo.getAttribute('data-dark');
+                }
+            });
+        });
+    </script>
 
 </head>
 <body class="body-public">
@@ -17,7 +43,13 @@
             <div class="row header m-0" data-component="header">
                 <div>
                     {% if org_branding.dark_logo_url %}
-                        <img class="app-logo" src="{{ service_logo_dark}}" alt="{{ logo_alt_text }}">
+                        <img 
+                            class="app-logo" 
+                            src="{{ service_logo_dark}}" 
+                            alt="{{ logo_alt_text }}"
+                            data-dark="{{ service_logo_dark }}"
+                            data-light="{{ service_logo_light }}"
+                        >
                     {% else %}
                         <img class="app-logo" src="{% static "ixctl/logo-darkbg.svg" %}" alt="ixctl" width="120" height="32">
                     {% endif %}
@@ -32,7 +64,7 @@
 
                         <br>
                         <br>
-                        <h4 style="font-size: 16px;color: white;">Participants</h4>
+                        <h4 style="font-size: 16px;">Participants</h4>
                         <div class="shaded-box">
                             <table>
                                 <tr>
@@ -59,7 +91,7 @@
                                 <br>
                                 <br>
                                 {% if route_server.routeserverconfig.doc_md %}
-                                <h6 style="font-size: 16px;color: white;">Route Server Markdown: {{route_server.name}}</h6>
+                                <h6 style="font-size: 16px;">Route Server Markdown: {{route_server.name}}</h6>
                                 <div class="shaded-box">
                                     {{ route_server.routeserverconfig.doc_md|render_markdown }}
                                 </div>
@@ -77,6 +109,9 @@
                 </div>
             </div>
         </div>
+        <footer>
+            <span class="icon icon-lg icon-theme-switcher" id="theme-toggle"></span>
+        </footer>
     </div>
 </body>
 </html>
