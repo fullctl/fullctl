@@ -88,6 +88,10 @@ class Command(CommandInterface):
                 first_name=first_name,
                 last_name=last_name,
             )
+            if row.get("password", None):
+                user.password = row["password"]
+                user.save()
+
             self.stdout.write(self.style.SUCCESS(f"Created user {username}."))
 
         # Check if ASN exists
