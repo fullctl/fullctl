@@ -76,7 +76,9 @@
 
   <a class="nav-link col-auto" id="tab-account" data-bs-toggle="tab" role="tab" aria-controls="page-account" aria-selected="false" href="#page-account">{% trans "User Account" %}</a>
 
+  {% if permissions.read_org_billing %}
   <a class="nav-link col-auto" id="tab-billing" data-bs-toggle="tab" role="tab" aria-controls="page-billing" aria-selected="true" href="#page-billing">{% trans "Billing" %}</a>
+  {% endif %}
 
 </div>
 {% endblock %}
