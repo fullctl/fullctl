@@ -209,7 +209,7 @@ def register(request):
         if form.is_valid():
             try:
                 del form.cleaned_data["password_confirmation"]
-                # del form.cleaned_data["captcha"]
+                del form.cleaned_data["captcha"]
                 user = get_user_model().objects.create_user(**form.cleaned_data)
                 fn_login(request, user, backend="django_grainy.backends.GrainyBackend")
                 redirect_next = valid_redirect(
