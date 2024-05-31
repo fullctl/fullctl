@@ -124,3 +124,11 @@ def test_index(db, account_objects, client_anon):
 
     response = client_anon.get(reverse("account:controlpanel"))
     assert response.status_code == 302
+
+
+def test_index_with_branding_org_var_set(db, account_objects, settings):
+    settings.BRANDING_ORG = account_objects.org.slug
+    response = account_objects.client.get(reverse("account:controlpanel"))
+
+    assert response.status_code == 200
+    assert response.context["org_branding"]["name"] == account_objects.org.name

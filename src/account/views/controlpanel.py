@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
@@ -13,6 +14,8 @@ from whitelabel_fullctl.models import OrganizationBranding
 def index(request):
     env = {}
     user = request.user
+    branding_org = getattr(settings, "BRANDING_ORG", None)
+    org_branding_components = {}
 
     form = account.forms.ChangeInformation(
         user,
@@ -63,12 +66,21 @@ def index(request):
     ).first()
 
     if not org_branding:
-        org_branding_components = {
-            "name": "FullCtl",
-            "show_logo": json.dumps(True),
-        }
+        if branding_org:
+            org_branding = OrganizationBranding.objects.filter(
+                org__slug=branding_org
+            ).first()
+            if org_branding:
+                css_dict = org_branding.css
+        else:
+            org_branding_components.update({
+                "name": "FullCtl",
+                "show_logo": json.dumps(True),
+            })
     else:
         css_dict = org_branding.css
+
+    if not org_branding_components:
         org_branding_components = {
             "name": org_branding.org.name,
             "html_footer": org_branding.html_footer
