@@ -51,7 +51,7 @@ class UserSettings(forms.Form):
 class RegisterUser(UserInformationBase, forms.Form):
     password = forms.CharField(widget=forms.PasswordInput)
     password_confirmation = forms.CharField(widget=forms.PasswordInput)
-    captcha = ReCaptchaField()
+    # captcha = ReCaptchaField()
 
     def clean_password(self):
         password = self.cleaned_data["password"]
