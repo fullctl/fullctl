@@ -175,7 +175,6 @@ input[type="checkbox"].validation-error-indicator ~label {
 
 .header img.logo {
   max-height: 4rem;
-  padding: 0.5rem;
 }
 
 .header .app-switcher .selected > .app-logo {
