@@ -72,6 +72,11 @@ def index(request):
             ).first()
             if org_branding:
                 css_dict = org_branding.css
+            else:
+                org_branding_components.update({
+                    "name": "FullCtl",
+                    "show_logo": json.dumps(True),
+                })
         else:
             org_branding_components.update({
                 "name": "FullCtl",
