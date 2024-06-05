@@ -297,3 +297,5 @@ settings_manager.set_option("SERVICE_KEY", "")
 settings_manager.set_option("CONTACT_ALLOWED_ORIGINS", settings.exposed_list())
 
 settings_manager.set_option("BRANDING_ORG", "")
+
+settings_manager.set_option("SHOW_REGISTER_LINK", True)
