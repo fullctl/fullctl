@@ -40,6 +40,7 @@ def login(request):
     env = {}
     org_branding = {}
     branding_org = getattr(settings, "BRANDING_ORG", None)
+    show_register_link = getattr(settings, "SHOW_REGISTER_LINK", True)
     http_host = request.get_host()
     org_branding_components = {}
 
@@ -95,6 +96,7 @@ def login(request):
         login_form=form,
         password_login_enabled=settings.PASSWORD_LOGIN_ENABLED,
         org_branding=org_branding_components,
+        show_register_link=show_register_link,
     )
 
     return render(request, "account/auth/login.html", env)
@@ -139,6 +141,7 @@ def login_frontend(request):
     Will redirect to the frontend service with a JWT refresh token if the user is authenticated.
     """
     env = {}
+    show_register_link = getattr(settings, "SHOW_REGISTER_LINK", True)
 
     if request.user.is_authenticated:
         redirect_next = valid_frontend_redirect(
@@ -179,6 +182,7 @@ def login_frontend(request):
         login_form=form,
         password_login_enabled=settings.PASSWORD_LOGIN_ENABLED,
         login_form_action="account:auth-login-frontend",
+        show_register_link=show_register_link,
     )
 
     return render(request, "account/auth/login.html", env)
