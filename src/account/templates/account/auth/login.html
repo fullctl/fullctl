@@ -20,7 +20,7 @@
     <p>Explore our products by registering a free account.<br/><br/>
       Signing in from PeeringDB is preferred because it associates authorized ASNs with your account.
       <br/><br/>
-      <!-- <a href="{% url 'account:auth-register' %}?next={{ request.GET.next|urlencode }}">{% trans "Register New Account" %}</a> -->
+      <a href="{% url 'account:auth-register' %}?next={{ request.GET.next|urlencode }}">{% trans "Register New Account" %}</a>
     </p>
     <h4>{% trans "Login" %}</h4>
     <form method="POST" action="{% if login_form_action %}{% url login_form_action %} {% else %} {% url 'account:auth-login' %} {% endif %}">
