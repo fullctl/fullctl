@@ -2,6 +2,7 @@ import os.path
 import re
 import subprocess
 import tempfile
+import ipaddress
 from datetime import datetime
 from secrets import token_urlsafe
 
@@ -19,6 +20,7 @@ except ImportError:
 
 import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.pdbctl as pdbctl
+import fullctl.service_bridge.prefixctl as prefixctl
 import fullctl.service_bridge.sot as sot
 import reversion
 import structlog
@@ -387,6 +389,13 @@ class InternetExchangeMember(PdbRefModel):
     speed = models.PositiveIntegerField()
     asn = models.PositiveIntegerField()
     name = models.CharField(max_length=255, blank=True, null=True)
+    prefix_set = models.CharField(
+        null=True,
+        blank=True,
+        help_text=_(
+            "URI for accessing a prefixlist, currently prefixctl::$slug"
+        ),
+    )
 
     ixf_state = models.CharField(
         max_length=255, default="active", choices=django_ixctl.enum.MEMBER_STATE
@@ -567,6 +576,33 @@ class InternetExchangeMember(PdbRefModel):
 
         self._net = sot.Network().first(asn=self.asn)
         return self._net
+
+    @property
+    def prefix_set_source(self) -> str | None:
+        """
+        Returns the source of the prefix set if set (e.g., prefixctl)
+        None if not set
+
+        This seems redundant currently, since the only source
+        for prefix sets is prefixctl
+        """
+
+        if not self.prefix_set:
+            return None
+
+        return self.prefix_set.split("::")[0]
+
+    @property
+    def prefix_set_slug(self) -> str | None:
+        """
+        Returns the slug of the prefix set if set
+        None if not set
+        """
+
+        if not self.prefix_set:
+            return None
+
+        return self.prefix_set.split("::")[-1]
 
     def __str__(self):
         return f"AS{self.asn} - {self.ipaddr4} - {self.ipaddr6} ({self.id})"
@@ -813,11 +849,69 @@ class Routeserver(HandleRefModel):
         #                 "as_sets": get_as_set(net.irr_as_set)
         #             }
 
-        return {"asns": asn_as_sets, "clients": list(clients.values())}
+        ars_clients = {"asns": asn_as_sets, "clients": list(clients.values())}
+
+        self.configure_whitelist_routes(ars_clients)
+        return ars_clients
 
     def __str__(self):
         return f"Routeserver {self.name} AS{self.asn}"
 
+    def configure_whitelist_routes(self, ars_clients: dict):
+
+        """
+        Configures whitelist routes for clients
+
+        Excpects ars_clients to be the return value of `self.ars_clients` (arouteserver
+        clients config, containing the `clients` key)
+
+        See https://arouteserver.readthedocs.io/en/latest/CONFIG.html#white-lists
+        """
+
+        # load members with prefix sets and store by ASN
+        members = {
+            member.asn: member for member in self.ix.member_set.filter(prefix_set__isnull=False)
+        }
+
+        if not members:
+            return
+
+        # load prefix sets from prefixctl and store by slug
+        prefix_sets = {
+            prefix_set.slug: prefix_set for prefix_set in prefixctl.PrefixSet().objects(
+                org=self.org.slug,
+                slugs=[member.prefix_set_slug for member in members.values()]
+            )
+        }
+
+        for client in ars_clients["clients"]:
+            member = members.get(client["asn"])
+
+            if not member:
+                # member does not have a prefix set configured
+                continue
+
+            # ars_clients is built from members so we don't need
+            # to check if member exists
+
+            prefix_set = prefix_sets.get(member.prefix_set_slug)
+
+            if not prefix_set:
+                logger.warning(f"Prefix set `{member.prefix_set_slug}` not found")
+                continue
+
+            if not prefix_set.prefixes:
+                logger.warning(f"Prefix set `{member.prefix_set_slug}` has no prefixes")
+                continue
+
+            client["cfg"].setdefault("filtering", {}).setdefault("irrdb", {})["white_list_route"] = []
+
+            for _prefix in prefix_set.prefixes:
+                prefix = ipaddress.ip_network(_prefix["prefix"])
+                white_list_route = client["cfg"]["filtering"]["irrdb"]["white_list_route"]
+                white_list_route.append({"prefix": str(prefix), "asn": member.asn, "length": prefix.prefixlen})
+
+            
 
 @reversion.register
 class RouteserverConfig(HandleRefModel):

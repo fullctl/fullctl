@@ -64,7 +64,7 @@ class InternetInternetExchangeAdmin(BaseAdmin):
 
 @admin.register(InternetExchangeMember)
 class MemberAdmin(BaseAdmin):
-    list_display = ("ix", "org", "asn", "ipaddr4", "ipaddr6", "port")
+    list_display = ("ix", "org", "asn", "ipaddr4", "ipaddr6", "port", "prefix_set")
     readonly_fields = ("org",)
     search_fields = (
         "ix__name",
@@ -98,6 +98,10 @@ class RouteserverAdmin(BaseAdmin):
 @admin.register(RouteserverConfig)
 class RouteserverConfigAdmin(BaseAdmin):
     list_display = ("routeserver", "created", "updated", "generated")
+
+    # django admin won't load sinve configs are huge, so exclude the
+    # body
+    exclude = ("body",)
 
 
 @admin.register(Network)

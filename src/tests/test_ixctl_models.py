@@ -163,8 +163,6 @@ def test_routeserver_ars_general_extra_config(db, pdb_data, account_objects):
     assert rs.ars_general == expected
 
 
-# code is currently commented out
-@pytest.mark.skip
 def test_routeserver_ars_clients(db, pdb_data, account_objects):
     rs = account_objects.routeserver
 
@@ -176,6 +174,28 @@ def test_routeserver_ars_clients(db, pdb_data, account_objects):
 
     assert rs.ars_clients == expected
 
+
+def test_routeserver_whitelist_routes(db ,pdb_data, account_objects):
+    rs = account_objects.routeserver
+
+    member = account_objects.ix.member_set.filter(asn=63311).first()
+
+    member.prefix_set = "test"
+    member.save()
+
+    fn = os.path.join(
+        os.path.dirname(__file__), "data", "rs", "whitelist_routes_default.json"
+    )
+    with open(fn) as file:
+        expected = json.load(file)
+
+    ars_clients = rs.ars_clients
+
+    rs.configure_whitelist_routes(ars_clients)
+
+    print(json.dumps(ars_clients, indent=4))
+
+    assert rs.ars_clients == expected
 
 def test_routeserver_routeserver_config(db, pdb_data, account_objects):
     rs = account_objects.routeserver

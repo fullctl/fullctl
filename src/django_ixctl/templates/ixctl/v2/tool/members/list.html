@@ -11,6 +11,7 @@
       <th data-sort-target="ipaddr4" class="sortable-button">{% trans "IPv4" %}</th>
       <th data-sort-target="ipaddr6" class="sortable-button">{% trans "IPv6" %}</th>
       <th data-sort-target="speed" data-sort-secondary="name,ipaddr4,ipaddr6"  class="sortable-button">{% trans "Speed" %}</th>
+      <th data-sort-target="prefix_set_name" data-sort-secondary="name,ipaddr4,ipaddr6"  class="sortable-button">{% trans "Prefix Set" %}</th>
       <th class="right">Options</th>
     </tr>
   </thead>
@@ -23,6 +24,7 @@
       <td data-field="ipaddr4"></td>
       <td data-field="ipaddr6"></td>
       <td data-field="speed"></td>
+      <td data-field="prefix_set_name"></td>
       <td data-field="controls" class="right">
         <a class="button btn" data-hover="show" data-action="view_member_details">
           <span class="icon ixctl icon-view"></span>

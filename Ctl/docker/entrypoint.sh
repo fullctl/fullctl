@@ -33,6 +33,7 @@ case "$1" in
     export RELEASE_ENV=run_tests
     export PDBCTL_URL=test://pdbctl
     export AAACTL_URL=test://aaactl
+    export PREFIXCTL_URL=test://prefixctl
     unset OAUTH_TWENTYC_URL
     cd main
     pytest tests/ -vv --cov-report=term-missing --cov-report=xml --cov=django_ixctl --cov=ixctl
