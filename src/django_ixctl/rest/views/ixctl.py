@@ -276,11 +276,14 @@ class Member(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet):
             request.GET, queryset=queryset
         ).qs
 
-        members = models.InternetExchangeMember.preload_networks(queryset)
+        # preload_networks returns a generator, but we need to be able
+        # to iterate over it multiple times, so we convert it to a list
+        members = list(models.InternetExchangeMember.preload_networks(queryset))
 
         serializer = Serializers.member(
             instance=members,
             many=True,
+            context={"instance":instance}
         )
 
         return Response(serializer.data)
@@ -365,6 +368,7 @@ class Member(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet):
         serializer = Serializers.member_detail(
             instance=members,
             many=True,
+            context={"instance":instance}
         )
 
         return Response(serializer.data)
@@ -377,6 +381,7 @@ class Member(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet):
     def retrieve(self, request, org, instance, ix, member_id, member, *args, **kwargs):
         serializer = Serializers.member_detail(
             instance=member,
+            context={"instance":instance}
         )
 
         models.InternetExchangeMember.preload_ports(org, [member])

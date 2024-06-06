@@ -26,6 +26,7 @@
         <th scope="col" data-sort-target=".ipaddr6">IPv6</th>
         <th scope="col" data-sort-target=".is_rs_peer">Route Server</th>
         <th scope="col" data-sort-target=".speed">Speed</th>
+        <th scope="col" data-sort-target=".prefix_set_name">Prefix Set</th>
         <th scope="col"></th>
       </tr>
     </thead>
@@ -53,6 +54,7 @@
     <td scope="col" class="ipaddr6" name="ipaddr6">IPv6</td>
     <td scope="col" class="is_rs_peer" name="is_rs_peer">Route Server</td>
     <td scope="col" class="speed" name="speed">Speed</td>
+    <td scope="col" class="prefix_set_name" name="prefix_set_name">P</td>
     <td class="right">
       <button type="button" class="btn btn-primary btn-sm" data-action="edit">
         <span>Edit</span>
@@ -94,6 +96,12 @@
         <div class="mb-3">
           <label class="form-label" for="ipaddr6">Member Type</label>
           <select class="form-control" name="ixf_member_type", id="ixf_member_type"></select>
+        </div>
+      </div>
+      <div class="col-sm">
+        <div class="mb-3">
+          <label class="form-label" for="prefix_set_name">Prefix Set</label>
+          <select class="form-control" name="prefix_set_name", id="prefix_set_name"></select>
         </div>
       </div>
     </div>

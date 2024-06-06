@@ -54,7 +54,18 @@ proxy.setup(
     ),
 )
 
-urlpatterns = proxy.urlpatterns(["aaactl", "devicectl"])
+proxy.setup(
+    "prefixctl",
+    proxy.proxy_api(
+        "prefixctl",
+        settings.PREFIXCTL_URL,
+        [
+            ("prefix_set/{org_tag}", "prefix_set/<str:org_tag>/", "list"),
+        ],
+    ),
+)
+
+urlpatterns = proxy.urlpatterns(["aaactl", "devicectl", "prefixctl"])
 
 urlpatterns += [
     path(

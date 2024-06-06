@@ -5,6 +5,7 @@ except ImportError:
 
 import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.pdbctl as pdbctl
+import fullctl.service_bridge.prefixctl as prefixctl
 import yaml
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
@@ -185,6 +186,7 @@ class InternetExchangeMember(ModelSerializer):
     )
 
     display_name = serializers.CharField(read_only=True)
+    prefix_set_name = serializers.SerializerMethodField()
 
     class Meta:
         model = models.InternetExchangeMember
@@ -207,6 +209,8 @@ class InternetExchangeMember(ModelSerializer):
             "md5",
             "prefix4",
             "prefix6",
+            "prefix_set",
+            "prefix_set_name",
             "port",
         ]
         validators = [
@@ -225,6 +229,30 @@ class InternetExchangeMember(ModelSerializer):
                 message="IPv6 address exists already in this exchange",
             ),
         ]
+
+    @property
+    def prefix_sets_by_slug(self) -> dict[str, prefixctl.PrefixSet]:
+
+        """
+        Returns prefix sets cached by slugs for all members being 
+        serialized. If the cache does not exist, it will be created.
+        """
+        if hasattr(self, "_prefix_sets_by_slug"):
+            return self._prefix_sets_by_slug
+
+        if not self.instance:
+            return {}
+
+        # we need an org instance to get the prefix sets
+        org_instance = self.context.get("instance")
+        if org_instance:
+            org_slug = org_instance.org.slug
+        else:
+            org_slug = None
+
+        prefix_sets = prefixctl.PrefixSet().objects(org=org_slug)
+        self._prefix_sets_by_slug = {prefixset.slug: prefixset for prefixset in prefix_sets}
+        return self._prefix_sets_by_slug
 
     def validate_ipaddr4(self, ipaddr4):
         if not ipaddr4:
@@ -246,6 +274,27 @@ class InternetExchangeMember(ModelSerializer):
             return None
         return md5
 
+    def validate_prefix_set(self, prefix_set_slug: str):
+        if not prefix_set_slug:
+            return None
+
+        # validate format
+        try:
+            source, slug = prefix_set_slug.split("::")
+
+            if source != "prefixctl":
+                raise ValidationError(_("Invalid prefix set source: {source}. Source should be `prefixctl`").format(source=source))
+
+        except ValueError:
+            raise ValidationError(_("Invalid prefix set slug. Format should be `prefixctl::<slug>`"))
+
+        prefix_set = self.prefix_sets_by_slug.get(slug)
+
+        if not prefix_set:
+            raise ValidationError(_("Prefix set `{prefix_set_slug}` not found").format(prefix_set_slug=prefix_set_slug))
+
+        return prefix_set_slug
+        
     def validate_port(self, port):
         """
         Validates the port to make sure it exists and belongs to the requesting
@@ -267,14 +316,26 @@ class InternetExchangeMember(ModelSerializer):
 
         return port_object.id
 
+    def get_prefix_set_name(self, obj):
+        if not obj.prefix_set:
+            return None
+
+        prefix_set = self.prefix_sets_by_slug.get(obj.prefix_set_slug)
+        
+        if not prefix_set:
+            return None
+
+        return prefix_set.name
+
 
 @register
-class InternetExchangeMemberDetail(ModelSerializer):
+class InternetExchangeMemberDetail(InternetExchangeMember):
     ref_tag = "member_detail"
     port = serializers.SerializerMethodField()
+    prefix_set_name = serializers.SerializerMethodField()
 
     class Meta(InternetExchangeMember.Meta):
-        fields = InternetExchangeMember.Meta.fields + ["port"]
+        fields = InternetExchangeMember.Meta.fields + ["port", "prefix_set_name"]
 
     def get_port(self, member):
         if not member.port:

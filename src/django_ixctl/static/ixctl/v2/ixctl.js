@@ -310,11 +310,10 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       )
       type_select.load((member?member.ixf_member_type:null));
 
+      var select_prefix_set = new twentyc.rest.Select(form.element.find('#prefix-set'));
+      select_prefix_set.load((member?member.prefix_set_name:null));
+
       // setup port auto complete
-
-
-
-
       fullctl.ext.select2.init_autocomplete(
 
         // bind to port <select> element
@@ -350,6 +349,48 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
                 primary: member.port.display_name,
                 secondary: member.port.virtual_port_name,
                 extra: member.port.device.display_name
+              })
+            })
+          }
+        }
+      );
+
+
+      // setup prefix-set auto complete
+      fullctl.ext.select2.init_autocomplete(
+
+        // bind to prefix-set <select> element
+        form.element.find("#prefix-set"),
+
+        // parent dropdown to form element
+        form.element,
+
+        // options
+        {
+
+          // autocomplete url
+          url: "/autocomplete/prefix/prefix_set?require_slug=1&org="+fullctl.org.slug,
+
+          // place holder text for the search field
+          placeholder: "Search Prefix Set by name or slug",
+
+          // if session is specifed, preselect it's prefix set
+          initial: (callback) => {
+            if(!member) {
+              return null;
+            }
+            form.get(member.id).then((response,b,c) => {
+              let member = response.content.data[0];
+
+              if(!member.prefix_set) {
+                callback({});
+                return;
+              }
+
+              callback({
+                id: member.id,
+                primary: member.prefix_set_name,
+                secondary: member.prefix_set,
               })
             })
           }
