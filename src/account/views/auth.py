@@ -250,7 +250,9 @@ def register(request):
         }
 
     env.update(
-        register_form=form, password_login_enabled=settings.PASSWORD_LOGIN_ENABLED, org_branding=org_branding_components,
+        register_form=form,
+        password_login_enabled=settings.PASSWORD_LOGIN_ENABLED,
+        org_branding=org_branding_components,
     )
 
     return render(request, "account/auth/register.html", env)

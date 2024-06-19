@@ -31,12 +31,12 @@ def permissions(request):
 
 def info(request):
     user_has_org_setup = False
-    
+
     # `user` may not necessarily be set on the request object
     # We're currently not 100% sure when this happens and have
     # had no success reproducing this issue at will.
     # For now, treat the symptom
-    # TODO: When does this happen?    
+    # TODO: When does this happen?
     if hasattr(request, "user") and request.user.is_authenticated:
         user_has_org_setup = request.user.org_user_set.filter(
             org__user__isnull=True
