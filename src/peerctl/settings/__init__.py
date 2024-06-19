@@ -149,6 +149,9 @@ settings_manager.set_option("AUTOPEER_ENABLED", False)
 # Use pdbctl as source of truth for peers and exchanges?
 settings_manager.set_option("PDBCTL_SOT_IX", True)
 
+# initial page to load
+settings_manager.set_option("DEFAULT_PAGE", "home")
+
 
 # FINALIZE
 settings_manager.set_default_append()

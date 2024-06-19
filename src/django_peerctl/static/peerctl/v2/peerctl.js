@@ -165,7 +165,16 @@ var $peerctl = $ctl.application.Peerctl = $tc.extend(
       if(!valid)
         return null;
       return autoload;
-    }
+    },
+
+    autoload_page : function() {
+      let page = this.get_autoload_args().page;
+      if(!page && $ctl.peerctl.defaultPage) {
+        this.page($ctl.peerctl.defaultPage);
+        return;
+      }
+      this.Application_autoload_page();
+    },
 
   },
   $ctl.application.Application
@@ -950,7 +959,7 @@ $peerctl.Home = $tc.extend(
       });
 
       if(this.get_number_of_as() <= 1) {
-        $ctl.peerctl.page("page-summary-sessions");
+        $ctl.peerctl.page("page-ix");
         $ctl.peerctl.hide_page("page-home");
       }
     },

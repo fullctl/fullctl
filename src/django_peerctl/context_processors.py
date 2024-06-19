@@ -17,6 +17,7 @@ def conf(request):
                 "url": settings.PEERINGDB_URL,
                 "source_of_truth": settings.PDBCTL_SOT_IX,
             },
+            "default_page": settings.DEFAULT_PAGE,
         },
     }
 

@@ -14,6 +14,7 @@
 
 <script>
 $(fullctl.application).on("initialized", function(e, peerctl, id) {
+  peerctl.defaultPage = '{{ settings.default_page|default:"home" }}';
   {% if net %}
     peerctl.network = {
       id: {{ net.id }},
@@ -38,6 +39,7 @@ $(fullctl.application).on("initialized", function(e, peerctl, id) {
 const selected_asn = null;
 {% else %}
 const selected_asn = "{{ selected_asn }}";
+
 {% endif %}
 </script>
 {% endblock %}
