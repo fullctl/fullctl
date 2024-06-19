@@ -99,6 +99,7 @@ const selected_asn = "{{ selected_asn }}";
     data-second-tab="#networks-body"
     href="#page-networks">{% trans "Networks" %}</a>
 
+  {% if peerctl_permissions.device_management %}
   <a class="nav-link"
     id="tab-policies"
     data-bs-toggle="tab"
@@ -107,7 +108,9 @@ const selected_asn = "{{ selected_asn }}";
     aria-selected="true"
     data-second-tab="#policies-body"
     href="#page-policies">{% trans "Policies" %}</a>
+  {% endif %}
 
+  {% if peerctl_permissions.device_management %}
   <a class="nav-link"
     id="tab-peer-groups"
     data-bs-toggle="tab"
@@ -116,6 +119,7 @@ const selected_asn = "{{ selected_asn }}";
     aria-selected="true"
     data-second-tab="#peer-groups-body"
     href="#page-peer-groups">{% trans "Peer Groups" %}</a>
+  {% endif %}
 
   <a class="nav-link"
     data-bs-toggle="tab"
@@ -123,7 +127,7 @@ const selected_asn = "{{ selected_asn }}";
     aria-controls="page-templates"
     aria-selected="false"
     data-second-tab="#templates-body"
-    href="#page-templates">{% trans "Templates" %}</a>
+    href="#page-templates">{% if peerctl_permissions.device_management %}{% trans "Templates" %}{% else %}{% trans "Email Templates" %}{% endif %}</a>
 
   {% if selected_asn %}
 

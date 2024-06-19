@@ -9,12 +9,14 @@
       aria-selected="false"
       href="#email-templates">{% trans "Email templates" %}</a>
 
+    {% if peerctl_permissions.device_management %}
     <a class="nav-link"
       data-bs-toggle="tab"
       role="tab"
       aria-controls="device-templates"
       aria-selected="false"
       href="#device-templates">{% trans "Device templates" %}</a>
+    {% endif %}
 
   </nav>
 </div>
