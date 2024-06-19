@@ -40,7 +40,7 @@ def login(request):
     env = {}
     org_branding = {}
     branding_org = getattr(settings, "BRANDING_ORG", None)
-    show_register_link = getattr(settings, "SHOW_REGISTER_LINK", True)
+    show_register_link = getattr(settings, "ENABLE_ACCOUNT_REGISTRATION", True)
     http_host = request.get_host()
     org_branding_components = {}
 
@@ -207,6 +207,10 @@ def register(request):
     branding_org = getattr(settings, "BRANDING_ORG", None)
     http_host = request.get_host()
     org_branding_components = {}
+
+    if not settings.ENABLE_ACCOUNT_REGISTRATION:
+        # registration is disabled, return a 404
+        raise Http404
 
     if request.method == "POST":
         form = account.forms.RegisterUser(data=request.POST)
