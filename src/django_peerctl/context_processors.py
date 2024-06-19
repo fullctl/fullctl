@@ -31,6 +31,4 @@ def permissions(request):
             "device_management": request.perms.check(namespace, "r"),
         },
     }
-    print("permissions: ", rv, namespace)
-
     return rv
