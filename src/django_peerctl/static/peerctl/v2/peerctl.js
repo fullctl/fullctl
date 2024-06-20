@@ -101,6 +101,10 @@ var $peerctl = $ctl.application.Peerctl = $tc.extend(
         this.$t.peering_requests_list.sync();
       });
 
+      if(this.defaultPage === "ix") {
+        this.$t.ix.sync();
+      }
+
       this.autoload_page();
     },
 
