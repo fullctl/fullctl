@@ -15,6 +15,21 @@ def conf(request):
             },
             "peeringdb": {
                 "url": settings.PEERINGDB_URL,
+                "source_of_truth": settings.PDBCTL_SOT_IX,
             },
+            "default_page": settings.DEFAULT_PAGE,
         },
     }
+
+def permissions(request):
+    """
+    add some commonly used permission variables to all template
+    contexts
+    """
+    namespace = f"service.devicectl.{request.org.permission_id}"
+    rv = {
+        "peerctl_permissions": {
+            "device_management": request.perms.check(namespace, "r"),
+        },
+    }
+    return rv

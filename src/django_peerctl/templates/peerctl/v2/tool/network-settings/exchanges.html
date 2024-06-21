@@ -1,6 +1,7 @@
 {% load i18n %}
 <table
 class="table list-table table-borderless center marg-top-lg"
+{% if not settings.peeringdb.source_of_truth %}style="display:none;"{% endif %}
 data-api-load="yes"
 data-api-base="{% url "peerctl_api:net-internet-exchanges" asn=selected_asn %}"
 data-template="exchanges_list">

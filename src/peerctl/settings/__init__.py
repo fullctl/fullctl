@@ -51,6 +51,7 @@ TEMPLATES[0]["OPTIONS"]["context_processors"] += [
     "fullctl.django.context_processors.permissions",
     "fullctl.django.context_processors.conf",
     "django_peerctl.context_processors.conf",
+    "django_peerctl.context_processors.permissions",
 ]
 
 LOGIN_REDIRECT_URL = "/"
@@ -85,8 +86,6 @@ settings_manager.set_option("PDB_API_USERNAME", "")
 settings_manager.set_option("PDB_API_PASSWORD", "")
 settings_manager.set_option("PEERINGDB_URL", "https://www.peeringdb.com/")
 
-# Use pdbctl as source of truth for peers and exchanges?
-settings_manager.set_option("PDBCTL_SOT_IX", True)
 
 # add user defined iso code for Kosovo
 COUNTRIES_OVERRIDE = {
@@ -145,13 +144,21 @@ AUTOPEER_ENABLED_NETWORKS = {
 
 settings_manager.set_option("AUTOPEER_ENABLED", False)
 
+# DEDICATED IX PEERCTL
+
+# Use pdbctl as source of truth for peers and exchanges?
+settings_manager.set_option("PDBCTL_SOT_IX", True)
+
+# initial page to load
+settings_manager.set_option("DEFAULT_PAGE", "home")
+
+
 # FINALIZE
 settings_manager.set_default_append()
 
 # look for mainsite/settings/${RELEASE_ENV}_append.py and load if it exists
 env_file = os.path.join(os.path.dirname(__file__), f"{RELEASE_ENV}_append.py")
 settings_manager.try_include(env_file)
-
 
 # TODO combine to log summarry to INFO
 settings.print_debug(f"loaded settings for version {PACKAGE_VERSION} (DEBUG: {DEBUG})")

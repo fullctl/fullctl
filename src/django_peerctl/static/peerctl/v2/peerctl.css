@@ -299,7 +299,6 @@ div.peers-row div.loading-indicator-container {
 }
 
 [data-element="ips"] {
-  background-color: var(--clr-bg-850);
   padding-top: 3px;
 }
 
