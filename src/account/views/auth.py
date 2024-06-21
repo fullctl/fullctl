@@ -40,6 +40,7 @@ def login(request):
     env = {}
     org_branding = {}
     branding_org = getattr(settings, "BRANDING_ORG", None)
+    show_register_link = getattr(settings, "ENABLE_ACCOUNT_REGISTRATION", True)
     http_host = request.get_host()
     org_branding_components = {}
 
@@ -95,6 +96,7 @@ def login(request):
         login_form=form,
         password_login_enabled=settings.PASSWORD_LOGIN_ENABLED,
         org_branding=org_branding_components,
+        show_register_link=show_register_link,
     )
 
     return render(request, "account/auth/login.html", env)
@@ -139,6 +141,7 @@ def login_frontend(request):
     Will redirect to the frontend service with a JWT refresh token if the user is authenticated.
     """
     env = {}
+    show_register_link = getattr(settings, "SHOW_REGISTER_LINK", True)
 
     if request.user.is_authenticated:
         redirect_next = valid_frontend_redirect(
@@ -179,6 +182,7 @@ def login_frontend(request):
         login_form=form,
         password_login_enabled=settings.PASSWORD_LOGIN_ENABLED,
         login_form_action="account:auth-login-frontend",
+        show_register_link=show_register_link,
     )
 
     return render(request, "account/auth/login.html", env)
@@ -199,6 +203,14 @@ def logout(request):
 
 def register(request):
     env = {}
+    org_branding = {}
+    branding_org = getattr(settings, "BRANDING_ORG", None)
+    http_host = request.get_host()
+    org_branding_components = {}
+
+    if not settings.ENABLE_ACCOUNT_REGISTRATION:
+        # registration is disabled, return a 404
+        raise Http404
 
     if request.method == "POST":
         form = account.forms.RegisterUser(data=request.POST)
@@ -219,8 +231,28 @@ def register(request):
     else:
         form = account.forms.RegisterUser()
 
+    if branding_org:
+        org_branding = OrganizationBranding.objects.filter(
+            org__slug=branding_org
+        ).first()
+    elif http_host:
+        org_branding = OrganizationBranding.objects.filter(http_host=http_host).first()
+
+    if org_branding:
+        name = org_branding.org.name
+        org_branding_components = {
+            "name": name,
+            "html_footer": org_branding.html_footer,
+            "css": org_branding.css,
+            "dark_logo_url": org_branding.dark_logo_url,
+            "light_logo_url": org_branding.light_logo_url,
+            "custom_org": True,
+        }
+
     env.update(
-        register_form=form, password_login_enabled=settings.PASSWORD_LOGIN_ENABLED
+        register_form=form,
+        password_login_enabled=settings.PASSWORD_LOGIN_ENABLED,
+        org_branding=org_branding_components,
     )
 
     return render(request, "account/auth/register.html", env)

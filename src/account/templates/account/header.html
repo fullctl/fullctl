@@ -1,11 +1,11 @@
 {% load static i18n %}
 {% block header %}
 <script>
-  const root = document.documentElement;
-  const primaryColorValue = "{{ org_branding.css.primary_color }}"
-  if (primaryColorValue) {
-    root.style.setProperty('--clr-accent-400', primaryColorValue);
-  }
+  const primaryColorValue = "{{ org_branding.css.primary_color }}"; // color
+  const setHeaderColor = "{{ org_branding.css.set_header_color }}"; // bool
+  const buttonTextColor = "{{ org_branding.css.button_text_color }}"; // color
+  const defaultDataTheme = "{{ org_branding.css.default_data_theme }}"; // light / dark
+  applyColorBranding(primaryColorValue, setHeaderColor, buttonTextColor, defaultDataTheme);
 
   document.addEventListener("DOMContentLoaded", function() {
     var appLogo = document.querySelector('.fullctl.logo');

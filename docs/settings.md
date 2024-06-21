@@ -11,3 +11,7 @@ If `True` will automatically confirm the users email during the oauth process.
 ### ENABLE_EMAIL_CONFIRMATION (True)
 
 Global toggle to enable/disable requirement for email confirmations.
+
+### ENABLE_ACCOUNT_REGISTRATION (True)
+
+Global toggle to enable/disable public account registration.
