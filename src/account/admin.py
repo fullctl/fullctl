@@ -260,7 +260,7 @@ class UserAdmin(UrlActionMixin, GrainyUserAdmin):
     readonly_fields = GrainyUserAdmin.readonly_fields + ("impersonate",)
     search_fields = ("email", "first_name", "last_name", "username")
 
-    actions = GrainyUserAdmin.actions + ("start_impersonation",)
+    actions = GrainyUserAdmin.actions + ("start_impersonation","stop_impersonation")
 
     def get_queryset(self, request):
         if is_impersonating(request):
@@ -287,7 +287,7 @@ class UserAdmin(UrlActionMixin, GrainyUserAdmin):
         url = reverse("admin:auth_user_actions", args=(obj.id, "start_impersonation"))
         return mark_safe(f'<a href="{url}">Start</a>')
 
-    @admin.action(description="Impersonate user")
+    @admin.action(description="Impersonate user", permissions=["impersonate"])
     def start_impersonation(self, request, queryset):
         if queryset.count() > 1:
             self.message_user(
@@ -297,7 +297,7 @@ class UserAdmin(UrlActionMixin, GrainyUserAdmin):
         user = queryset.first()
         start_impersonation(request, user)
 
-    @admin.action(description="Stop impersonating user")
+    @admin.action(description="Stop impersonating user", permissions=["impersonate"])
     def stop_impersonation(self, request, queryset):
         user = is_impersonating(request)
 
@@ -308,6 +308,8 @@ class UserAdmin(UrlActionMixin, GrainyUserAdmin):
 
         self.message_user(request, f"No longer impersonating {user}", messages.SUCCESS)
 
+    def has_impersonate_permission(self, request):
+        return request.user.is_superuser or request.perms.check("impersonate", "c")
 
 @admin.register(ContactMessage)
 class ContactMessageAdmin(admin.ModelAdmin):
