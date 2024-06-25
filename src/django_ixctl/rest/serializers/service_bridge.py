@@ -17,11 +17,13 @@ class Prefix(ModelSerializer):
 @register
 class InternetExchange(ModelSerializer):
     org_id = serializers.SerializerMethodField()
+    org_slug = serializers.SerializerMethodField()
 
     class Meta:
         model = models.InternetExchange
         fields = [
             "org_id",
+            "org_slug",
             "id",
             "slug",
             "pdb_id",
@@ -35,6 +37,9 @@ class InternetExchange(ModelSerializer):
     def get_org_id(self, ix):
         return ix.instance.org.permission_id
 
+
+    def get_org_slug(self, ix):
+        return ix.instance.org.slug
 
 @register
 class InternetExchangeMember(ModelSerializer):
