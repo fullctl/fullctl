@@ -295,3 +295,49 @@ def test_federated_auth_regenerate(db, account_objects):
     )
 
     assert response.status_code == 403
+
+
+def test_service_bridge_federated_service_urls_list(db, account_objects):
+    """
+    Tests listing federated service URLs for an organization
+    """
+
+    auth_info = federation_models.AuthFederation.create_for_org(
+        account_objects.org, user=account_objects.user
+    )
+
+    service_id = account_objects.federated_service_support.id
+
+    # Create a test federated service URL for the organization
+    service_url = federation_models.FederatedServiceURL.objects.create(
+        url="https://example.com/federated-service",
+        service_id=service_id,
+        auth=auth_info.auth,
+    )
+
+    # create lookup tag
+    federation_models.FederatedServiceURLTag.objects.create(
+        service_url=service_url, tag="test-tag"
+    )
+
+    # send api request to reverse of service-bridge-data-federated_service_url-list
+    api_url = reverse(
+        "service_bridge_api:service-bridge-data-federated_service_url-list",
+    )
+    response = account_objects.api_client.get(f"{api_url}?org={account_objects.org.slug}&tags=test-tag")
+
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data["data"]) == 1
+    assert data["data"][0]["url"] == "https://example.com/federated-service"
+    assert data["data"][0]["service"] == service_id
+    assert data["data"][0]["org"] == account_objects.org.slug
+    assert data["data"][0]["tags"] == ["test-tag"]
+
+    # now test a non existent tag
+
+    response = account_objects.api_client.get(f"{api_url}?org={account_objects.org.slug}&tags=non-existent-tag")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["data"]) == 0

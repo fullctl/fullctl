@@ -289,6 +289,18 @@ class AccountObjects:
             permissions=PERM_CRUD,
         )
 
+        service_bridge_managed_permission = ManagedPermission.objects.create(
+            namespace="service_bridge.*",
+            description="",
+            group="aaactl",
+        )
+
+        ManagedPermissionRoleAutoGrant.objects.get_or_create(
+            managed_permission=service_bridge_managed_permission,
+            role=admin_role,
+            permissions=PERM_CRUD,
+        )
+        
         ManagedPermission.apply_roles_all()
 
         self.other_org = Organization.objects.create(

@@ -101,6 +101,9 @@ class AuthFederation(HandleRefModel):
 
         return AuthFederationInfo(client_id, client_secret, auth)
 
+    def __str__(self):
+        return f"{self.org.name} OAuth Application"
+
     def set_redirect_urls(self):
 
         """
@@ -138,6 +141,10 @@ class ServiceFederationSupport(HandleRefModel):
         ),
         default="auth",
     )
+    selectable = models.BooleanField(
+        default=True,
+        help_text=_("Whether this service can be selected by organizations for federation."),
+    )
 
     class Meta:
         verbose_name = _("Federation Support for Service")
@@ -173,11 +180,12 @@ class FederatedServiceURL(HandleRefModel):
         verbose_name=_("Service Configuration"),
         help_text=_("Service specific configuration for this URL."),
         default=dict,
+        blank=True,
     )
 
     class Meta:
-        verbose_name = _("Service URL")
-        verbose_name_plural = _("Service URLs")
+        verbose_name = _("Federated Service URL")
+        verbose_name_plural = _("Federated Service URLs")
         unique_together = (("url", "auth"), ("service", "auth"))
         db_table = "account_federated_service_url"
 
@@ -186,3 +194,33 @@ class FederatedServiceURL(HandleRefModel):
 
     def __str__(self):
         return self.url
+
+    @property
+    def org(self):
+        return self.auth.org
+
+
+class FederatedServiceURLTag(HandleRefModel):
+    """
+    Represents a tag for a federated service URL. This is 
+    used for quick federation identification based on tags.
+    """
+
+    tag = models.CharField(max_length=255, verbose_name=_("Tag"))
+    service_url = models.ForeignKey(
+        FederatedServiceURL,
+        on_delete=models.CASCADE,
+        related_name="tags",
+        verbose_name=_("Service URL"),
+    )
+
+    class Meta:
+        verbose_name = _("Service URL Tag")
+        verbose_name_plural = _("Service URL Tags")
+        db_table = "account_federated_service_url_tag"
+
+    class HandleRef:
+        tag = "federated_service_url_tag"
+
+    def __str__(self):
+        return self.tag
