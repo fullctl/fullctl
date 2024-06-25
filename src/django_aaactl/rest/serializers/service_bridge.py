@@ -83,6 +83,29 @@ class Service(ModelSerializer):
     def get_federated(self, obj):
         return getattr(obj, "federated", False)
 
+@register
+class FederatedServiceURL(ModelSerializer):
+
+    org = serializers.SerializerMethodField()
+    org_name = serializers.SerializerMethodField()
+    tags = serializers.SerializerMethodField()
+    service_slug = serializers.SerializerMethodField()
+
+    class Meta:
+        model = account_models.FederatedServiceURL
+        fields = ["id", "service", "url", "org", "org_name", "tags", "service_slug"]
+
+    def get_org(self, obj):
+        return obj.org.slug
+
+    def get_tags(self, obj):
+        return [tag.tag for tag in obj.tags.all()]
+
+    def get_service_slug(self, obj):
+        return obj.service.slug
+
+    def get_org_name(self, obj):
+        return obj.org.name
 
 @register
 class OrganizationCanTrialForObject(serializers.Serializer):

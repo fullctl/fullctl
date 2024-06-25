@@ -44,6 +44,7 @@ from account.models.federation import (
     AuthFederation,
     FederatedServiceURL,
     ServiceFederationSupport,
+    FederatedServiceURLTag,
 )
 
 # registered models
@@ -335,7 +336,7 @@ class ContactMessageAdmin(admin.ModelAdmin):
 
 @admin.register(ServiceFederationSupport)
 class ServiceFederationAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "federation_level", "created", "updated")
+    list_display = ("name", "slug", "federation_level", "selectable", "created", "updated")
     search_fields = ("name", "slug")
 
 
@@ -353,3 +354,17 @@ class AuthFederationAdmin(admin.ModelAdmin):
     autocomplete_fields = ("org",)
 
     inlines = (ServiceURLInline,)
+
+class FederatedServiceURLTagInline(admin.TabularInline):
+    model = FederatedServiceURLTag
+    extra = 1
+
+@admin.register(FederatedServiceURL)
+class FederatedServiceURLAdmin(admin.ModelAdmin):
+    list_display = ("service", "org", "url")
+    readonly_fields = ("org",)
+    search_fields = ("service__name", "service__slug", "url", "auth__org__name", "auth__org__slug")
+    inlines = (FederatedServiceURLTagInline,)
+
+    def org(self, obj):
+        return obj.auth.org

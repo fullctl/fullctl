@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.route.service_bridge import route
-from fullctl.django.rest.views.service_bridge import DataViewSet, SystemViewSet
+from fullctl.django.rest.views.service_bridge import DataViewSet, SystemViewSet, MethodFilter
 from oauth2_provider.models import AccessToken
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -111,6 +111,22 @@ class Service(AaactlDataViewSet):
 
         return Response(serializer.data)
 
+@route
+class FederatedServiceURL(AaactlDataViewSet):
+    path_prefix = "/data"
+    allowed_http_methods = ["GET"]
+    valid_filters = [
+        ("org", "auth__org__slug"),
+        ("slug", "service__slug__iexact"),
+        ("slugs", "service__slug__in"),
+        ("tag", "tags__tag__iexact"),
+        ("tags", "tags__tag__in"),
+    ]
+    autocomplete = "service"
+    allow_unfiltered = True
+
+    queryset = account_models.FederatedServiceURL.objects.all().select_related("service", "auth").prefetch_related("tags")
+    serializer_class = Serializers.federated_service_url
 
 @route
 class Product(AaactlDataViewSet):
