@@ -2,6 +2,7 @@ import ipaddress
 import re
 
 import fullctl.service_bridge.ixctl as ixctl
+import fullctl.service_bridge.aaactl as aaactl
 import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.sot as sot
 from django.db.models import Count, Q
@@ -194,6 +195,9 @@ class Port(serializers.Serializer):
     maxprefix4 = serializers.SerializerMethodField()
     maxprefix6 = serializers.SerializerMethodField()
 
+    federated_peerctl = serializers.SerializerMethodField()
+    ix_portal = serializers.SerializerMethodField()
+
     class Meta:
         fields = [
             "id",
@@ -219,6 +223,8 @@ class Port(serializers.Serializer):
             "mtu",
             "maxprefix4",
             "maxprefix6",
+            "federated_peerctl",
+            "ix_portal",
         ]
 
     # caching
@@ -267,7 +273,47 @@ class Port(serializers.Serializer):
 
         return self._batched_peer_counts
 
+    @property
+    def federated_services(self):
+
+        """
+        Retrieves a list of federated services for the ports being
+        serialized.
+
+        Will cache the result for subsequent calls
+        """
+
+        if hasattr(self, "_federated_services"):
+            return self._federated_services
+    
+        if not isinstance(self.instance, list):
+            ports = [self.instance]
+        else:
+            ports = self.instance
+
+        self._federated_services = aaactl.FederatedServiceURL().federated_services(
+            service_slugs=["peerctl"],
+            make_tag=lambda source_id: "ix."+source_id.replace(":", "."),
+            source_ids=[
+                i.port_info_object.ref_ix_id for i in ports 
+                if i.port_info_object and i.port_info_object.ref_ix_id
+            ],
+        )
+
+        return self._federated_services
+        
     # serializers.SerializerMethodField
+
+    def get_federated_peerctl(self, instance):
+        obj = self.federated_services.get("peerctl", {}).get(instance.port_info_object.ref_ix_id)
+        if not obj:
+            return None
+
+        return {
+            "url": obj.url,
+            "org_name": obj.org_name,
+        }
+
 
     def get_asn(self, instance):
         return instance.port_info_object.net.asn
@@ -361,6 +407,9 @@ class Port(serializers.Serializer):
             return ix.name
         return ""
 
+    def get_ix_portal(self, instance):
+        return self.get_ix_object(instance).portal_url
+    
     def get_display_name(self, instance):
         if instance.virtual_port_name and not is_dummy(instance.virtual_port_name):
             return f"{instance.virtual_port_name}: {instance.display_name}"

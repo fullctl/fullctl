@@ -9,6 +9,7 @@ import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.sot as sot
+from fullctl.service_bridge.client import url_join
 import reversion
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -886,6 +887,18 @@ class InternetExchange(sot.ReferenceMixin, Base):
 
         return obj
 
+    @property
+    def portal_url(self) -> str | None:
+        """
+        Returns the URL to the public information page for this Internet Exchange
+
+        This currently only works for IXs that are sourced from ixctl
+        """
+        if self.ref_source != "ixctl":
+            return None
+
+        return url_join(settings.IXCTL_URL, self.ref.org_slug, self.ref.slug, "public", "information")
+    
     def __str__(self):
         return f"InternetExchange({self.id}): {self.name}"
 

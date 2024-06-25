@@ -1,5 +1,6 @@
 (function($, $tc, $ctl) {
 
+  
 var $peerctl = $ctl.application.Peerctl = $tc.extend(
   "Peerctl",
   {
@@ -183,6 +184,13 @@ var $peerctl = $ctl.application.Peerctl = $tc.extend(
   },
   $ctl.application.Application
 );
+
+$peerctl.build_federation_info_message = function(federation) {
+  let info_node = $ctl.template("federated_peerctl_info")
+  info_node.find('.org-name').text(federation.org_name)
+  info_node.find('.federated-url').attr("href", federation.url).text(federation.url)
+  return info_node;
+}
 
 $peerctl.NetworkSettings = $tc.extend(
   "NetworkSettings",
@@ -411,6 +419,14 @@ $peerctl.Ix = $tc.extend(
         }
 
         row.attr("id", "ix-port-"+data.id);
+
+        if(data.federated_peerctl) {
+          row.find('.port-display').hide();
+          let info_node = $peerctl.build_federation_info_message(data.federated_peerctl);
+          row.find('.port-display').before(info_node);
+        }  else {
+          row.find('.port-display').show();
+        }
 
       };
 
@@ -693,12 +709,12 @@ $peerctl.PeeringLists = $tc.extend(
             if (!port_id) return;
             port_filter.localstorage_set(port_id);
             peering_lists_tool.sync_url(port_id);
-            const port = peering_lists_tool.ports[port_id];
+            const port = peering_lists_tool.ports[port_id] || {};
             let initial = {
               id: port.id,
               primary: port.ix_name,
               secondary: "",
-              extra: ""
+              extra: "",
             };
             let option = $(new Option(initial.primary, initial.id, true, true));
             option.data("selection_data", initial);
@@ -713,8 +729,9 @@ $peerctl.PeeringLists = $tc.extend(
       this.$w.port_filter.init_localstorage();
 
       this.$w.port_filter.element.on("change", () => {
+        let port_id = this.$w.port_filter.element.val();
         this.sync();
-        this.sync_url(this.$w.port_filter.element.val())
+        this.sync_url(port_id)
       });
 
       this.widget("port_info", ($e) => {
@@ -829,12 +846,41 @@ $peerctl.PeeringLists = $tc.extend(
       // for it to appear as it needs to wait until the request resolves
       this.$w.peers.start_processing();
 
+      let toggleFederation = (federated_peerctl) => {
+        $('.federated-peerctl-info').not('[data-template]').detach();
+        if(federated_peerctl) {
+          // hide the peers list and show the federation info box (with link)
+          this.$w.peers.done_processing();
+          let info_node = $peerctl.build_federation_info_message(federated_peerctl);
+          // attach before the peers list
+          this.$w.peers.element.before(info_node);
+          $('.hide-when-federated').hide();
+          this.$w.peers.element.hide();
+        } else {
+          $('.hide-when-federated').show()
+          this.$w.peers.element.show();
+        }
+      }
+
+      if(port) {
+        toggleFederation(port.federated_peerctl);
+      }
+
       this.$w.port_filter.load(port_id).then(() => {
         const port = this.port_object();
         if (!port) {
           this.$w.peers.done_processing();
           return;
         }
+
+        let federated_peerctl = port ? port.federated_peerctl : null;
+
+        // if federated peerctl, instead of loading the `peers` list
+        // we display the info box that leads to the federated peerctl
+        // instance
+  
+        toggleFederation(federated_peerctl);
+
         this.$w.port_info.find(".speed").text( $ctl.formatters.pretty_speed(port.speed) );
         this.$w.port_policy_4.element.val(port.policy4.id);
         this.$w.port_policy_6.element.val(port.policy6.id);
@@ -845,11 +891,26 @@ $peerctl.PeeringLists = $tc.extend(
         this.$w.port_is_route_server_peer.element.prop("checked", port.is_route_server_peer);
         //this.$w.net_as_set.element.val(fullctl.peerctl.network.as_set);
 
-        this.$w.peers.load();
-        this.$w.port_policy_4.load();
-        this.$w.port_policy_6.load();
-        this.$w.port_device_template.load();
+
+        if(!federated_peerctl) {
+          this.$w.peers.load();
+          this.$w.port_policy_4.load();
+          this.$w.port_policy_6.load();
+          this.$w.port_device_template.load();
+          this.set_ixctl_portal_link(port);
+        }
+
       });
+    },
+
+    set_ixctl_portal_link : function(port) {
+      let portal_link = $('#ix-portal-link');
+      if(!port.ix_portal) {
+        portal_link.hide();
+      } else {
+        portal_link.attr("href", port.ix_portal);
+        portal_link.show();
+      }
     },
 
     sync_ports : function() {

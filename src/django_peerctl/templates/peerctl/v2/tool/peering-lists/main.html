@@ -43,6 +43,11 @@
       </div>
     </div>
 
+    <!-- FEDERATED PEERCTL INFO -->
+    <div data-template="federated_peerctl_info" class="alert alert-info federated-peerctl-info marg-top-lg">
+      <p><span class="org-name"></span> maintains a federated <img class="inline-service-logo" src="{% static "peerctl/logo-darkbg.svg" %}"/> at <a href="" class="federated-url"></a>. Please continue there to manage this port.</p>
+    </div>
+
     <!-- PEERS TEMPLATE -->
 
     <div
@@ -411,7 +416,7 @@
       </div>
 
 
-      <div class="row mt-4">
+      <div class="row mt-4 hide-when-federated">
 
             <div class="toolbar-field col-auto py-0 me-auto">
                 <span class="me-2">
