@@ -11,12 +11,12 @@
     >
     </select>
     </span>
-    <button class="col-auto py-2 btn secondary" data-element="button_port_settings">
+    <button class="col-auto py-2 btn secondary hide-when-federated" data-element="button_port_settings">
       <span class="icon fullctl icon-settings"></span>
     </button>
   </div>
 
-  <div class="col-auto right mt-1">
+  <div class="col-auto right mt-1 hide-when-federated">
     <div class="port-info infobar row" data-element="port_info">
       <div class="toolbar-field col-auto">
         <span class="field">Speed:</span> <span class="value speed">-</span>
@@ -32,7 +32,7 @@
     </div>
   </div>
 </div>
-<div class="row mt-2">
+<div class="row mt-2 hide-when-federated">
   <div class="col-md-6">
     <div class="toolbar-control input-group searchbar mx-auto" data-element="peer_searchbar">
       <input type="text" value="" data-element="peer_filter" data-role="filter" placeholder="Search by IP / ASN / Name">
@@ -43,5 +43,15 @@
         <span class="icon icon-cancel"></span>
       </button>
     </div>
+  </div>
+  <div class="col-md-6 right">
+    <a href="" class="primary btn ix-portal-link small" id="ix-portal-link">
+      <div class="row align-items-center">
+        <div class="col label pe-0">IX Portal</div>
+        <div class="col-auto">
+          <span class="icon icon-logout"></span>
+        </div>
+      </div>
+    </a>
   </div>
 </div>

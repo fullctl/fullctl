@@ -1,6 +1,5 @@
 from django.conf import settings
 
-
 def conf(request):
     """
     add some commonly used setting variables to all template
