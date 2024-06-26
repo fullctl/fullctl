@@ -273,13 +273,20 @@ class OauthAccessToken(ModelSerializer):
 
 @register
 class OrganizationBrandingSerializer(ModelSerializer):
+
+    org_name = serializers.SerializerMethodField()
+
     class Meta:
         model = branding_models.OrganizationBranding
         fields = [
             "org",
+            "org_name",
             "show_logo",
             "html_footer",
             "css",
             "light_logo_url",
             "dark_logo_url",
         ]
+
+    def get_org_name(self, obj):
+        return obj.org.name

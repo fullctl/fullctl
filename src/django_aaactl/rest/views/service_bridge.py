@@ -5,6 +5,7 @@ from fullctl.django.rest.views.service_bridge import DataViewSet, SystemViewSet,
 from oauth2_provider.models import AccessToken
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.conf import settings
 
 import account.models as account_models
 import applications.models as application_models
@@ -233,8 +234,26 @@ class OrganizationBranding(AaactlDataViewSet):
     allowed_http_methods = ["GET"]
     valid_filters = [
         ("org", "org__slug"),
+        ("best", MethodFilter("best_branding"))
     ]
     allow_unfiltered = True
 
     queryset = branding_models.OrganizationBranding.objects.all()
     serializer_class = Serializers.org_branding
+
+    def filter_best_branding(self, qset, value):
+
+        # either return the branding for the org slug (value)
+        # if it exists, otherwise check BRANDING_ORG
+
+        global_branding_org = getattr(settings, "BRANDING_ORG", None)
+
+        org_branding = qset.filter(org__slug=value).first()
+
+        if org_branding:
+            return qset.filter(org__slug=value)
+
+        if global_branding_org:
+            return qset.filter(org__slug=global_branding_org)
+        
+        return qset.none()
