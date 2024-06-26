@@ -25,6 +25,17 @@ def permissions(request):
     add some commonly used permission variables to all template
     contexts
     """
+
+    if not hasattr(request, "org"):
+        # org is not set on request, this happens during display
+        # of error handling while the account is not authenticated
+        #
+        # if org is not set, there are no permissions
+        # to scope so just assume no permissions
+        return {
+            "peerctl_permissions": {}
+        }
+
     namespace = f"service.devicectl.{request.org.permission_id}"
     rv = {
         "peerctl_permissions": {
