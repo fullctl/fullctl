@@ -18,6 +18,7 @@ from account.impersonate import (
     is_impersonating,
     start_impersonation,
     stop_impersonation,
+    allowed_to_impersonate,
 )
 from account.models import (
     APIKey,
@@ -283,7 +284,10 @@ class UserAdmin(UrlActionMixin, GrainyUserAdmin):
                 )
                 return mark_safe(f'<a href="{url}">Stop</a>')
             if request.user == obj:
-                return "-"
+                return "Cannot impersonate yourself"
+            
+        if not allowed_to_impersonate(request.user, obj):
+            return "Superuser only"
 
         url = reverse("admin:auth_user_actions", args=(obj.id, "start_impersonation"))
         return mark_safe(f'<a href="{url}">Start</a>')
@@ -293,6 +297,11 @@ class UserAdmin(UrlActionMixin, GrainyUserAdmin):
         if queryset.count() > 1:
             self.message_user(
                 request, "Please only select one user to impersonate", messages.ERROR
+            )
+        
+        if not allowed_to_impersonate(request.user, queryset.first()):
+            self.message_user(
+                request, "You are not allowed to impersonate this user", messages.ERROR
             )
 
         user = queryset.first()

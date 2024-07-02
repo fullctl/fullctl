@@ -9,13 +9,20 @@ from account.models import Impersonation
 from account.session import set_selected_org
 from django_grainy.util import Permissions
 
-def allowed_to_impersonate(user: User) -> bool:
+def allowed_to_impersonate(user: User, other_user: User = None) -> bool:
 
     if not isinstance(user, User):
         # keys are currently not allowed to impersonate
         return False
 
-    return getattr(user, "is_superuser", False) or Permissions(user).check("impersonate", "c")
+    # if other_user is a super user, there is a hard requirement
+    # for the user requesting the impersonation to be a super user
+    # as well
+
+    if other_user and other_user.is_superuser:
+        return user.is_superuser
+
+    return user.is_superuser or Permissions(user).check("impersonate", "c")
 
 def is_impersonating(request):
     """
@@ -28,7 +35,7 @@ def is_impersonating(request):
 
     if getattr(request, "impersonating", None):
         # Only superusers are ever able to impersonate anyone
-        if not allowed_to_impersonate(request.impersonating.superuser):
+        if not allowed_to_impersonate(request.impersonating.superuser, request.impersonating.user):
             return None
 
         return request.impersonating.user
@@ -47,7 +54,7 @@ def start_impersonation(request, user):
     """
 
     # Only superusers are ever able to impersonate anyone
-    if not allowed_to_impersonate(request.user):
+    if not allowed_to_impersonate(request.user, user):
         return
 
     # stop current personation
