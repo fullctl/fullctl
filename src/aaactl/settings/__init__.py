@@ -169,6 +169,7 @@ SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 settings_manager.set_option("SOCIAL_AUTH_GOOGLE_OAUTH2_ENABLED", True)
 settings_manager.set_option("SOCIAL_AUTH_PEERINGDB_ENABLED", True)
 settings_manager.set_option("SOCIAL_AUTH_OKTA_OPENIDCONNECT_ENABLED", True)
+settings_manager.set_option("SOCIAL_AUTH_FULLCTL_ENABLED", True)
 
 if SOCIAL_AUTH_PEERINGDB_ENABLED:
     AUTHENTICATION_BACKENDS.insert(
@@ -182,6 +183,9 @@ if SOCIAL_AUTH_OKTA_OPENIDCONNECT_ENABLED:
 
 if SOCIAL_AUTH_GOOGLE_OAUTH2_ENABLED:
     AUTHENTICATION_BACKENDS.insert(0, "social_core.backends.google.GoogleOAuth2")
+
+if SOCIAL_AUTH_FULLCTL_ENABLED:
+    AUTHENTICATION_BACKENDS.insert(0, "fullctl.social.backends.FullCtlOAuth2")
 
 SOCIAL_AUTH_PIPELINE = (
     "social_core.pipeline.social_auth.social_details",
@@ -219,6 +223,10 @@ PDB_OAUTH_ACCESS_TOKEN_URL = f"{PDB_ENDPOINT}/oauth2/token/"
 PDB_OAUTH_AUTHORIZE_URL = f"{PDB_ENDPOINT}/oauth2/authorize/"
 PDB_OAUTH_PROFILE_URL = f"{PDB_ENDPOINT}/profile/v1"
 
+# BACKEND: fullctl
+settings_manager.set_option("SOCIAL_AUTH_FULLCTL_API_URL", "")
+settings_manager.set_option("SOCIAL_AUTH_FULLCTL_KEY", "")
+settings_manager.set_option("SOCIAL_AUTH_FULLCTL_SECRET", "")
 
 # django rest framework
 
