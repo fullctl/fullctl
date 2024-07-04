@@ -169,7 +169,7 @@ SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 settings_manager.set_option("SOCIAL_AUTH_GOOGLE_OAUTH2_ENABLED", True)
 settings_manager.set_option("SOCIAL_AUTH_PEERINGDB_ENABLED", True)
 settings_manager.set_option("SOCIAL_AUTH_OKTA_OPENIDCONNECT_ENABLED", True)
-settings_manager.set_option("SOCIAL_AUTH_FULLCTL_ENABLED", True)
+settings_manager.set_option("SOCIAL_AUTH_FULLCTL_ENABLED", False)
 
 if SOCIAL_AUTH_PEERINGDB_ENABLED:
     AUTHENTICATION_BACKENDS.insert(
