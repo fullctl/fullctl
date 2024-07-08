@@ -131,7 +131,6 @@ class UpdateLAN(ModelSerializer):
 
 @register
 class InternetExchange(ModelSerializer):
-    slug = serializers.SlugField(required=False)
 
     class Meta:
         model = models.InternetExchange
@@ -149,6 +148,14 @@ class InternetExchange(ModelSerializer):
             "notes",
             "public_view",
         ]
+        extra_kwargs = {
+            "slug": {
+                "required": False,
+                "allow_blank": True,
+                "allow_null": True,
+                "default": None,
+            }
+        }
 
         read_only_fields = [
             "verified",
