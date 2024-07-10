@@ -283,7 +283,7 @@ const selected_asn = "{{ selected_asn }}";
 
 {% block "app_content_main" %}
 <div class="tab-content" id="app-pages">
-  <div class="tab-pane{% if settings.default_page == "home" %}show active{% endif %}" id="home-body" role="tabpanel" aria-labelledby="tab-home">
+  <div class="tab-pane{% if settings.default_page == "home" %} show active{% endif %}" id="home-body" role="tabpanel" aria-labelledby="tab-home">
     {% include "peerctl/v2/tool/home/main.html" %}
   </div>
 
@@ -319,7 +319,7 @@ const selected_asn = "{{ selected_asn }}";
     {% include "peerctl/v2/tool/network-settings/main.html" %}
   </div>
 
-  <div class="tab-pane{% if settings.default_page == "ix" %}show active{% endif %}" id="ix-body" role="tabpanel" aria-labelledby="tab-ix">
+  <div class="tab-pane{% if settings.default_page == "ix" %} show active{% endif %}" id="ix-body" role="tabpanel" aria-labelledby="tab-ix">
     {% include "peerctl/v2/tool/ix/main.html" %}
   </div>
 </div>
