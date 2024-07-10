@@ -1,4 +1,5 @@
 import reversion
+from copy import deepcopy
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
@@ -321,6 +322,46 @@ class UserAdmin(UrlActionMixin, GrainyUserAdmin):
     def has_impersonate_permission(self, request):
         return request.user.is_superuser or request.perms.check("impersonate", "c")
 
+    def has_change_permission(self, request, obj=None):
+        # override so only superusers are allowed to change superusers
+        if obj and obj.is_superuser and not request.user.is_superuser:
+            return False
+
+        return super().has_change_permission(request, obj)
+
+    def save_model(self, request, obj, form, change):
+
+        # during save we also want to check that the user is not trying to change
+        # the superuser status of another user unless they are a superuser themselves
+
+        if not request.user.is_superuser and obj.is_superuser:
+            messages.error(request, "Only superusers can change superuser status")
+            return
+
+        super().save_model(request, obj, form, change)
+        
+    def get_fieldsets(self, request, obj=None):
+        # remove the is_superuser, is_staff fields from the form if the user is not a superuser
+        # and the user is not the user being edited
+
+        fieldsets = super(UserAdmin, self).get_fieldsets(request, obj)
+        if not obj:
+            return fieldsets
+
+        if not request.user.is_superuser:
+            fieldsets = deepcopy(fieldsets)
+            for fieldset in fieldsets:
+                if 'is_superuser' in fieldset[1]['fields']:
+                    if type(fieldset[1]['fields']) == tuple :
+                        fieldset[1]['fields'] = list(fieldset[1]['fields'])
+                    fieldset[1]['fields'].remove('is_superuser')
+
+                if 'is_staff' in fieldset[1]['fields']:
+                    if type(fieldset[1]['fields']) == tuple :
+                        fieldset[1]['fields'] = list(fieldset[1]['fields'])
+                    fieldset[1]['fields'].remove('is_staff')
+
+        return fieldsets
 @admin.register(ContactMessage)
 class ContactMessageAdmin(admin.ModelAdmin):
     list_display = ("name", "email", "service", "type", "created", "updated", "status")
