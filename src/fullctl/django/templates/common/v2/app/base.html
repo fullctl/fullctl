@@ -1,6 +1,6 @@
 {% extends "common/v2/base.html" %}
 {% load static i18n fullctl_util %}
-{% block "title" %}fullctl / {{ service_name }}{% endblock %}
+{% block "title" %}{{org_branding.name}} / {{ service_tag }}{% endblock %}
 
 {% block "js" %}
 {{ block.super }}
@@ -53,6 +53,39 @@ fullctl.aaactl_urls = {{ account_service.urls|safe }}
 var True = true, False = false;
 
 fullctl.permissions = {{ permissions|safe }}
+
+// Apply color branding
+const primaryColorValue = "{{ org_branding.css.primary_color }}"; // color
+const setHeaderColor = "{{ org_branding.css.set_header_color }}"; // bool
+const buttonTextColor = "{{ org_branding.css.button_text_color }}"; // color
+const defaultDataTheme = "{{ org_branding.css.default_data_theme }}"; // light / dark
+applyColorBranding(primaryColorValue, setHeaderColor, buttonTextColor, defaultDataTheme);
+
+// Apply logo size branding
+const logo_width = "{{ org_branding.css.logo_width }}";
+const logo_height = "{{ org_branding.css.logo_height }}";
+applyLogoBranding(logo_width, logo_height)
+
+// store theme for easy reference in other parts of the app
+fullctl.brand = {
+  colors: {
+    primary: primaryColorValue,
+    secondary: "{{ org_branding.css.secondary_color }}" || null,
+    header: setHeaderColor,
+    button_text: buttonTextColor,
+    text: "{{ org_branding.css.text_color }}" || null,
+  },
+  logo: {
+    width: logo_width,
+    height: logo_height,
+    url_dark: "{{ org_branding.dark_logo_url }}" || null,
+    url_light: "{{ org_branding.light_logo_url }}" || null,
+  },
+  graph: {
+    logo_theme: "{{ org_branding.css.graph_logo_theme }}" || null,
+  }
+}
+
 </script>
 
 {% block "header" %}
@@ -85,17 +118,25 @@ fullctl.permissions = {{ permissions|safe }}
       {% block "header_left" %}
       <div class="app-switcher" data-element="app_switcher">
         <div class="selected {{ request.app_id }} d-flex align-items-center">
-          <img class="app-logo" src="{% static service_logo_dark %}" alt="{{ service_tag }}">
+          {% if org_branding.dark_logo_url %}
+          <img class="app-logo" src="{{ service_logo_dark }}" alt="{{ logo_alt_text }}">
+          {% else %}
+          <img class="app-logo" src="{% static service_logo_dark %}" alt="{{ logo_alt_text }}">
+          {% endif %}
         <span class="icon {{ request.app_id }} icon-caret-y ms-4"></span>
         <div class="others" style="display:none">
           {% for service_app in service_applications %}
           {%   if service_app.slug != service_tag %}
           {%     with "common/logos/"|add:service_app.slug|add:"-dark.svg" as other_app_logo %}
             <a class="list-item" {% if not service_app.always_show_dashboard %}data-grainy-remove="{{ service_app.grainy }}.{{ request.org.remote_id}}"{% endif %} href="{{ service_app.org_redirect }}" data-slug="{{ service_app.slug }}">
-              {% if not service_app.logo %}
-                <img class="app-logo" src="{% static other_app_logo %}" alt="{{ service_app.slug }}">
+              {% if org_branding.show_logo %}
+                {% if not service_app.logo %}
+                  <img class="app-logo" src="{% static other_app_logo %}" alt="{{ service_app.name }}">
+                {% else %}
+                  <img class="app-logo" src="{{ service_app.logo }}" alt="{{ service_app.slug }}">
+                {% endif %}
               {% else %}
-                <img class="app-logo" src="{{ service_app.logo }}" alt="{{ service_app.slug }}">
+                  <span class="text-item">{{ service_app.name }}</span>
               {% endif %}
                 <span class="icon-arrow | icon icon-lg"></span>
             </a>

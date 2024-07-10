@@ -68,6 +68,17 @@ if getattr(settings, "DEVICECTL_URL", None):
     ]
 
 
+if getattr(settings, "PREFIXCTL_URL", None):
+    import fullctl.django.autocomplete.prefixctl
+
+    urlpatterns += [
+        path(
+            "autocomplete/prefix/prefix_set",
+            fullctl.django.autocomplete.prefixctl.prefixctl_prefix_set.as_view(),
+            name="prefix set autocomplete",
+        ),
+    ]
+
 if settings.DEBUG:
     # support version ignorant serving of static files
     urlpatterns += [
@@ -80,6 +91,7 @@ for import_path, namespace in getattr(settings, "FULLCTL_ADDON_URLS", []):
 
 urlpatterns += [
     path("_diag", fullctl.django.views.diag),
+    path("health/tasks/", fullctl.django.views.tasks_queue_status, name="tasks-queue"),
     path("health/", fullctl.django.views.healthcheck),
     path("authcheck/", fullctl.django.views.authcheck),
     path("apidocs/schema.json", api_schema, name="api_schema"),
