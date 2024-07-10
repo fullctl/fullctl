@@ -259,7 +259,7 @@ button:focus {
 }
 
 .m-info {
-  font-size: --var(--fs-300);
+  font-size: var(--fs-300);
 }
 
 .ux-keep-list-open {
@@ -776,6 +776,7 @@ span.icon {
 span.icon-lg {
   width: 32px;
   height: 32px;
+  mask-size: cover;
 }
 
 span.icon-arrow {
@@ -933,6 +934,21 @@ span.icon-triangle-fill-down {
 span.icon-warning {
   -webkit-mask-image: url(icons/exclamation-triangle.svg);
   mask-image: url(icons/exclamation-triangle.svg);
+}
+
+span.icon-thumbs-down {
+  -webkit-mask-image: url(icons/hand-thumbs-down.svg);
+  mask-image: url(icons/hand-thumbs-down.svg);
+}
+
+span.icon-thumbs-up {
+  -webkit-mask-image: url(icons/hand-thumbs-up.svg);
+  mask-image: url(icons/hand-thumbs-up.svg);
+}
+
+span.icon-exclamation-circle {
+  -webkit-mask-image: url(icons/exclamation-circle.svg);
+  mask-image: url(icons/exclamation-circle.svg);
 }
 
 [data-true] {
@@ -1140,6 +1156,7 @@ div.list-th {
   line-height: var(--size-500);
 }
 
+.loading-container,
 .tool {
   position: relative;
 }
@@ -1733,9 +1750,11 @@ span.fullctl-sot {
   font-size: 12px;
 }
 
+img.inline-service-logo,
 .cross-promotion img.app-logo {
   height: 18px;
   display: inline;
+  vertical-align: sub;
 }
 
 img.service-link {
@@ -1788,7 +1807,7 @@ div.autocomplete-controls {
   line-height: initial;
 }
 
-.modal .controls input.select2-search__field {
+.select2-container--default .select2-search--dropdown .select2-search__field {
   border: none;
   border-bottom: 1px solid transparent;
 }

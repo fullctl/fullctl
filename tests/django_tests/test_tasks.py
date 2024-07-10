@@ -1,8 +1,30 @@
 import pytest
+from django.conf import settings
+from django.utils import timezone
 
 import fullctl.django.tasks.orm as orm
 import tests.django_tests.testapp.models as models
-from fullctl.django.models.concrete.tasks import TaskClaimed, TaskLimitError
+from fullctl.django.health_check import health_check_task_stack_queue
+from fullctl.django.models.concrete.tasks import (
+    TaskClaimed,
+    TaskLimitError,
+    TaskMaxAgeError,
+    TaskSchedule,
+)
+
+
+@pytest.mark.django_db
+def test_task_with_max_run_time():
+    task = models.TestTaskWithMaxRunTime.create_task(1, 2)
+
+    orm.claim_task(task)
+
+    task.created = task.created - timezone.timedelta(seconds=7200)
+    task.save()
+
+    orm.tasks_max_time_reached()
+
+    assert orm.fetch_tasks()
 
 
 @pytest.mark.django_db
@@ -115,3 +137,74 @@ def test_task_limits_with_id():
     orm.work_task(task_b)
     task_a = models.LimitedTaskWithLimitId.create_task("test")
     task_b = models.LimitedTaskWithLimitId.create_task("other")
+
+
+@pytest.mark.django_db
+def test_task_limit_error_returns_message_without_limit_id_provided():
+    models.LimitedTask.create_task("test")
+
+    with pytest.raises(TaskLimitError) as exc_info:
+        models.LimitedTask.create_task("test")
+
+    assert "Task limit exceeded" == str(exc_info.value)
+
+
+@pytest.mark.django_db
+def test_task_limit_error_returns_message_with_limit_id_provided():
+    task = models.LimitedTaskWithLimitId.create_task("test")
+
+    with pytest.raises(TaskLimitError) as exc_info:
+        raise TaskLimitError(task)
+
+    assert "Task limit exceeded for task with limit id: test" == str(exc_info.value)
+
+
+@pytest.mark.django_db
+def test_schedule_limited_task_manually(dj_account_objects):
+    org = dj_account_objects.org
+    models.LimitedTaskWithLimitId.create_task("test")
+
+    task_schedule = TaskSchedule.objects.create(
+        org=org,
+        task_config={
+            "tasks": [
+                {
+                    "op": "task_limited_2",
+                    "param": {"args": ["test"]},
+                }
+            ],
+        },
+        description="test",
+        repeat=True,
+        interval=3600,
+        schedule=timezone.now(),
+    )
+
+    # This will not raise a TaskLimitError
+    task_schedule.spawn_tasks()
+
+
+@pytest.mark.django_db
+def test_task_stack_queue_for_maximum_pending_tasks():
+    settings.MAX_PENDING_TASKS = 10
+    settings.TASK_MAX_AGE_THRESHOLD = 24
+
+    for _ in range(11):
+        models.TestTask.create_task(1, 2)
+
+    with pytest.raises(TaskLimitError):
+        health_check_task_stack_queue()
+
+
+@pytest.mark.django_db
+def test_task_stack_queue_for_tasks_exceeding_maximum_age_threshold():
+    settings.MAX_PENDING_TASKS = 10
+    settings.TASK_MAX_AGE_THRESHOLD = 1
+
+    task = models.TestTask.create_task(1, 2)
+
+    task.created = task.created - timezone.timedelta(hours=2)
+    task.save()
+
+    with pytest.raises(TaskMaxAgeError):
+        health_check_task_stack_queue()

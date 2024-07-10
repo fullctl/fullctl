@@ -157,6 +157,8 @@ class SettingsManager(confu.util.SettingsManager):
         self.set_bool("EMAIL_USE_TLS", True)
         self.set_option("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 
+        self.set_list("CORS_ALLOWED_ORIGINS", [], envvar_element_type=str)
+
         # Application definition
 
         INSTALLED_APPS = [
@@ -195,7 +197,29 @@ class SettingsManager(confu.util.SettingsManager):
             os.path.join(self.scope["BASE_DIR"], "main", f"django_{service_tag}"),
         )
 
+        # TASK_RECHECK_DECAY_MAX is the maximum time in seconds to wait before rechecking a task
         self.set_option("TASK_RECHECK_DECAY_MAX", 3600)
+
+        # MAX_PENDING_TASKS is the maximum number of tasks that can be pending at any time
+        self.set_option("MAX_PENDING_TASKS", 100)
+
+        # TASK_MAX_AGE_THRESHOLD is the maximum hours a task can be pending before it is considered stale
+        self.set_option("TASK_MAX_AGE_THRESHOLD", 24)
+
+        # TASK_DEFAULT_MAX_AGE (seconds) is the default maximum age for a task - default is 6 hours
+        self.set_option("TASK_DEFAULT_MAX_AGE", 3600 * 6)
+
+        # TASK_DEFAULT_PRUNE_AGE (days) is the default age at which a task is pruned when the `fullctl_manage_tasks prune`
+        # command is run - default is 30 days
+        self.set_option("TASK_DEFAULT_PRUNE_AGE", 30.0)
+
+        # TASK_DEFAULT_PRUNE_EXCLUDE (list of task op types that should never be pruned)
+        self.set_option("TASK_DEFAULT_PRUNE_EXCLUDE", [])
+
+        # TASK_DEFAULT_PRUNE_STATUS (list of task statuses that should be pruned)
+        self.set_option(
+            "TASK_DEFAULT_PRUNE_STATUS", ["completed", "failed", "cancelled"]
+        )
 
         # eval from default.py file
         filename = os.path.join(os.path.dirname(__file__), "default.py")
@@ -214,6 +238,7 @@ class SettingsManager(confu.util.SettingsManager):
         MIDDLEWARE = self.get("MIDDLEWARE")
 
         MIDDLEWARE += [
+            "fullctl.django.middleware.AutocompleteRequestPermsMiddleware",
             "django_structlog.middlewares.RequestMiddleware",
         ]
 

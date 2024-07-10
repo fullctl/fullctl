@@ -1,9 +1,14 @@
 from datetime import datetime
 
+import structlog
 from django.conf import settings
-
+from django.http import HttpRequest
 from fullctl.django.auth import RemotePermissionsError
-from fullctl.service_bridge.aaactl import ServiceApplication
+from fullctl.django.models.concrete.account import Organization
+from fullctl.django.util import DEFAULT_FULLCTL_BRANDING
+from fullctl.service_bridge.aaactl import OrganizationBranding, ServiceApplication
+
+log = structlog.get_logger("django")
 
 
 def conf(request):
@@ -21,9 +26,34 @@ def conf(request):
     }
 
 
+def request_can_see_service(request: HttpRequest, service_slug: str) -> bool:
+    """
+    Check if the requesting user has access to the service
+    """
+
+    if service_slug == "aaactl":
+        # everyone has access to aaactl
+        return True
+
+    if service_slug == settings.SERVICE_TAG:
+        # the user is requesting access to the service information
+        # for the service that is currently being rendered
+        return True
+
+    org = getattr(request, "org", None)
+    perms = getattr(request, "perms", None)
+
+    if not org or not perms:
+        # no organization or permissions object has been established
+        # assume the user does not have access to the service
+        return False
+
+    return perms.check(f"service.{service_slug}.{org.permission_id}", "r")
+
 def account_service(request):
     context = {}
     org = getattr(request, "org", None)
+    context["org_branding"] = {}
 
     if org:
         org_slug = org.slug
@@ -31,6 +61,73 @@ def account_service(request):
         org_slug = ""
 
     local_auth = getattr(settings, "USE_LOCAL_PERMISSIONS", False)
+    branding_override = getattr(settings, "BRANDING_ORG", None)
+    branding = None
+
+    # start by setting a default branding
+    context["org_branding"] = DEFAULT_FULLCTL_BRANDING
+
+    # if there is a branding_override set in the settings for the instance
+    # use that (this is the highest priority branding setting)
+    if branding_override:
+
+        # SERVICE OVERRIDES BRANDING GLOBALLY
+
+        branding = OrganizationBranding().first(org=branding_override)
+
+        if not branding:
+            log.warning(f"Using branding override: {branding_override}, but branding does not exist in aaactl")
+
+    # otherwise check if the organization of the request has a branding applied
+    # to it through aaactl (either on the org directly or through a BRANDING_ORG
+    # set in aaactl)
+    elif not branding:
+
+        # AAACTL SELECTS BRANDING
+
+        # using the `best` filter to get the most specific branding
+        # this will either select the org's branding if it has one
+        # or the branding set in the BRANDING_ORG setting
+        branding = OrganizationBranding().first(best=org_slug)
+
+        log.info("Branding AAACTL", branding=branding.json if branding else None, org_slug=org_slug)
+
+    # last if there is no branding set yet, we would check http host
+    # however for this to work some changes need to be made on the aaactl
+    # side to support multiple hostnames (since services will be on different hosts)
+    # TODO: supprt host for branding
+    # http_host = request.get_host()
+
+    # a branding was selected, prepare the context
+    if branding:
+        context["org_branding"] = {
+            "name": branding.org_name,
+            "html_footer": branding.html_footer,
+            "css": branding.css,
+            "dark_logo_url": branding.dark_logo_url,
+            "light_logo_url": branding.light_logo_url,
+            "custom_org": True,
+            "show_logo": branding.show_logo,
+        }
+
+    if not context["org_branding"].get("dark_logo_url", None):
+        service_logo_dark = f"{settings.SERVICE_TAG}/logo-darkbg.svg"
+    else:
+        service_logo_dark = context["org_branding"].get("dark_logo_url")
+
+    if not context["org_branding"].get("light_logo_url", None):
+        service_logo_light = f"{settings.SERVICE_TAG}/logo-lightbg.svg"
+    else:
+        service_logo_light = context["org_branding"].get("light_logo_url")
+
+    if not context["org_branding"].get("name", None):
+        logo_alt_text = settings.SERVICE_TAG
+        service_name = settings.SERVICE_TAG.replace("ctl", "")
+    else:
+        logo_alt_text = context["org_branding"].get("name")
+        service_name = context["org_branding"].get("name")
+
+    service_tag = settings.SERVICE_TAG
 
     # TODO abstract so other auth services can be
     # defined
@@ -45,19 +142,26 @@ def account_service(request):
             },
         },
         oauth_manages_org=not local_auth,
-        service_logo_dark=f"{settings.SERVICE_TAG}/logo-darkbg.svg",
-        service_logo_light=f"{settings.SERVICE_TAG}/logo-lightbg.svg",
-        service_tag=settings.SERVICE_TAG,
-        service_name=settings.SERVICE_TAG.replace("ctl", ""),
+        service_logo_dark=service_logo_dark,
+        service_logo_light=service_logo_light,
+        service_tag=service_tag,
+        service_name=service_name,
+        logo_alt_text=logo_alt_text,
     )
 
     if settings.OAUTH_TWENTYC_URL:
         context.update(
             service_applications=[
-                service_application.for_org(org)
+                # we call sanitize() to remove the `config` attribute
+                # as that may contain sensitive information
+                # that we don't necessarily want to expose to the template
+                # context
+                service_application.for_org(org).sanitize()
                 for service_application in ServiceApplication().objects(
                     group="fullctl", org=(org_slug or None)
                 )
+                # only show services that the user has access to
+                if request_can_see_service(request, service_application.slug)
             ],
         )
 
@@ -73,14 +177,17 @@ def account_service(request):
 
     if local_auth:
         context["service_info"] = {
-            "name": settings.SERVICE_TAG,
+            "name": f"{settings.SERVICE_TAG} {context['org_branding']['name']}"
+            if context["org_branding"].get("name", None)
+            else settings.SERVICE_TAG,
             "slug": settings.SERVICE_TAG,
             "description": "Local permissions",
             "org_has_access": True,
-            "org_namespace": f"{settings.SERVICE_TAG}",
+            "org_namespace": settings.SERVICE_TAG,
         }
 
     return context
+
 
 
 def permissions(request):
