@@ -211,6 +211,7 @@ class InternetExchangeMember(ModelSerializer):
             "macaddr",
             "as_macro",
             "as_macro_override",
+            "as_macro_negate",
             "is_rs_peer",
             "speed",
             "md5",
@@ -246,9 +247,6 @@ class InternetExchangeMember(ModelSerializer):
         """
         if hasattr(self, "_prefix_sets_by_slug"):
             return self._prefix_sets_by_slug
-
-        if not self.instance:
-            return {}
 
         # we need an org instance to get the prefix sets
         org_instance = self.context.get("instance")
@@ -294,7 +292,7 @@ class InternetExchangeMember(ModelSerializer):
 
         except ValueError:
             raise ValidationError(_("Invalid prefix set slug. Format should be `prefixctl::<slug>`"))
-
+        
         prefix_set = self.prefix_sets_by_slug.get(slug)
 
         if not prefix_set:

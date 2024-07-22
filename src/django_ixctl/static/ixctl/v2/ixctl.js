@@ -388,7 +388,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
               }
 
               callback({
-                id: member.id,
+                id: member.prefix_set,
                 primary: member.prefix_set_name,
                 secondary: member.prefix_set,
               })
