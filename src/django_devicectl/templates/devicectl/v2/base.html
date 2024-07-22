@@ -1,5 +1,6 @@
 {% extends "common/v2/app/base.html" %}
 {% load static i18n %}
+{% block "title" %}fullctl / device{% endblock %}
 
 {% block "js" %}
 {{ block.super }}
@@ -164,9 +165,7 @@ $(document).ready(() => {
     </div>
     <div class="device-container" style="display:none">
       {% include "devicectl/v2/tool/device/main.html" %}
-      {% include "devicectl/v2/tool/virtual_ports/main.html" %}
-      {% include "devicectl/v2/tool/logical_ports/main.html" %}
-      {% include "devicectl/v2/tool/physical_ports/main.html" %}
+      {% include "devicectl/v2/tool/device/ports.html" %}
     </div>
   </div>
 </div>

@@ -24,9 +24,12 @@
         <li class="nav-item" role="presentation">
           <a class="nav-link" id="history-tab" data-bs-toggle="tab" href="#history" role="tab" aria-controls="history" aria-selected="false">History</a>
         </li>
+        <li class="nav-item" role="presentation">
+          <a class="nav-link" id="allports-tab" data-bs-toggle="tab" href="#allports" role="tab" aria-controls="allports" aria-selected="false">Ports</a>
+        </li>
 
       </ul>
-    
+
       <div class="tab-content" id="deviceStatusTabsContent" style="position:relative">
         <!-- Device Details Tab -->
         <div class="tab-pane fade show active" id="device-detail" role="tabpanel" aria-labelledby="device-detail-tab">
@@ -36,7 +39,7 @@
           </div>
           <div class="row">
             <div class="col-12" data-element="device_ports_container">
-   
+
             </div>
           </div>
         </div>
@@ -47,14 +50,18 @@
         <div class="tab-pane fade" data-element="current_config_container" id="current-config" role="tabpanel" aria-labelledby="current-config-tab">
         </div>
         <!-- Reference Config Tab -->
-        <div class="tab-pane fade" data-element="reference_config_container" id="reference-config" role="tabpanearia-labelledby="reference-config-tab">
+        <div class="tab-pane fade" data-element="reference_config_container" id="reference-config" role="tabpanel" aria-labelledby="reference-config-tab">
         </div>
         <!-- Reports Tab -->
         <div class="tab-pane fade" id="reports" role="tabpanel" data-element="device_reports_container" aria-labelledby="reports-tab">
         </div>
         <!-- History Tab -->
         <div class="tab-pane fade" id="history" role="tabpanel" data-element="config_history_container" aria-labelledby="history-tab">
-          
+
+        </div>
+        <!-- Ports Tab -->
+        <div class="tab-pane fade" id="allports" role="tabpanel" data-element="all_ports_container" aria-labelledby="allports-tab">
+
         </div>
 
       </div>

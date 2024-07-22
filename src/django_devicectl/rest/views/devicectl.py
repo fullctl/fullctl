@@ -1,6 +1,7 @@
 import json
 import os
 import time
+import structlog
 
 import fullctl.service_bridge.pdbctl as pdbctl
 from django.conf import settings
@@ -23,6 +24,8 @@ import django_devicectl.traffic as traffic
 from django_devicectl.rest.decorators import grainy_endpoint
 from django_devicectl.rest.route.devicectl import route
 from django_devicectl.rest.serializers.devicectl import Serializers
+
+logger = structlog.get_logger("django_structlog")
 
 
 @route
@@ -506,6 +509,19 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         )
         return Response(serializer.data)
 
+    @action(detail=True, serializer_class=Serializers.acl)
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def acls(self, request, org, instance, device, *args, **kwargs):
+
+        ordering_filter = CaseInsensitiveOrderingFilter(["name"])
+        queryset = models.ACL.objects.select_related().all()
+        queryset = queryset.filter(device_id=device.id, instance_id=instance.id)
+        queryset = ordering_filter.filter_queryset(request, queryset, self)
+
+        serializer = Serializers.acl(queryset, many=True)
+        return Response(serializer.data)
+
     @auditlog()
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def create(self, request, org, instance, *args, **kwargs):
@@ -936,9 +952,18 @@ class VirtualPort(PortTrafficMixin, CachedObjectMixin, viewsets.GenericViewSet):
     @auditlog()
     @grainy_endpoint(namespace="virtual_port.{request.org.permission_id}")
     def create(self, request, org, instance, *args, **kwargs):
+        if acl_name := request.data.get("acl_name"):
+            # Used to attach an ACL to a Virtual Port
+            acl = models.ACL.objects.get(instance=instance, name=acl_name)
+            request.data["acl"] = acl.id
+
+        # Ensure logical port exists
         models.LogicalPort.objects.get(
             instance=instance, id=request.data.get("logical_port")
         )
+        # Set mandatory instance in logical port
+        request.data["logical_ports_data"] = None
+
         serializer = Serializers.virtual_port(data=request.data)
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
@@ -958,11 +983,24 @@ class VirtualPort(PortTrafficMixin, CachedObjectMixin, viewsets.GenericViewSet):
         id="virtual_port_id",
     )
     def update(self, request, org, instance, virtual_port, *args, **kwargs):
-        serializer = Serializers.virtual_port(
-            virtual_port,
-            data=request.data,
-        )
+        if acl_name := request.data.get("acl_name"):
+            # Used to attach an ACL to a Virtual Port
+            acl = models.ACL.objects.get(instance=instance, name=acl_name)
+            request.data["acl"] = acl.id
+        else:
+            # Used to detach an ACL from a Virtual Port
+            request.data["acl"] = None
 
+        # Ensure logical port exists
+        models.LogicalPort.objects.get(
+            instance=instance, id=request.data.get("logical_port")
+        )
+        # Set mandatory instance in logical port
+        request.data["logical_ports_data"]["instance"] = instance.id
+
+        serializer = Serializers.virtual_port(
+            virtual_port, data=request.data, context={"data": request.data}
+        )
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         virtual_port = serializer.save()
@@ -1125,3 +1163,97 @@ class TrafficGroup(viewsets.GenericViewSet):
             request.GET.get("start_time"),
             request.GET.get("duration"),
         )
+
+
+@route
+class ACL(CachedObjectMixin, viewsets.GenericViewSet):
+    """
+    A viewset for viewing and editing Access Control List (ACL) instances.
+
+    Methods:
+    - list: Retrieve a list of all ACL entries.
+    - retrieve: Retrieve a specific ACL entry by ID.
+    - create: Create a new ACL entry.
+    - destroy: Delete a specific ACL entry by ID.
+    """
+
+    serializer_class = Serializers.acl
+    queryset = models.ACL.objects.all()
+    lookup_url_kwarg = "acl_id"
+    ref_tag = "acl"
+    lookup_field = "id"
+
+    @grainy_endpoint(namespace="device.{request.org.permission_id}")
+    def list(self, request, org, instance, *args, **kwargs):
+        """
+        Retrieve a list of all Access Control List (ACL) entries by device.
+
+        Returns a list of ACL entries including the following fields:
+        - name: Unique identifier of the ACL entry.
+        - device: Device ID associated with the ACL entry.
+        """
+        ordering_filter = CaseInsensitiveOrderingFilter(["name"])
+        queryset = models.ACL.objects.filter(device__instance=instance)
+        queryset = ordering_filter.filter_queryset(request, queryset, self)
+        serializer = Serializers.acl(queryset, many=True)
+        return Response(serializer.data)
+
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{acl_id}")
+    @load_object(
+        "acl",
+        models.ACL,
+        device__instance="instance",
+        id="acl_id",
+    )
+    def retrieve(self, request, org, instance, acl, *args, **kwargs):
+        """
+        Retrieve a single Access Control List (ACL) entry by its ID.
+
+        Returns the details of the specified ACL entry, including:
+        - name: Unique identifier of the ACL entry.
+        - device: Device ID associated with the ACL entry.
+        """
+        serializer = Serializers.acl(
+            instance=acl,
+            many=False,
+        )
+        return Response(serializer.data)
+
+    @grainy_endpoint(namespace="device.{request.org.permission_id}")
+    def create(self, request, org, instance, *args, **kwargs):
+        """
+        Create a new Access Control List (ACL) entry.
+
+        Accepts a payload with the following fields:
+        - name: Unique identifier of the ACL entry.
+        - device: Device ID associated with the ACL entry.
+
+        Returns the created ACL entry with its unique identifier.
+        """
+        device = models.Device.objects.get(
+            instance=instance, id=request.data.get("device")
+        )
+        request.data["instance"] = instance.id
+
+        serializer = Serializers.acl(data=request.data)
+        if not serializer.is_valid():
+            return BadRequest(serializer.errors)
+
+        acl = serializer.save()
+        acl.save()
+
+        return Response(Serializers.acl(instance=acl).data)
+
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{acl_id}")
+    @load_object("acl", models.ACL, instance="instance", id="acl_id")
+    def destroy(self, request, org, instance, acl, *args, **kwargs):
+        """
+        Delete an existing Access Control List (ACL) entry by its ID.
+
+        Returns the ACL deleted details indicating the deletion was successful.
+        Or a '404 Error: Not Found' if it does not exists.
+        """
+        serializer = Serializers.acl(instance=acl)
+        response = Response(serializer.data)
+        acl.delete()
+        return response

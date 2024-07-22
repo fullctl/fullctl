@@ -10,6 +10,7 @@
       <th data-sort-target="name" class="sortable-button">{% trans "Name" %}</th>
       <th data-sort-target="logical_port" class="sortable-button">{% trans "Logical Port" %}</th>
       <th data-sort-target="vlan_id" class="sortable-button">{% trans "VLAN id" %}</th>
+      <th data-sort-target="acl_name" class="sortable-button">{% trans "ACL" %}</th>
       <th class="right">{% trans "Options" %}</th>
     </tr>
   </thead>
@@ -20,14 +21,15 @@
       <td data-field="display_name" class="highlight"></td>
       <td data-field="logical_port_name"></td>
       <td data-field="vlan_id"></td>
+      <td data-field="acl_name"></td>
       <td data-field="controls" class="right">
-        <a class="button btn" data-action="edit_virtual_port" data-hover="show">
+        <a class="button btn" onclick="event.stopPropagation();" data-action="edit_virtual_port" data-hover="show">
           <span class="icon icon-edit"></span>
         </a>
-        <a class="button btn delete" data-hover="show" data-element="delete_virtual_port" data-api-method="DELETE" data-confirm="Delete virtual port?" data-api-base="{% url "devicectl_api:virtual_port-detail" org_tag=request.org.slug virtual_port_id=0 %}">
+        <a class="button btn delete" onclick="event.stopPropagation();" data-hover="show" data-element="delete_virtual_port" data-api-method="DELETE" data-confirm="Delete virtual port?" data-api-base="{% url "devicectl_api:virtual_port-detail" org_tag=request.org.slug virtual_port_id=0 %}">
           <span class="icon icon-delete">
         </a>
-        <button class="btn">
+        <button class="btn" onclick="event.stopPropagation();">
           <span class="icon icon-options"></span>
         </button>
       </td>
@@ -44,4 +46,3 @@
 
   </tbody>
 </table>
-

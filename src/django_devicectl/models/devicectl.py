@@ -373,7 +373,6 @@ class Device(ServiceBridgeReferenceModel):
 
 
 class DeviceConfigStatus(HandleRefModel):
-
     """
     Abstract model for device config status models
 
@@ -450,7 +449,6 @@ class DeviceConfigStatus(HandleRefModel):
     namespace_instance="device.{instance.org.permission_id}.{instance.id}",
 )
 class DeviceOperationalStatus(DeviceConfigStatus):
-
     """
     Describes a device's current operational status.
 
@@ -505,7 +503,6 @@ class DeviceOperationalStatus(DeviceConfigStatus):
     namespace_instance="device.{instance.org.permission_id}.{instance.id}",
 )
 class DeviceConfigHistory(DeviceConfigStatus):
-
     """
     Describes historical log of device configuration changes
 
@@ -581,7 +578,6 @@ class DeviceConfigHistory(DeviceConfigStatus):
     namespace_instance="device.{instance.org.permission_id}.{instance.id}",
 )
 class DeviceRefereeReport(HandleRefModel):
-
     """
     Describes referee report of device configuration, which will describe
     source of truth for configuration.
@@ -729,6 +725,7 @@ class LogicalPort(HandleRefModel):
         tag = "logical_port"
 
     class Meta:
+        # TODO @sergio: all other tables are 'devicetl_' not 'devctl_'
         db_table = "devctl_logical_port"
         verbose_name = _("Logical Port")
         verbose_name_plural = _("Logical Ports")
@@ -756,6 +753,93 @@ class LogicalPort(HandleRefModel):
                 name=f"{self.name}:vp-001",
                 vlan_id=0,
             )
+
+
+@reversion.register()
+@grainy_model(
+    namespace="acl",
+    namespace_instance="acl.{instance.org.permission_id}.{instance.id}",
+)
+class ACL(HandleRefModel):
+    """Access Control List model.
+
+    This model represents an access control list (ACL) entry, which
+    examines the information held within data packets flowing into or
+    out of the network to determine where it came from and where it
+    is going. The device then decides whether the data packet should
+    be allowed to pass to the other side or not.
+
+    Atributes:
+    - device (ForeignKey): A reference to the Device that applies the ACL.
+    - name (CharField): Identifier of the ACL.
+
+    Methods:
+    - __str__(): Returns a string representation of the ACL entry, useful for
+      debugging and admin interface.
+
+    Example:
+    ```
+    >>> from django_devicectl.models import ACL
+    >>> acl = ACL(name="acl_example_1", instance_id="10", device_id="6")
+    >>> acl.save()
+    >>> print(acl)
+    ACL(1) acl_example_1
+    ```
+    """
+
+    device = models.ForeignKey(
+        Device,
+        related_name="acls",
+        on_delete=models.CASCADE,
+    )
+
+    instance = models.ForeignKey(
+        Instance,
+        related_name="acls",
+        on_delete=models.CASCADE,
+    )
+
+    name = models.CharField(max_length=255, help_text=_("Access Control List"))
+    # TODO @sergio: slug
+
+    class HandleRef:
+        """Needed by register decorator."""
+
+        tag = "acl"
+
+    class Meta:
+        """
+        Meta class for ACL model.
+
+        Attributes:
+        - db_table (str): Custom database table name.
+        - verbose_name (str): Human-readable name for the model.
+        - verbose_name_plural (str): Plural name for the model.
+        """
+
+        db_table = "devicectl_acl"
+        verbose_name = _("Access Control List")
+        verbose_name_plural = _("Access Control Lists")
+
+    @property
+    def device_name(self):
+        """Returns the name of the Device this ACL is associated with."""
+        return self.device.name
+
+    @property
+    def org(self):
+        return self.instance.org
+
+    def __str__(self):
+        """
+        Returns a string representation of the ACL entry, combining
+        id and name.
+
+        Returns:
+        str: A string representation of the ACL entry in the format
+        'ACL(1) acl_example_1'.
+        """
+        return f"ACL({self.id}) {self.name}"
 
 
 @reversion.register()
@@ -789,6 +873,18 @@ class VirtualPort(ServiceBridgeReferenceModel):
             "fullctl.service_bridge.nautobot.Interface",
             "fullctl.service_bridge.netbox.Interface",
         ],
+    )
+
+    # An ACL can be attached to many Virtual Ports,
+    # but a Virtual Port can only have one ACL
+    acl = models.ForeignKey(
+        ACL,
+        help_text="acl",
+        related_name="virtual_port",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        default=None,
     )
 
     meta = models.JSONField(
@@ -847,6 +943,11 @@ class VirtualPort(ServiceBridgeReferenceModel):
     @property
     def physical_ports(self):
         return self.logical_port.physical_ports
+
+    @property
+    def acl_name(self):
+        """Returns all ACLs attached to this virtual port."""
+        return self.acl.name
 
     def __str__(self):
         return f"VirtualPort({self.id}) {self.name}"
