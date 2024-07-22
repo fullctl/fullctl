@@ -1,4 +1,5 @@
 import json
+import structlog
 
 from django.utils.translation import gettext_lazy as _
 from fullctl.django.rest.decorators import serializer_registry
@@ -7,6 +8,8 @@ from rest_framework import serializers
 
 import django_devicectl.models as models
 import django_devicectl.models.tasks as tasks
+
+logger = structlog.getLogger("django_structlog")
 
 Serializers, register = serializer_registry()
 
@@ -240,11 +243,53 @@ class Port(ModelSerializer):
 
 
 @register
+class ACL(ModelSerializer):
+    """Serializer for ACL model.
+
+    This serializer transforms AccessControlList model instances
+    into JSON format and validates incoming data for creating or
+    updating ACL entries.
+
+    Attributes:
+    - Meta: Metadata for the serializer, including the model it
+    serializes and the fields to include.
+
+    Example:
+    ```
+    >>> from django_devicectl.models import ACL
+    >>> from django_devicectl.rest.serializers.devicectl import ACL as ACLSerializer
+    >>> acl = ACL.objects.get(id=1)
+    >>> serializer = ACLSerializer(acl)
+    >>> print(serializer.data)
+    {'name': 'acl_example_1', 'device': 6, 'device_name': 'Demo Device', 'instance': 10, 'grainy': 'acl.33.1130', 'id': 1, 'status': 'ok', 'created': '2024-07-18T14:00:10.446656Z', 'updated': '2024-07-18T14:00:10.446701Z'}
+
+    ```
+    """
+
+    class Meta:
+        """Meta class for ACL Serializer.
+
+        Attributes:
+        - model (ACL): The model that the serializer transforms.
+        - fields (list): The fields to include in the serialized output.
+        """
+
+        model = models.ACL
+        fields = [
+            "name",
+            "device",
+            "device_name",
+            "instance",
+        ]
+
+
+@register
 class VirtualPort(TagMixin, ModelSerializer):
     physical_ports = serializers.SerializerMethodField()
     device = serializers.SerializerMethodField()
     port = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
+    logical_ports_data = LogicalPort(write_only=True, allow_null=True)
 
     class Meta:
         model = models.VirtualPort
@@ -253,22 +298,127 @@ class VirtualPort(TagMixin, ModelSerializer):
             "display_name",
             "logical_port",
             "logical_port_name",
+            "logical_ports_data",
             "device",
             "device_name",
             "physical_ports",
             "vlan_id",
             "port",
             "tags",
+            "acl",
+            "acl_name",
         ]
 
+    def get_acl(self, obj):
+        if not obj.acl:
+            return None
+        return obj.acl.name
+
+    def get_acl_name(self, obj):
+        if not obj.acl_name:
+            return ""
+        return obj.acl_name
+
     def get_physical_ports(self, obj):
-        return InlinePhysicalPort(obj.physical_ports.all(), many=True).data
+        return PhysicalPort(obj.physical_ports.all(), many=True).data
 
     def get_device(self, obj):
         return obj.device.id
 
     def get_port(self, obj):
         return obj.port.id
+
+    def create(self, validated_data):
+        """Create a new VirtualPort instance.
+
+        This method takes the validated data and creates a new
+        VirtualPort entry in the database.
+        """
+
+        # Remove the empty logical_ports_data object that is
+        # always received when a new VirtualPort is created
+        del validated_data["logical_ports_data"]
+
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        """Update an existing VirtualPort instance.
+
+        This method takes the validated data and updates the
+        specific VirtualPort entry.
+        """
+        updated_instance = super().update(instance, validated_data)
+
+        # LogicalPort associated with this VirtualPort instance is
+        # recieved by context. Here each value received is assigned to
+        # each parameter of the entry in the database.
+        if logical_ports_data := self.context.get("data").get("logical_ports_data"):
+            logical_port = models.LogicalPort.objects.get(
+                id=int(logical_ports_data.get("id"))
+            )
+
+            if logical_ports_data["channel"] == "":
+                logical_ports_data["channel"] = None
+            logical_port.channel = logical_ports_data.get("channel")
+
+            if logical_port.description != logical_ports_data.get("description"):
+                logical_port.description = logical_ports_data.get("description")
+
+            if logical_port.name != logical_ports_data.get("name"):
+                logical_port.name = logical_ports_data.get("name")
+
+            if logical_ports_data["trunk"] == "":
+                logical_ports_data["trunk"] = None
+            logical_port.trunk = logical_ports_data.get("trunk")
+
+            logical_port.save()
+
+        # PhysicalPorts associated with this VirtualPort instance are
+        # recieved by context. Here each value received is assigned to
+        # each parameter of the entry in the database.
+        if physical_ports_data := self.context.get("data").get("physical_ports_data"):
+            for physical_port in physical_ports_data:
+                if physical_port:
+                    physical_port_instance = models.PhysicalPort.objects.get(
+                        id=int(physical_port.get("id"))
+                    )
+
+                    if physical_port_instance.name != physical_port.get("name"):
+                        physical_port_instance.name = physical_port.get("name")
+
+                    if physical_port_instance.logical_port.id != int(
+                        physical_port.get("logical_port")
+                    ):
+                        physical_port_instance.logical_port = LogicalPort.objects.get(
+                            id=int(physical_port.get("logical_port"))
+                        )
+
+                    if physical_port_instance.description != physical_port.get(
+                        "description"
+                    ):
+                        physical_port_instance.description = physical_port.get(
+                            "description"
+                        )
+
+                    physical_port_instance.save()
+
+        return updated_instance
+
+    def to_representation(self, instance):
+        """Customize the representation of the VirtualPort instance.
+
+        This method customizes the output format of the serialized data,
+        adding more details to the representation if needed.
+        """
+        representation = super().to_representation(instance)
+
+        # Add LogicalPort details to the VirtualPort representation.
+        logical_port_instance = models.LogicalPort.objects.get(
+            id=representation["logical_port"]
+        )
+        representation["logical_port"] = LogicalPort(logical_port_instance).data
+
+        return representation
 
 
 @register
@@ -341,7 +491,6 @@ class PortTraffic(serializers.ListSerializer):
 
 @register
 class PortTrafficMRTGImport(serializers.Serializer):
-
     """
     Allows importing of port traffic data points using log lines
     from an MRTG log file.

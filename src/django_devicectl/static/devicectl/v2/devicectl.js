@@ -27,14 +27,6 @@ $ctl.application.Devicectl = $tc.extend(
         return new $ctl.application.Devicectl.DeviceDetails();
       });
 
-      this.tool("logical_ports", () => {
-        return new $ctl.application.Devicectl.LogicalPorts();
-      });
-
-      this.tool("physical_ports", () => {
-        return new $ctl.application.Devicectl.PhysicalPorts();
-      });
-
       this.tool("virtual_ports", () => {
         return new $ctl.application.Devicectl.VirtualPorts();
       });
@@ -89,9 +81,7 @@ $ctl.application.Devicectl = $tc.extend(
 
       $('#ports-tab').on('show.bs.tab', () => {
         $('[data-element=button_create_facility]').hide();
-        $('[data-component=virtual_ports').appendTo($("#device-detail"));
-        $('[data-component=logical_ports').appendTo($("#device-detail"));
-        $('[data-component=physical_ports').appendTo($("#device-detail"));
+        $("#allports").append($('[data-component=virtual_ports]'));
       });
 
       $('#tab-overview').on('show.bs.tab', () => {
@@ -101,9 +91,6 @@ $ctl.application.Devicectl = $tc.extend(
       $($ctl).trigger("init_tools", [this]);
 
       this.$t.devices.activate();
-      this.$t.logical_ports.activate();
-      this.$t.physical_ports.activate();
-      this.$t.virtual_ports.activate();
 
       this.sync();
 
@@ -187,8 +174,6 @@ $ctl.application.Devicectl.DeviceSelect = $tc.extend(
 
     sync : function() {
       $ctl.devicectl.$t.virtual_ports.sync();
-      $ctl.devicectl.$t.logical_ports.sync();
-      $ctl.devicectl.$t.physical_ports.sync();
       $ctl.devicectl.$t.device.show_device(this.element.val());
     },
 
@@ -322,7 +307,7 @@ $ctl.application.Devicectl.ConfigLoader = $tc.extend(
 /**
  * Report listing widget, with functionality to expand and pretty-render
  * referee reports depending on report type
- * 
+ *
  * @class DeviceReportList
  * @extends twentyc.rest.List
  * @namespace $ctl.application.Devicectl
@@ -335,7 +320,7 @@ $ctl.application.Devicectl.DeviceReportList = $tc.extend(
     DeviceReportList: function(jq) {
       this.List(jq);
       this.device_id = 0;
-    
+
       this.local_action("toggle_view_report", this.toggle_view_report.bind(this));
       this.formatters.row = (row, data) => {
         let button_download = row.find("[data-element=button_download_report]");
@@ -346,13 +331,13 @@ $ctl.application.Devicectl.DeviceReportList = $tc.extend(
 
     /**
      * Will toggle the visibility of the report for a row
-     * 
+     *
      * Toggling visibility on will also load the report if it has not been loaded yet
-     * 
+     *
      * @method toggle_view_report
-     * @param {*} data 
-     * @param {*} row 
-     * @returns 
+     * @param {*} data
+     * @param {*} row
+     * @returns
      */
 
     toggle_view_report : function(data, row) {
@@ -374,7 +359,7 @@ $ctl.application.Devicectl.DeviceReportList = $tc.extend(
 
     /**
      * renders a report
-     * 
+     *
      * @method render_report
      * @param {String} kind
      * @param {Object} report_data
@@ -390,11 +375,11 @@ $ctl.application.Devicectl.DeviceReportList = $tc.extend(
     },
 
     /**
-     * Renders a stacked report 
-     * 
+     * Renders a stacked report
+     *
      * report data will be an object literal that will be stringified
      * and rendered with syntax highlighting set to json
-     * 
+     *
      * @method _render_stacked_report
      * @param {Object} report_data
      * @returns {jQuery} report element
@@ -409,7 +394,7 @@ $ctl.application.Devicectl.DeviceReportList = $tc.extend(
 
     /**
      * Renders a snapshot report
-     * 
+     *
      * report data will be an object literal that will be stringified
      * and rendered with syntax highlighting set to json
      */
@@ -423,11 +408,11 @@ $ctl.application.Devicectl.DeviceReportList = $tc.extend(
 
     /**
      * renders a sequential report row by row
-     * 
+     *
      * report_data will be an array of strings representing each row
-     * 
+     *
      * row format is: [{source name}] {path}: {value}
-     * 
+     *
      * @method _render_sequential_report
      * @param {Array} report_data
      * @returns {jQuery} report element
@@ -1178,8 +1163,6 @@ $ctl.application.Devicectl.ModalLogicalPort = $tc.extend(
       }
 
       $(this.form).on("api-write:success", (ev, e, payload, response) => {
-        $ctl.devicectl.$t.logical_ports.$w.list.load();
-        $ctl.devicectl.$t.physical_ports.$w.list.load();
         modal.hide();
       });
 
@@ -1336,8 +1319,6 @@ $ctl.application.Devicectl.ModalPhysicalPort = $tc.extend(
       })
 
       $(this.form).on("api-write:success", (ev, e, payload, response) => {
-        $ctl.devicectl.$t.physical_ports.$w.list.load();
-        $ctl.devicectl.$t.logical_ports.$w.list.load();
         modal.hide();
       });
 
@@ -1386,11 +1367,17 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
           return url.replace("/0/", "/" + data.id + "/");
         };
 
-        $(button_delete).on("api-write:success", () => $ctl.devicectl.sync());
+        $(button_delete).on("api-write:success", () => {
+          $ctl.devicectl.sync()
+          this.$w.list.load();
+        });
 
         if (!grainy.check(data.grainy, "d")) {
           button_delete.element.hide();
         }
+        row.click(() =>{
+          new $ctl.application.Devicectl.PortsViewInformation(data);
+        });
       };
 
       this.$w.list.format_request_url = (url) => {
@@ -1414,6 +1401,14 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
         }
       });
 
+      menu.find('[data-element="button_add_physical_port"]').click(() => {
+        return new $ctl.application.Devicectl.ModalPhysicalPort();
+      });
+
+      menu.find('[data-element="button_add_logical_port"]').click(() => {
+        return new $ctl.application.Devicectl.ModalLogicalPort();
+      });
+
       return menu;
     },
 
@@ -1435,6 +1430,8 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
         )
 
         this.$e.menu.find('[data-element="button_add_virtual_port"]').grainy_toggle(namespace, "c")
+        this.$e.menu.find('[data-element="button_add_logical_port"]').grainy_toggle(namespace, "c")
+        this.$e.menu.find('[data-element="button_add_physical_port"]').grainy_toggle(namespace, "c")
 
       } else {
         this.hide();
@@ -1442,6 +1439,94 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
     }
   },
   $ctl.application.Tool
+);
+
+$ctl.application.Devicectl.PortsViewInformation = $tc.extend(
+  "PortsViewInformation",
+  {
+    PortsViewInformation: function (data) {
+      var title = "Virtual Port - " + data.display_name;
+      var element = $('<div>');
+
+      var dataContent = `
+        <div class="row mb-3">
+        <label class="form-label">Name</label>
+        <input type="text" style="background-color: var(--bs-body-bg);" value="${data.display_name}" readonly/>
+        </div>
+
+        <div class="row mb-3">
+        <label class="form-label">Logical Port</label>
+        <input type="text" style="background-color: var(--bs-body-bg);" value="${data.logical_port_name}" readonly/>
+        </div>
+
+        <div class="row mb-3">
+        <label class="form-label">VLAN ID</label>
+        <input type="text" style="background-color: var(--bs-body-bg);" value="${data.vlan_id}" readonly/>
+        </div>
+
+        <div class="row mb-3">
+        <label class="form-label">ACL</label>
+        <input type="text" style="background-color: var(--bs-body-bg);" value="${data.acl_name}" readonly/>
+        </div>
+
+        <div class="modal-header">
+        <h5 class="modal-title">Logical Port - ${data.logical_port.name}</h5>
+        </div>
+        <br>
+        <div class="row mb-3">
+        <label class="form-label">Name</label>
+        <input type="text" style="background-color: var(--bs-body-bg);" value="${data.logical_port.name}" readonly/>
+        </div>
+
+        <div class="row mb-3">
+        <label class="form-label">Channel</label>
+        <input type="text" style="background-color: var(--bs-body-bg);" value="${data.logical_port.channel}" readonly/>
+        </div>
+
+        <div class="row mb-3">
+        <label class="form-label">Trunk</label>
+        <input type="text" style="background-color: var(--bs-body-bg);" value="${data.logical_port.trunk}" readonly/>
+        </div>
+
+        <div class="row mb-3">
+        <label class="form-label">Description</label>
+        <input type="text" style="background-color: var(--bs-body-bg);" value="${data.logical_port.description}" readonly/>
+        </div>
+      `;
+
+      data.physical_ports.forEach(function(physical_port, index){
+        dataContent += `
+        <div class="modal-header">
+        <h5 class="modal-title">Physical Port - ${physical_port.display_name}</h5>
+        </div>
+        <br>
+        <div class="row mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" style="background-color: var(--bs-body-bg);" value="${physical_port.name}" readonly/>
+        </div>
+
+        <div class="row mb-3">
+            <label class="form-label">Device</label>
+            <input type="text" style="background-color: var(--bs-body-bg);" value="${physical_port.device_name}" readonly/>
+        </div>
+
+        <div class="row mb-3">
+            <label class="form-label">Logical Port</label>
+            <input type="text" style="background-color: var(--bs-body-bg);" value="${physical_port.logical_port_name}" readonly/>
+        </div>
+
+        <div class="row mb-3">
+            <label class="form-label">Description</label>
+            <input type="text" style="background-color: var(--bs-body-bg);" value="${physical_port.description}" readonly/>
+        </div>
+        `;
+      })
+      element.append(dataContent);
+
+      this.Modal("no_button_center", title, element);
+  }
+},
+  $ctl.application.Modal
 );
 
 $ctl.application.Devicectl.ModalVirtualPort = $tc.extend(
@@ -1453,26 +1538,107 @@ $ctl.application.Devicectl.ModalVirtualPort = $tc.extend(
       var form = this.form = new twentyc.rest.Form(
         $ctl.template("form_virtual_port")
       );
+      var LogicalPortsList = [];
 
-      var logical_port_select = this.logical_port_select = new twentyc.rest.Select(
+      var logicalPortsSelect = this.logicalPortsSelect = new twentyc.rest.Select(
         form.element.find('select[name="logical_port"]')
       )
-
-      logical_port_select.format_request_url = (url) => {
+      logicalPortsSelect.format_request_url = (url) => {
         return url.replace("/0/", "/" + fullctl.devicectl.device_id() + "/");
       };
+      logicalPortsSelect.load();
 
-      logical_port_select.load().then(() => {
-        if (virtual_port) { logical_port_select.element.val(virtual_port.logical_port) }
-      });
-      this.virtual_port = virtual_port;
+
+      if (!virtual_port) {
+        var logicalPortsContainer = form.element.find("#logical_port_form_container")
+        var PhysicalPortsContainer = form.element.find("#physical_ports_form_container")
+        logicalPortsContainer.hide()
+        PhysicalPortsContainer.hide()
+      }
 
       if (virtual_port) {
-        title = "Edit " + virtual_port.display_name;
+        title = "Edit Virtual Port" + virtual_port.display_name;
         form.method = "PUT"
         form.form_action = virtual_port.id;
         form.fill(virtual_port);
 
+        $.ajax({
+          url: `/api/facility/${$ctl.org.slug}/${fullctl.devicectl.facility_slug()}/logical_ports/`,
+          type: 'GET',
+          success: function(response) {
+              logical_ports_data = response.data
+              response.data.forEach(function(data) {
+                  LogicalPortsList.push({
+                    id: data.id,
+                    logical_ports_name: data.display_name
+                });
+            });
+          },
+          error: function(xhr, status, error) {
+              console.error(xhr.responseText);
+          },
+          async: false
+        });
+
+        // channel
+        var logicalPortChannel = form.element.find('input[name="logical_port_channel"]');
+        logicalPortChannel.val(virtual_port.logical_port.channel)
+
+        // trunk
+        var logicalPortTrunk = form.element.find('input[name="logical_port_trunk"]')
+        logicalPortTrunk.val(virtual_port.logical_port.trunk)
+
+        // description
+        var logicalPortDescription = form.element.find('input[name="logical_port_description"]');
+        logicalPortDescription.val(virtual_port.logical_port.description)
+        this.virtual_port = virtual_port;
+
+        physical_ports = form.element.find('.physical-ports-container');
+
+        virtual_port.physical_ports.forEach(function(port, index){
+          var physicaldataContent = `
+            <div class="row mb-3">
+              <div class="col-12" data-api-submit="yes">
+                <label for="physical_port-name" class="form-label">Physical Port Name</label>
+                <input type="text" class="form-control" id="physical_port-name" name="physical_port_name_${index}" value="${port.display_name}"/>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-12" data-api-submit="yes">
+                <label for="physical_port-device" class="form-label">Device</label>
+                <input type="text" class="form-control" name="physical_port_device_name_${index}" id="device" value="${port.device_name}" disabled>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-12" data-api-submit="yes">
+                <label for="physical_port-logical_port_${index}" class="form-label">Logical Port</label>
+                <span class="modal-control">
+                <select
+                  data-api-action="" class="form-control" id="physical_port-logical_port_${index}" name="physical_logical_port_${index}">
+                <select>
+                </span>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-12" data-api-submit="yes">
+                <label for="physical_port-description" class="form-label">Description</label>
+                <input type="text" class="form-control" id="physical_port-description" name="physical_port_description_${index}" value="${port.description}" />
+              </div>
+            </div>
+            <hr style="border-color: #000; border-width: 2px;">
+          `
+          physical_ports.append(physicaldataContent)
+
+          var logicalPortsSelect = form.element.find(`#physical_port-logical_port_${index}`);
+          logicalPortsSelect.append($('<option>').attr('value', `${port.logical_port}`).text(`${port.logical_port_name}`));
+
+          $.each(LogicalPortsList, function(index, logical_port) {
+            if (port.logical_port_name !== logical_port.logical_ports_name) {
+              var option = $('<option>').attr('value', logical_port.id).text(logical_port.logical_ports_name);
+              logicalPortsSelect.append(option);
+            }
+          })
+        });
 
         form.element.find('input[type="text"],select,input[type="checkbox"]').each(function () {
           if (!grainy.check(virtual_port.grainy + "." + $(this).attr("name"), "u")) {
@@ -1480,9 +1646,73 @@ $ctl.application.Devicectl.ModalVirtualPort = $tc.extend(
           }
         });
 
-
         $(this.form).on("api-write:before", (ev, e, payload) => {
+          let nameToIdMap = {};
+          if (payload.logical_port_name) {
+            payload.logical_ports_data = {
+              channel: payload.logical_port_channel,
+              description: payload.logical_port_description,
+              name: payload.logical_port_name,
+              trunk: payload.logical_port_trunk
+            }
+          }
+
           payload["id"] = virtual_port.id;
+          payload.logical_ports_data.id = payload.logical_port;
+
+          if (virtual_port.physical_ports) {
+            virtual_port.physical_ports.forEach(port => {
+              nameToIdMap[port.name] = port.id;
+            });
+          }
+
+          delete payload.logical_port_channel;
+          delete payload.logical_port_description;
+          delete payload.logical_port_name;
+          delete payload.logical_port_trunk;
+
+          payload["physical_ports_data"] = []
+
+          if (virtual_port){
+            var count = 0;
+            for (var key in payload) {
+                // Check if the key starts with "physical"
+                if (key.startsWith("physical")) {
+                    // Increment the count
+                    count++;
+                }
+            }
+            iterate_times = count / 4
+
+            for (var i = 0; i < iterate_times; i++) {
+              payload.physical_ports_data.push({
+                id: nameToIdMap[payload[`physical_port_name_${i}`]],
+                name: payload[`physical_port_name_${i}`],
+                device_name: payload[`physical_port_device_name_${i}`],
+                logical_port: payload[`physical_logical_port_${i}`],
+                description: payload[`physical_port_description_${i}`],
+              })
+
+              delete payload[`physical_port_name_${i}`];
+              delete payload[`physical_port_device_name_${i}`];
+              delete payload[`physical_logical_port_${i}`];
+              delete payload[`physical_port_description_${i}`];
+            }
+          } else {
+              if (payload["physical_port_name"]) {
+                payload.physical_ports_data.push({
+                  name: payload["physical_port_name"],
+                  device_name: payload["physical_port_device_name"],
+                  logical_port: payload["physical_logical_port"],
+                  description: payload["physical_port_description"],
+                })
+              }
+              delete payload["physical_port_name"];
+              delete payload["physical_port_device_name"];
+              delete payload["physical_logical_port"];
+              delete payload["physical_port_description"];
+          }
+
         });
       }
 
