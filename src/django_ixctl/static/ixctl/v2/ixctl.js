@@ -310,9 +310,6 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       )
       type_select.load((member?member.ixf_member_type:null));
 
-      var select_prefix_set = new twentyc.rest.Select(form.element.find('#prefix-set'));
-      select_prefix_set.load((member?member.prefix_set_name:null));
-
       // setup port auto complete
       fullctl.ext.select2.init_autocomplete(
 
