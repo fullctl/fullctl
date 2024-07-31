@@ -7,7 +7,6 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("django_fullctl", "0035_alter_servicebridgeaction_function"),
         ("django_devicectl", "0036_acl_device"),
     ]
 
