@@ -1,12 +1,64 @@
 # ACL
 
-- [GUI](#gui)
-- [API](#api)
-  - [API ACL EndPoints](#acl-endpoints)
-  - [API VirtualPort EndPoints](#virtual-port-endpoints)
+[[_TOC_]]
 
 ## GUI
+
+```
+https://dev5.20c.com:8105/demo/
+```
+
+### Attach one ACL when creating a Virtual Port
+
+ACL must exists to be attached to a Virtual Port. More info [Create an ACL](#create_an_acl)
+
+Add a new Virtual Port.
+
+![](../images/acl/devicectl_acl_1.png)
+
+Introduce the ACL name.
+
+![](../images/acl/devicectl_acl_2.png)
+
+If ACL does not exist there will be an error.
+
+![](../images/acl/devicectl_acl_3.png)
+
+If ACL exists, virtual port is created and ACL attached.
+
+![](../images/acl/devicectl_acl_4.png)
+
+
+### Attach an ACL to an existing Virtual Port
+
+ACL must exists to be attached to a Virtual Port. More info [Create an ACL](#create_an_acl)
+
+Edit an existing Virtual Port.
+
+![](../images/acl/devicectl_acl_5.png)
+
+Introduce the ACL name.
+
+![](../images/acl/devicectl_acl_6.png)
+
+Verify the Virtual Port has the required ACL attached.
+
+![](../images/acl/devicectl_acl_7.png)
+
+### Detach the ACL from a Virtual Port
+
+Edit the Virtual Port.
+
+Remove the attached ACL name.
+
+![](../images/acl/devicectl_acl_8.png)
+
 ## API
+
+```
+https://dev5.20c.com:8105/apidocs/swagger
+```
+
 ### ACL EndPoints
 #### List all ACL
 
@@ -15,6 +67,42 @@ curl -X 'GET' \
   'https://dev5.20c.com:8105/api/acl/demo/' \
   -H 'accept: application/json' \
   -H 'X-CSRFToken: 52uPzfs82daHjhT9AlxHcAdDQl1SvhjVv738GUsfRko3LQYlK9dmnWoHn1oGcRuY'
+```
+
+#### Create an ACL
+
+```bash
+curl -X 'POST' \
+  'https://dev5.20c.com:8105/api/acl/demo/' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -H 'X-CSRFToken: IrCL7n6Mr2MwLCwNtrXv8dEkKlSZmwwlFHzM3HScEPcHkprAZlk21z3A6dDt9Mya' \
+  -d '{
+  "name": "acl_demo_00",
+  "device": 6
+}'
+```
+
+```json
+{
+  "data": [
+    {
+      "name": "acl_demo_00",
+      "device": 6,
+      "device_name": "Demo Device",
+      "instance": 10,
+      "grainy": "acl.33.1131",
+      "id": 1131,
+      "status": "ok",
+      "created": "2024-07-30T11:29:48.516894Z",
+      "updated": "2024-07-30T11:29:48.523461Z"
+    }
+  ],
+  "errors": {},
+  "profiling": {
+    "queries": 35
+  }
+}
 ```
 
 ### VirtualPort EndPoints
