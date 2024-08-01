@@ -3,6 +3,7 @@ from django.conf import settings
 from django.urls import include, path
 
 import django_peerctl.autocomplete.devicectl
+import django_peerctl.autocomplete.peerctl
 import django_peerctl.views as views
 from django_peerctl.legacy.views import device_template_base, email_template_base
 
@@ -56,6 +57,11 @@ urlpatterns += [
         django_peerctl.autocomplete.devicectl.devicectl_ixi_port.as_view(),
         name="devicectl ixi-port autocomplete",
     ),
+    path(
+        "autocomplete/networks",
+        django_peerctl.autocomplete.peerctl.net_autocomplete_view().as_view(),
+        name="networks autocomplete",
+    )
 ]
 
 urlpatterns += [
