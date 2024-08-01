@@ -14,7 +14,7 @@ $ctl.application.Peerctl.Networks = $tc.extend(
 
       this.select_network_search.select2({
         ajax: {
-          url : '/autocomplete/pdb/net',
+          url : '/autocomplete/networks',
           dataType: 'json',
           processResults : function(data, params) {
 

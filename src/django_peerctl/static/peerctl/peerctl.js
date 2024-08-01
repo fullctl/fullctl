@@ -1,5 +1,6 @@
 (function($, $tc, $ctl) {
 
+
 var $peerctl = $ctl.application.Peerctl = $tc.extend(
   "Peerctl",
   {
@@ -137,7 +138,6 @@ var $peerctl = $ctl.application.Peerctl = $tc.extend(
         return null;
       return autoload;
     }
-
   },
   $ctl.application.Application
 );
@@ -231,7 +231,7 @@ $peerctl.Networks = $tc.extend(
 
       this.select_network_search.select2({
         ajax: {
-          url : '/autocomplete/pdb/net',
+          url : '/autocomplete/networks',
           dataType: 'json',
           processResults : function(data, params) {
 
