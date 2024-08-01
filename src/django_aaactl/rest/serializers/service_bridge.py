@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
@@ -83,6 +84,7 @@ class Service(ModelSerializer):
     def get_federated(self, obj):
         return getattr(obj, "federated", False)
 
+
 @register
 class FederatedServiceURL(ModelSerializer):
 
@@ -106,6 +108,7 @@ class FederatedServiceURL(ModelSerializer):
 
     def get_org_name(self, obj):
         return obj.org.name
+
 
 @register
 class OrganizationCanTrialForObject(serializers.Serializer):
@@ -275,6 +278,8 @@ class OauthAccessToken(ModelSerializer):
 class OrganizationBrandingSerializer(ModelSerializer):
 
     org_name = serializers.SerializerMethodField()
+    light_logo_url = serializers.SerializerMethodField()
+    dark_logo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = branding_models.OrganizationBranding
@@ -288,5 +293,24 @@ class OrganizationBrandingSerializer(ModelSerializer):
             "dark_logo_url",
         ]
 
+    @property
+    def url_variables(self) -> dict:
+        return {
+            "version": settings.PACKAGE_VERSION,
+            "static_path": settings.STATIC_URL.strip("/"),
+        }
+
     def get_org_name(self, obj):
         return obj.org.name
+
+    def get_light_logo_url(self, obj):
+        try:
+            return obj.light_logo_url.format(**self.url_variables)
+        except KeyError:
+            return obj.light_logo_url
+
+    def get_dark_logo_url(self, obj):
+        try:
+            return obj.dark_logo_url.format(**self.url_variables)
+        except KeyError:
+            return obj.dark_logo_url
