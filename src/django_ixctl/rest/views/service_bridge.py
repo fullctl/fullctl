@@ -80,6 +80,8 @@ class InternetExchangeMember(DataViewSet):
         ("sot", MethodFilter("sot")),
         ("ip", MethodFilter("ip")),
         ("mutual", MethodFilter("mutual")),
+        ("q", MethodFilter("search")),
+        ("distinct", MethodFilter("distinct")),
     ]
 
     join_xl = {"ix": ("ix",), "ix_name": ("ix",)}
@@ -121,6 +123,21 @@ class InternetExchangeMember(DataViewSet):
                 ids.append(member.id)
 
         return qset.filter(id__in=ids)
+
+    def filter_search(self, qset, value:str):
+        """
+        Filters by member ASN or name (network name)
+        """
+        return qset.filter(
+            Q(asn__startswith=value)
+            | Q(name__icontains=value)
+        )
+
+    def filter_distinct(self, qset, value:str):
+        """
+        Apply distinct filter to queryset for a given field
+        """
+        return qset.distinct(value)
 
     @action(
         detail=False,
