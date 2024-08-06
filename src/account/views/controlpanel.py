@@ -6,6 +6,7 @@ from django.shortcuts import render
 
 import account.forms
 from whitelabel_fullctl.models import OrganizationBranding
+from common.util import format_logo_url
 
 # Create your views here.
 
@@ -96,10 +97,10 @@ def index(request):
             if org_branding.html_footer
             else json.dumps(org_branding.html_footer),
             "css": css_dict,
-            "dark_logo_url": org_branding.dark_logo_url
+            "dark_logo_url": format_logo_url(org_branding.dark_logo_url)
             if org_branding.dark_logo_url
             else json.dumps(org_branding.dark_logo_url),
-            "light_logo_url": org_branding.light_logo_url
+            "light_logo_url": format_logo_url(org_branding.light_logo_url)
             if org_branding.light_logo_url
             else json.dumps(org_branding.light_logo_url),
             "show_logo": json.dumps(org_branding.show_logo),

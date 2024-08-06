@@ -14,6 +14,7 @@ from oauth2_provider.oauth2_backends import get_oauthlib_core
 from rest_framework_simplejwt.tokens import RefreshToken
 
 import account.forms
+from common.util import format_logo_url
 from account.models import EmailConfirmation, Invitation, PasswordReset
 from account.session import set_selected_org
 from applications.models import Service
@@ -87,8 +88,8 @@ def login(request):
             "name": name,
             "html_footer": org_branding.html_footer,
             "css": org_branding.css,
-            "dark_logo_url": org_branding.dark_logo_url,
-            "light_logo_url": org_branding.light_logo_url,
+            "dark_logo_url": format_logo_url(org_branding.dark_logo_url),
+            "light_logo_url": format_logo_url(org_branding.light_logo_url),
             "custom_org": True,
         }
 
@@ -244,8 +245,8 @@ def register(request):
             "name": name,
             "html_footer": org_branding.html_footer,
             "css": org_branding.css,
-            "dark_logo_url": org_branding.dark_logo_url,
-            "light_logo_url": org_branding.light_logo_url,
+            "dark_logo_url": format_logo_url(org_branding.dark_logo_url),
+            "light_logo_url": format_logo_url(org_branding.light_logo_url),
             "custom_org": True,
         }
 
