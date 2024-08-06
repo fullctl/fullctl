@@ -10,6 +10,7 @@ import applications.models as application_models
 import billing.models as billing_models
 import whitelabel_fullctl.models as branding_models
 from account.rest.serializers import Serializers as AccountSerializers
+from common.util import format_logo_url
 
 Serializers, register = serializer_registry()
 
@@ -304,13 +305,7 @@ class OrganizationBrandingSerializer(ModelSerializer):
         return obj.org.name
 
     def get_light_logo_url(self, obj):
-        try:
-            return obj.light_logo_url.format(**self.url_variables)
-        except KeyError:
-            return obj.light_logo_url
+        return format_logo_url(obj.light_logo_url)
 
     def get_dark_logo_url(self, obj):
-        try:
-            return obj.dark_logo_url.format(**self.url_variables)
-        except KeyError:
-            return obj.dark_logo_url
+        return format_logo_url(obj.dark_logo_url)
