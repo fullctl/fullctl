@@ -8,6 +8,7 @@
   class="table list-table table-borderless center"
   data-api-load="yes"
   data-api-base="{% url "peerctl_api:sessions_summary-list" asn=selected_asn %}"
+  data-api-metric-base="{% url "proxies-api-devicectl-virtual-port-metric" org_tag=request.org.slug pk="0" %}"
   data-template="list">
   <thead>
       <th>
@@ -31,6 +32,9 @@
       <th>
         <div>{% trans "status4" %}</div>
         <div>{% trans "status6" %}</div>
+      </th>
+      <th>
+        <div>{% trans "Port Metrics" %}</div>
       </th>
       <th></th>
       </tr>
@@ -71,7 +75,19 @@
           <div data-field="meta4" class="pb-1"></div>
           <div data-field="meta6" class="pt-1"></div>
         </td>
+        <td data-action="show_port_metrics">
+          <div data-field="port_metric" style="display: grid">
+            <span class="btn" data-field="port_display_name"></span>
+          </div>
+        </td>
         <td data-field="controls" class="right">
+          <a
+            class="button btn"
+            data-action="view_session"
+            role="button"
+          >
+            <span class="icon ixctl icon-view"></span>
+          </a>
           <a
             class="button btn"
             data-action="edit_session"

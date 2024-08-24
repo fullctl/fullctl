@@ -29,6 +29,16 @@ proxy.setup(
             ("facility/{org_tag}", "facility/<str:org_tag>/", "facility-list"),
             ("device/{org_tag}/{pk}/", "device/<str:org_tag>/<int:pk>/", "detail"),
             ("device/{org_tag}", "device/<str:org_tag>/", "list"),
+            (
+                "metric/{org_tag}/port/{port_id}",
+                "metric/<str:org_tag>/port/<int:port_id>/",
+                "metric",
+            ),
+            (
+                "virtual_port/{org_tag}/{pk}/metric",
+                "virtual_port/<str:org_tag>/<int:pk>/metric/",
+                "virtual-port-metric",
+            ),
         ],
     ),
 )

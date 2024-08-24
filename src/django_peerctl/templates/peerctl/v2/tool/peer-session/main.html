@@ -1,0 +1,64 @@
+{% load static i18n %}
+<div class="tool shift-down" data-component="session_details">
+
+  {% include "common/v2/tool_base.html" %}
+
+  <div class="row">
+    <div class="col right">
+      <a href="#page-summary-sessions" class="primary btn" id="ix-peer-summary-link">
+        <div class="row align-items-center">
+          <div class="col label pe-0">Summary Sessions</div>
+          <div class="col-auto">
+            <span class="icon icon-list"></span>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col fullctl-inner-tabs">
+      <ul class="nav nav-tabs" id="sessionStatusTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <a class="nav-link active" id="session-overview-tab" data-bs-toggle="tab" href="#session-overview" role="tab" aria-controls="session-overview" aria-selected="true">Overview</a>
+        </li>
+      </ul>
+
+      <div class="tab-content" id="sessionStatusTabsContent" style="position:relative">
+        <!-- session Overview Tab -->
+        <div class="tab-pane fade show active" id="session-overview" role="tabpanel" aria-labelledby="session-overview-tab">
+          <div class="row">
+            <div class="col-6" data-element="session_container">
+              <!-- Session information -->
+            </div>
+
+            <div class="col-6 graph-controls">
+              <div class="row mb-3">
+                <table class="table compact nowrap" id="metric_table">
+                  <thead>
+                    <tr>
+                      <th>{% trans "Device" %}</th>
+                      <th>{% trans "Resource" %}</th>
+                      <th>{% trans "Value" %}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="templates">
+    {% include "peerctl/v2/tool/peer-session/menu.html" %}
+    {% include "peerctl/v2/tool/peer-session/session.html" %}
+  </div>
+</div>

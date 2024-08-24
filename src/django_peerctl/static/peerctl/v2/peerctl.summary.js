@@ -88,7 +88,17 @@ $ctl.application.Peerctl.SessionsSummary = $tc.extend(
           row.find("[data-action=edit_session]").click(() => {
             new $ctl.application.Peerctl.ModalFloatingSession(null, null, null, data);
           });
-        }
+
+          // common/v2/metric.js
+          let url = this.$w.list_peer_sessions.element.data('api-metric-base');
+          $.fn.show_metric_list(url, row, data);
+
+          // show session details
+          row.find('a[data-action="view_session"]').click(() => {
+            $ctl.peerctl.$t.session_details.show_session(row.data("apiobject"));
+            $ctl.peerctl.page("page-peer-session");
+          });
+        };
 
         w.formatters.meta4 = (value) => {
           if(!value)
@@ -96,11 +106,11 @@ $ctl.application.Peerctl.SessionsSummary = $tc.extend(
 
           const node = $('<div class="d-flex align-items-center">');
           if (value.session_state && value.session_state == "ESTABLISHED") {
-            node.append($('<span class="icon icon-triangle-fill-up me-auto">'))
-            node.addClass("up")
+            node.append($('<span class="icon icon-triangle-fill-up me-auto">'));
+            node.addClass("up");
           } else {
-            node.append($('<span class="icon icon-triangle-fill-down me-auto">'))
-            node.addClass("down")
+            node.append($('<span class="icon icon-triangle-fill-down me-auto">'));
+            node.addClass("down");
           }
 
           value.last_updown = value.last_updown ? fullctl.formatters.seconds_to_wdhms(value.last_updown) : '-';
@@ -312,7 +322,9 @@ $ctl.application.Peerctl.SessionsSummary = $tc.extend(
 
     sync_url: function(force, facility, device, port, q) {
       if(this.$w.select_facility.element.is(":visible") || force) {
-        window.history.pushState({}, '', "#page-summary-sessions;"+(facility||'')+";"+(device||'')+";"+(port||"")+";"+(q||""));
+        let hash = "#page-summary-sessions;"+(facility||'')+";"+(device||'')+";"+(port||"")+";"+(q||"");
+        window.history.replaceState({}, '', hash);
+        // console.log('peerCtl peerctl.js summary replaceState', hash);
       }
     },
 
@@ -428,6 +440,52 @@ $ctl.application.Peerctl.SessionsSummary = $tc.extend(
   },
   $ctl.application.Tool
 );
+
+$ctl.application.Peerctl.SessionDetails = $tc.extend(
+  "SessionDetails",
+  {
+    SessionDetails: function () {
+      this.Tool("session_details");
+      this.widget("session", ($e) => {
+        let form = new twentyc.rest.Form(
+          this.template("session_widget", this.$e.session_container)
+        );
+        return form;
+      });
+
+      //this.session_id = 0;
+      //this.session = null;
+    },
+
+    init : function() {
+      var tool = this;
+    },
+
+    //menu : function() {},
+
+    show_session : function(session_data) {
+      this.$w.session.fill(session_data);
+
+        this.$e.menu.find('.peer-name').text(session_data.peer_name);
+        this.$e.menu.find('.peer-asn').text(session_data.peer_asn);
+        this.$e.menu.find('.ip4').text(session_data.peer_ip4);
+
+      $.each(session_data.metric, function(index, metric) {
+        // Create a div for each device
+        let deviceHTML = `<p>${metric.device_name}</p>`;
+        // Append the generated HTML to the container
+        $('#device-name').empty().append(deviceHTML);
+      });
+
+      // this.show_metric(session_data);
+      let url = this.$w.session.element.data('api-metric-base');
+      $.fn.show_metric_table(url, session_data);
+    },
+  },
+  $ctl.application.Tool
+);
+
+
 
 $ctl.application.Peerctl.SummaryCountsPanel = $tc.extend(
   "CountsPanel",

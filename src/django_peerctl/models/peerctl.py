@@ -2298,7 +2298,7 @@ class PeerSession(PolicyHolderMixin, meta.DataMixin, Base):
         else:
             networks = {}
 
-        Port.load_references(port_infos + sessions, join="device")
+        Port.load_references(port_infos + sessions, join="device,physical_ports")
 
         for session in sessions:
             if not session.port or not session.port.id:
