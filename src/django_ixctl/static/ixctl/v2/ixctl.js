@@ -102,12 +102,15 @@ $ctl.application.Ixctl = $tc.extend(
 
       this.tool("member_details", () => {
         return new $ctl.application.Ixctl.MemberDetails();
-      })
+      });
 
       this.tool("traffic", () => {
         return new $ctl.application.Ixctl.Traffic();
       });
 
+      // this.tool("metric", () => {
+      //   return new $ctl.application.Ixctl.Metric();
+      // });
 
       this.$t.members.activate();
     },
@@ -179,6 +182,7 @@ $ctl.application.Ixctl = $tc.extend(
       this.sync();
       this.sync_url(id);
       $ctl.ixctl.$t.traffic.sync();
+      // $ctl.ixctl.$t.metric.sync();
     },
 
     sync_url: function(id) {
@@ -434,26 +438,34 @@ $ctl.application.Ixctl.Members = $tc.extend(
     Members : function() {
       this.Tool("members");
     },
+
     init : function() {
       this.widget("list", ($e) => {
         return new $ctl.application.Ixctl.MemberList(
           this.template("list", this.$e.body)
         );
       });
+
       this.$w.list.formatters.row = (row, data) => {
+
+        // common/v2/metric.js
+        let url = this.$w.list.element.data('api-metric-base');
+        $.fn.show_metric_list(url, row, data);
+
         row.find('a[data-action="edit_member"]').click(() => {
           var member = row.data("apiobject");
           new $ctl.application.Ixctl.ModalMember($ctl.ixctl.ix_slug(), member);
         }).each(function() {
           if(!grainy.check(data.grainy+".?", "u")) {
-            $(this).hide()
+            $(this).hide();
           }
         });
 
         row.find('a[data-action="view_member_details"]').click(() => {
+          // console.log("member details",row.data("apiobject").id)
           $ctl.ixctl.$t.member_details.show_member(row.data("apiobject").id);
-          $ctl.ixctl.page("member");
-        })
+          window.location.href = '#member';
+        });
 
         if(!grainy.check(data.grainy, "d")) {
           row.find('a[data-api-method="DELETE"]').hide();
@@ -466,11 +478,11 @@ $ctl.application.Ixctl.Members = $tc.extend(
         let url = this.base_url.split("/").slice(0,-1);
         url.push($ctl.ixctl.ix_slug());
         this.base_url = url.join("/");
-      })
+      });
 
       $(this.$w.list).on("load:after", () => {
         this.update_counts();
-      })
+      });
 
       this.initialize_sortable_headers();
     },
@@ -510,8 +522,8 @@ $ctl.application.Ixctl.Members = $tc.extend(
               secondary_row.addClass("filter-hidden");
             }
           });
-        }
-      }
+        };
+      };
 
       // used to store the last after_list_load_func so we can remove it
       // when the filter is cleared.
@@ -722,11 +734,35 @@ $ctl.application.Ixctl.MemberList = $tc.extend(
   twentyc.rest.List
 );
 
+/**
+ * Metric tool
+ */
+
+// $ctl.application.Ixctl.Metric = $tc.extend(
+//     "Metric",
+//     {
+//         Metric : function() {
+//             this.Tool("metric");
+//             this.member = null;
+//         },
+
+//         menu : function() {},
+
+//         sync : function() {
+//             // console.log("metric sync");
+//         },
+
+//         show : function(member) {
+//             // console.log(member.port);
+//         }
+
+//     },
+//     $ctl.application.Tool
+// );
 
 /**
  * Traffic tool
  */
-
 
 $ctl.application.Ixctl.Traffic = $tc.extend(
   "Traffic",
@@ -737,7 +773,7 @@ $ctl.application.Ixctl.Traffic = $tc.extend(
     },
 
     sync : function() {
-      this.show_graph_controls().indicate_graph_loading().show_graph()
+      this.show_graph_controls().indicate_graph_loading().show_graph();
     },
 
     // Function to indicate loading
@@ -759,7 +795,7 @@ $ctl.application.Ixctl.Traffic = $tc.extend(
     // Function to show graphs
     show_graph : function(end_date, duration) {
       let graph_container = this.$e.graph_container;
-      let url = graph_container.data("api-base").replace("/0/", "/"+$ctl.ixctl.ix()+"/")
+      let url = graph_container.data("api-base").replace("/0/", "/"+$ctl.ixctl.ix()+"/");
       let params = [];
       if (end_date) {
         params.push('start_time=' + end_date);
@@ -781,15 +817,15 @@ $ctl.application.Ixctl.Traffic = $tc.extend(
             $('<div class="alert alert-info">').append(
               $('<p>').text("No aggregated traffic data available for this exchange.")
             )
-          )
+          );
         } else {
           this.$e.refresh_traffic_graph.show();
         }
-      })
+      });
     }
   },
   $ctl.application.Tool
-)
+);
 
 /**
  * Device details tool
@@ -832,6 +868,8 @@ $ctl.application.Ixctl.MemberDetails = $tc.extend(
       );
       this.$e.refresh_traffic_graph.hide();
 
+      $.fn.reset_metric_table();
+
       this.$w.member.get(""+member_id).then(
         (response) => {
           let member = response.first();
@@ -848,8 +886,11 @@ $ctl.application.Ixctl.MemberDetails = $tc.extend(
           this.$w.member.fill(member);
           this.$e.body.parents(".tool").find('#date_range_select').val("24");
           this.show_graph_controls(member).indicate_graph_loading().show_graphs(member);
+          //this.show_metric(member);
+          let url = this.$w.member.element.data('api-metric-base');
+          $.fn.show_metric_table(url, member);
         }
-      )
+      );
 
     },
 
@@ -930,13 +971,29 @@ $ctl.application.Ixctl.MemberDetails = $tc.extend(
 );
 
 
+
+
 $(document).ready(function() {
   $ctl.ixctl = new $ctl.application.Ixctl();
-
 
   $('#traffic-tab').on('show.bs.tab', () => {
     $ctl.ixctl.$t.traffic.sync();
   });
+
+    window.addEventListener('hashchange', function() {
+        // Captures changes in the URL hash
+        // console.log('on(hashchange) hash:', window.location.hash);
+        loadContent(window.location.hash);
+    });
+
+    function loadContent(href) {
+    //     console.log('load() href:', href);
+    //     // Load or display content based on the page ID or hash
+        $(href).addClass('active show')
+            .siblings('.tab-pane.active')
+            .removeClass('active show');
+    };
+
 });
 
 

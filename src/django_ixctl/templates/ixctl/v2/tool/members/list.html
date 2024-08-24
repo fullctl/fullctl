@@ -2,6 +2,7 @@
 <table
   class="table table-borderless list-table"
   data-api-base="{% url "ixctl_api:member-list" org_tag=request.org.slug ix_tag="default" %}"
+  data-api-metric-base="{% url "proxies-api-devicectl-virtual-port-metric" org_tag=request.org.slug pk="0" %}"
   data-api-action=""
   data-template="list">
   <thead>
@@ -12,6 +13,7 @@
       <th data-sort-target="ipaddr6" class="sortable-button">{% trans "IPv6" %}</th>
       <th data-sort-target="speed" data-sort-secondary="name,ipaddr4,ipaddr6"  class="sortable-button">{% trans "Speed" %}</th>
       <th data-sort-target="prefix_set_name" data-sort-secondary="name,ipaddr4,ipaddr6"  class="sortable-button">{% trans "Prefix Set" %}</th>
+      <th>{% trans "Port Metrics" %}</th>
       <th class="right">Options</th>
     </tr>
   </thead>
@@ -25,10 +27,12 @@
       <td data-field="ipaddr6"></td>
       <td data-field="speed"></td>
       <td data-field="prefix_set_name"></td>
+      <td data-action="show_port_metrics">
+        <div data-field="port_metric" style="display: grid">
+          <span class="btn" data-field="port_name"></span>
+        </div>
+      </td>
       <td data-field="controls" class="right">
-        <a class="button btn" data-hover="show" data-action="view_member_details">
-          <span class="icon ixctl icon-view"></span>
-        </a>
         <a class="button btn" data-hover="show" data-action="edit_member">
           <span class="icon ixctl icon-edit"></span>
         </a>
@@ -41,13 +45,16 @@
         >
           <span class="icon ixctl icon-delete"></span>
         </a>
+        <a class="button btn" data-action="view_member_details">
+          <span class="icon ixctl icon-view"></span>
+        </a>
         <button class="btn">
           <span class="icon icon-options"></span>
         </button>
       </td>
     </tr>
     <tr data-template="row" class="secondary">
-      <td class="property" colspan="5">
+      <td class="property" colspan="7">
         <div class="row">
           <div class="col-12 col-sm-4 col-lg-3 col-xl-2 field">
             {% trans "State" %}:
@@ -81,4 +88,3 @@
 
   </tbody>
 </table>
-

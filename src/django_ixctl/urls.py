@@ -35,6 +35,16 @@ proxy.setup(
                 "traffic/<str:org_tag>/ix/<int:ix_id>/",
                 "ix-traffic",
             ),
+            (
+                "metric/{org_tag}/port/{port_id}",
+                "metric/<str:org_tag>/port/<int:port_id>/",
+                "metric",
+            ),
+            (
+                "virtual_port/{org_tag}/{pk}/metric",
+                "virtual_port/<str:org_tag>/<int:pk>/metric/",
+                "virtual-port-metric",
+            ),
         ],
     ),
 )
