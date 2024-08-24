@@ -24,6 +24,9 @@ from rest_framework.validators import UniqueTogetherValidator
 import django_ixctl.models as models
 from django_ixctl.peeringdb import import_exchange, import_org
 
+import structlog
+logger = structlog.getLogger('django_structlog')
+
 Serializers, register = serializer_registry()
 
 
@@ -194,6 +197,7 @@ class InternetExchangeMember(ModelSerializer):
 
     display_name = serializers.CharField(read_only=True)
     prefix_set_name = serializers.SerializerMethodField()
+    port_name = serializers.SerializerMethodField()
 
     class Meta:
         model = models.InternetExchangeMember
@@ -220,6 +224,7 @@ class InternetExchangeMember(ModelSerializer):
             "prefix_set",
             "prefix_set_name",
             "port",
+            "port_name",
         ]
         validators = [
             SoftRequiredValidator(
@@ -242,7 +247,7 @@ class InternetExchangeMember(ModelSerializer):
     def prefix_sets_by_slug(self) -> dict[str, prefixctl.PrefixSet]:
 
         """
-        Returns prefix sets cached by slugs for all members being 
+        Returns prefix sets cached by slugs for all members being
         serialized. If the cache does not exist, it will be created.
         """
         if hasattr(self, "_prefix_sets_by_slug"):
@@ -292,14 +297,14 @@ class InternetExchangeMember(ModelSerializer):
 
         except ValueError:
             raise ValidationError(_("Invalid prefix set slug. Format should be `prefixctl::<slug>`"))
-        
+
         prefix_set = self.prefix_sets_by_slug.get(slug)
 
         if not prefix_set:
             raise ValidationError(_("Prefix set `{prefix_set_slug}` not found").format(prefix_set_slug=prefix_set_slug))
 
         return prefix_set_slug
-        
+
     def validate_port(self, port):
         """
         Validates the port to make sure it exists and belongs to the requesting
@@ -326,11 +331,40 @@ class InternetExchangeMember(ModelSerializer):
             return None
 
         prefix_set = self.prefix_sets_by_slug.get(obj.prefix_set_slug)
-        
+
         if not prefix_set:
             return None
 
         return prefix_set.name
+
+    def get_port_name(self, member):
+        if not member.port:
+            return None
+        try:
+            port = self.ports.get(member.port.id)
+            return port.virtual_port_name
+        except AttributeError:
+            return None
+
+    @property
+    def ports(self) -> dict[str, devicectl.Port]:
+        """
+        Returns ports cached.
+        If the cache does not exist, it will be created.
+        """
+        if hasattr(self, "_ports"):
+            return self._ports
+
+        instance = self.context.get("instance")
+        if instance:
+            org_id = instance.org.id
+        else:
+            org_id = None
+
+        ports = devicectl.Port().objects(org_id=org_id)
+
+        self._ports = {port.id: port for port in list(ports)}
+        return self._ports
 
 
 @register

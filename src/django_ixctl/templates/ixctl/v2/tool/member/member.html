@@ -2,6 +2,7 @@
 <div data-template="member_widget"
     data-api-base="{% url "ixctl_api:member-list" org_tag=request.org.slug ix_tag="default" %}"
     data-api-traffic-base="{% url "proxies-api-devicectl-virtual-port-traffic" org_tag=request.org.slug pk="0" %}"
+    data-api-metric-base="{% url "proxies-api-devicectl-metric" org_tag=request.org.slug port_id="0" %}"
     data-api-action=""
     data-api-method="GET">
 
