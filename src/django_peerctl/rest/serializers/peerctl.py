@@ -1488,6 +1488,7 @@ class PeerSession(ModelSerializer):
     md5 = serializers.SerializerMethodField()
 
     status = serializers.SerializerMethodField()
+    metric = serializers.SerializerMethodField()
 
     ref_tag = "peer_session"
 
@@ -1549,6 +1550,7 @@ class PeerSession(ModelSerializer):
             "meta4",
             "meta6",
             "status",
+            "metric",
         ]
 
     def get_meta4(self, obj):
@@ -1814,6 +1816,11 @@ class PeerSession(ModelSerializer):
             return obj.port.object.virtual_port_name
 
         return ""
+
+    def get_metric(self, obj):
+        if obj.port and obj.port.object and obj.port.object.physical_ports:
+            return obj.port.object.physical_ports
+        return None
 
 
 @register

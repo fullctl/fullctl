@@ -1,6 +1,4 @@
 (function($, $tc, $ctl) {
-
-  
 var $peerctl = $ctl.application.Peerctl = $tc.extend(
   "Peerctl",
   {
@@ -105,6 +103,11 @@ var $peerctl = $ctl.application.Peerctl = $tc.extend(
       if(this.defaultPage === "ix") {
         this.$t.ix.sync();
       }
+
+      this.tool("session_details", () => {
+        return new $ctl.application.Peerctl.SessionDetails();
+      });
+
 
       this.autoload_page();
     },
@@ -809,7 +812,9 @@ $peerctl.PeeringLists = $tc.extend(
       if (window.location.hash.indexOf("#page-peering-lists") == -1) {
         return
       }
-      window.history.pushState({}, '', "#page-peering-lists;"+id);
+      let hash = "#page-peering-lists;"+id;
+      window.history.replaceState({}, '', hash);
+      // console.log('peerCtl peerctl.js replaceState', hash);
     },
 
     sync : function(port_id) {
@@ -878,7 +883,7 @@ $peerctl.PeeringLists = $tc.extend(
         // if federated peerctl, instead of loading the `peers` list
         // we display the info box that leads to the federated peerctl
         // instance
-  
+
         toggleFederation(federated_peerctl);
 
         this.$w.port_info.find(".speed").text( $ctl.formatters.pretty_speed(port.speed) );
@@ -1005,7 +1010,6 @@ $peerctl.PeeringLists = $tc.extend(
         fullctl.peerctl.network.as_set = data.as_set;
       });
       */
-
 
       return menu;
     }
@@ -2392,7 +2396,35 @@ $peerctl.PeeringRequestsList = $tc.extend(
 
 
 $(document).ready(function() {
-  $ctl.peerctl = new $peerctl();
+    $ctl.peerctl = new $peerctl();
+
+    if (window.location.hash) {
+        // console.log('peerCtl initial hash: ' + window.location.hash);
+    }
+
+    window.addEventListener('popstate', function(event) {
+        // Captures history state changes triggered by the back/forward buttons.
+        // console.log('popstate event triggered:', event.state);
+        if (event.state) {
+            loadContent(event.state.pageId);
+        }
+    });
+
+    window.addEventListener('hashchange', function() {
+        // Captures changes in the URL hash
+        // console.log('hashchange event triggered:', window.location.hash);
+        loadContent(window.location.hash.substring(1)); // Remove the '#' from the hash
+    });
+
+    function loadContent(pageId) {
+        // Load or display content based on the page ID or hash
+        if(pageId==undefined){
+            return;
+        }
+        let href = pageId.split(";")[0];
+        // console.log('Loading content for:', href);
+        $(`a.nav-link[href="#${href}"]`).tab('show');
+    }
 });
 
 })(jQuery, twentyc.cls, fullctl);
