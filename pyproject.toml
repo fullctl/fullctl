@@ -23,10 +23,12 @@ python = "^3.9"
 fullctl = { git = "https://github.com/fullctl/fullctl.git", branch = "prep-release" }
 pygments = "^2.14"
 
-# graphs
+# graphs & metrics
 matplotlib = "^3.7.2"
 pandas = "^2.0.3"
 cairosvg = "^2.7.0"
+
+pytimeparse2 = ">1.7.1"
 
 [tool.poetry.dev-dependencies]
 # testing

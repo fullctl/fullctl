@@ -1,5 +1,8 @@
 import json
 import os
+import time
+
+import structlog
 
 import fullctl.django.tasks.qualifiers as qualifiers
 import fullctl.graph.mrtg.rrd as mrtg_rrd
@@ -12,9 +15,12 @@ from fullctl.django.models import Task
 from fullctl.django.models.concrete import OrganizationFile
 from fullctl.django.tasks import register
 from fullctl.graph.render.traffic import render_graph
+from fullctl.metrics import Metrics
+from fullctl.metrics.schema import Point
 
 import django_devicectl.models.devicectl as models
 
+log = structlog.get_logger("django_structlog")
 
 class OrgConcurrencyLimit(qualifiers.Base):
 
@@ -156,6 +162,8 @@ class UpdateTrafficGraphs(Task):
             if end_early:
                 break
 
+        self.update_victoriametrics(kwargs.get("update", []))
+
         for data in kwargs.get("import_mrtg", []):
             self.import_mrtg(data)
             processed_port_ids.add(data["id"])
@@ -173,6 +181,65 @@ class UpdateTrafficGraphs(Task):
             UpdateIxctlIxTrafficGraphs.create_task(
                 org=self.org,
             )
+
+    def update_victoriametrics(self, all_data:list[dict]):
+
+        if not all_data:
+            return
+
+        metrics = Metrics(
+            settings.TIMESERIES_DB_URL,
+            (settings.TIMESERIES_DB_USER, settings.TIMESERIES_DB_PASSWORD) if settings.TIMESERIES_DB_USER else None
+        )
+
+        tags_base = {
+            "ctl_org_id": self.org.remote_id,
+            "ctl_org": self.org.slug,
+        }
+
+        port_ids = []
+        for data in all_data:
+            virtual_port = self.context_model.objects.get(id=data["id"])
+            port_ids.append(virtual_port.port.id)
+
+        members = {m.port: m for m in ixctl.InternetExchangeMember().objects(ports=port_ids, org=self.org.remote_id)}
+
+
+        # collect ix ids from ixctl
+        points = []
+        for data in all_data:
+            try:
+
+                virtual_port = self.context_model.objects.get(id=data["id"])
+                
+                tags = {
+                    **tags_base,
+                    "ctl_port_id": data["id"],
+                    "ctl_ix_id": members[virtual_port.port.id].ix_id,
+                    "ctl_device_id": virtual_port.device.id,
+                }
+
+                point = Point(
+                    measurement="mrtg",
+                    tags=tags,
+                    fields={
+                        "bps_in": data["bps_in"] * 8,
+                        "bps_out": data["bps_out"] * 8,
+                        "bps_in_max": data["bps_in_max"] * 8,
+                        "bps_out_max": data["bps_out_max"] * 8,
+                    },
+                    timestamp=data["timestamp"],
+                )
+
+                points.append(point)
+            except Exception as e:
+                log.exception(f"Error processing data point {data}", e=e)
+                continue
+        
+        if points:
+            log.debug("Writing points to victoriametrics", points=points)
+            metrics.write_many(points)
+
 
     def update_rrd(self, data):
         """
@@ -345,7 +412,11 @@ class UpdateIxctlIxTrafficGraphs(Task):
 
             output_file = f"ixctl-ix-{ix_id}.rrd"
             output_path = os.path.join(settings.GRAPHS_PATH, output_file)
-            mrtg_rrd.aggregate_rrd_files(rrd_files, output_path)
+            try:
+                mrtg_rrd.aggregate_rrd_files(rrd_files, output_path)
+            except Exception:
+                log.exception(f"Error aggregating rrd files for IX {ix_id}")
+                continue
             graph_files.append(output_file)
 
         return graph_files
@@ -373,8 +444,131 @@ class RenderTrafficGraphs(Task):
         tag = "task_render_traffic_graphs"
 
     def run(self, *args, **kwargs):
+        for obj in args:
+            _, obj_type, obj_id = obj.split(".")[0].split('-')
+            self.render_from_victoriametrics(obj_id, obj_type)
+
         for graph_file in args:
             self.render_from_rrd(graph_file)
+
+    def render_from_victoriametrics(self, obj_id, obj_type):
+        self.ix_graphs = {}
+
+        metrics = Metrics(
+            settings.TIMESERIES_DB_URL,
+            (settings.TIMESERIES_DB_USER, settings.TIMESERIES_DB_PASSWORD) if settings.TIMESERIES_DB_USER else None
+        )
+
+        object_label = None
+        file_prefix = ""
+
+        for duration, resolution, suffix in self.periods:
+
+            # Determine object type and set parameters
+            if obj_type == "virtual-port":
+                obj = models.VirtualPort.objects.get(id=obj_id)
+                title = f"{obj.name}"
+                service = "devicectl"
+                public = False
+                object_label = "port"
+            elif obj_type == "device":
+                obj = models.Device.objects.get(id=obj_id)
+                title = f"{obj.name}"
+                service = "devicectl"
+                public = False
+                object_label = "device"
+            elif obj_type == "ix":
+                obj = ixctl.InternetExchange().object(obj_id)
+                title = f"{obj.name}"
+                service = "ixctl"
+                public = True
+                object_label = "ix"
+                file_prefix = "ixctl-"
+                self.ix_graphs.setdefault(obj_id, []).append(f"{obj_type}-{obj_id}")
+            else:
+                log.error(f"Unknown object type {obj_type}")
+                return
+
+            # Calculate time range
+            end_time = int(time.time())
+            start_time = end_time - duration
+
+            # Query VictoriaMetrics
+            query = metrics.build_query_string(
+                aggregator=None,
+                metrics=["mrtg_bps_in", "mrtg_bps_out", "mrtg_bps_in_max", "mrtg_bps_out_max"],
+                tags={
+                    f"ctl_{object_label}_id": obj_id,
+                    "ctl_org": self.org.slug,
+                },
+                time_range=resolution,
+            )
+
+            query = f"sum by (__name__) ({query})"
+
+            result = metrics.query_range(query, start=str(start_time), end=str(end_time), step=str(resolution)+"s")
+
+            # Process the data
+            data = []
+                        
+            # process data so its neat rows of
+            # timestamp, bps_in, bps_out, bps_in_max, bps_out_max
+
+            data_by_timestamp = {}
+
+            for metric in result.data.result:
+                metric_name = metric.metric["__name__"]
+
+                # strip mrtg_ prefix
+                metric_name = metric_name.replace("mrtg_", "")
+
+                for value in metric.values:
+                    timestamp = int(value[0])
+                    if timestamp not in data_by_timestamp:
+                        data_by_timestamp[timestamp] = {"timestamp": timestamp}
+                    data_by_timestamp[timestamp][metric_name] = float(value[1])
+
+            data = sorted(data_by_timestamp.values(), key=lambda x: x["timestamp"])
+
+            if not data:
+                log.warning(f"No valid data found for {obj_type}-{obj_id} with duration {duration}")
+                continue
+
+            # Render the graph
+            png_data = render_graph(
+                data,
+                title_label=title,
+                service=service,
+            )
+
+            # Save the graph
+            image_file_name = f"{file_prefix}{obj_type}-{obj_id}-{suffix}-victoria.png"
+
+            try:
+                f = OrganizationFile.objects.get(org=self.org, name=image_file_name)
+                f.content = png_data
+                f.public = public
+                f.content_type = "image/png"
+                f.save()
+            except OrganizationFile.DoesNotExist:
+                OrganizationFile.objects.create(
+                    org=self.org,
+                    name=image_file_name,
+                    content=png_data,
+                    content_type="image/png",
+                    public=public,
+                )
+
+            if public:
+                self.ix_graphs.setdefault(obj_id, []).append(image_file_name)
+
+        # Process IX graphs if any
+        for ix_id, graphs in self.ix_graphs.items():
+            AuditCtlIXTrafficProcessed.create_task(
+                org=self.org,
+                ix_id=ix_id,
+                graphs=graphs,
+            )
 
     def render_from_rrd(self, filepath):
         self.ix_graphs = {}
