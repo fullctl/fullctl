@@ -81,7 +81,7 @@ def account_service(request):
     # otherwise check if the organization of the request has a branding applied
     # to it through aaactl (either on the org directly or through a BRANDING_ORG
     # set in aaactl)
-    elif not branding:
+    elif not branding and not local_auth:
 
         # AAACTL SELECTS BRANDING
 

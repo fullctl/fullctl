@@ -399,4 +399,210 @@
             fullctl.graphs.render_graph(data.data, selector=selector, titleLabel);
         });
     }
+
+    // VICTORIA METRICS TRAFFIC (MRTG AND SFLOW)
+    // they currently can be rendered with the same function since we're 
+    // just tracking bps_in and bps_out
+
+    fullctl.graphs.render_graph_vm_mrtg_and_sflow = function(data, selector="#graph", titleLabel = "") {
+        if (!data || !data.data || !data.data[0] || !data.data[0].data || !data.data[0].data.result) {
+            console.error("Invalid data format");
+            return;
+        }
+
+        const result = data.data[0].data.result;
+        const processedData = [];
+
+        // Find the metrics for each type
+        const bpsInMetric = result.find(item => item.metric.metric === "bps_in");
+        const bpsOutMetric = result.find(item => item.metric.metric === "bps_out");
+        const bpsInMaxMetric = result.find(item => item.metric.metric === "bps_in_max");
+        const bpsOutMaxMetric = result.find(item => item.metric.metric === "bps_out_max");
+
+        if (!bpsInMetric || !bpsOutMetric || !bpsInMaxMetric || !bpsOutMaxMetric) {
+            console.error("Missing required metrics");
+            return;
+        }
+
+        // Process the data into the format expected by the rendering function
+        for (let i = 0; i < bpsInMetric.values.length; i++) {
+
+            // assert that i is within the bounds of the other metrics
+            if(i >= bpsOutMetric.values.length || i >= bpsInMaxMetric.values.length || i >= bpsOutMaxMetric.values.length) {
+                console.error("Metrics are not of the same length")
+                break;
+            }
+
+            processedData.push({
+                timestamp: bpsInMetric.values[i][0],
+                bps_in: parseFloat(bpsInMetric.values[i][1]),
+                bps_out: parseFloat(bpsOutMetric.values[i][1]),
+                bps_in_max: parseFloat(bpsInMaxMetric.values[i][1]),
+                bps_out_max: parseFloat(bpsOutMaxMetric.values[i][1])
+            });
+        }
+
+        // Sort the processed data by timestamp
+        processedData.sort((a, b) => a.timestamp - b.timestamp);
+
+        // Clear the existing graph
+        d3.select(selector).selectAll("*").remove();
+
+        // Render the graph using the existing render_graph function
+        fullctl.graphs.render_graph(processedData, selector, titleLabel);
+    }
+
+    fullctl.graphs.render_graph_from_file_vm_mrtg = function(path, selector="#graph", titleLabel = "") {
+        return d3.json(path).then(function(data) {
+            $(selector).empty();
+            fullctl.graphs.render_graph_vm_mrtg_and_sflow(data, selector, titleLabel);
+        });
+    }
+
+    fullctl.graphs.render_graph_from_file_vm_sflow = function(path, selector="#graph", titleLabel = "") {
+        return d3.json(path).then(function(data) {
+            $(selector).empty();
+            fullctl.graphs.render_graph_vm_mrtg_and_sflow(data, selector, titleLabel);
+        });
+    }
+
+
+    fullctl.graphs.RENDERER_BY_TYPE = {
+        // legacy mrtg graphs rendered from rrd files
+        "rrd_mrtg": fullctl.graphs.render_graph_from_file,
+        
+        // mrtg graph rendered from victoria metrics data
+        "vm_mrtg": fullctl.graphs.render_graph_from_file_vm_mrtg,
+
+        // sflow graph rendered from victoria metrics data
+        "vm_sflow": fullctl.graphs.render_graph_from_file_vm_sflow
+    }
+
+    /**
+     * Function to show graphs
+     * Either port or total traffic
+     * 
+     * get_url is a function that returns the url to fetch the traffic data
+     * it takes the graph container and the url attribute as arguments
+     * 
+     * ```
+     * function get_url(graph_container, url_attribute) {
+     *  return graph_container.data(url_attribute).replace("/0/", "/"+$ctl.ixctl.ix()+"/")
+     * }
+     * ```
+     * 
+     * Proxy is used to pass the current context which can either be 
+     * the total traffic tool or the member details tool
+     */
+
+    fullctl.graphs.show_graph = function(
+        graph_container,
+        graph_traffic_source,
+        end_date, 
+        duration,
+        title,
+        selector,
+        get_url,
+        proxy
+    ) {
+        if(!graph_traffic_source) {
+        // legacy default
+        graph_traffic_source = "rrd_mrtg";
+        }
+    
+        if(proxy.$e.dev_tools) {
+        proxy.$e.graph_traffic_source.text(graph_traffic_source);
+        }
+    
+        let renderer_function = fullctl.graphs.RENDERER_BY_TYPE[graph_traffic_source];
+    
+        // split by underscore and take the first part
+        // will be vm or rrd
+        let metric_store = graph_traffic_source.split("_")[0];
+    
+        if(!renderer_function) {
+        throw new Error("No renderer function found for graph_traffic_source: " + graph_traffic_source);
+        }
+    
+        let url_attribute = (
+        graph_traffic_source !== "rrd_mrtg" ? 
+        `api-base-${graph_traffic_source.replace('_','-')}` : 
+        "api-base"
+        );
+
+        let url = get_url(graph_container, url_attribute)
+        let params = [];
+    
+        if(metric_store == "rrd") {
+
+            // the legacy RRD endpoint expects the following 
+            // parameters
+
+            // start_time = unix timestamp of previous date
+            // end_time = unix timestamp of stop date (> start_time)
+            // duration = duration in seconds
+
+            // the data comes in as this so can be used directly
+
+            if (end_date) {
+                params.push('start_time=' + end_date);
+            }
+            if (end_date && duration) {
+                params.push('duration=' + duration);
+            }
+        } else if(metric_store == "vm") {
+
+            // the victoria metrics endpoint expects the following
+
+            // start = start time in unix timestamp or relative time (e.g -24h)
+            // end = end time in unix timestamp or relative time (e.g -24h)
+            // step = step size (calculated to reasonable unit from duration)
+
+            if (duration) {
+                // duration comes in as seconds
+                // and describes the total time period between start and end
+
+                if(duration <= 3600) {
+                    params.push('step=60');
+                } else if(duration <= 86400) {
+                    params.push('step=300');
+                } else if(duration <= 86400 * 30) {
+                    params.push('step=3600');
+                } else {
+                    params.push('step=86400');
+                }
+                params.push('start=-'+duration+'s');
+
+            } else {
+                params.push('step=300');
+                params.push('start=-24h');
+            }
+        }
+    
+        if (params.length > 0) {
+        url += '?' + params.join('&');
+        }
+    
+        console.log("Requesting traffic data", {url, graph_traffic_source, metric_store});
+    
+        renderer_function(
+        url,
+        selector,
+        title,
+        ).then(() => {
+        // check if a svg has been added to the container, if not, graph data was empty
+        if(graph_container.find("svg").length == 0) {
+            graph_container.empty().append(
+            $('<div class="alert alert-info">').append(
+                $('<p>').text("No aggregated traffic data available.")
+            )
+            )
+        } else {
+            proxy.$e.refresh_traffic_graph.show();
+        }
+        })
+    }
+    
+
+
 })();

@@ -5,6 +5,9 @@ Unreleased:
   deprecated: []
   removed: []
   security: []
+1.14.0:
+  added:
+  - Metrics support
 1.13.0:
   added:
   - task queue health checks and display

@@ -4,6 +4,11 @@
 ## Unreleased
 
 
+## 1.14.0
+### Added
+- Metrics support
+
+
 ## 1.13.0
 ### Added
 - task queue health checks and display

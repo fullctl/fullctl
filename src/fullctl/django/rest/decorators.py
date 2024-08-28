@@ -109,7 +109,9 @@ class grainy_endpoint(base):
     def __call__(self, fn):
         decorator = self
 
-        if getattr(settings, "USE_LOCAL_PERMISSIONS", False):
+        local_auth = getattr(settings, "USE_LOCAL_PERMISSIONS", False)
+
+        if local_auth:
             permissions_cls = Permissions
         else:
             permissions_cls = RemotePermissions
@@ -159,8 +161,11 @@ class grainy_endpoint(base):
                 else:
                     reversion.set_comment(f"{request.user}")
 
-                with ServiceBridgeContext(request.org):
+                if local_auth:
                     return fn(self, request, *args, **kwargs)
+                else:
+                    with ServiceBridgeContext(request.org):
+                        return fn(self, request, *args, **kwargs)
 
         inner.__name__ = fn.__name__
 

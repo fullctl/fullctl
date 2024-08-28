@@ -898,6 +898,10 @@ twentyc.rest.Widget = twentyc.cls.extend(
               data[input.attr("name")] = true;
             else
               data[input.attr("name")] = false;
+          } else if(input.attr("type") == "radio") {
+                if(input.prop("checked")) {
+                  data[input.attr("name")] = input.val();
+                }
           } else {
             if (input.data("type") == "int") {
               data[input.attr("name")] = parseInt(input.val());
@@ -915,7 +919,7 @@ twentyc.rest.Widget = twentyc.cls.extend(
           }
         });
       });
-
+      
       $(this).trigger("payload:after", [data]);
 
       return data;
@@ -961,6 +965,8 @@ twentyc.rest.Widget = twentyc.cls.extend(
           if(tag == "select" || tag == "input" || tag == "textarea") {
             if(col_element.attr("type") == "checkbox") {
               col_element.prop("checked", data[k]);
+            } else if (col_element.attr("type") == "radio") {
+                  col_element.filter('[value="' + data[k] + '"]').prop("checked", true);
             } else {
               col_element.val(data[k]);
             }
@@ -1049,8 +1055,13 @@ twentyc.rest.Form = twentyc.cls.extend(
     fill : function(data) {
       var key, value;
       this.clear_errors();
-      for(key in data) {
-        value = data[key];
+
+      const prepared_data = {...data};
+
+      $(this).trigger("fill:before", [prepared_data]);
+
+      for(key in prepared_data) {
+        value = prepared_data[key];
         this.element.find('[name="'+key+'"]').each(function() {
 
           if($(this).data("constant") == "yes") {
@@ -1059,6 +1070,8 @@ twentyc.rest.Form = twentyc.cls.extend(
 
           if($(this).attr("type") == "checkbox") {
             $(this).prop("checked", value);
+          } else if ($(this).attr("type") == "radio") {
+                  $(this).filter('[value="' + value + '"]').prop("checked", true);
           } else {
             $(this).val(value);
           }
@@ -1180,7 +1193,7 @@ twentyc.rest.Form = twentyc.cls.extend(
       this.element.find('input,textarea,select').each(function() {
         var input = $(this);
         var tag = this.tagName.toLowerCase();
-        if(tag == "select" || input.attr("type") == "checkbox") {
+        if(tag == "select" || input.attr("type") == "checkbox"|| input.attr("type") == "radio") {
           input.on("change", submit_handler);
         } else {
           input.on("keyup", submit_handler);
