@@ -145,6 +145,19 @@ class InternetExchange(PdbRefModel):
         ),
     )
 
+    graph_traffic_source = models.CharField(
+        max_length=255,
+        choices=(
+            ("", "No Graphs"),
+            ("rrd_mrtg", "RRD / MRTG (deprecated)"),
+            ("vm_mrtg", "VictoriaMetrics / MRTG"),
+            ("vm_sflow", "VictoriaMetrics / sFlow"),
+        ),
+        help_text=_("Traffic metric storage and data type for graph rendering"),
+        default="",
+        blank=True,
+    )
+
     class PdbRef(PdbRefModel.PdbRef):
         pdbctl = pdbctl.InternetExchange
 
@@ -356,7 +369,6 @@ class OrganizationDefaultExchange(models.Model):
     def __str__(self):
         return f"{self.org.name} -> {self.ix.name}"
 
-
 @reversion.register()
 @grainy_model(
     namespace="member",
@@ -380,7 +392,6 @@ class InternetExchangeMember(PdbRefModel):
     )
     ipaddr4 = InetAddressField(blank=True, null=True, store_prefix_length=False)
     ipaddr6 = InetAddressField(blank=True, null=True, store_prefix_length=False)
-    macaddr = MACAddressField(null=True, blank=True)
     as_macro_override = models.CharField(
         max_length=255, blank=True, null=True, validators=[validate_as_set]
     )
@@ -422,7 +433,7 @@ class InternetExchangeMember(PdbRefModel):
         db_table = "ixctl_member"
         verbose_name_plural = _("Internet Exchange Members")
         verbose_name = _("Internet Exchange Member")
-        unique_together = (("ipaddr4", "ix"), ("ipaddr6", "ix"), ("macaddr", "ix"))
+        unique_together = (("ipaddr4", "ix"), ("ipaddr6", "ix"))
 
     @classmethod
     def create_from_pdb(cls, pdb_object, ix, save=True, **fields):
@@ -609,9 +620,86 @@ class InternetExchangeMember(PdbRefModel):
 
         return self.prefix_set.split("::")[-1]
 
+    @property
+    def macaddr(self) -> str | None:
+        """
+        Backwards compatibility for macaddr field
+        """
+
+        try:
+            return str(self.mac_addresses.all()[0].address)
+        except IndexError:
+            return None
+        
+    # setter for macaddr field
+    @macaddr.setter
+    def macaddr(self, value:str):
+        if not value or not self.id:
+            return
+        
+        self.mac_addresses.all().delete()
+
+        MacAddress.objects.get_or_create(member=self, address=value)
+
+    @property
+    def macaddr_set(self) -> list[str]:
+        """
+        Returns a list of MAC addresses for this member
+        """
+
+        return [str(mac.address) for mac in self.mac_addresses.all()]
+
+    # setter for macaddr_set field
+    @macaddr_set.setter
+    def macaddr_set(self, macs:list[str]):
+        if not self.id:
+            return
+            
+        # delete all existing mac addresses
+        self.mac_addresses.all().delete()
+
+        if not macs:
+            return
+        
+        self.mac_addresses.bulk_create(
+            MacAddress(member=self, address=mac) for mac in macs
+        )
+
     def __str__(self):
         return f"AS{self.asn} - {self.ipaddr4} - {self.ipaddr6} ({self.id})"
 
+
+@reversion.register()
+@grainy_model(
+    namespace="member",
+    namespace_instance=(
+        "member.{instance.org.permission_id}.{instance.ix_id}.{instance.member.asn}"
+    ),
+)
+class MacAddress(HandleRefModel):
+
+    """
+    Describes a MAC address
+    """
+
+    address = MACAddressField()
+    member = models.ForeignKey(
+        InternetExchangeMember,
+        on_delete=models.CASCADE,
+        related_name="mac_addresses",
+    )
+
+    class Meta:
+        db_table = "ixctl_mac"
+        verbose_name = _("MAC Address")
+        verbose_name_plural = _("MAC Addresses")
+        unique_together = (("address", "member"),)
+
+    class HandleRef:
+        tag = "mac"
+
+    def __str__(self):
+        return f"{self.address}"
 
 @reversion.register
 @grainy_model(

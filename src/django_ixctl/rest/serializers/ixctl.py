@@ -17,6 +17,7 @@ from fullctl.django.rest.serializers import (
     RequireContext,
     SoftRequiredValidator,
 )
+from fullctl.django.inet.validators import validate_mac_address, validate_mac_addresses
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueTogetherValidator
@@ -135,6 +136,8 @@ class UpdateLAN(ModelSerializer):
 @register
 class InternetExchange(ModelSerializer):
 
+    graph_traffic_source = serializers.CharField(read_only=True)
+    
     class Meta:
         model = models.InternetExchange
         fields = [
@@ -150,6 +153,7 @@ class InternetExchange(ModelSerializer):
             "vlan_id",
             "notes",
             "public_view",
+            "graph_traffic_source",
         ]
         extra_kwargs = {
             "slug": {
@@ -171,13 +175,16 @@ class InternetExchange(ModelSerializer):
         if not slug:
             slug = models.InternetExchange.default_slug(cleaned_data["name"])
         qset = models.InternetExchange.objects.filter(instance=instance, slug=slug)
+        
+        if self.instance and self.instance.id:
+            qset = qset.exclude(id=self.instance.id)
+
         if qset.exists():
             raise ValidationError(
                 _("You already have an exchange with the identifier `{}`").format(slug)
             )
         cleaned_data["slug"] = slug
         return cleaned_data
-
 
 @register
 class InternetExchangeMember(ModelSerializer):
@@ -187,12 +194,17 @@ class InternetExchangeMember(ModelSerializer):
     ipaddr6 = IPAddressField(
         version=6, allow_blank=True, allow_null=True, required=False, default=None
     )
+
     macaddr = serializers.CharField(
         allow_blank=True,
         allow_null=True,
         required=False,
         default=None,
-        validators=[RegexValidator(r"(?i)^([0-9a-f]{2}[-:]){5}[0-9a-f]{2}$")],
+    )
+
+    macaddr_set = serializers.ListSerializer(
+        child=serializers.CharField(),
+        required=False,
     )
 
     display_name = serializers.CharField(read_only=True)
@@ -213,6 +225,7 @@ class InternetExchangeMember(ModelSerializer):
             "ipaddr4",
             "ipaddr6",
             "macaddr",
+            "macaddr_set",
             "as_macro",
             "as_macro_override",
             "as_macro_negate",
@@ -274,10 +287,21 @@ class InternetExchangeMember(ModelSerializer):
             return None
         return ipaddr6
 
-    def validate_macaddr(self, macaddr):
+    def validate_macaddr(self, macaddr: str):
         if not macaddr:
             return None
+        
+        validate_mac_address(macaddr)
+        
         return macaddr
+    
+    def validate_macaddr_set(self, macaddr_set: list[str]):
+        if not macaddr_set:
+            return []
+        
+        validate_mac_addresses(macaddr_set)
+
+        return macaddr_set
 
     def validate_md5(self, md5):
         if not md5:
@@ -337,6 +361,12 @@ class InternetExchangeMember(ModelSerializer):
 
         return prefix_set.name
 
+    def save(self):
+        member = super().save()
+        # member needs to be saved before we can set the macaddr_set
+        member.macaddr_set = self.validated_data.get("macaddr_set", [])
+
+        return member
     def get_port_name(self, member):
         if not member.port:
             return None

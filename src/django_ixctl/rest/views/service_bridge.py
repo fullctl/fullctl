@@ -77,6 +77,7 @@ class InternetExchangeMember(DataViewSet):
         ("asns", "asn__in"),
         ("ports", MethodFilter("ports")),
         ("peers", MethodFilter("peers")),
+        ("peers_from_port", MethodFilter("peers_from_port")),
         ("sot", MethodFilter("sot")),
         ("ip", MethodFilter("ip")),
         ("mutual", MethodFilter("mutual")),
@@ -94,6 +95,13 @@ class InternetExchangeMember(DataViewSet):
     def filter_peers(self, qset, value):
         member = self.get_queryset().filter(id=value).first()
         return qset.filter(ix_id=member.ix_id, status="ok").exclude(id=value)
+
+    def filter_peers_from_port(self, qset, value):
+        class Port:
+            def __init__(self, _id) -> None:
+                self.id = int(_id)
+        member = self.get_queryset().filter(port=Port(value)).first()
+        return qset.filter(ix_id=member.ix_id, status="ok").exclude(id=member.id)
 
     def filter_mutual(self, qset, value):
         asn = value
@@ -146,13 +154,13 @@ class InternetExchangeMember(DataViewSet):
     )
     @grainy_endpoint(namespace="service_bridge")
     def mac_address(self, request, asn, ip, *args, **kwargs):
-        mac_address = request.data.get("mac_address")
-
+        macaddr_set = request.data.getlist("macaddr_set")
         members = models.InternetExchangeMember.objects.filter(
             ix__verified=True, asn=asn, ipaddr4=ip
-        )
+        ).prefetch_related("mac_addresses")
 
-        members.update(macaddr=mac_address)
+        for member in members:
+            member.macaddr_set = macaddr_set
         return Response(Serializers.member(instance=members, many=True).data)
 
     @action(detail=False, methods=["PUT"], url_path="sync/as-macro")
@@ -212,13 +220,44 @@ class InternetExchangeMember(DataViewSet):
 
         start_time = request.query_params.get("start_time")
         duration = request.query_params.get("duration")
+        step = request.query_params.get("step")
 
         return Response(
             devicectl.VirtualPort().traffic(
-                virtual_port_id, start_time=start_time, duration=duration
+                virtual_port_id, 
+                start_time=start_time, 
+                duration=duration,
+                step=step,
+                traffic_source = member.ix.graph_traffic_source
             )
         )
 
+    @action(detail=True, methods=["GET"])
+    @grainy_endpoint(namespace="service_bridge")
+    def traffic_asn_pair(self, request, pk=None, *args, **kwargs):
+        member = self.get_object()
+
+        if not member.port:
+            return Response({})
+
+        virtual_port_id = member.port.object.virtual_port
+
+        start_time = request.query_params.get("start_time")
+        duration = request.query_params.get("duration")
+        step = request.query_params.get("step")
+        asn_src = request.query_params.get("asn_src")
+        asn_dst = request.query_params.get("asn_dst")
+
+        return Response(
+            devicectl.VirtualPort().traffic_asn_pair(
+                virtual_port_id, 
+                asn_src=asn_src,
+                asn_dst=asn_dst,
+                start_time=start_time, 
+                duration=duration,
+                step=step,
+            )
+        )
 
 @route
 class RouteServer(DataViewSet):

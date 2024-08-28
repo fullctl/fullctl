@@ -104,6 +104,11 @@ class InternetExchange(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericView
     @auditlog()
     @grainy_endpoint(namespace="ix.{request.org.permission_id}.{ix.pk}")
     def update(self, request, org, ix, instance, auditlog=None, *args, **kwargs):
+
+        data = request.data
+
+        data["instance"] = instance.id
+
         serializer = Serializers.ix(
             ix,
             data=request.data,
@@ -275,6 +280,8 @@ class Member(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet):
         queryset = filters.InternetExchangeMemberFilter(
             request.GET, queryset=queryset
         ).qs
+
+        queryset = queryset.prefetch_related("mac_addresses")
 
         # preload_networks returns a generator, but we need to be able
         # to iterate over it multiple times, so we convert it to a list

@@ -302,6 +302,26 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       this.member = member;
       form.base_url = form.base_url.replace("/default", "/"+ix_slug);
 
+      $(this.form).on("payload:after", (ev, payload) => {
+        // macaddr_set comes in as a string with a mac address
+        // on each line. We need to split it into an array
+        payload.macaddr_set = payload.macaddr_set.split("\n").filter((line) => {
+          return line.trim() != "";
+        });
+
+        // delete payload.macaddr
+        if(payload.macaddr)
+          delete payload.macaddr;
+
+        return payload;
+      });
+      
+      $(this.form).on("fill:before", (ev, data) => {
+        // macaddr_set comes in as an array, we need to join it into a string
+        data.macaddr_set = data.macaddr_set.join("\n");
+        return data;
+      });
+
       // load select options
 
       var state_select = new twentyc.rest.Select(
@@ -471,6 +491,10 @@ $ctl.application.Ixctl.Members = $tc.extend(
           row.find('a[data-api-method="DELETE"]').hide();
         }
       };
+
+      this.$w.list.formatters.macaddr_set = (macaddr_set) => {
+        return macaddr_set.join("\n");
+      }
 
       this.$w.list.formatters.speed = $ctl.formatters.pretty_speed;
 
@@ -770,6 +794,24 @@ $ctl.application.Ixctl.Traffic = $tc.extend(
 
     Traffic : function() {
       this.Tool("traffic");
+
+      if(this.$e.dev_tools) {
+        this.$e.force_rrd_mrtg.click(() => {
+          this.force_traffic_source = "rrd_mrtg";
+          this.sync();
+        });
+        
+        this.$e.force_vm_mrtg.click(() => {
+          this.force_traffic_source = "vm_mrtg";
+          this.sync();
+        });
+
+        this.$e.force_vm_sflow.click(() => {
+          this.force_traffic_source = "vm_sflow";
+          this.sync();
+        });
+      }
+
     },
 
     sync : function() {
@@ -794,34 +836,29 @@ $ctl.application.Ixctl.Traffic = $tc.extend(
 
     // Function to show graphs
     show_graph : function(end_date, duration) {
-      let graph_container = this.$e.graph_container;
-      let url = graph_container.data("api-base").replace("/0/", "/"+$ctl.ixctl.ix()+"/");
-      let params = [];
-      if (end_date) {
-        params.push('start_time=' + end_date);
-      }
-      if (end_date && duration) {
-        params.push('duration=' + duration);
-      }
-      if (params.length > 0) {
-        url += '?' + params.join('&');
-      }
-      fullctl.graphs.render_graph_from_file(
-        url,
-        ".graph_container",
+      let ix = $ctl.ixctl.ix_object();
+      let graph_traffic_source = this.force_traffic_source || ix.graph_traffic_source;
+      fullctl.graphs.show_graph(
+        this.$e.graph_container,
+        graph_traffic_source,
+
+        end_date,
+        duration,
+        
+        // title
         fullctl.ixctl.ix_object().name + " Total Traffic",
-      ).then(() => {
-        // check if a svg has been added to the container, if not, graph data was empty
-        if(graph_container.find("svg").length == 0) {
-          graph_container.empty().append(
-            $('<div class="alert alert-info">').append(
-              $('<p>').text("No aggregated traffic data available for this exchange.")
-            )
-          );
-        } else {
-          this.$e.refresh_traffic_graph.show();
-        }
-      });
+
+        // selector
+        ".graph_container",
+
+        // get_url function
+        (graph_container, url_attribute) => {
+          return graph_container.data(url_attribute).replace("/0/", "/"+$ctl.ixctl.ix()+"/")
+        },
+
+        // proxy
+        this
+      );
     }
   },
   $ctl.application.Tool
@@ -854,8 +891,13 @@ $ctl.application.Ixctl.MemberDetails = $tc.extend(
         form.format_request_url = (url) => {
           return url.replace("default", $ctl.ixctl.ix_slug());
         }
+        $(form).on("fill:before", (ev, data) => {
+          data.macaddr_set = data.macaddr_set.join("\n");
+        });
         return form;
       });
+
+
     },
 
     // Function to show member details
@@ -924,7 +966,6 @@ $ctl.application.Ixctl.MemberDetails = $tc.extend(
 
     // Function to show graphs
     show_graphs : function(member, end_date, duration) {
-      let graph_container = this.$e.body.parents(".tool").find("[data-element=graphs_container]");
 
       if(!member.port) {
         // member does not have a port assigned
@@ -937,41 +978,25 @@ $ctl.application.Ixctl.MemberDetails = $tc.extend(
         return;
       }
 
-      let url = this.$w.member.element.data('api-traffic-base').replace(/0/g, member.port.virtual_port);
-      let params = [];
-      if (end_date) {
-        params.push('start_time=' + end_date);
-      }
-      if (end_date && duration) {
-        params.push('duration=' + duration);
-      }
-      if (params.length > 0) {
-        url += '?' + params.join('&');
-      }
+      let ix = $ctl.ixctl.ix_object();
+      let graph_traffic_source = this.force_traffic_source || ix.graph_traffic_source;
 
-      fullctl.graphs.render_graph_from_file(
-        url,
-        "#member_port_traffic_graph",
+      fullctl.graphs.show_graph(
+        this.$e.body.parents(".tool").find("[data-element=graphs_container]"),
+        graph_traffic_source,
+        end_date,
+        duration,
         member.port.virtual_port_name,
-      ).then(() => {
-        // check if a svg has been added to the container, if not, graph data was empty
-        if(graph_container.find("svg").length == 0) {
-          graph_container.empty().append(
-            $('<div class="alert alert-info">').append(
-              $('<p>').text("No traffic data available for this member.")
-            )
-          )
-        } else {
-          this.$e.refresh_traffic_graph.show();
-        }
-      })
+        "#member_port_traffic_graph",
+        (graph_container, url_attribute) => {
+          return graph_container.data(url_attribute).replace(/0/g, member.port.virtual_port);
+        },
+        this
+      );
     }
   },
   $ctl.application.Tool
 );
-
-
-
 
 $(document).ready(function() {
   $ctl.ixctl = new $ctl.application.Ixctl();

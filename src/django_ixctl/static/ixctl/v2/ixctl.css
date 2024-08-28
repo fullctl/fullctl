@@ -60,3 +60,11 @@ span.icon-lg {
   width: 32px;
   height: 32px;
 }
+
+p[data-field="macaddr_set"] {
+  white-space: pre-wrap;
+}
+
+tr.secondary td.property div.row div p[data-field="macaddr_set"] {
+  margin-left: 0px;
+}
