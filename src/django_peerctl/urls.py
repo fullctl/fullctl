@@ -30,8 +30,8 @@ proxy.setup(
             ("device/{org_tag}/{pk}/", "device/<str:org_tag>/<int:pk>/", "detail"),
             ("device/{org_tag}", "device/<str:org_tag>/", "list"),
             (
-                "metric/{org_tag}/port/{port_id}",
-                "metric/<str:org_tag>/port/<int:port_id>/",
+                "metric/device/{org_tag}/port/{port_id}",
+                "metric/device/<str:org_tag>/port/<int:port_id>/",
                 "metric",
             ),
             (
