@@ -138,18 +138,21 @@ class Organization(HandleRefModel):
         perms.load()
         org_namespaces = perms.pset.expand("?.?", exact=True)
 
+        org_ids = set()
+
         for ns in org_namespaces:
             try:
                 int(ns[1])
             except (ValueError, IndexError):
                 continue
 
-            try:
-                org = cls.objects.get(remote_id=ns[1])
-                if org not in related_orgs:
-                    permissioned_orgs.append(org)
-            except cls.DoesNotExist:
-                pass
+            org_ids.add(ns[1])
+
+        orgs_by_id = {org.remote_id: org for org in cls.objects.filter(remote_id__in=org_ids)}
+
+        for org in orgs_by_id.values():
+            if org not in related_orgs:
+                permissioned_orgs.append(org)
 
         return list(set(related_orgs + permissioned_orgs))
 

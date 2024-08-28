@@ -893,3 +893,17 @@ div.autocomplete-item {
 .graph-placeholder {
   background-color: var(--graph-placeholder-bg);
 }
+
+/*
+ * metrics
+ */
+
+.red{
+    background-color: red !important;
+}
+.amber{
+    background-color: #FFBF00 !important;
+}
+.green{
+    background-color: green !important;
+}

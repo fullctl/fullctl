@@ -4,6 +4,16 @@ import re
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
+__all__ = [
+    "validate_ip4",
+    "validate_ip6",
+    "validate_prefix",
+    "validate_masklength_range",
+    "validate_mac_address",
+    "validate_mac_addresses",
+    "validate_as_set",
+]
+
 # valid IRR source identifiers
 # reference: http://www.irr.net/docs/list.html
 IRR_SOURCE = (
@@ -52,6 +62,18 @@ def validate_prefix(value):
 def validate_masklength_range(value):
     if not re.match(r"^([0-9]+\.\.[0-9]+|exact)$", value):
         raise ValidationError("Needs to be [0-9]+..[0-9]+ or 'exact'")
+
+
+def validate_mac_address(value: str):
+    if not re.match(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", value):
+        raise ValidationError("Invalid MAC address")
+
+def validate_mac_addresses(value: list[str]):
+    for mac in value:
+        try:
+            validate_mac_address(mac)
+        except ValidationError:
+            raise ValidationError(f"Invalid MAC address: {mac}")
 
 
 def validate_as_set(value):

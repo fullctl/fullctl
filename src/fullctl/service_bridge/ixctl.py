@@ -76,8 +76,8 @@ class InternetExchangeMember(Ixctl):
         ref_tag = "member"
         data_object_cls = InternetExchangeMemberObject
 
-    def set_mac_address(self, asn, ip, mac_address, source):
-        data = {"mac_address": mac_address, "source": source}
+    def set_mac_address(self, asn:int, ip:str, macaddr_set:list[str], source):
+        data = {"macaddr_set": macaddr_set, "source": source}
 
         ip = ipaddress.ip_interface(ip).ip
 
@@ -95,7 +95,7 @@ class InternetExchangeMember(Ixctl):
 
         self.put(f"data/member/sync/{asn}/{member_ip}/{router_ip}/md5", data=data)
 
-    def traffic(self, pk, start_time=None, duration=None):
+    def traffic(self, pk:int, start_time:str|int=None, duration:int=None, step:int=None):
         params = {}
         if start_time:
             params["start_time"] = start_time
@@ -103,11 +103,25 @@ class InternetExchangeMember(Ixctl):
         if duration:
             params["duration"] = duration
 
+        if step:
+            params["step"] = step
+
         return self.get(
             f"data/member/{pk}/traffic",
             params=params,
         )
 
+    def traffic_asn_pair(self, pk:int, asn_src:int, asn_dst:int, start_time:int, duration:int, step:int):
+        return self.get(
+            f"data/member/{pk}/traffic_asn_pair",
+            params={
+                "asn_src": asn_src,
+                "asn_dst": asn_dst,
+                "start_time": start_time,
+                "duration": duration,
+                "step": step,
+            },
+        )
 
 class RouteserverObject(IxctlEntity):
     description = "Ixctl Route Server"

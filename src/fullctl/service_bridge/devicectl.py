@@ -142,19 +142,43 @@ class VirtualPort(Devicectl):
     class Meta(Devicectl.Meta):
         ref_tag = "virtual_port"
 
-    def traffic(self, pk, start_time=None, duration=None):
+    def traffic(self, pk, start_time:int | str=None, duration:int=None, step:int=None, traffic_source:str="vm_sflow"):
         params = {}
         if start_time:
             params["start_time"] = start_time
 
         if duration:
             params["duration"] = duration
+        
+        if step:
+            params["step"] = step
+
+        params["traffic_source"] = traffic_source
 
         return self.get(
             f"data/virtual_port/{pk}/traffic",
             params=params,
         )
 
+    def traffic_asn_pair(self, pk:int, asn_src:int, asn_dst:int, start_time:int, duration:int, step:int):
+        return self.get(
+            f"data/virtual_port/{pk}/traffic/asn/{asn_src}/{asn_dst}",
+            params={
+                "start_time": start_time,
+                "duration": duration,
+                "step": step,
+            },
+        )
+
+    def traffic_asn_table(self, pk:int, start_time:int, duration:int, step:int):
+        return self.get(
+            f"data/virtual_port/{pk}/traffic/asn-table",
+            params={
+                "start_time": start_time,
+                "duration": duration,
+                "step": step,
+            },
+        )
 
 class IPAddress(Devicectl):
     class Meta(Devicectl.Meta):

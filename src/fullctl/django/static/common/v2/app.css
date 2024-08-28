@@ -951,6 +951,11 @@ span.icon-exclamation-circle {
   mask-image: url(icons/exclamation-circle.svg);
 }
 
+span.icon-graph-up {
+  -webkit-mask-image: url(icons/graph-up.svg);
+  mask-image: url(icons/graph-up.svg);
+}
+
 [data-true] {
   display: none;
 }
@@ -1773,10 +1778,17 @@ img.service-link ~ span.icon {
  * autocomplete stylings
  */
 
+.select2-selection__placeholder {
+  font-size: 16px;
+}
+
 div.autocomplete-item {
   position: relative;
-  margin: -5px;
   padding: 5px;
+}
+
+.select2-dropdown div.autocomplete-item {
+  margin: -5px;
   border-bottom: 1px solid var(--secondary-list-btn-bg);
 }
 
@@ -1968,4 +1980,24 @@ button.badge-btn:disabled {
   height: 256px;
   display: block;
   position: relative;
+}
+
+/*
+ * metric
+ */
+
+.dataTable {
+    border-bottom: 1px solid var(--clr-border-400);
+}
+
+.flex-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+.left {
+    text-align: left;
+}
+.right {
+    text-align: right;
 }

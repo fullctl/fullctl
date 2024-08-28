@@ -16,6 +16,17 @@ services:
       - ./initdb.d:/docker-entrypoint-initdb.d
       - postgres_data:/var/lib/postgresql/data
 
+  victoriametrics:
+    image: victoriametrics/victoria-metrics
+    ports:
+      - "8428:8428"
+    volumes:
+      - victoria-metrics-data:/victoria-metrics-data
+    command:
+      - '--storageDataPath=/victoria-metrics-data'
+      - '--httpListenAddr=:8428'
+      - '--httpAuth.username=fullctl'
+      - '--httpAuth.password=devPASSWORD'
 
   aaactl_web:
     user: "0:0"
@@ -194,6 +205,7 @@ services:
       - ../../../ripestat-data-parser/ripestat:/srv/service/venv/lib/python3.11/site-packages/ripestat:Z
       - ../../../prefix-meta-sorbs/src/prefix_meta_sorbs:/srv/service/venv/lib/python3.11/site-packages/prefix_meta_sorbs:Z
       - ../../../prefix-meta-arin/src/prefix_meta_arin:/srv/service/venv/lib/python3.11/site-packages/prefix_meta_arin:Z
+      - ../../../prefixctl-reputation/tests:/srv/service/main/tests/prefixctl_reputation_tests
 
   prefixctl_tasks:
     user: "0:0"
@@ -285,3 +297,4 @@ services:
 
 volumes:
   postgres_data:
+  victoria-metrics-data:

@@ -38,3 +38,7 @@ repos:
         entry: poetry run flake8 .
         language: system
         pass_filenames: false
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: ''  # Use the sha / tag you want to point at
+    hooks:
+      - id: eslint
