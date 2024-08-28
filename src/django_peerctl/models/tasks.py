@@ -16,9 +16,9 @@ class SyncMacAddress(Task):
     class HandleRef:
         tag = "task_sync_mac_address"
 
-    def run(self, asn, ip4, mac_address, *args, **kwargs):
+    def run(self, asn:int, ip4:str, mac_addresses: list[str], *args, **kwargs):
         ixctl.InternetExchangeMember().set_mac_address(
-            asn, ip4, mac_address, source="peerctl"
+            asn, ip4, mac_addresses, source="peerctl"
         )
 
 

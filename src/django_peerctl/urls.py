@@ -71,7 +71,7 @@ urlpatterns += [
         "autocomplete/networks",
         django_peerctl.autocomplete.peerctl.net_autocomplete_view().as_view(),
         name="networks autocomplete",
-    )
+    ),
 ]
 
 urlpatterns += [
