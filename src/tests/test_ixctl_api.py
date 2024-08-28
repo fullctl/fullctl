@@ -110,6 +110,7 @@ def test_ix_put_ixf_export_policy(db, pdb_data, account_objects):
         "urlkey": "new url key",
         "slug": ix.slug,
         "ixf_export_privacy": "private",
+        "instance": ix.instance.id,
     }
 
     response = client.put(
@@ -123,6 +124,8 @@ def test_ix_put_ixf_export_policy(db, pdb_data, account_objects):
         json.dumps(data),
         content_type="application/json",
     )
+
+    print(response.json())
 
     assert response.status_code == 200
     output = response.json()["data"]

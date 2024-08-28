@@ -25,6 +25,7 @@ proxy.setup(
                 "device-virtual-ports",
             ),
             # traffic graphs
+            # LEGACY RRD / MRTG
             (
                 "virtual_port/{org_tag}/{pk}/traffic",
                 "virtual_port/<str:org_tag>/<int:pk>/traffic/",
@@ -34,6 +35,28 @@ proxy.setup(
                 "traffic/{org_tag}/ix/{ix_id}",
                 "traffic/<str:org_tag>/ix/<int:ix_id>/",
                 "ix-traffic",
+            ),
+            # VictoriaMetrics / MRTG
+            (
+                "metric/mrtg/{org_tag}/graph/port/{port_id}",
+                "metric/mrtg/<str:org_tag>/graph/port/<int:port_id>/",
+                "port-traffic-vm-mrtg",
+            ),
+            (
+                "metric/mrtg/{org_tag}/graph/ix/{ix_id}",
+                "metric/mrtg/<str:org_tag>/graph/ix/<int:ix_id>/",
+                "ix-traffic-vm-mrtg",
+            ),
+            # VictoriaMetrics / SFlow
+            (
+                "metric/sflow/{org_tag}/graph/port/{port_id}",
+                "metric/sflow/<str:org_tag>/graph/port/<int:port_id>/",
+                "port-traffic-vm-sflow",
+            ),
+            (
+                "metric/sflow/{org_tag}/graph/ix/{ix_id}",
+                "metric/sflow/<str:org_tag>/graph/ix/<int:ix_id>/",
+                "ix-traffic-vm-sflow",
             ),
             (
                 "metric/{org_tag}/port/{port_id}",

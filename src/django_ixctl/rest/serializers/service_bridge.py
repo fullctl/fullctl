@@ -32,6 +32,7 @@ class InternetExchange(ModelSerializer):
             "verified",
             "mtu",
             "vlan_id",
+            "graph_traffic_source",
         ]
 
     def get_org_id(self, ix):
@@ -46,12 +47,19 @@ class InternetExchangeMember(ModelSerializer):
     ix = serializers.SerializerMethodField()
     ix_name = serializers.SerializerMethodField()
     pdb_ix_id = serializers.SerializerMethodField()
+    org_id = serializers.SerializerMethodField()
+
+    macaddr_set = serializers.ListSerializer(
+        child=serializers.CharField(),
+        read_only=True,
+    )
 
     class Meta:
         model = models.InternetExchangeMember
         fields = [
             "id",
             "ix_id",
+            "org_id",
             "pdb_ix_id",
             "ix",
             "ix_name",
@@ -62,6 +70,7 @@ class InternetExchangeMember(ModelSerializer):
             "ipaddr6",
             "is_rs_peer",
             "macaddr",
+            "macaddr_set",
             "md5",
             "port",
         ]
@@ -77,6 +86,8 @@ class InternetExchangeMember(ModelSerializer):
     def get_pdb_ix_id(self, member):
         return member.ix.pdb_id
 
+    def get_org_id(self, member):
+        return member.ix.instance.org.permission_id
 
 @register
 class Routeserver(ModelSerializer):

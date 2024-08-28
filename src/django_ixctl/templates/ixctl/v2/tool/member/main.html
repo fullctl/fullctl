@@ -44,7 +44,13 @@
                 </div>
 
               </div>
-              <div data-element="graphs_container" id="member_port_traffic_graph">
+              <div 
+              data-element="graphs_container" 
+              id="member_port_traffic_graph"
+              data-api-base="{% url "proxies-api-devicectl-virtual-port-traffic" org_tag=request.org.slug pk="0" %}"
+              data-api-base-vm-mrtg="{% url "proxies-api-devicectl-port-traffic-vm-mrtg" org_tag=request.org.slug port_id="0" %}"
+              data-api-base-vm-sflow="{% url "proxies-api-devicectl-port-traffic-vm-sflow" org_tag=request.org.slug port_id="0" %}"
+              >
                 <!-- Traffic graphs -->
                 <div class="graph-placeholder"><div class="loading-shim"></div></div>
               </div>
@@ -59,6 +65,17 @@
                       </div>
                     </div>
                   </button>
+                  {% if request.user.is_superuser and request.GET.dev %}
+                  <!-- dev tools: only available for superusers if ?dev=1 is passed in url params -->
+                  <div data-element="dev_tools" class="marg-top-lg">
+                    <h4>Developer Tools</h4>
+                    Loaded from: <span data-element="graph_traffic_source"></span>
+  
+                    <button class="secondary btn btn-sm" data-element="force_rrd_mrtg">Toggle RRD / MRTG</button>
+                    <button class="secondary btn btn-sm" data-element="force_vm_mrtg">Toggle VictoriaMetrics / MRTG</button>
+                    <button class="secondary btn btn-sm" data-element="force_vm_sflow">Toggle VictoriaMetrics / sFlow</button>
+                  </div>
+                  {% endif %}
                 </div>
               </div>
 

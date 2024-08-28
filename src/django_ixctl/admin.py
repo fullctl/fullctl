@@ -6,6 +6,7 @@ from django_ixctl.models import (
     InternetExchange,
     InternetExchangeMember,
     InternetExchangePrefix,
+    MacAddress,
     Network,
     PermissionRequest,
     Routeserver,
@@ -16,12 +17,6 @@ from django_ixctl.models import (
 
 
 class MemberForm(ModelForm):
-    def clean_macaddr(self):
-        macaddr = self.cleaned_data["macaddr"]
-        if not macaddr:
-            return None
-        return macaddr
-
     def clean_ipaddr4(self):
         ipaddr4 = self.cleaned_data["ipaddr4"]
         if not ipaddr4:
@@ -34,6 +29,9 @@ class MemberForm(ModelForm):
             return None
         return ipaddr6
 
+class MacAddressInline(BaseTabularAdmin):
+    model = MacAddress
+    extra = 0
 
 class InternetExchangeMemberInline(BaseTabularAdmin):
     model = InternetExchangeMember
@@ -51,7 +49,7 @@ class PrefixInline(admin.TabularInline):
 
 @admin.register(InternetExchange)
 class InternetInternetExchangeAdmin(BaseAdmin):
-    list_display = ("name", "id", "org", "source_of_truth")
+    list_display = ("name", "id", "org", "source_of_truth", "graph_traffic_source")
     list_filter = ("source_of_truth",)
     readonly_fields = ("org",)
     search_fields = ("name", "instance__org__slug", "instance__org__name")
@@ -74,6 +72,7 @@ class MemberAdmin(BaseAdmin):
         "ipaddr6",
     )
     form = MemberForm
+    inlines = (MacAddressInline,)
 
     def org(self, obj):
         return obj.ix.instance.org
