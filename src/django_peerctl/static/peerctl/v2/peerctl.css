@@ -37,12 +37,9 @@ div.hide-available-peers .peers-row.peers-inactive {
 
 .btn[data-element="md5"] {
   font-weight: var(--fw-semi-bold);
-  --bs-btn-color: var(--primary-btn-clr);
-  --bs-btn-bg: #f1f2f2;
-  --bs-btn-hover-color: var(--primary-btn-clr);
-  --bs-btn-hover-bg: #f1f2f2;
-  --bs-btn-active-color: var(--primary-btn-clr);
-  --bs-btn-active-bg: #f1f2f2;
+  --bs-btn-color: var(--primary-btn-bg);
+  --bs-btn-hover-color: var(--primary-btn-bg);
+  --bs-btn-active-color: var(--primary-btn-bg);
 }
 
 .peers-row {
@@ -341,4 +338,9 @@ div.menu #network-search-result-name {
 
 #network-search-result-asn {
   font-size: 1rem;
+}
+
+p[data-field="macaddr_set"] {
+  white-space: pre-wrap;
+  margin-left: 0px !important;
 }

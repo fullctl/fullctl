@@ -1,4 +1,6 @@
 (function($, $tc, $ctl) {
+
+
 var $peerctl = $ctl.application.Peerctl = $tc.extend(
   "Peerctl",
   {
@@ -9,6 +11,11 @@ var $peerctl = $ctl.application.Peerctl = $tc.extend(
         return;
       }
 
+      // init port form class
+      this.tool("port_form", () => {
+        return new $peerctl.PortForm();
+      });
+
       // init home page tool
       this.tool("home", () => {
         return new $peerctl.Home();
@@ -18,11 +25,6 @@ var $peerctl = $ctl.application.Peerctl = $tc.extend(
       if (!selected_asn) {
         return;
       }
-
-      // init peering lists tool
-      this.tool("peering_lists", () => {
-        return new $peerctl.PeeringLists();
-      });
 
       // init network settings tool
       this.tool("network_settings", () => {
@@ -63,15 +65,12 @@ var $peerctl = $ctl.application.Peerctl = $tc.extend(
         );
       });
 
-      this.$t.peering_lists.activate();
-      this.$t.peering_lists.sync_ports();
       this.$t.policies.activate();
       this.$t.peering_requests_list.activate();
 
       this.get_autoload_args();
       $($ctl).trigger("init_tools", [this]);
 
-      this.port_settings = $('#port-settings');
 
       $(this.$c.toolbar.$e.button_port_settings).on("click", () => {
         new $peerctl.modals.PortSettings();
@@ -81,10 +80,25 @@ var $peerctl = $ctl.application.Peerctl = $tc.extend(
         window.location.href = "?asn=" + $(this).data("select-asn") + window.location.hash;
       });
 
+      // init peering lists tool
+      this.tool("peering_lists", () => {
+        return new $peerctl.PeeringLists(this.$t.port_form);
+      });
+
+      this.port_settings = this.$t.peering_lists.$e.menu.find("#port-settings")
+
       $('#tab-peering-lists').on('show.bs.tab', () => {
-        this.$t.peering_lists.sync_url(
-          this.port()
-        );
+        this.$t.peering_lists.activate();
+        this.$t.port_form.show_port_form();
+        this.$t.peering_lists.sync_url(this.port());
+        this.$t.port_form.port_filter.element.on("change", () => {
+          this.$t.peering_lists.sync();
+          this.$t.peering_lists.sync_url(this.$t.port_form.get_current_port_id());
+        });
+      });
+
+      $('#tab-peering-lists').on('hide.bs.tab', () => {
+        this.$t.port_form.hide_port_form();
       });
 
       // lazy loading of peering_lists
@@ -94,6 +108,26 @@ var $peerctl = $ctl.application.Peerctl = $tc.extend(
 
       $('#tab-ix').on('shown.bs.tab', () => {
         this.$t.ix.sync();
+      });
+      
+      // init AS table tool
+      this.tool("as_table", ()=> {
+        return new $peerctl.ASTable(this.$t.port_form);
+      });
+
+      $('#tab-as-table').on('shown.bs.tab', () => {
+        this.$t.port_form.show_port_filter();
+        this.$t.as_table.sync();
+
+        this.$t.port_form.port_filter.element.on("change", () => {
+          this.$t.as_table.sync();
+        });
+
+
+      });
+
+      $('#tab-as-table').on('hide.bs.tab', () => {
+        this.$t.port_form.hide_port_filter();
       });
 
       $('#tab-peering-requests').on('shown.bs.tab', () => {
@@ -119,11 +153,11 @@ var $peerctl = $ctl.application.Peerctl = $tc.extend(
     },
 
     port : function() {
-      return this.$t.peering_lists.$w.port_filter.element.val();
+      return this.$t.port_form.get_current_port_id();
     },
 
     port_object : function() {
-      return this.$t.peering_lists.ports[this.port()]
+      return this.$t.port_form.ports[this.port()]
     },
 
     unload_port : function(id) {
@@ -399,6 +433,10 @@ $peerctl.Ix = $tc.extend(
         return url +"?ixi=1&load_md5=1";
       }
 
+      this.$w.list.formatters.macaddr_set = (value, data) => {
+        return value.join("\n");
+      }
+
       this.$w.list.formatters.row = (row, data) => {
         row.find(".ix-header").attr("data-ix-header", data.ref_ix_id);
 
@@ -530,42 +568,18 @@ $peerctl.Ix = $tc.extend(
     // Function to show graphs
     show_graph : function(port, row, end_date, duration) {
       let graph_container = row.find("[data-element=graph_container]");
-
-      if(!port.ref_id || port.ref_id.split(":")[0] != "ixctl") {
-        graph_container.empty().append(message);
-        return;
-      }
-
-      let url = this.$w.list.element.data('api-base') + "/" + port.id + "/traffic/ix";
-      let params = [];
-      if (end_date) {
-        params.push('start_time=' + end_date);
-      }
-      if (end_date && duration) {
-        params.push('duration=' + duration);
-      }
-      if (params.length > 0) {
-        url += '?' + params.join('&');
-      }
-
-      console.log(port, "#ix-port-"+port.id+" .graph_container");
-
-      fullctl.graphs.render_graph_from_file(
-        url,
+      fullctl.graphs.show_graph(
+        graph_container,
+        port.ix_graph_traffic_source,
+        end_date,
+        duration,
+        port.display_name,
         "#ix-port-"+port.id+" .graph_container",
-        port.virtual_port_name,
-      ).then(() => {
-        // check if a svg has been added to the container, if not, graph data was empty
-        if(graph_container.find("svg").length == 0) {
-          graph_container.empty().append(
-            $('<div class="alert alert-info">').append(
-              $('<p>').text("No traffic data available for this port.")
-            )
-          )
-        } else {
-          this.$e.refresh_traffic_graph.show();
-        }
-      })
+        () => {
+          return this.$w.list.element.data('api-base') + port.id + "/traffic/ix";
+        },
+        this
+      );
     }
 
   },
@@ -573,11 +587,79 @@ $peerctl.Ix = $tc.extend(
 )
 
 /**
+ * Model that displays an AS to AS graph
+ * @class ModalAsGraph
+ * @extends $ctl.application.Modal
+ * @constructor
+ * @param {Number} asn - destination ASN
+ * @namespace fullctl.peerctl
+ */
+
+$peerctl.ModalAsGraph = $tc.extend(
+  "ModalAsGraph",
+  {
+    ModalAsGraph : function(port_id, asn) {
+      var modal = this;
+      var title = "Traffic between AS "+$ctl.peerctl.network.asn+" and AS "+asn;
+
+      this.asn = asn;
+      this.port_id = port_id;
+      this.container = $ctl.template("as_graph");
+      this.container.attr("id", "as-graph");
+
+      this.$e = {
+        "refresh_traffic_graph": this.container.find("[data-element=refresh_traffic_graph]"),
+      }
+
+      this.Modal("no_button_lg", title, this.container);
+      this.show_graph_controls({id: this.port_id});
+      this.show_graph(asn);
+    },
+
+    // Function to indicate loading
+    indicate_loading : function() {
+      let graph_container = this.container.find("[data-element=graph_container]");
+      graph_container.empty().append(
+        fullctl.template("graph_placeholder")
+      );
+      return this;
+    },
+
+    show_graph_controls(port) {
+      fullctl.graphs.init_controls(this.container, this, (end_date, duration)=>{
+        this.indicate_loading(this.container).show_graph(this.asn, end_date, duration);
+      });
+      this.container.find('.graph-controls').show();
+    },
+
+    show_graph : function(asn, end_date, duration) {
+      const src_asn = $ctl.peerctl.network.asn;
+      const graph_container = this.container.find(".graph-container");
+      this.indicate_loading(this.container);
+
+      fullctl.graphs.show_graph(
+        graph_container,
+        "vm_sflow",
+        end_date,
+        duration,
+        "Flow between AS"+src_asn+" and AS"+asn,
+        "#as-graph .graph-container",
+        () => {
+          return graph_container.data('api-base') + this.port_id + "/traffic/asn/" + asn;
+        },
+        this
+      );
+    }
+  },
+  $ctl.application.Modal
+);
+
+/**
  * Modal that lets user edit the following values on an ixi port
  *
  * - prefix4
  * - prefix6
- * - mac_address
+ * - macaddr_set
  * - md5
  *
  * @class ModalIxPort
@@ -602,6 +684,21 @@ $peerctl.ModalIxPort = $tc.extend(
         return url.replace("/0/", "/"+port.id+"/");
       }
 
+      $(form).on("payload:after", (ev, payload) => {
+        // macaddr_set comes in as a string with a mac address
+        // on each line. We need to split it into an array
+        payload.macaddr_set = payload.macaddr_set.split("\n").filter((line) => {
+          return line.trim() != "";
+        });
+        return payload;
+      });
+      
+      $(form).on("fill:before", (ev, data) => {
+        // macaddr_set comes in as an array, we need to join it into a string
+        data.macaddr_set = data.macaddr_set.join("\n");
+        return data;
+      });
+
       // fill form
       form.fill(port);
 
@@ -622,136 +719,161 @@ $peerctl.ModalIxPort = $tc.extend(
 );
 
 
+/**
+ * This is the port form class for controlling the selected ports.
+ * 
+ * The following attributes are note worthy
+ * - port_filter: This is the select filter with autocomplete enabled
+ * - port_elements: Other controls except port_filter
+ * 
+ * It can be displayed as follows:
+ * 
+ * $('#<tab_to_display_the_form>').on('show.bs.tab', () => {
+ *  this.$t.port_form.show_port_form();
+ * });
+ * 
+ * this.$t.port_form being the tool location after it's initialization.
+ * 
+ * PortForm can be injected into any tool to hook into it's onchange like
+ * 
+ * <port_form_ref_after_injection>.port_filter.element.on("change", () => {
+ *  Your logic here...
+ * });
+ *
+ * @class PortForm
+ * @namespace fullctl.peerctl
+ */
+$peerctl.PortForm = $tc.define(
+  "PortForm", 
+  {
+    PortForm: function(){
+      this.ports = {};
+      this.port_form = $('#port-form');
+      this.port_form.hide();
+      this.port_elements = $('#port-form .hide-when-federated');
+      this.port_filter = this.get_port_filter();
+      this.load_port_filter();
+    },
+    get_port_filter: function() {
+      const port_filter_selector = $('select#port-filter');
+      const port_filter = fullctl.ext.select2.init_autocomplete(
+        port_filter_selector,
+        port_filter_selector.parent(),
+        {
+          url: '/autocomplete/device/ixi-port?asn=' + fullctl.peerctl.network.asn,
+          process: (data, term, params) => {
+            if(fullctl.util.is_valid_ip4(term)) {
+              // check if we have an exact match for the ip in the results
+              var exact_found = data.results.find((obj) => {
+                return obj.text.primary && obj.text.primary.split("/")[0] == term
+              });
+
+              if(!exact_found) {
+                // if no exact match was found, add an entry for the ip that
+                // can be selected as a choice.
+                data.results.unshift({
+                  id: term,
+                  text: {primary: term, secondary:"Ip not assigned", extra:""},
+                  selected_text: {primary: term, secondary:"Ip not assigned", extra:""},
+                });
+              }
+            }
+          },
+          placeholder: "Search IP, device, port or location names.",
+          controls: false,
+          localstorage_key: "port_filter"
+        }
+      );
+      port_filter.init_localstorage();
+      return port_filter
+    },
+    show_port_form: function() {
+      this.port_form.show();
+      this.port_elements.show();
+    },
+    hide_port_form: function() {
+      this.port_elements.hide();
+      this.port_form.hide();
+    },
+    show_port_filter: function() {
+      this.port_form.show();
+      this.port_elements.hide();
+    },
+    hide_port_filter: function() {
+      this.port_elements.hide();
+      this.port_form.hide();
+    },
+    load_port_filter: function(port_id, callback) {
+      const url = this.port_filter.element.data("api-ports");
+      return $.ajax({
+        type: 'GET',
+        dataType: 'json',
+        url: url,
+        timeout: 30000,
+        success: ({data}) => {
+          data.forEach((port) => {
+            this.ports[port.id] = port;
+          });
+          this.set_default_port(port_id);
+          if (callback) callback();
+          $(this).trigger("ports-loaded");
+        },
+        fail: function(xhr, textStatus, errorThrown){
+          console.log(xhr)
+        }
+      });
+    },
+    set_default_port: function(port_id) {
+      const localstorage_selected_port = this.port_filter.localstorage_get();
+      const selected_port_id = port_id && this.ports[port_id] ? port_id : localstorage_selected_port && this.ports[localstorage_selected_port] ? localstorage_selected_port : Object.keys(this.ports)[0];
+      if (this.port_filter.element.find(`option[value='${selected_port_id}']`).length) return;
+      if (!selected_port_id) return;
+      this.port_filter.localstorage_set(selected_port_id);
+      this.set_filter_option(selected_port_id);
+    },
+    set_filter_option: function(port_id) {
+      const port = this.ports[port_id] || {};
+      let initial = {
+        id: port.id,
+        primary: port.ix_name,
+        secondary: "",
+        extra: "",
+      };
+      let option = $(new Option(initial.primary, initial.id, true, true));
+      option.data("selection_data", initial);
+      this.port_filter.element.append(option);
+    },
+    get_current_port_id: function() {
+      return this.port_filter.element.val();
+    },
+    get_port_details: function(port_id) {
+      return this.ports[port_id] || {};
+    }
+  }
+);
+
 $peerctl.PeeringLists = $tc.extend(
   "PeeringLists",
   {
-    PeeringLists : function() {
+    PeeringLists : function(port_form) {
       this.Tool("peering_lists");
-      const peering_lists_tool = this;
-
-      this.ports = {};
-
-      this.widget("port_filter", ($e) => {
-        return fullctl.ext.select2.init_autocomplete(
-
-          // bind to port <select> element
-          $('#page-peering-lists select#port-filter'),
-
-          // parent dropdown to form element
-          $('#page-peering-lists select#port-filter').parent(),
-
-          // options
-          {
-
-            // autocomplete url
-            url: '/autocomplete/device/ixi-port?asn=' + fullctl.peerctl.network.asn,
-
-            // process results, allowing us to add entries for
-            // ips that are not assigned to a port
-            process: (data, term, params) => {
-              if(fullctl.util.is_valid_ip4(term)) {
-
-                // check if we have an exact match for the ip in the results
-                var exact_found = data.results.find((obj) => {
-                  return obj.text.primary && obj.text.primary.split("/")[0] == term
-                });
-
-                if(!exact_found) {
-
-                  // if no exact match was found, add an entry for the ip that
-                  // can be selected as a choice.
-
-                  data.results.unshift({
-                    id: term,
-                    text: {primary: term, secondary:"Ip not assigned", extra:""},
-                    selected_text: {primary: term, secondary:"Ip not assigned", extra:""},
-                  });
-                }
-              }
-            },
-
-            // place holder text for the search field
-            placeholder: "Search IP, device, port or location names.",
-
-            controls: false,
-
-            localstorage_key: "peering_lists_port_filter"
-          }
-        );
-      });
-      const port_filter = this.$w.port_filter;
-      this.$w.port_filter.load = (port_id) => {
-
-        const list = this;
-        // use data-api-ports to get a list of ports
-        const port_api_url = this.$w.port_filter.element.data("api-ports");
-        const select_element = this.$w.port_filter.element;
-
-        return $.ajax({
-          type: 'GET',
-          dataType: 'json',
-          url: port_api_url,
-          // TODO: optimize response speed
-          timeout: 30000,
-          success: function(response){
-            const data = response.data;
-            for(let i = 0; i < data.length; i++) {
-              peering_lists_tool.ports[data[i].id] = data[i];
-            }
-
-            // set value of select element on loading
-            if (port_id) {
-              if (select_element.find("option[value='" + port_id + "']").length)
-                return
-            } else {
-              if (port_filter.localstorage_get() && peering_lists_tool.ports[port_filter.localstorage_get()])
-                port_id = port_filter.localstorage_get();
-              else
-                port_id = Object.keys(peering_lists_tool.ports)[0];
-            }
-            if (!port_id) return;
-            port_filter.localstorage_set(port_id);
-            peering_lists_tool.sync_url(port_id);
-            const port = peering_lists_tool.ports[port_id] || {};
-            let initial = {
-              id: port.id,
-              primary: port.ix_name,
-              secondary: "",
-              extra: "",
-            };
-            let option = $(new Option(initial.primary, initial.id, true, true));
-            option.data("selection_data", initial);
-            select_element.append(option);
-            list.$w.devicectl_device.load();
-          },
-          fail: function(xhr, textStatus, errorThrown){
-            console.log(xhr)
-          }
-        });
-      };
-      this.$w.port_filter.init_localstorage();
-
-      this.$w.port_filter.element.on("change", () => {
-        let port_id = this.$w.port_filter.element.val();
-        this.sync();
-        this.sync_url(port_id)
-      });
+      this.port_form = port_form;
 
       this.widget("port_info", ($e) => {
-        return $('#page-peering-lists [data-element="port_info"]');
+        return $('#port-form [data-element="port_info"]');
       });
 
       this.widget("toggle_active_peers", ($e) => {
-        return $('#page-peering-lists [data-element="toggle_active_peers"]');
+        return $('#port-form [data-element="toggle_active_peers"]');
       });
 
       this.widget("toggle_available_peers", ($e) => {
-        return $('#page-peering-lists [data-element="toggle_available_peers"]');
+        return $('#port-form [data-element="toggle_available_peers"]');
       });
 
       this.widget("searchbar", ($e) => {
         return new fullctl.application.Searchbar(
-          $('#page-peering-lists [data-element="peer_searchbar"]'),
+          $('#port-form [data-element="peer_searchbar"]'),
           () => this.sync(),
           () => this.sync()
         );
@@ -801,11 +923,11 @@ $peerctl.PeeringLists = $tc.extend(
     },
 
     port : function() {
-      return this.$w.port_filter.element.val();
+      return this.port_form.get_current_port_id();
     },
 
     port_object: function() {
-      return this.ports[this.port()]
+      return this.port_form.ports[this.port()]
     },
 
     sync_url: function(id) {
@@ -862,7 +984,9 @@ $peerctl.PeeringLists = $tc.extend(
           $('.hide-when-federated').hide();
           this.$w.peers.element.hide();
         } else {
-          $('.hide-when-federated').show()
+          if ($('#peering-lists-body').hasClass('active')) {
+            $('.hide-when-federated').show()
+          }
           this.$w.peers.element.show();
         }
       }
@@ -871,7 +995,10 @@ $peerctl.PeeringLists = $tc.extend(
         toggleFederation(port.federated_peerctl);
       }
 
-      this.$w.port_filter.load(port_id).then(() => {
+      this.port_form.load_port_filter(port_id, () => {
+        this.sync_url(port_id);
+        this.$w.devicectl_device.load();
+      }).then(() => {
         const port = this.port_object();
         if (!port) {
           this.$w.peers.done_processing();
@@ -885,14 +1012,12 @@ $peerctl.PeeringLists = $tc.extend(
         // instance
 
         toggleFederation(federated_peerctl);
-
         this.$w.port_info.find(".speed").text( $ctl.formatters.pretty_speed(port.speed) );
         this.$w.port_policy_4.element.val(port.policy4.id);
         this.$w.port_policy_6.element.val(port.policy6.id);
         this.$w.devicectl_device.element.val(port.device.id);
         this.$w.devicectl_port.element.val(port.id);
-
-        this.$w.port_mac_address.element.val(port.mac_address);
+        this.$w.port_macaddr_set.element.val(port.macaddr_set.join("\n"));
         this.$w.port_is_route_server_peer.element.prop("checked", port.is_route_server_peer);
         //this.$w.net_as_set.element.val(fullctl.peerctl.network.as_set);
 
@@ -918,10 +1043,6 @@ $peerctl.PeeringLists = $tc.extend(
       }
     },
 
-    sync_ports : function() {
-      this.$w.port_filter.load()
-    },
-
     menu: function() {
       var menu = this.Tool_menu();
 
@@ -945,8 +1066,8 @@ $peerctl.PeeringLists = $tc.extend(
         return new $peerctl.DeviceTemplateSelect(menu.find('[data-element="port_device_template"]'));
       });
 
-      this.widget("port_mac_address", ($e) => {
-        return new $peerctl.MacAddressInput(menu.find('[data-element="port_mac_address"]'));
+      this.widget("port_macaddr_set", ($e) => {
+        return new $peerctl.MacAddressInput(menu.find('[data-element="port_macaddr_set"]'));
       });
 
       this.widget("port_is_route_server_peer", ($e) => {
@@ -999,7 +1120,7 @@ $peerctl.PeeringLists = $tc.extend(
       });
 
 
-      $(this.$w.port_mac_address).on("api-write:success", (ev, endpoint, sent_data, response)=>{
+      $(this.$w.port_macaddr_set).on("api-write:success", (ev, endpoint, sent_data, response)=>{
         //var data = response.first();
         //fullctl.peerctl.ports[data.id] = data;
       });
@@ -1309,6 +1430,10 @@ $peerctl.MaxPrefixInput = $tc.extend(
       this.Input(jq);
       this.ip_version = parseInt(jq.data("ip-version"));
       this.peer_id = peer_id;
+
+      $(this).on("apply_data:before", (ev, data) => {
+        data.macaddr_set = data.macaddr_set.join("\n");
+      })
     },
     format_request_url : function(url, method) {
       return url.replace("port_pk", fullctl.peerctl.port()).replace("peer_id", this.peer_id);
@@ -1331,7 +1456,7 @@ $peerctl.MacAddressInput = $tc.extend(
     },
     payload : function() {
       return {
-        mac_address: this.element.val()
+        macaddr_set: this.element.val().split("\n")
       }
     }
   },
@@ -2004,6 +2129,71 @@ $peerctl.DeviceTemplatePreview = $tc.extend(
     }
   },
   $ctl.ConfigPreview
+);
+
+
+/**
+ * Renders a list of AS in a table
+ * @class ASTable
+ * @extends $ctl.application.Tool
+ * @constructor
+ * @namespace fullctl.peerctl
+ */
+$peerctl.ASTable = $tc.extend(
+  "ASTable",
+  {
+    ASTable : function(port_form) {
+      this.Tool("as_table");
+      this.port_form = port_form;
+
+      $(this.port_form).on("ports-loaded", () => {
+        this.sync();
+      });
+
+      this.widget("list_as_table", ($e) => {
+        const w = new twentyc.rest.List(
+          this.jquery.find('table'),
+        );
+
+        w.format_request_url = () => {
+          return `/api/port/${fullctl.peerctl.network.asn}/${this.port_form.get_current_port_id()}/traffic/asn-table/`
+        }
+
+        w.formatters.bps_in_current = fullctl.formatters.pretty_speed_bits
+        w.formatters.bps_out_current = fullctl.formatters.pretty_speed_bits
+        w.formatters.bps_in_max = fullctl.formatters.pretty_speed_bits
+        w.formatters.bps_out_max = fullctl.formatters.pretty_speed_bits
+        w.formatters.bps_in_average = fullctl.formatters.pretty_speed_bits
+        w.formatters.bps_out_average = fullctl.formatters.pretty_speed_bits
+
+        w.formatters.row = (row, data) => {
+          row.find('[data-element=button_display_graph]').click(()=>{
+            // open AS traffic modal
+            new $peerctl.ModalAsGraph(this.port_form.get_current_port_id(), data.asn);
+          });
+        }
+
+        return w;
+      });
+
+    },
+    sync: function() {
+      // if port id is currently null do nothing
+      if (!this.port_form.get_current_port_id()) {
+        return
+      }
+
+      this.sync_url(this.port_form.get_current_port_id());
+      this.$w.list_as_table.load();
+    },
+    sync_url: function(id) {
+      if (window.location.hash.indexOf("#page-as-table") == -1) {
+        return
+      }
+      window.history.pushState({}, '', "#page-as-table;"+id);
+    },
+  },
+  $ctl.application.Tool
 );
 
 

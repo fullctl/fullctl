@@ -1,5 +1,6 @@
 from django.conf import settings
 
+
 def conf(request):
     """
     add some commonly used setting variables to all template
@@ -20,6 +21,7 @@ def conf(request):
         },
     }
 
+
 def permissions(request):
     """
     add some commonly used permission variables to all template
@@ -32,9 +34,7 @@ def permissions(request):
         #
         # if org is not set, there are no permissions
         # to scope so just assume no permissions
-        return {
-            "peerctl_permissions": {}
-        }
+        return {"peerctl_permissions": {}}
 
     namespace = f"service.devicectl.{request.org.permission_id}"
     rv = {

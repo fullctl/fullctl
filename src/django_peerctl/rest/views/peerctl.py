@@ -1,8 +1,10 @@
 import ipaddress
 
+import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.sot as sot
+from fullctl.service_bridge.client import ServiceBridgeError
 from django.conf import settings
 from django.db.models.functions import Lower
 from django.http import HttpResponse
@@ -488,7 +490,21 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
         port = models.Port().object(pk)
         mac_address = request.data.get("mac_address")
         try:
-            port.set_mac_address(mac_address)
+            port.set_mac_address([mac_address])
+        except Exception as exc:
+            return BadRequest({"non_field_errors": [[str(exc)]]})
+
+        serializer = self.serializer_class(port)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["put"])
+    @grainy_endpoint(namespace="verified.asn.{asn}.?")
+    def set_mac_addresses(self, request, asn, pk, *args, **kwargs):
+        # get port
+        port = models.Port().object(pk)
+        macaddr_set = request.data.get("macaddr_set")
+        try:
+            port.set_mac_address(macaddr_set)
         except Exception as exc:
             return BadRequest({"non_field_errors": [[str(exc)]]})
 
@@ -537,17 +553,118 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
         if int(port_info.ref.asn) != int(asn):
             return Response({}, status=403)
 
-        start_time = request.GET.get("start_time")
+        start_time = request.GET.get("start_time") or request.GET.get("start")
         duration = request.GET.get("duration")
+        step = request.GET.get("step")
 
         return Response(
             ixctl.InternetExchangeMember().traffic(
                 port_info.ref_id.split(":")[1],
                 start_time=start_time,
                 duration=duration,
+                step=step,
             )
         )
 
+    @action(detail=True, methods=["get"], url_path="traffic/asn/(?P<asn_other>[^/.]+)")
+    @grainy_endpoint(namespace="verified.asn.{asn}.?")
+    def asn_traffic(self, request, asn, pk, asn_other, *args, **kwargs):
+        """
+        Traffic datapoints from this network to another
+        """
+
+        port = models.Port().object(pk)
+        port_info = port.port_info_object
+
+        # port info reference needs to exist, as it is used to relate
+        # the port to an exchange
+
+        if not port_info or not port_info.ref_id:
+            return Response({})
+
+        # port info reference needs to be from ixctl
+
+        if not port_info.ref_source == "ixctl":
+            return Response({})
+
+        # port info reference needs to be from the same asn as this
+        # network (everyone is only allowed to see their own traffic)
+
+        if int(port_info.ref.asn) != int(asn):
+            return Response({}, status=403)
+
+        start_time = request.GET.get("start_time") or request.GET.get("start")
+        duration = request.GET.get("duration")
+        step = request.GET.get("step")
+
+        return Response(
+            ixctl.InternetExchangeMember().traffic_asn_pair(
+                port_info.ref_id.split(":")[1],
+                asn_src=asn,
+                asn_dst=asn_other,
+                start_time=start_time,
+                duration=duration,
+                step=step,
+            )
+        )
+
+    @action(detail=True, methods=["get"], url_path="traffic/asn-table")
+    @grainy_endpoint(namespace="verified.asn.{asn}.?")
+    def asn_table(self, request, asn, pk, *args, **kwargs):
+        """
+        Traffic datapoints from this network to another
+        """
+
+        port = models.Port().object(pk)
+        port_info = port.port_info_object
+
+        # port info reference needs to exist, as it is used to relate
+        # the port to an exchange
+
+        if not port_info or not port_info.ref_id:
+            return BadRequest({"non_field_errors": ["Port info not found or has no reference"]})
+
+        # port info reference needs to be from ixctl
+
+        if not port_info.ref_source == "ixctl":
+            return BadRequest({"non_field_errors": ["Port info reference is not ixctl"]})
+
+        # port info reference needs to be from the same asn as this
+        # network (everyone is only allowed to see their own traffic)
+
+        if int(port_info.ref.asn) != int(asn):
+            return Response(status=403)
+
+        # we get the member id from the port info reference
+        # which is {sot_tag}:{member_id} - e.g., "ixctl:1234"
+        member_id = port_info.ref_id.split(":")[1]
+
+        # fetch the member object
+        member = ixctl.InternetExchangeMember().first(id=member_id)
+
+        if not member:
+            return BadRequest({"non_field_errors": ["IX member not found"]})
+
+        # ix port
+        ix_port = devicectl.Port().first(id=member.port)
+
+        if not ix_port:
+            return BadRequest({"non_field_errors": ["IX port not found"]})
+
+        # as table
+        try:
+            as_table = devicectl.VirtualPort().traffic_asn_table(
+                pk=ix_port.virtual_port,
+                start_time="-1d",
+                duration=None,
+                step="300",
+            )
+        except ServiceBridgeError as exc:
+            if exc.status == 400 and "No member found" in str(exc):
+                return BadRequest({"non_field_errors": ["No traffic data available"]})
+
+        return Response(as_table)
+        
 
 # peer view
 # list all peers for a port and asn

@@ -1,8 +1,8 @@
 import ipaddress
 import re
 
-import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.aaactl as aaactl
+import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.sot as sot
 from django.db.models import Count, Q
@@ -10,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from fullctl.django.models.concrete.tasks import TaskLimitError
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
+from fullctl.django.inet.validators import validate_mac_address, validate_mac_addresses
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError  # noqa
 
@@ -183,6 +184,7 @@ class Port(serializers.Serializer):
     policy6 = serializers.SerializerMethodField()
     device = serializers.SerializerMethodField()
     mac_address = serializers.SerializerMethodField()
+    macaddr_set = serializers.SerializerMethodField()
     is_route_server_peer = serializers.SerializerMethodField()
     md5 = serializers.SerializerMethodField()
 
@@ -197,6 +199,8 @@ class Port(serializers.Serializer):
 
     federated_peerctl = serializers.SerializerMethodField()
     ix_portal = serializers.SerializerMethodField()
+    ix_graph_traffic_source = serializers.SerializerMethodField()
+    virtual_port = serializers.SerializerMethodField()
 
     class Meta:
         fields = [
@@ -218,6 +222,7 @@ class Port(serializers.Serializer):
             "ref_ix_id",
             "ref_source",
             "mac_address",
+            "macaddr_set",
             "is_route_server_peer",
             "md5",
             "mtu",
@@ -225,6 +230,8 @@ class Port(serializers.Serializer):
             "maxprefix6",
             "federated_peerctl",
             "ix_portal",
+            "ix_graph_traffic_source",
+            "virtual_port",
         ]
 
     # caching
@@ -285,7 +292,7 @@ class Port(serializers.Serializer):
 
         if hasattr(self, "_federated_services"):
             return self._federated_services
-    
+
         if not isinstance(self.instance, list):
             ports = [self.instance]
         else:
@@ -293,19 +300,22 @@ class Port(serializers.Serializer):
 
         self._federated_services = aaactl.FederatedServiceURL().federated_services(
             service_slugs=["peerctl"],
-            make_tag=lambda source_id: "ix."+source_id.replace(":", "."),
+            make_tag=lambda source_id: "ix." + source_id.replace(":", "."),
             source_ids=[
-                i.port_info_object.ref_ix_id for i in ports 
+                i.port_info_object.ref_ix_id
+                for i in ports
                 if i.port_info_object and i.port_info_object.ref_ix_id
             ],
         )
 
         return self._federated_services
-        
+
     # serializers.SerializerMethodField
 
     def get_federated_peerctl(self, instance):
-        obj = self.federated_services.get("peerctl", {}).get(instance.port_info_object.ref_ix_id)
+        obj = self.federated_services.get("peerctl", {}).get(
+            instance.port_info_object.ref_ix_id
+        )
         if not obj:
             return None
 
@@ -313,7 +323,6 @@ class Port(serializers.Serializer):
             "url": obj.url,
             "org_name": obj.org_name,
         }
-
 
     def get_asn(self, instance):
         return instance.port_info_object.net.asn
@@ -329,6 +338,10 @@ class Port(serializers.Serializer):
         if instance.mac_address:
             return f"{instance.mac_address}"
         return None
+
+    @models.ref_fallback([])
+    def get_macaddr_set(self, instance):
+        return instance.port_info_object.macaddr_set
 
     @models.ref_fallback(False)
     def get_is_route_server_peer(self, instance):
@@ -409,7 +422,10 @@ class Port(serializers.Serializer):
 
     def get_ix_portal(self, instance):
         return self.get_ix_object(instance).portal_url
-    
+
+    def get_ix_graph_traffic_source(self, instance):
+        return self.get_ix_object(instance).graph_traffic_source
+
     def get_display_name(self, instance):
         if instance.virtual_port_name and not is_dummy(instance.virtual_port_name):
             return f"{instance.virtual_port_name}: {instance.display_name}"
@@ -423,6 +439,10 @@ class Port(serializers.Serializer):
         if getattr(instance, "device", None):
             return instance.device.__dict__
         return instance.devices[0].__dict__
+
+    def get_virtual_port(self, instance):
+        print(dir(instance))
+        return getattr(instance, "virtual_port", None)
 
     def get_policy(self, instance, version):
         policy = get_best_policy(instance, version, raise_error=False)
@@ -457,6 +477,10 @@ class PortUpdate(serializers.Serializer):
     maxprefix6 = serializers.IntegerField(required=False)
     md5 = serializers.CharField(required=False, allow_blank=True)
     mac_address = serializers.CharField(required=False, allow_blank=True)
+    macaddr_set = serializers.ListSerializer(
+        child=serializers.CharField(),
+        required=False,
+    )
     is_route_server_peer = serializers.BooleanField(required=False)
 
     ref_tag = "port_update"
@@ -467,6 +491,7 @@ class PortUpdate(serializers.Serializer):
             "maxprefix6",
             "md5",
             "mac_address",
+            "macaddr_set",
             "is_route_server_peer",
         ]
 
@@ -481,10 +506,15 @@ class PortUpdate(serializers.Serializer):
         prefix6 = self.validated_data.get("maxprefix6")
         md5 = self.validated_data.get("md5")
         mac_address = self.validated_data.get("mac_address")
+        macaddr_set = self.validated_data.get("macaddr_set") or []
+
+        if mac_address:
+            macaddr_set.append(mac_address)
+
         is_route_server_peer = self.validated_data.get("is_route_server_peer")
 
         # set mac address
-        port.set_mac_address(mac_address)
+        port.set_mac_address(macaddr_set)
 
         # set md5
         port.set_route_server_md5(md5)
@@ -498,6 +528,21 @@ class PortUpdate(serializers.Serializer):
         # override is_route_server_peer
         port.port_info_object.set_is_route_server_peer(is_route_server_peer)
 
+    def validate_mac_address(self, macaddr: str):
+        if not macaddr:
+            return None
+        
+        validate_mac_address(macaddr)
+        
+        return macaddr
+    
+    def validate_macaddr_set(self, macaddr_set: list[str]):
+        if not macaddr_set:
+            return []
+        
+        validate_mac_addresses(macaddr_set)
+
+        return macaddr_set
 
 @register
 class Peer(serializers.Serializer):

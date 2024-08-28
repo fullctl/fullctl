@@ -317,7 +317,7 @@
 
     <div data-template="menu">
 
-      <div id="port-settings" style="display:none">
+      <div id="port-settings" data-element="port_settings" style="display:none">
           <div class="row mb-3">
             <div class="col">
               <label class="form-label">{% trans "Policy IPv4" %}</label>
@@ -352,13 +352,16 @@
 
           <div class="row mb-3">
             <div class="col">
-              <label class="form-label">{% trans "MAC Address" %}</label>
-              <input type="text"
+              <label class="form-label">{% trans "MAC-Addresses" %}</label>
+              <textarea type="text"
+                disabled
                 class="form-control"
-                data-api-base="{% url "peerctl_api:port-set-mac-address" asn=selected_asn pk="port_id" %}"
+                data-api-base="{% url "peerctl_api:port-set-mac-addresses" asn=selected_asn pk="port_id" %}"
                 data-api-method="put"
-                name="mac_address"
-                data-element="port_mac_address">
+                name="macaddr_set"
+                rows="3"
+                data-element="port_macaddr_set">
+              </textarea>
             </div>
           </div>
 

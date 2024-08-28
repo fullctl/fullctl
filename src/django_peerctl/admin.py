@@ -10,6 +10,7 @@ from django_peerctl.models import (
     EmailLog,
     EmailLogRecipient,
     InternetExchange,
+    MacAddress,
     Network,
     Organization,
     PeerNetwork,
@@ -114,12 +115,17 @@ class PeerPortAdmin(admin.ModelAdmin):
     list_display = ("id", "peer_net", "port_info", "created", "updated")
 
 
+class MacAddressInline(admin.TabularInline):
+    model = MacAddress
+    extra = 0
+
 @admin.register(PortInfo)
 class PortInfoAdmin(CachedPortMixin, admin.ModelAdmin):
     list_display = ("net", "asn", "ref_id", "ip4", "ip6", "port")
     readonly_fields = ("asn", "ix", "ip4", "ip6", "ref_ix_id")
     search_fields = ("net__asn",)
     form = status_form()
+    inlines = (MacAddressInline,)
 
     def asn(self, obj):
         return obj.net.asn

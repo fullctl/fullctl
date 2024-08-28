@@ -184,6 +184,15 @@ const selected_asn = "{{ selected_asn }}";
       data-second-tab="#ix-body"
       href="#page-ix">{% trans "IX" %}</a>
     {% endif %}
+  
+  <a class="nav-link"
+    id="tab-as-table"
+    data-bs-toggle="tab"
+    role="tab"
+    aria-controls="page-as-table"
+    aria-selected="false"
+    data-second-tab="#as-table-body"
+    href="#page-as-table">{% trans "AS Table" %}</a>
 
   {% endif %}
 
@@ -256,6 +265,9 @@ const selected_asn = "{{ selected_asn }}";
 {% endblock %}
 
 {% block "app_content_toolbar" %}
+<div class="row" id="port-form">
+  {% include "peerctl/v2/tool/port-form.html" %}
+</div>
 <div class="tab-content" id="app-pages">
   <div class="tab-pane{% if settings.default_page == "home" %}show active{% endif %}" id="page-home" role="tabpanel" aria-labelledby="tab-home">
   </div>
@@ -268,7 +280,6 @@ const selected_asn = "{{ selected_asn }}";
   </div>
 
   <div class="tab-pane" id="page-peering-lists" role="tabpanel" aria-labelledby="tab-peering-lists">
-    {% include "peerctl/v2/tool/peering-lists/port-form.html" %}
   </div>
 
   <div class="tab-pane" id="page-peering-requests" role="tabpanel" aria-labelledby="tab-peering-requests">
@@ -292,6 +303,9 @@ const selected_asn = "{{ selected_asn }}";
   </div>
 
   <div class="tab-pane{% if settings.default_page == "ix" %}show active{% endif %}" id="page-ix" role="tabpanel" aria-labelledby="tab-ix">
+  </div>
+
+  <div class="tab-pane" id="page-as-table" role="tabpanel" aria-labelledby="tab-as-table">
   </div>
 
 </div>
@@ -347,10 +361,14 @@ const selected_asn = "{{ selected_asn }}";
   <div class="tab-pane{% if settings.default_page == "ix" %} show active{% endif %}" id="ix-body" role="tabpanel" aria-labelledby="tab-ix">
     {% include "peerctl/v2/tool/ix/main.html" %}
   </div>
+
+  <div class="tab-pane" id="as-table-body" role="tabpanel" aria-labelledby="tab-as-table">
+    {% include "peerctl/v2/tool/as-table/main.html" %}
+  </div>
 </div>
 {% endblock %}
 
 {% block "templates" %}
 {{ block.super }}
-
+{% include "peerctl/v2/as_graph.html" %}
 {% endblock %}

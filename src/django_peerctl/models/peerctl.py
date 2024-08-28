@@ -9,7 +9,6 @@ import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.sot as sot
-from fullctl.service_bridge.client import url_join
 import reversion
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -25,6 +24,7 @@ from fullctl.django.fields.service_bridge import ReferencedObjectField
 from fullctl.django.models.abstract import HandleRefModel, meta
 from fullctl.django.models.concrete import Instance, Organization, Task  # noqa
 from fullctl.django.validators import ip_address_string
+from fullctl.service_bridge.client import url_join
 from fullctl.service_bridge.data import Relationships
 from jinja2 import DictLoader, Environment, FileSystemLoader
 from netfields import InetAddressField, MACAddressField, NetManager
@@ -897,8 +897,31 @@ class InternetExchange(sot.ReferenceMixin, Base):
         if self.ref_source != "ixctl":
             return None
 
-        return url_join(settings.IXCTL_URL, self.ref.org_slug, self.ref.slug, "public", "information")
-    
+        return url_join(
+            settings.IXCTL_URL,
+            self.ref.org_slug,
+            self.ref.slug,
+            "public",
+            "information",
+        )
+
+    @property
+    def graph_traffic_source(self) -> str | None:
+        """
+        Returns identifier for the traffic graph source
+
+        - rrd_mrtg
+        - vm_mrtg
+        - vm_sflow
+
+        This currently only works for IXs that are sourced from ixctl
+        """
+
+        if self.ref_source != "ixctl":
+            return None
+
+        return self.ref.graph_traffic_source
+
     def __str__(self):
         return f"InternetExchange({self.id}): {self.name}"
 
@@ -1185,13 +1208,17 @@ class PortObject(devicectl.DeviceCtlEntity, PolicyHolderMixin):
     def set_policy(self, *args, **kwargs):
         return self.port_policy.set_policy(*args, **kwargs)
 
-    def set_mac_address(self, mac_address):
-        self.port_info_object.mac_address = mac_address
+    def set_mac_address(self, mac_addresses: str | list[str]):
+
+        if isinstance(mac_addresses, str):
+            mac_addresses = [mac_addresses]
+
+        self.port_info_object.macaddr_set = mac_addresses
         self.port_info_object.save()
 
         if self.asn:
             SyncMacAddress.create_task(
-                self.asn, self.port_info_object.ipaddr4, mac_address
+                self.asn, self.port_info_object.ipaddr4, mac_addresses
             )
 
     def set_route_server_md5(self, md5):
@@ -1646,8 +1673,6 @@ class PortInfo(sot.ReferenceMixin, Base):
 
     is_route_server_peer = models.BooleanField(null=True)
 
-    mac_address = MACAddressField(null=True, blank=True)
-
     objects = NetManager()
 
     class HandleRef:
@@ -1844,6 +1869,59 @@ class PortInfo(sot.ReferenceMixin, Base):
     def ix(self):
         return InternetExchange.get_or_create(self.ref.ix_id, self.ref_source)
 
+    @property
+    def mac_address(self) -> str | None:
+        """
+        Backwards compatibility for mac_address field
+        """
+
+        try:
+            return self.macaddr_set[0]
+        except IndexError:
+            return None
+        
+    # setter for mac_address field
+    @mac_address.setter
+    def mac_address(self, value:str):
+        if not value or not self.id:
+            return
+        self.mac_addresses.all().delete()
+
+        MacAddress.objects.get_or_create(port_info=self, address=value)
+
+    @property
+    @ref_fallback([])
+    def macaddr_set(self) -> list[str]:
+        """
+        Returns a list of MAC addresses for this member
+        """
+
+        overrides = [str(mac.address) for mac in self.mac_addresses.all()]
+
+        if not overrides:
+            # get from ref if not set
+            return self.ref.macaddr_set
+
+        return overrides
+
+    # setter for macaddr_set field
+    @macaddr_set.setter
+    def macaddr_set(self, macs:list[str]):
+
+        if not self.id:
+            return
+
+        # delete all existing mac addresses
+        self.mac_addresses.all().delete()
+
+        if not macs:
+            return
+
+        self.mac_addresses.bulk_create(
+            MacAddress(port_info=self, address=mac) for mac in macs
+        )
+
+
     def __str__(self):
         return "PortInfo({}): {} {} {}".format(
             self.id, self.ix_name, self.ipaddr4, self.ipaddr6
@@ -1905,6 +1983,38 @@ class PortInfo(sot.ReferenceMixin, Base):
         return False
 
 
+@reversion.register()
+@grainy_model(
+    namespace="member",
+    namespace_instance=(
+        "member.{instance.org.permission_id}.{instance.ix_id}.{instance.member.asn}"
+    ),
+)
+class MacAddress(HandleRefModel):
+
+    """
+    Describes a MAC address
+    """
+
+    address = MACAddressField()
+    port_info = models.ForeignKey(
+        PortInfo,
+        on_delete=models.CASCADE,
+        related_name="mac_addresses",
+    )
+
+    class Meta:
+        db_table = "ixctl_mac"
+        verbose_name = _("MAC Address")
+        verbose_name_plural = _("MAC Addresses")
+        unique_together = (("address", "port_info"),)
+
+    class HandleRef:
+        tag = "mac"
+
+    def __str__(self):
+        return f"{self.address}"
+    
 class DeviceObject(devicectl.DeviceCtlEntity):
     @property
     def type_label(self):

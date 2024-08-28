@@ -1,16 +1,17 @@
-from django.apps import AppConfig
 import structlog
+from django.apps import AppConfig
 
 log = structlog.get_logger("django")
+
 
 class DjangoPeerctlConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "django_peerctl"
 
     def ready(self):
-        import django_peerctl.signals  # noqa
-
         from django.conf import settings
+
+        import django_peerctl.signals  # noqa
 
         # Does this peerctl instance want to use pdbctl as a source
         # of truth for peers and exchanges?
@@ -20,16 +21,12 @@ class DjangoPeerctlConfig(AppConfig):
             # so we remove it from the service bridge sources
             # list for sot.InternetExchangeMember
 
-            import fullctl.service_bridge.sot as sot
             import fullctl.service_bridge.pdbctl as pdbctl
+            import fullctl.service_bridge.sot as sot
 
-            sot.InternetExchangeMember.sources.remove(
-                (pdbctl.NetworkIXLan, {})
-            )
+            sot.InternetExchangeMember.sources.remove((pdbctl.NetworkIXLan, {}))
 
-            sot.InternetExchange.sources.remove(
-                (pdbctl.InternetExchange, {})
-            )
+            sot.InternetExchange.sources.remove((pdbctl.InternetExchange, {}))
 
             def empty_objects(self, *args, **kwargs):
                 # empty generator
@@ -39,8 +36,11 @@ class DjangoPeerctlConfig(AppConfig):
             pdbctl.NetworkIXLan.objects = empty_objects
             pdbctl.InternetExchange.objects = empty_objects
 
-            log.info("pdbctl DISABLED as source of truth for InternetExchangeMember and InternetExchange")
+            log.info(
+                "pdbctl DISABLED as source of truth for InternetExchangeMember and InternetExchange"
+            )
 
         else:
-            log.info("pdbctl ENABLED as source of truth for InternetExchangeMember and InternetExchange")
-
+            log.info(
+                "pdbctl ENABLED as source of truth for InternetExchangeMember and InternetExchange"
+            )
