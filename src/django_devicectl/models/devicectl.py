@@ -12,6 +12,7 @@ from fullctl.django.models.abstract import (
     GeoModel,
     HandleRefModel,
     ServiceBridgeReferenceModel,
+    MetricModel,
 )
 from fullctl.django.models.concrete import Instance
 from fullctl.service_bridge import nautobot, netbox
@@ -1247,3 +1248,63 @@ class Port(HandleRefModel):
 
     def __str__(self):
         return f"Port({self.id}) {self.virtual_port.name}"
+
+
+@reversion.register()
+@grainy_model(
+    namespace="metric",
+    namespace_instance="metric.{instance.org.permission_id}.{instance.id}",
+)
+class DeviceMetric(MetricModel):
+    """Metric model."""
+
+    device = models.OneToOneField( # Only interested in last metric from each device
+        Device,
+        related_name="metric",
+        on_delete=models.CASCADE,
+    )
+
+    instance = models.ForeignKey(
+        Instance,
+        related_name="metric",
+        on_delete=models.CASCADE,
+    )
+
+    class HandleRef:
+        """Needed by register decorator."""
+
+        tag = "metric"
+
+    class Meta:
+        """
+        Meta class for Metric model.
+
+        Attributes:
+        - db_table (str): Custom database table name.
+        - verbose_name (str): Human-readable name for the model.
+        - verbose_name_plural (str): Plural name for the model.
+        """
+
+        db_table = "devicectl_metric"
+        verbose_name = _("Metric")
+        verbose_name_plural = _("Metrics")
+
+    @property
+    def device_name(self):
+        """Returns the name of the Device this Metric is associated with."""
+        return self.device.name
+
+    @property
+    def org(self):
+        """Returns the name of the Organization this Metric is associated with."""
+        return self.instance.org
+
+    def __str__(self):
+        """
+        Returns a string representation of the entry.
+
+        Returns:
+        str: A string representation of the Metric entry in the format
+        'Metric(demo_device) 1.2 at YYYY-MM-DD'.
+        """
+        return f"Metric{self.device_name} {self.data} at {self.timestamp}"

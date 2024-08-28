@@ -2,9 +2,12 @@ import json
 import os
 import time
 import structlog
+from flatten_json import flatten
+
 
 import fullctl.service_bridge.pdbctl as pdbctl
 from django.conf import settings
+from django.utils import timezone
 from fullctl.django.auditlog import auditlog
 from fullctl.django.decorators import service_bridge_sync
 from fullctl.django.rest.core import BadRequest
@@ -15,7 +18,7 @@ from fullctl.django.rest.mixins import (  # ContainerQuerysetMixin,; OrgQueryset
 )
 from fullctl.django.rest.renderers import PlainTextRenderer
 from fullctl.graph.mrtg import rrd as mrtg_rrd
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -24,6 +27,7 @@ import django_devicectl.traffic as traffic
 from django_devicectl.rest.decorators import grainy_endpoint
 from django_devicectl.rest.route.devicectl import route
 from django_devicectl.rest.serializers.devicectl import Serializers
+import django_devicectl.rest.serializers.devicectl as serializers
 
 logger = structlog.get_logger("django_structlog")
 
@@ -608,6 +612,33 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
 
         return Response(Serializers.device_traffic(instance=traffic_data).data)
 
+    @action(detail=True, methods=["post"])
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def metric(self, request, org, instance, device_id, device, *args, **kwargs):
+        """
+        Insert optics stats data.
+        """
+        data = request.data.copy()
+        data["instance"] = instance.id
+        data["device"] = device.id
+
+        try:
+            # Try to fetch the existing metric for the device
+            metric = models.DeviceMetric.objects.get(device=device)
+            # Update the existing metric with new data
+            serializer = Serializers.metric(metric, data=data, partial=True)
+        except models.DeviceMetric.DoesNotExist:
+            # If no metric exists, create a new one
+            serializer = Serializers.metric(data=data)
+
+        if not serializer.is_valid():
+            logger.debug(f"{serializer.errors=}")
+            return BadRequest(serializer.errors)
+
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 class PortTrafficMixin:
     """
@@ -1087,6 +1118,27 @@ class VirtualPort(PortTrafficMixin, CachedObjectMixin, viewsets.GenericViewSet):
         }
         return self._import_traffic_mrtg_batch(request.data, ports, org=org)
 
+    @action(detail=True, methods=["get"])
+    @grainy_endpoint(
+        namespace="virtual_port.{request.org.permission_id}.{virtual_port_id}"
+    )
+    @load_object(
+        "virtual_port",
+        models.VirtualPort,
+        logical_port__instance="instance",
+        id="virtual_port_id",
+    )
+    def metric(
+        self, request, org, instance, virtual_port_id, virtual_port, *args, **kwargs
+    ):
+        """
+        Returns metric data points for this specific virtual port
+        """
+        ports = Serializers.physical_port(
+            virtual_port.physical_ports.all(), many=True
+        ).data
+        return Response(ports)
+
 
 @route
 class PeeringDBFacilities(CachedObjectMixin, viewsets.GenericViewSet):
@@ -1257,3 +1309,51 @@ class ACL(CachedObjectMixin, viewsets.GenericViewSet):
         response = Response(serializer.data)
         acl.delete()
         return response
+
+
+@route
+class MetricDevice(viewsets.GenericViewSet):
+    """A viewset for viewing Metric instances."""
+
+    serializer_class = Serializers.metric
+    queryset = models.DeviceMetric.objects.all()
+    lookup_url_kwarg = "metric_id"
+    ref_tag = "metric/device"
+    lookup_field = "id"
+
+    @action(detail=False, methods=["get"], url_path="port/(?P<port_id>[^/.]+)")
+    @load_object(
+        "virtual_port",
+        models.VirtualPort,
+        logical_port__instance="instance",
+        id="port_id",
+    )
+    @grainy_endpoint(namespace="device.{request.org.permission_id}")
+    def port(self,
+             request,
+             org,
+             instance,
+             port_id,
+             virtual_port,
+             *args,
+             **kwargs,):
+        """Returns metric data points in Key-Value format for dataTable.
+
+        This endpoint is used for details dataTable in ixCtl and peerCtl.
+        """
+        result = []
+
+        ports = Serializers.physical_port(
+            virtual_port.physical_ports.all(), many=True
+        ).data
+
+        for port in ports:
+            flat_data = port.get("metric")
+            kv = [
+                {"device": port.get("device_name"), "resource": x, "value": y}
+                for x, y in flat_data.items()
+            ]
+
+            result.extend(kv)
+
+        return Response(result)

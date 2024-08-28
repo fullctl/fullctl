@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from flatten_json import flatten
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
@@ -8,6 +9,7 @@ from fullctl.django.rest.serializers import ModelSerializer
 from rest_framework import serializers
 
 import django_devicectl.models.devicectl as models
+from django_devicectl.rest.serializers.devicectl import Metric
 
 Serializers, register = serializer_registry()
 
@@ -309,6 +311,8 @@ class VirtualPort(ModelSerializer):
 
 @register
 class PhysicalPort(ModelSerializer):
+    metric = serializers.SerializerMethodField()
+
     class Meta:
         model = models.PhysicalPort
         fields = [
@@ -316,7 +320,34 @@ class PhysicalPort(ModelSerializer):
             "name",
             "device_id",
             "device_name",
+            "metric",
         ]
+
+    @staticmethod
+    def _filter_dict_by_key_substring(input_dict, substring):
+        """
+        Filters a dictionary to include only the key-value pairs where the key contains a specified substring.
+
+        Args:
+        input_dict (dict): The dictionary to filter.
+        substring (str): The substring to search for in the keys.
+
+        Returns:
+        dict: A new dictionary with only the key-value pairs where the key contains the substring.
+        """
+        return {key: value for key, value in input_dict.items() if substring in key}
+
+    def get_metric(self, obj):
+        try:
+            # Get all metrics from this device
+            metric = Metric(
+                models.DeviceMetric.objects.filter(device=obj.device.id).latest("created"),
+                context={"detailed": True},
+            ).data
+            # Return only keys with same port name
+            return PhysicalPort._filter_dict_by_key_substring(metric, obj.name)
+        except models.DeviceMetric.DoesNotExist:
+            return {"Warning: ": "No metrics available for this interface."}
 
 
 @register

@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
 from rest_framework import serializers
+from flatten_json import flatten
 
 import django_devicectl.models as models
 import django_devicectl.models.tasks as tasks
@@ -183,6 +184,8 @@ class Device(TagMixin, ModelSerializer):
 
 @register
 class PhysicalPort(ModelSerializer):
+    metric = serializers.SerializerMethodField()
+
     class Meta:
         model = models.PhysicalPort
         fields = [
@@ -193,7 +196,34 @@ class PhysicalPort(ModelSerializer):
             "logical_port",
             "logical_port_name",
             "description",
+            "metric",
         ]
+
+    @staticmethod
+    def _filter_dict_by_key_substring(input_dict, substring):
+        """
+        Filters a dictionary to include only the key-value pairs where the key contains a specified substring.
+
+        Args:
+        input_dict (dict): The dictionary to filter.
+        substring (str): The substring to search for in the keys.
+
+        Returns:
+        dict: A new dictionary with only the key-value pairs where the key contains the substring.
+        """
+        return {key: value for key, value in input_dict.items() if substring in key}
+
+    def get_metric(self, obj):
+        try:
+            # Get all metrics from this device
+            metric = Metric(
+                models.DeviceMetric.objects.filter(device=obj.device.id).latest("created"),
+                context={"detailed": True},
+            ).data
+            # Return only keys with same port name
+            return PhysicalPort._filter_dict_by_key_substring(metric, obj.name)
+        except models.DeviceMetric.DoesNotExist:
+            return {"Warning: ": "No metrics available for this interface."}
 
 
 @register
@@ -542,3 +572,39 @@ class PortTrafficMRTGImportBatch(serializers.ListSerializer):
             org=self.context["org"],
             context_model=context_model,
         )
+
+
+@register
+class Metric(ModelSerializer):
+    """Serializer for Metric model."""
+
+    class Meta:
+        """Meta class for Metric serializer."""
+
+        model = models.DeviceMetric
+        fields = [
+            "id",
+            "instance",
+            "device",
+            "data",
+            "timestamp",
+        ]
+
+    def to_representation(self, instance):
+        """Flat json to easy display in datatables."""
+
+        representation = super().to_representation(instance)
+
+        if self.context.get("flatten", True):
+            unflat_data = representation.get("data")
+            flat_data = flatten(unflat_data, ".")
+            return flat_data
+
+        # if self.context.get("keyvalue", True):
+        #     unflat_data = representation.get("data")
+        #     flat_data = flatten(unflat_data, ".")
+        #     kv = [
+        #         {"device": instance.device.name, "resource": x, "value": y}
+        #         for x, y in flat_data.items()
+        #     ]
+        #     return kv
