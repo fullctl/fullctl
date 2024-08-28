@@ -28,8 +28,7 @@ matplotlib = "^3.7.2"
 pandas = "^2.0.3"
 cairosvg = "^2.7.0"
 flatten-json = "^0.1.14"
-
-pytimeparse2 = ">1.7.1"
+pytimeparse2 = ">=1.7.1"
 
 [tool.poetry.dev-dependencies]
 # testing
