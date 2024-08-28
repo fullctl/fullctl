@@ -1,3 +1,5 @@
+import fullctl.service_bridge.ixctl as ixctl
+from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.route.service_bridge import route
 from fullctl.django.rest.views.service_bridge import (
     DataViewSet,
@@ -12,6 +14,8 @@ import django_devicectl.models.devicectl as models
 from django_devicectl.rest.serializers.service_bridge import Serializers
 from django_devicectl.rest.views.devicectl import PortTrafficMixin
 
+import django_devicectl.mrtg as mrtg
+import django_devicectl.sflow as sflow
 
 @route
 class Status(StatusViewSet):
@@ -225,12 +229,116 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
         """
         Returns current traffic data for the virtual port
         """
-        return self._get_traffic(
-            self.get_queryset().get(id=pk),
-            request.GET.get("start_time"),
-            request.GET.get("duration"),
-        )
 
+        start_time = request.GET.get("start_time")
+        duration = request.GET.get("duration")
+        step = request.GET.get("step")
+
+        # traffic source
+        # will be one of
+        # - rrd_mrtg
+        # - vm_mrtg
+        # - vm_sflow
+        traffic_source = request.GET.get("traffic_source")
+
+
+        virtual_port = self.get_queryset().get(id=pk)
+        data = {}
+
+        if traffic_source == "rrd_mrtg":
+            # LEGACY MRTG from RRD
+            return self._get_traffic(
+                self.get_queryset().get(id=pk),
+                start_time=start_time,
+                duration=duration,
+            )
+        elif traffic_source == "vm_mrtg":
+            # VICTORIAMETRICS MRTG
+            data = mrtg.query_graph_port_total(
+                org_id=virtual_port.org.remote_id, port_id=pk, step=step, start=start_time, end=None
+            ).model_dump()
+        elif traffic_source == "vm_sflow":
+            # VICTORIAMETRICS SFLOW
+            data = sflow.query_graph_port_total(
+                org_id=virtual_port.org.remote_id, port_id=pk, step=step, start=start_time, end=None
+            ).model_dump()
+
+        return Response(data)
+
+    @action(detail=True, methods=["get"], url_path="traffic/asn/(?P<asn_src>[^/.]+)/(?P<asn_dst>[^/.]+)")
+    def traffic_asn_pair(self, request, pk, asn_src, asn_dst, *args, **kwargs):
+
+        """
+        Query sflow data for a specific asn pair
+        """
+
+        virtual_port = self.get_queryset().get(id=pk)
+        data = {}
+
+        start = request.query_params.get("start_time", "-1h")
+        end = request.query_params.get("end", None)
+        step = request.query_params.get("step", "15m")
+
+        # query sflow data for device
+        data = sflow.query_graph_asn_pair(
+            org_id=virtual_port.org.remote_id,
+            port_id=virtual_port.id,
+            asn_src=asn_src,
+            asn_dst=asn_dst,
+            step=step, 
+            start=start, 
+            end=end,
+        )
+        return Response(data.model_dump())
+
+    @action(detail=True, methods=["get"], url_path="traffic/asn-table")
+    def traffic_asn_table(self, request, pk, *args, **kwargs):
+
+        """
+        Aggregate sflow data to get traffic from the specified ASNs to all other ASNs
+        at the specified port.
+
+        Will provide a table of traffic between ASNs.
+
+        This requires that the specified port exists on a member in IxCtl.
+
+        Query parameters:
+        
+        - start: start time for the query (unix timestamp or relative time like -1h)
+        - end: end time for the query (unix timestamp or relative time like -1h)
+        - step: step size for the query (seconds)
+        """
+
+        virtual_port = self.get_queryset().get(id=pk)
+        data = {}
+
+        start = request.query_params.get("start_time") or request.query_params.get("start", "-15m")
+        end = request.query_params.get("end", None)
+        step = request.query_params.get("step", 300)
+
+        port = virtual_port.port
+
+        member = ixctl.InternetExchangeMember().first(ports=[port.id], org=virtual_port.org.remote_id)
+
+        if not member:
+            return BadRequest({"error": "No member found with the specified port in IxCtl"})
+
+        members = ixctl.InternetExchangeMember().objects(peers=member.id)
+        asn_names = {m.asn: m.name for m in members}
+             
+        # query sflow data for device
+        data = sflow.asn_table(
+            sflow.query_graph_asn(
+                org_id=virtual_port.org.remote_id,
+                port_id=virtual_port.id,
+                asn=member.asn,
+                step=step, 
+                start=start, 
+                end=end, 
+            ),
+            asn_names=asn_names
+        )
+        return Response(data)
 
 @route
 class IPAddress(DataViewSet):
