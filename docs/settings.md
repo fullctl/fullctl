@@ -42,3 +42,13 @@
 - `BILLING_INTEGRATIOON` - if False will disable all billing checks
 - `SERVICE_TAG` - should be the service reference tag (e.g., 'ixctl')
 - `USE_LOCAL_PERMISSIONS` - if `True` permissions will be handled locally instead of through aaactl.
+
+### Support
+
+- `CONTACT_US_EMAIL` - email address to send contact us messages to, defaults to `SUPPORT_EMAIL`
+- `SUPPORT_EMAIL` - email address to send support messages to, defaults to `SERVER_EMAIL`
+- `POST_FEATURE_REQUEST_URL` - url to post feature requests to
+- `DISABLE_FEATURE_REQUEST` - if `True` will disable the feature request form
+- `DOCS_URL` - url to the documentation
+- `LEGAL_URL` - url to the legal page
+- `TERMS_OF_SERVICE_URL` - url to the terms of service page

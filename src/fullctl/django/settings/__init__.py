@@ -489,6 +489,9 @@ class SettingsManager(confu.util.SettingsManager):
         # URL to POST Feature Request form to
         self.set_option("POST_FEATURE_REQUEST_URL", "/api/account/user/contact_message")
 
+        # Disable feature request
+        self.set_option("DISABLE_FEATURE_REQUEST", False)
+
         # Docs URL
         self.set_option("DOCS_URL", "https://docs.fullctl.com")
 
