@@ -4,6 +4,11 @@
 
 ## PrefixCtl Meta - external source setup
 
+### RegCtl
+
+- `REGCTL_URL` - URL to RegCtl instance
+- `REGCTL_CACHE_EXPIRY` (default=86400) - RegCtl result cache in seconds
+
 ### IP2Location
 
 - `IP2LOCATION_API_KEY`
