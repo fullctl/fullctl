@@ -1,5 +1,6 @@
 Unreleased:
-  added: []
+  added:
+  - regctl prefix-meta source
   fixed: []
   changed: []
   deprecated: []

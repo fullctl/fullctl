@@ -16,6 +16,10 @@ settings_manager.set_option("ARIN_WHOWAS_DISABLED", False)
 # rdap bootstrap server
 settings_manager.set_option("RDAP_BOOTSTRAP_URL", "https://rdap.org/")
 
+# RegCtl
+
+settings_manager.set_option("REGCTL_URL", "")
+
 # Cache expiry
 
 # 24 hours
@@ -41,3 +45,6 @@ settings_manager.set_option("RDAP_CACHE_EXPIRY", 86400)
 
 # Never
 settings_manager.set_option("ARIN_WHOWAS_CACHE_EXPIRY", None, envvar_type=int)
+
+# 24 hours
+settings_manager.set_option("REGCTL_CACHE_EXPIRY", 86400)
