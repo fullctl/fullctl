@@ -81,7 +81,7 @@ def validate_query_params(**kwargs):
 
 
 TRAFFIC_GRAPH_QUERY_BASE = """
-avg by (metric) (
+sum by (metric) (
     label_replace(
         rate_over_sum(sflow_bytes{{{tags_in}}}[{step}]),
         "metric", "bps_in", "", ""
@@ -93,7 +93,7 @@ max by (metric) (
         "metric", "bps_in_max", "", ""
     ) * 8 @ {step}
 ) or
-avg by (metric) (
+sum by (metric) (
     label_replace(
         rate_over_sum(sflow_bytes{{{tags_out}}}[{step}]),
         "metric", "bps_out", "", ""
