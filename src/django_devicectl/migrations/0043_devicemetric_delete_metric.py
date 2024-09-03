@@ -13,6 +13,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.DeleteModel(
+            name="Metric",
+        ),
         migrations.CreateModel(
             name="DeviceMetric",
             fields=[
@@ -82,8 +85,5 @@ class Migration(migrations.Migration):
             managers=[
                 ("handleref", django.db.models.manager.Manager()),
             ],
-        ),
-        migrations.DeleteModel(
-            name="Metric",
         ),
     ]
