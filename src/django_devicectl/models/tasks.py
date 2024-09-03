@@ -18,6 +18,7 @@ from fullctl.graph.render.traffic import render_graph
 from fullctl.metrics import Metrics
 from fullctl.metrics.schema import Point
 
+import django_devicectl.sflow as sflow
 import django_devicectl.models.devicectl as models
 
 log = structlog.get_logger("django_structlog")
@@ -636,6 +637,91 @@ class RenderTrafficGraphs(Task):
                 content_type="image/png",
                 public=public,
             )
+
+@register
+class RenderSflowTrafficGraphs(Task):
+    """
+    Renders total IX traffic graphs from VictoriaMetrics sflow metrics to PNG files
+    """
+
+    periods = [
+        # duration, resolution, filename suffix
+        (86400, 300, "5m"),
+        (86400 * 7, 1800, "30m"),
+        (86400 * 30, 7200, "2h"),
+        (86400 * 365, 86400, "1d"),
+    ]
+
+    class Meta:
+        proxy = True
+
+    class HandleRef:
+        tag = "task_render_sflow_traffic_graphs"
+
+    def run(self, *args, **kwargs):
+        ix_id = kwargs.get('ix_id')
+        if not ix_id:
+            raise ValueError("IX ID is required")
+
+        ix = ixctl.InternetExchange().object(ix_id)
+        
+        for duration, resolution, suffix in self.periods:
+            self.render_graph(ix, duration, resolution, suffix)
+
+    def render_graph(self, ix, duration, resolution, suffix):
+        end_time = int(time.time())
+        start_time = end_time - duration
+
+        result = sflow.query_graph_ix_total(
+            org_id=self.org.remote_id,
+            ix_id=ix.id,
+            step=resolution,
+            start=start_time,
+            end=end_time
+        )
+
+        # Process the data
+        data = []
+        for metric in result.data.result:
+            metric_name = metric.metric['metric']
+            for value in metric.values:
+                timestamp, val = value
+                existing = next((item for item in data if item['timestamp'] == timestamp), None)
+                if existing:
+                    existing[metric_name] = float(val)
+                else:
+                    data_point = {'timestamp': int(timestamp)}
+                    data_point[metric_name] = float(val)
+                    data.append(data_point)
+
+        data.sort(key=lambda x: x['timestamp'])
+
+        # Render the graph
+        png_data = render_graph(
+            data,
+            title_label=f"{ix.name} - Total Traffic",
+            service="ixctl",
+        )
+
+        # Save the graph
+        image_file_name = f"ixctl-ix-{ix.id}-{suffix}-sflow.png"
+
+        try:
+            f = OrganizationFile.objects.get(org=self.org, name=image_file_name)
+            f.content = png_data
+            f.public = True
+            f.content_type = "image/png"
+            f.save()
+        except OrganizationFile.DoesNotExist:
+            OrganizationFile.objects.create(
+                org=self.org,
+                name=image_file_name,
+                content=png_data,
+                content_type="image/png",
+                public=True,
+            )
+
+        return image_file_name
 
 
 @register
