@@ -17,7 +17,9 @@
 
   <div class="col-xs-12 col-sm-6 col-md-4">
   {% if password_login_enabled %}
-    <p>Explore our products by registering a free account.<br/><br/>
+      {% if show_register_link %}
+      <p>Explore our products by registering a free account.<br/><br/>
+      {% endif %}
       Signing in from PeeringDB is preferred because it associates authorized ASNs with your account.
       <br/><br/>
       {% if show_register_link %}
