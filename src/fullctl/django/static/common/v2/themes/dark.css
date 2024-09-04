@@ -76,6 +76,7 @@
   --graph-placeholder-bg: var(--clr-bg-transparent-850);
 
   --select2-selected-bg: var(--clr-bg-700);
+  --theme-switcher-color: var(--clr-primary-200);
 
   color-scheme: dark;
 }
@@ -118,6 +119,8 @@
   --graph-placeholder-bg: var(--clr-bg-transparent-820);
 
   --select2-selected-bg: var(--clr-bg-400);
+
+  --theme-switcher-color: var(--clr-primary-900);
 
   color-scheme: light;
 }
@@ -906,4 +909,12 @@ div.autocomplete-item {
 }
 .green{
     background-color: green !important;
+}
+
+/*
+  * theme switcher
+  */
+
+span.icon-theme-switcher {
+    background-color: var(--theme-switcher-color);
 }
