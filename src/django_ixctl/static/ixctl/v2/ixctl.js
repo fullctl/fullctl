@@ -113,12 +113,6 @@ $ctl.application.Ixctl = $tc.extend(
       // });
 
       this.$t.members.activate();
-
-      // member details need to be closed when tabs are switched
-      //$('div.app-pages-nav [data-bs-toggle="tab"]').on('show.bs.tab', () => {
-      //  $ctl.ixctl.$t.member_details.hide();
-      //});
-
     },
 
 
