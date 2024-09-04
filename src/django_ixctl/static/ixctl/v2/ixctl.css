@@ -47,10 +47,6 @@ th, td {
   text-align: left;
 }
 
-span.icon-theme-switcher {
-  background: url(icons/theme-switcher.svg);
-}
-
 span.icon {
   display: inline-block;
   vertical-align: bottom;

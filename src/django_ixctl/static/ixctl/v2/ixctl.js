@@ -912,6 +912,8 @@ $ctl.application.Ixctl.MemberDetails = $tc.extend(
 
       $.fn.reset_metric_table();
 
+      $("#tab-member").tab("show")
+
       this.$w.member.get(""+member_id).then(
         (response) => {
           let member = response.first();
