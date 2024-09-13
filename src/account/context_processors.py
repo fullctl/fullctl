@@ -50,4 +50,5 @@ def info(request):
         "cloudflare_analytics_id": settings.CLOUDFLARE_ANALYTICS_ID,
         "enable_email_confirmation": settings.ENABLE_EMAIL_CONFIRMATION,
         "has_org_setup": user_has_org_setup,
+        "PDB_OAUTH_PROMPT_LINK": settings.PDB_OAUTH_PROMPT_LINK,
     }
