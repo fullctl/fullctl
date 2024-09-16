@@ -11,6 +11,6 @@ case "$1" in
     exec $@
     ;;
   * )
-    exec manage $@
+    exec $@
     ;;
 esac
