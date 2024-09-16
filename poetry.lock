@@ -1230,15 +1230,22 @@ name = "rdap"
 version = "1.5.2"
 description = "Registration Data Access Protocol tools"
 optional = false
-python-versions = "<4.0,>=3.8"
-files = [
-    {file = "rdap-1.5.2-py3-none-any.whl", hash = "sha256:d138f89446647eb0b121ca57a3a099e80fb20600cabf29d7b3cb5e7d13e8769d"},
-    {file = "rdap-1.5.2.tar.gz", hash = "sha256:40fa8df10d2bcf14e6ebf6c17fb77b4b232df8340dfa269d33441dce4b2ea0b4"},
-]
+python-versions = "^3.8"
+files = []
+develop = false
 
 [package.dependencies]
+googlemaps = ">=4.10"
 munge = {version = ">=1.3", extras = ["yaml"]}
+phonenumbers = ">=8.13.0"
+pydantic = ">=2.8.2"
 requests = ">=2.25.1"
+
+[package.source]
+type = "git"
+url = "https://github.com/20c/rdap.git"
+reference = "regctl"
+resolved_reference = "08abd06606a394a9ac957a20071092d0e9cefe97"
 
 [[package]]
 name = "redis"
@@ -1576,4 +1583,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "a9b99335d259d3fab31a9f9224ac3e3e388933aacce290a1cf79a60c7cf4c923"
+content-hash = "bce3176a4c771b1e4f0c5daae0d4d8d0067b80c862b019505f4afda04cc69ccc"

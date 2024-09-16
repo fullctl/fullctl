@@ -24,16 +24,10 @@ structlog = ">=24.4"
 fastapi = ">=0.111"
 uvicorn = ">=0.30.1"
 httpx = ">=0.27.0"
-rdap = ">=1.5"
 phonenumbers = ">=8.13"
 googlemaps = ">=4.10"
 redis = ">=5.0.7"
-
-#[tool.poetry.dependencies.rdap]
-#git = "https://github.com/20c/ctl.git"
-#branch = "main"
-#path = "/home/vegu/20c/rdap"
-#develop = true
+rdap = { git = "https://github.com/20c/rdap.git", branch = "regctl" }
 
 [tool.poetry.dev-dependencies]
 # testing
