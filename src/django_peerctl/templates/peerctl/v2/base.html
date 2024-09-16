@@ -255,8 +255,13 @@ const selected_asn = "{{ selected_asn }}";
     <div class="col-md-8">
       <div class="alert alert-warning marg-top-lg">
         {% blocktrans trimmed with app_id=request.app_id org_name=request.org.display_name_verbose %}
-        {{ org_name }} is currently not permissioned to manage any ASNs. Please contact <a href="mailto:{{ support_email }}">{{ support_email }}</a> support for assistance or <a href="https://docs.fullctl.com/aaaCtl/Sign-up-for-PeeringDB/">connect your account to PeeringDB</a>.
+        {{ org_name }} is currently not permissioned to manage any ASNs. Please contact <a href="mailto:{{ support_email }}">{{ support_email }}</a> support for assistance.
         {% endblocktrans %}
+        {% if PDB_OAUTH_PROMPT_LINK != "never" %}
+        {% blocktrans %}
+        You also may <a href="https://docs.fullctl.com/aaaCtl/Sign-up-for-PeeringDB/">connect your account to PeeringDB</a>.
+        {% endblocktrans %}
+        {% endif %}
       </div>
     </div>
   </div>
