@@ -503,7 +503,8 @@
         title,
         selector,
         get_url,
-        proxy
+        proxy,
+        prepare_params = (params) => {}
     ) {
         if(!graph_traffic_source) {
         // legacy default
@@ -577,6 +578,10 @@
                 params.push('step=300');
                 params.push('start=-24h');
             }
+        }
+
+        if(prepare_params) {
+            prepare_params(params);
         }
     
         if (params.length > 0) {
