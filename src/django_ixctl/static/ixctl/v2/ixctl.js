@@ -993,7 +993,26 @@ $ctl.application.Ixctl.MemberDetails = $tc.extend(
         (graph_container, url_attribute) => {
           return graph_container.data(url_attribute).replace(/0/g, member.port.virtual_port);
         },
-        this
+        this,
+        (params) => {
+          // prepare URL parameters for the graph data request
+
+          // check if query_override element is available, and if it is
+          // and has a value, add it to the URL parameters
+          //
+          // this allows the user to override the aggregation query for live
+          // debugging of the graph data (this feature is only available to superusers)
+          if(!this.$e.query_override)
+            return;
+          const queryOverride = this.$e.query_override.val();
+          const queryOverrideVisible = this.$e.query_override.is(":visible");
+          if(queryOverride && queryOverrideVisible) {
+
+            // base64 encode the query override
+            let encoded = btoa(queryOverride);
+            params.push(`query_override=${encoded}`);
+          }
+        }
       );
     }
   },
