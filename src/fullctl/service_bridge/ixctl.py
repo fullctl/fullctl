@@ -123,6 +123,17 @@ class InternetExchangeMember(Ixctl):
             },
         )
 
+    def metric(self, pk: int):
+        return self.get(
+            f"data/member/{pk}/metric",
+        )
+
+    def metric_table(self, pk: int):
+        return self.get(
+            f"data/member/{pk}/metric_table",
+        )
+
+
 class RouteserverObject(IxctlEntity):
     description = "Ixctl Route Server"
     relationships = {
