@@ -80,30 +80,39 @@ def validate_query_params(**kwargs):
             raise ValueError(f"Invalid query parameter: {k}")
 
 
-TRAFFIC_GRAPH_QUERY_BASE = """
-sum by (metric) (
-    label_replace(
-        rate_over_sum(sflow_bytes{{{tags_in}}}[{step}]),
-        "metric", "bps_in", "", ""
-    ) * 8
-) or
-max by (metric) (
-    label_replace(
-        rate_over_sum(sflow_bytes{{{tags_in}}}[{step_max}]),
-        "metric", "bps_in_max", "", ""
-    ) * 8 @ {step}
-) or
-sum by (metric) (
-    label_replace(
-        rate_over_sum(sflow_bytes{{{tags_out}}}[{step}]),
-        "metric", "bps_out", "", ""
-    ) * 8
-) or
-max by (metric) (
-    label_replace(
-        rate_over_sum(sflow_bytes{{{tags_out}}}[{step_max}]),
-        "metric", "bps_out_max", "", ""
-    ) * 8 @ {step}
+# The basic query for traffic data
+#
+# We use `or vector(0)` to ensure that we always get timeseries data
+# for the full duration. If there is no data, we will get a 0 value.
+#
+# We use `label_replace` to ensure sane metric names in the result
+# 
+# `bps_in`, `bps_out` are the average bits per second for incoming and outgoing traffic in the given time range
+# `bps_in_max`, `bps_out_max` are the maximum bits per second for incoming and outgoing traffic in the given time range
+
+TRAFFIC_GRAPH = """
+label_replace(
+    (sum(sflow_bytes{{{tags_in}}}) * 8 / {step}) or vector(0),
+    "metric", "bps_in", "", ""
+)
+or
+label_replace(
+    (max_over_time(
+        sum(sflow_bytes{{{tags_in}}})[{step_max}:]
+    ) * 8 / {step}) or vector(0),
+    "metric", "bps_in_max", "", ""
+)
+or
+label_replace(
+    (sum(sflow_bytes{{{tags_out}}}) * 8 / {step}) or vector(0),
+    "metric", "bps_out", "", ""
+)
+or
+label_replace(
+    (max_over_time(
+        sum(sflow_bytes{{{tags_out}}})[{step_max}:]
+    ) * 8 / {step}) or vector(0),
+    "metric", "bps_out_max", "", ""
 )
 """
 
@@ -135,9 +144,9 @@ def query_graph_ix_total(org_id: int, ix_id: int, step: str, start:str | int, en
 
     step = int(step) if isinstance(step, str) else step
     
-    query = TRAFFIC_GRAPH_QUERY_BASE.format(tags_in=tags_in, tags_out=tags_out, step=step, step_max=step_size_for_max(step))
+    query = TRAFFIC_GRAPH.format(tags_in=tags_in, tags_out=tags_out, step=step, step_max=step_size_for_max(step))
     
-    return metrics.query_range(query, start=start, end=end, step=step)
+    return metrics.query_range(query, start=start, end=end, step=step, keep_metric_names=True)
     
 
 def query_graph_port_total(org_id: int, port_id: int, step: str, start:str, end:str, **kwargs) -> QueryResult:
@@ -162,6 +171,7 @@ def query_graph_port_total(org_id: int, port_id: int, step: str, start:str, end:
     - step: tick size (e.g. 15m)
     - start: start time (unix timestamp or relative time like -1h)
     - end: end time (unix timestamp or relative time like -1h)
+    - query_override: Override the query with a custom query (useful for testing and debugging)
     """
 
     metrics = metrics_client()
@@ -171,8 +181,12 @@ def query_graph_port_total(org_id: int, port_id: int, step: str, start:str, end:
 
     step = int(step) if isinstance(step, str) else step
 
-    query = TRAFFIC_GRAPH_QUERY_BASE.format(tags_in=tags_in, tags_out=tags_out, step=step, step_max=step_size_for_max(step))
-    
+    query_override = kwargs.pop("query_override", None)
+
+    query_base = query_override or TRAFFIC_GRAPH
+
+    query = query_base.format(tags_in=tags_in, tags_out=tags_out, step=step, step_max=step_size_for_max(step))
+
     return metrics.query_range(query, start=start, end=end, step=step)
 
 
@@ -180,14 +194,14 @@ def query_graph_port_total(org_id: int, port_id: int, step: str, start:str, end:
 def query_graph_asn(org_id: int, port_id:int, asn: int, step: str, start:str, end:str, **kwargs) -> QueryResult:
     """
     Queries bits per second for a specific ASN to ASN (in and out)
-
+    
     This is done by looking for a match in `ctl_asn_src` for outgoing
     traffic and `ctl_asn_dst` for incoming traffic.
-
+    
     This needs to aggregate to individual ASNs, not just the total.
-
+    
     In the end we want to have a graph that shows individual metrics for each ASN that has traffic to/from the given ASN.
-
+    
     Creates 4 metrics (per asn):
     
     - bps_in (avg of all incoming traffic as bits per second)
@@ -196,7 +210,7 @@ def query_graph_asn(org_id: int, port_id:int, asn: int, step: str, start:str, en
     - bps_out_max (max of all outgoing traffic as bits per second)
     
     Arguments:
-
+    
     - org_id: Organization ID (aaactl ID) - the organization that stores the data
     - port_id: Port ID - needs to be the port for the source ASN
     - asn: ASN
@@ -204,36 +218,43 @@ def query_graph_asn(org_id: int, port_id:int, asn: int, step: str, start:str, en
     - start: start time (unix timestamp or relative time like -1h)
     - end: end time (unix timestamp or relative time like -1h)
     """
-
+    
     metrics = metrics_client()
 
     step = int(step) if isinstance(step, str) else step
     step_max = step_size_for_max(step)
 
     query = f"""
-    avg by (metric, ctl_asn_src) (
-        label_replace(
-            rate_over_sum(sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_dst="{port_id}", ctl_asn_dst="{asn}"}}[{step}]),
-            "metric", "bps_in", "", ""
-        ) * 8
-    ) or
-    max by (metric, ctl_asn_src) (
-        label_replace(
-            rate_over_sum(sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_dst="{port_id}", ctl_asn_dst="{asn}"}}[{step_max}]),
-            "metric", "bps_in_max", "", ""
-        ) * 8
-    ) or
-    avg by (metric, ctl_asn_dst) (
-        label_replace(
-            rate_over_sum(sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_src="{port_id}", ctl_asn_src="{asn}"}}[{step}]),
-            "metric", "bps_out", "", ""
-        ) * 8
-    ) or
-    max by (metric, ctl_asn_dst) (
-        label_replace(
-            rate_over_sum(sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_src="{port_id}", ctl_asn_src="{asn}"}}[{step_max}]),
-            "metric", "bps_out_max", "", ""
-        ) * 8
+    label_replace(
+        sum by (ctl_asn_src) (
+            sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_dst="{port_id}", ctl_asn_dst="{asn}"}}
+        ) * 8 / {step} or vector(0),
+        "metric", "bps_in", "", ""
+    )
+    or
+    label_replace(
+        max_over_time(
+            sum by (ctl_asn_src) (
+                sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_dst="{port_id}", ctl_asn_dst="{asn}"}}
+            )[{step_max}:]
+        ) * 8 / {step} or vector(0),
+        "metric", "bps_in_max", "", ""
+    )
+    or
+    label_replace(
+        sum by (ctl_asn_dst) (
+            sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_src="{port_id}", ctl_asn_src="{asn}"}}
+        ) * 8 / {step} or vector(0),
+        "metric", "bps_out", "", ""
+    )
+    or
+    label_replace(
+        max_over_time(
+            sum by (ctl_asn_dst) (
+                sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_src="{port_id}", ctl_asn_src="{asn}"}}
+            )[{step_max}:]
+        ) * 8 / {step}  or vector(0),
+        "metric", "bps_out_max", "", ""
     )
     """
 
@@ -272,21 +293,36 @@ def query_graph_asn_pair(org_id: int, port_id: int, asn_src: int, asn_dst: int, 
 
     query = f"""
     label_replace(
-        rate_over_sum(sflow_bytes{{ctl_org_id=\"{org_id}\", ctl_port_id_dst="{port_id}", ctl_asn_dst="{asn_src}", ctl_asn_src="{asn_dst}"}}[{step}]),
+        sum(
+            sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_dst="{port_id}", ctl_asn_dst="{asn_src}", ctl_asn_src="{asn_dst}"}}
+        ) * 8 / {step} or vector(0),
         "metric", "bps_in", "", ""
-    ) * 8 or
+    )
+    or
     label_replace(
-        max(rate_over_sum(sflow_bytes{{ctl_org_id=\"{org_id}\", ctl_port_id_dst="{port_id}", ctl_asn_dst="{asn_src}", ctl_asn_src="{asn_dst}"}}[{step_max}])),
+        max_over_time(
+            sum(
+                sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_dst="{port_id}", ctl_asn_dst="{asn_src}", ctl_asn_src="{asn_dst}"}}
+            )[{step_max}:]
+        ) * 8 / {step}  or vector(0),
         "metric", "bps_in_max", "", ""
-    ) * 8 or
+    )
+    or
     label_replace(
-        rate_over_sum(sflow_bytes{{ctl_org_id=\"{org_id}\", ctl_port_id_src="{port_id}", ctl_asn_src="{asn_src}", ctl_asn_dst="{asn_dst}"}}[{step}]),
+        sum(
+            sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_src="{port_id}", ctl_asn_src="{asn_src}", ctl_asn_dst="{asn_dst}"}}
+        ) * 8 / {step} or vector(0),
         "metric", "bps_out", "", ""
-    ) * 8 or
+    )
+    or
     label_replace(
-        max(rate_over_sum(sflow_bytes{{ctl_org_id=\"{org_id}\", ctl_port_id_src="{port_id}", ctl_asn_src="{asn_src}", ctl_asn_dst="{asn_dst}"}}[{step_max}])),
+        max_over_time(
+            sum(
+                sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_src="{port_id}", ctl_asn_src="{asn_src}", ctl_asn_dst="{asn_dst}"}}
+            )[{step_max}:]
+        ) * 8 / {step}  or vector(0),
         "metric", "bps_out_max", "", ""
-    ) * 8
+    )
     """
     
     return metrics.query_range(query, start=start, end=end, step=step)

@@ -1,4 +1,5 @@
 import structlog
+import base64
 
 import fullctl.service_bridge.ixctl as ixctl
 from fullctl.django.rest.core import BadRequest
@@ -107,11 +108,21 @@ class MetricSflow(CachedObjectMixin, viewsets.GenericViewSet):
         - start: start time for the query (unix timestamp or relative time like -1h)
         - end: end time for the query (unix timestamp or relative time like -1h)
         - step: step size for the query (seconds)
+        - query_override: override the query to use a custom query (only superusers)
         """
 
         start = request.query_params.get("start", "-15m")
         end = request.query_params.get("end", None)
         step = request.query_params.get("step", 300)
+        query_override = request.query_params.get("query_override", None)
+
+        # only superusers are allowed to use query_override
+        if query_override and not request.user.is_superuser:
+            return BadRequest({"error": "Only superusers are allowed to use query_override"})
+
+        # if query override is set decode from base64
+        if query_override:
+            query_override = base64.b64decode(query_override).decode("utf-8")
 
         # query sflow data for device
         data = sflow.query_graph_port_total(
@@ -119,7 +130,8 @@ class MetricSflow(CachedObjectMixin, viewsets.GenericViewSet):
             port_id=port_id,
             step=step, 
             start=start, 
-            end=end, 
+            end=end,
+            query_override=query_override
         )
         return Response(data.model_dump())
 
