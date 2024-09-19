@@ -224,8 +224,8 @@ class InternetExchangeMember(DataViewSet):
 
         return Response(
             devicectl.VirtualPort().traffic(
-                virtual_port_id, 
-                start_time=start_time, 
+                virtual_port_id,
+                start_time=start_time,
                 duration=duration,
                 step=step,
                 traffic_source = member.ix.graph_traffic_source
@@ -250,14 +250,47 @@ class InternetExchangeMember(DataViewSet):
 
         return Response(
             devicectl.VirtualPort().traffic_asn_pair(
-                virtual_port_id, 
+                virtual_port_id,
                 asn_src=asn_src,
                 asn_dst=asn_dst,
-                start_time=start_time, 
+                start_time=start_time,
                 duration=duration,
                 step=step,
             )
         )
+
+    @action(detail=True, methods=["GET"])
+    @grainy_endpoint(namespace="service_bridge")
+    def metric(self, request, pk=None, *args, **kwargs):
+        member = self.get_object()
+
+        if not member.port:
+            return Response({})
+
+        virtual_port_id = member.port.object.virtual_port
+
+        return Response(
+            devicectl.VirtualPort().metric(
+                virtual_port_id,
+            )
+        )
+
+    @action(detail=True, methods=["GET"])
+    @grainy_endpoint(namespace="service_bridge")
+    def metric_table(self, request, pk=None, *args, **kwargs):
+        member = self.get_object()
+
+        if not member.port:
+            return Response({})
+
+        virtual_port_id = member.port.object.virtual_port
+
+        return Response(
+            devicectl.VirtualPort().metric_table(
+                virtual_port_id,
+            )
+        )
+
 
 @route
 class RouteServer(DataViewSet):
