@@ -90,7 +90,7 @@ $ctl.application.Peerctl.SessionsSummary = $tc.extend(
           });
 
           // common/v2/metric.js
-          let url = this.$w.list_peer_sessions.element.data('api-metric-base');
+          let url = this.templates.list.data('api-metric-base');
           $.fn.show_metric_list(url, row, data);
 
           // show session details
@@ -477,7 +477,6 @@ $ctl.application.Peerctl.SessionDetails = $tc.extend(
         $('#device-name').empty().append(deviceHTML);
       });
 
-      // this.show_metric(session_data);
       let url = this.$w.session.element.data('api-metric-base');
       $.fn.show_metric_table(url, session_data);
     },
