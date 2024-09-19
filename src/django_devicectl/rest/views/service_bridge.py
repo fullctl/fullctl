@@ -285,8 +285,8 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
             port_id=virtual_port.id,
             asn_src=asn_src,
             asn_dst=asn_dst,
-            step=step, 
-            start=start, 
+            step=step,
+            start=start,
             end=end,
         )
         return Response(data.model_dump())
@@ -303,7 +303,7 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
         This requires that the specified port exists on a member in IxCtl.
 
         Query parameters:
-        
+
         - start: start time for the query (unix timestamp or relative time like -1h)
         - end: end time for the query (unix timestamp or relative time like -1h)
         - step: step size for the query (seconds)
@@ -325,20 +325,57 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
 
         members = ixctl.InternetExchangeMember().objects(peers=member.id)
         asn_names = {m.asn: m.name for m in members}
-             
+
         # query sflow data for device
         data = sflow.asn_table(
             sflow.query_graph_asn(
                 org_id=virtual_port.org.remote_id,
                 port_id=virtual_port.id,
                 asn=member.asn,
-                step=step, 
-                start=start, 
-                end=end, 
+                step=step,
+                start=start,
+                end=end,
             ),
             asn_names=asn_names
         )
         return Response(data)
+
+    @action(detail=True, methods=["get"], url_path="metric")
+    def metric(self, request, pk, *args, **kwargs):
+        """
+        Returns current metric data for the virtual port
+        """
+        virtual_port = self.get_queryset().get(id=pk)
+
+        ports = Serializers.physical_port(
+            virtual_port.physical_ports.all(), many=True
+        ).data
+
+        return Response(ports)
+
+    @action(detail=True, methods=["get"], url_path="metric_table")
+    def metric_table(self, request, pk, *args, **kwargs):
+        """
+        Returns current metric data for the virtual port
+        """
+        result = []
+        virtual_port = self.get_queryset().get(id=pk)
+
+        ports = Serializers.physical_port(
+            virtual_port.physical_ports.all(), many=True
+        ).data
+
+        for port in ports:
+            flat_data = port.get("metric")
+            kv = [
+                {"device": port.get("device_name"), "resource": x, "value": y}
+                for x, y in flat_data.items()
+            ]
+
+            result.extend(kv)
+
+        return Response(result)
+
 
 @route
 class IPAddress(DataViewSet):
