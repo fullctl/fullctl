@@ -18,6 +18,8 @@ def conf(request):
                 "source_of_truth": settings.PDBCTL_SOT_IX,
             },
             "default_page": settings.DEFAULT_PAGE,
+            # defined in aaactl, used globally
+            "PDB_OAUTH_PROMPT_LINK": settings.PDB_OAUTH_PROMPT_LINK,
         },
     }
 
