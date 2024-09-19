@@ -1,7 +1,7 @@
 {% load i18n %}
 <div data-template="session_widget"
      data-api-base="{% url "peerctl_api:sessions_summary-list" asn=selected_asn %}"
-     data-api-metric-base="{% url "proxies-api-devicectl-metric" org_tag=request.org.slug port_id="0" %}"
+     data-api-metric-base="{% url "peerctl_api:port-ix-metric-table" asn=selected_asn pk=0 %}"
 >
   <div class="row controls">
     <div class="col-12">

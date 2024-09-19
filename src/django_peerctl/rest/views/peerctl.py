@@ -664,7 +664,74 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
                 return BadRequest({"non_field_errors": ["No traffic data available"]})
 
         return Response(as_table)
-        
+
+    @action(detail=True, methods=["get"], url_path="metric/ix")
+    @grainy_endpoint(namespace="verified.asn.{asn}.?")
+    def ix_metric(self, request, asn, pk, *args, **kwargs):
+        """
+        IX metric datapoints for this port (only if the port is
+        is referenced by an ixctl port info object)
+        """
+
+        port = models.Port().object(pk)
+        port_info = port.port_info_object
+
+        # port info reference needs to exist, as it is used to relate
+        # the port to an exchange
+
+        if not port_info or not port_info.ref_id:
+            return Response({})
+
+        # port info reference needs to be from ixctl
+
+        if not port_info.ref_source == "ixctl":
+            return Response({})
+
+        # port info reference needs to be from the same asn as this
+        # network (everyone is only allowed to see their own metrics)
+
+        if int(port_info.ref.asn) != int(asn):
+            return Response({}, status=403)
+
+        return Response(
+            ixctl.InternetExchangeMember().metric(
+                port_info.ref_id.split(":")[1],
+            )
+        )
+
+    @action(detail=True, methods=["get"], url_path="metric_table/ix")
+    @grainy_endpoint(namespace="verified.asn.{asn}.?")
+    def ix_metric_table(self, request, asn, pk, *args, **kwargs):
+        """
+        IX metric datapoints for this port (only if the port is
+        is referenced by an ixctl port info object)
+        """
+
+        port = models.Port().object(pk)
+        port_info = port.port_info_object
+
+        # port info reference needs to exist, as it is used to relate
+        # the port to an exchange
+
+        if not port_info or not port_info.ref_id:
+            return Response({})
+
+        # port info reference needs to be from ixctl
+
+        if not port_info.ref_source == "ixctl":
+            return Response({})
+
+        # port info reference needs to be from the same asn as this
+        # network (everyone is only allowed to see their own metrics)
+
+        if int(port_info.ref.asn) != int(asn):
+            return Response({}, status=403)
+
+        return Response(
+            ixctl.InternetExchangeMember().metric_table(
+                port_info.ref_id.split(":")[1],
+            )
+        )
 
 # peer view
 # list all peers for a port and asn

@@ -8,7 +8,7 @@
   class="table list-table table-borderless center"
   data-api-load="yes"
   data-api-base="{% url "peerctl_api:sessions_summary-list" asn=selected_asn %}"
-  data-api-metric-base="{% url "proxies-api-devicectl-virtual-port-metric" org_tag=request.org.slug pk="0" %}"
+  data-api-metric-base="{% url "peerctl_api:port-ix-metric" asn=selected_asn pk=0 %}"
   data-template="list">
   <thead>
       <th>

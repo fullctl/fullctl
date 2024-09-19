@@ -421,9 +421,13 @@ class Port(serializers.Serializer):
         return ""
 
     def get_ix_portal(self, instance):
+        if not self.get_ix_object(instance):
+            return None
         return self.get_ix_object(instance).portal_url
 
     def get_ix_graph_traffic_source(self, instance):
+        if not self.get_ix_object(instance):
+            return None
         return self.get_ix_object(instance).graph_traffic_source
 
     def get_display_name(self, instance):
@@ -531,15 +535,15 @@ class PortUpdate(serializers.Serializer):
     def validate_mac_address(self, macaddr: str):
         if not macaddr:
             return None
-        
+
         validate_mac_address(macaddr)
-        
+
         return macaddr
-    
+
     def validate_macaddr_set(self, macaddr_set: list[str]):
         if not macaddr_set:
             return []
-        
+
         validate_mac_addresses(macaddr_set)
 
         return macaddr_set
