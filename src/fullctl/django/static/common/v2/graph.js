@@ -564,7 +564,7 @@
                 // and describes the total time period between start and end
 
                 if(duration <= 3600) {
-                    params.push('step=60');
+                    params.push('step=300');
                 } else if(duration <= 86400) {
                     params.push('step=300');
                 } else if(duration <= 86400 * 30) {
