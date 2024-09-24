@@ -92,31 +92,35 @@ def validate_query_params(**kwargs):
 
 TRAFFIC_GRAPH = """
 label_replace(
-    (sum(sflow_bytes{{{tags_in}}}) * 8 / {step}) or vector(0),
+    (sum(avg_over_time(sflow_bytes{{{tags_in}}})) * 8 / {collection_step}) or vector(0),
     "metric", "bps_in", "", ""
 )
 or
 label_replace(
-    (max_over_time(
-        sum(sflow_bytes{{{tags_in}}})[{step_max}:]
-    ) * 8 / {step}) or vector(0),
+    max(sum(max_over_time(sflow_bytes{{{tags_in}}})) * 8 / {collection_step}) or vector(0),
     "metric", "bps_in_max", "", ""
 )
 or
 label_replace(
-    (sum(sflow_bytes{{{tags_out}}}) * 8 / {step}) or vector(0),
+    (sum(avg_over_time(sflow_bytes{{{tags_out}}})) * 8 / {collection_step}) or vector(0),
     "metric", "bps_out", "", ""
 )
 or
 label_replace(
-    (max_over_time(
-        sum(sflow_bytes{{{tags_out}}})[{step_max}:]
-    ) * 8 / {step}) or vector(0),
+    max(sum(max_over_time(sflow_bytes{{{tags_out}}})) * 8 / {collection_step}) or vector(0),
     "metric", "bps_out_max", "", ""
 )
 """
 
-def query_graph_ix_total(org_id: int, ix_id: int, step: str, start:str | int, end:str | int | None = None, **kwargs) -> QueryResult:
+def query_graph_ix_total(
+    org_id: int, 
+    ix_id: int, 
+    step: str, 
+    start:str | int, 
+    end:str | int | None = None,
+    collection_step: int = 300,
+    **kwargs
+) -> QueryResult:
     """
     Queries bits per second for a specific IX (in and out)
 
@@ -134,6 +138,7 @@ def query_graph_ix_total(org_id: int, ix_id: int, step: str, start:str | int, en
     - step: tick size (e.g. 15m)
     - start: start time (unix timestamp or relative time like -1h)
     - end: end time (unix timestamp or relative time like -1h)
+    - collection_step: step size for the collection (default 300) - this should be the interval at which data is collected
     """
 
     metrics = metrics_client()
@@ -144,12 +149,20 @@ def query_graph_ix_total(org_id: int, ix_id: int, step: str, start:str | int, en
 
     step = int(step) if isinstance(step, str) else step
     
-    query = TRAFFIC_GRAPH.format(tags_in=tags_in, tags_out=tags_out, step=step, step_max=step_size_for_max(step))
+    query = TRAFFIC_GRAPH.format(tags_in=tags_in, tags_out=tags_out, step=step, step_max=step_size_for_max(step), collection_step=collection_step)
     
     return metrics.query_range(query, start=start, end=end, step=step, keep_metric_names=True)
     
 
-def query_graph_port_total(org_id: int, port_id: int, step: str, start:str, end:str, **kwargs) -> QueryResult:
+def query_graph_port_total(
+    org_id: int, 
+    port_id: int, 
+    step: str, 
+    start:str,
+    end:str,
+    collection_step: int = 300,
+    **kwargs
+) -> QueryResult:
     
     """
     Queries bits per second for a specific port (in and out)
@@ -172,6 +185,7 @@ def query_graph_port_total(org_id: int, port_id: int, step: str, start:str, end:
     - start: start time (unix timestamp or relative time like -1h)
     - end: end time (unix timestamp or relative time like -1h)
     - query_override: Override the query with a custom query (useful for testing and debugging)
+    - collection_step: step size for the collection (default 300) - this should be the interval at which data is collected
     """
 
     metrics = metrics_client()
@@ -185,13 +199,22 @@ def query_graph_port_total(org_id: int, port_id: int, step: str, start:str, end:
 
     query_base = query_override or TRAFFIC_GRAPH
 
-    query = query_base.format(tags_in=tags_in, tags_out=tags_out, step=step, step_max=step_size_for_max(step))
+    query = query_base.format(tags_in=tags_in, tags_out=tags_out, step=step, step_max=step_size_for_max(step), collection_step=collection_step)
 
     return metrics.query_range(query, start=start, end=end, step=step)
 
 
 
-def query_graph_asn(org_id: int, port_id:int, asn: int, step: str, start:str, end:str, **kwargs) -> QueryResult:
+def query_graph_asn(
+    org_id: int, 
+    port_id:int, 
+    asn: int, 
+    step: str, 
+    start:str,
+    end:str,
+    collection_step: int = 300, 
+    **kwargs
+) -> QueryResult:
     """
     Queries bits per second for a specific ASN to ASN (in and out)
     
@@ -217,43 +240,47 @@ def query_graph_asn(org_id: int, port_id:int, asn: int, step: str, start:str, en
     - step: tick size (e.g. 15m)
     - start: start time (unix timestamp or relative time like -1h)
     - end: end time (unix timestamp or relative time like -1h)
+    - collection_step: step size for the collection (default 300) - this should be the interval at which data is collected
     """
     
     metrics = metrics_client()
 
     step = int(step) if isinstance(step, str) else step
-    step_max = step_size_for_max(step)
 
     query = f"""
     label_replace(
         sum by (ctl_asn_src) (
-            sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_dst="{port_id}", ctl_asn_dst="{asn}"}}
-        ) * 8 / {step} or vector(0),
+            avg_over_time(
+                sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_dst="{port_id}", ctl_asn_dst="{asn}"}}
+            )
+        ) * 8 / {collection_step} or vector(0),
         "metric", "bps_in", "", ""
     )
     or
     label_replace(
-        max_over_time(
-            sum by (ctl_asn_src) (
+        max by (ctl_asn_src) (
+            max_over_time(
                 sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_dst="{port_id}", ctl_asn_dst="{asn}"}}
-            )[{step_max}:]
-        ) * 8 / {step} or vector(0),
+            )
+        ) * 8 / {collection_step} or vector(0),
         "metric", "bps_in_max", "", ""
     )
     or
     label_replace(
         sum by (ctl_asn_dst) (
-            sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_src="{port_id}", ctl_asn_src="{asn}"}}
-        ) * 8 / {step} or vector(0),
+            avg_over_time(
+                sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_src="{port_id}", ctl_asn_src="{asn}"}}
+            )
+        ) * 8 / {collection_step} or vector(0),
         "metric", "bps_out", "", ""
     )
     or
     label_replace(
-        max_over_time(
-            sum by (ctl_asn_dst) (
+        max by (ctl_asn_dst) (
+            max_over_time(
                 sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_src="{port_id}", ctl_asn_src="{asn}"}}
-            )[{step_max}:]
-        ) * 8 / {step}  or vector(0),
+            )
+        ) * 8 / {collection_step}  or vector(0),
         "metric", "bps_out_max", "", ""
     )
     """
@@ -261,7 +288,17 @@ def query_graph_asn(org_id: int, port_id:int, asn: int, step: str, start:str, en
     return metrics.query_range(query, start=start, end=end, step=step)
 
 
-def query_graph_asn_pair(org_id: int, port_id: int, asn_src: int, asn_dst: int, step: str | int, start:str, end:str, **kwargs) -> QueryResult:
+def query_graph_asn_pair(
+    org_id: int, 
+    port_id: int, 
+    asn_src: int, 
+    asn_dst: int, 
+    step: str | int, 
+    start:str, 
+    end:str,
+    collection_step: int = 300, 
+    **kwargs
+) -> QueryResult:
     """
     Queries bits per second for a specific ASN to ASN (in and out)
 
@@ -284,6 +321,7 @@ def query_graph_asn_pair(org_id: int, port_id: int, asn_src: int, asn_dst: int, 
     - step: tick size (e.g. 15m)
     - start: start time (unix timestamp or relative time like -1h)
     - end: end time (unix timestamp or relative time like -1h)
+    - collection_step: step size for the collection (default 300) - this should be the interval at which data is collected
     """
 
     metrics = metrics_client()
@@ -294,33 +332,41 @@ def query_graph_asn_pair(org_id: int, port_id: int, asn_src: int, asn_dst: int, 
     query = f"""
     label_replace(
         sum(
-            sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_dst="{port_id}", ctl_asn_dst="{asn_src}", ctl_asn_src="{asn_dst}"}}
-        ) * 8 / {step} or vector(0),
+            avg_over_time(
+                sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_dst="{port_id}", ctl_asn_dst="{asn_src}", ctl_asn_src="{asn_dst}"}}
+            )
+        ) * 8 / {collection_step} or vector(0),
         "metric", "bps_in", "", ""
     )
     or
     label_replace(
-        max_over_time(
+        max(
             sum(
-                sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_dst="{port_id}", ctl_asn_dst="{asn_src}", ctl_asn_src="{asn_dst}"}}
-            )[{step_max}:]
-        ) * 8 / {step}  or vector(0),
+                max_over_time(
+                    sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_dst="{port_id}", ctl_asn_dst="{asn_src}", ctl_asn_src="{asn_dst}"}}
+                )
+            )
+        ) * 8 / {collection_step}  or vector(0),
         "metric", "bps_in_max", "", ""
     )
     or
     label_replace(
-        sum(
-            sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_src="{port_id}", ctl_asn_src="{asn_src}", ctl_asn_dst="{asn_dst}"}}
-        ) * 8 / {step} or vector(0),
+        max(
+            sum(
+                avg_over_time(
+                    sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_src="{port_id}", ctl_asn_src="{asn_src}", ctl_asn_dst="{asn_dst}"}}
+                )
+            )
+        ) * 8 / {collection_step} or vector(0),
         "metric", "bps_out", "", ""
     )
     or
     label_replace(
-        max_over_time(
-            sum(
+        sum(
+            max_over_time(
                 sflow_bytes{{ctl_org_id="{org_id}", ctl_port_id_src="{port_id}", ctl_asn_src="{asn_src}", ctl_asn_dst="{asn_dst}"}}
-            )[{step_max}:]
-        ) * 8 / {step}  or vector(0),
+            )
+        ) * 8 / {collection_step}  or vector(0),
         "metric", "bps_out_max", "", ""
     )
     """
@@ -367,6 +413,8 @@ def asn_table(result: QueryResult, asn_names: dict[int, str]) -> list[dict]:
 
     result_data = []
     asn_data = {}
+
+    print(result.data.result)
 
     for item in result.data.result:
         metric = item.metric
