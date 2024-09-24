@@ -17,6 +17,10 @@ from django_devicectl.rest.views.devicectl import PortTrafficMixin
 import django_devicectl.mrtg as mrtg
 import django_devicectl.sflow as sflow
 
+import structlog
+logger = structlog.getLogger('django_structlog')
+
+
 @route
 class Status(StatusViewSet):
     checks = ("bridge_peerctl", "bridge_aaactl", "bridge_pdbctl")
@@ -177,10 +181,16 @@ class Port(DataViewSet):
     def request_dummy_ports(self, request, *args, **kwargs):
         data = self.prepare_write_data(request)
 
-        slz = self.serializer_class(data=data)
-        slz.is_valid(raise_exception=True)
+        serializer = self.serializer_class(data=data)
+        if not serializer.is_valid():
+            logger.error(f"{serializer.errors=}")
+            return BadRequest(f"{serializer.errors=}")
 
-        ports = slz.save()
+        try:
+            ports = serializer.save()
+        except Exception as exception:
+            logger.error(f"{exception=}")
+            return BadRequest(f"request_dummy_port(): {exception=}")
 
         return Response(Serializers.port(ports, many=True).data)
 

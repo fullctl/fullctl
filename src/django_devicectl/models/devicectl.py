@@ -20,6 +20,8 @@ from netfields.fields import InetAddressField
 
 import django_devicectl.referee as referee_util
 
+import structlog
+logger = structlog.getLogger("django_structlog")
 
 @reversion.register()
 @grainy_model(
@@ -1083,12 +1085,16 @@ class PortInfo(HandleRefModel):
                 ip_other.save()
         else:
             if address and ip:
-                if ip_other:
+
+                if ip_other and ip_other != ip:
+                    # delete only if both objects are different
                     ip_other.delete()
 
+                # Apply the address and reference update
                 ip.address = address
                 ip.reference = reference
                 ip.save()
+
             elif ip:
                 ip.delete()
 
