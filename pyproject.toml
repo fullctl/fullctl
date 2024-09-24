@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pdbctl"
-version = "1.4.0-rc.19"
+version = "1.4.0-rc.20"
 description = "allows other fullctl services to facilitate updates to and from PeeringDB"
 readme = "README.md"
 repository = "https://github.com/fullctl/pbctl"
