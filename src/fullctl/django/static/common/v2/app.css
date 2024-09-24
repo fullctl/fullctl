@@ -1779,7 +1779,7 @@ img.service-link ~ span.icon {
  */
 
 .select2-selection__placeholder {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 div.autocomplete-item {
@@ -1834,6 +1834,11 @@ div.autocomplete-controls {
 .select2-container--default .select2-selection--single .select2-selection__arrow {
   right: 4px;
   top: initial;
+}
+
+.select2-container .select2-selection--single .select2-selection__rendered {
+  padding-bottom: 3px;
+  padding-top: 3px;
 }
 
 /* table display */

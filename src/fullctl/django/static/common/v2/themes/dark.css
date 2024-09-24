@@ -679,6 +679,10 @@ div.menu div.menu-deco-border {
   --bs-alert-border-color: var(--clr-accent-600);
 }
 
+.message-warning {
+  color: var(--clr-accent-500) !important;
+}
+
 .alert-info {
   --bs-alert-border-color: var(--clr-accent-400);
 }

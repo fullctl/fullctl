@@ -293,6 +293,11 @@
             .attr("stroke-width", 1);
 
 
+        // calculate legend spacing based on total width and number of items
+        // with a min width of 120
+
+        let legendSpacing = Math.max(120, width / 4);
+
         // Add legend
         const legend = svg.append("g")
             .attr("font-family", "sans-serif")
@@ -307,7 +312,7 @@
                 {key: "bps_out_peak", label: "OUT Peak: " + format_y_axis(bps_out_peak)}
             ])
             .enter().append("g")
-            .attr("transform", function(d, i) { return "translate(" + (i * 120) + ",0)"; }); // Make legend horizontal
+            .attr("transform", function(d, i) { return "translate(" + (i * legendSpacing) + ",0)"; }); // Make legend horizontal
 
 
         legend.append("rect")

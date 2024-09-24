@@ -8,7 +8,9 @@
           <span class="icon icon-lg icon-theme-switcher"></span>
         </div>
         <div class="col-auto">
+          {% if not disable_contact_us %}
           <a title="Contact support" data-message-type="support" {% if post_feature_request_url == "" %}href="mailto:{{ support_email }}" {% else %}data-element="feature_request_btn"{% endif %}>Contact Us</a>
+          {% endif %}
           {% if not disable_feature_request %}
           |
           <a title="Feature request" data-message-type="feature-request" {% if post_feature_request_url == "" %}href="mailto:{{ support_email }}" {% else %}data-element="feature_request_btn"{% endif %} type="button">
@@ -38,9 +40,11 @@
           <a title="Contact support" data-message-type="support" {% if post_feature_request_url == "" %}href="mailto:{{ support_email }}" {% else %}data-element="feature_request_btn"{% endif %}>Contact Support</a>
           <a href="{{ legal_url }}">Legal Notes</a>
         </div>
+        {% if not disable_help_menu %}
         <div class="col-sm-auto help-btn" type="button">
           <span class="icon icon-lg icon-help"></span>
         </div>
+        {% endif %}
       </div>
       {% endblock %}
     </div>
