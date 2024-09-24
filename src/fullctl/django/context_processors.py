@@ -20,6 +20,8 @@ def conf(request):
         "no_reply_email": settings.NO_REPLY_EMAIL,
         "post_feature_request_url": settings.POST_FEATURE_REQUEST_URL,
         "disable_feature_request": getattr(settings, "DISABLE_FEATURE_REQUEST", False),
+        "disable_help_menu": getattr(settings, "DISABLE_HELP_MENU", False),
+        "disable_contact_us": getattr(settings, "DISABLE_CONTACT_US", False),
         "docs_url": settings.DOCS_URL,
         "legal_url": settings.LEGAL_URL,
         "terms_of_service_url": settings.TERMS_OF_SERVICE_URL,

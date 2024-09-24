@@ -49,6 +49,12 @@
 - `SUPPORT_EMAIL` - email address to send support messages to, defaults to `SERVER_EMAIL`
 - `POST_FEATURE_REQUEST_URL` - url to post feature requests to
 - `DISABLE_FEATURE_REQUEST` - if `True` will disable the feature request form
+- `DISABLE_HELP_MENU` - if `True` will disable the help menu in the lower right corner
+- `DISABLE_CONTACT_US` - if `True` will disable the contact us form and link
 - `DOCS_URL` - url to the documentation
 - `LEGAL_URL` - url to the legal page
 - `TERMS_OF_SERVICE_URL` - url to the terms of service page
+- `PDB_OAUTH_PROMPT_LINK` - controls how call to action for linking a peeringdb account is displayed
+    - `never` - never show the call to action
+    - `no_asn` - only show if there are no ASN authorizations
+    - `always` - always show if there are no linked PeeringDB accounts
