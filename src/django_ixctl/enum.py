@@ -15,6 +15,15 @@ MEMBER_STATE = (
     ("pending-deletion", _("Pending deletion")),
 )
 
+PORT_STATE = (
+    ("ok", _("Ok")),
+    ("pending", _("Pending")),
+    ("deactivated", _("Deactivated")),
+    ("failed", _("Failed")),
+    ("expired", _("Expired")),
+    ("admin_down", _("Admin Down")),
+)
+
 ARS_TYPES = (
     ("bird", _("Bird")),
     ("bird2", _("Bird 2")),

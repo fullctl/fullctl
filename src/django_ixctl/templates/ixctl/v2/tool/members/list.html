@@ -3,6 +3,7 @@
   class="table table-borderless list-table"
   data-api-base="{% url "ixctl_api:member-list" org_tag=request.org.slug ix_tag="default" %}"
   data-api-metric-base="{% url "proxies-api-devicectl-virtual-port-metric" org_tag=request.org.slug pk="0" %}"
+  data-api-port-status="{% url "ixctl_api:member-status" org_tag=request.org.slug ix_tag="default" member_id="0" %}"
   data-api-action=""
   data-template="list">
   <thead>
@@ -39,10 +40,21 @@
         </div>
       </td>
       <td data-field="controls" class="right">
-        <a class="button btn" data-hover="show" data-action="edit_member">
+        <a class="button btn" title="Edit Member"data-hover="show" data-action="edit_member">
           <span class="icon ixctl icon-edit"></span>
         </a>
         <a class="button btn"
+           title="Bounce Port"
+          data-hover="show"
+          data-action="toggle_status"
+        >
+          <span data-field="status" data-toggle="checked">
+            <img data-false src="{% static "common/icons/Indicator/X-Ind/X.svg" %}" class="icon filled" />
+            <img data-true src="{% static "common/icons/Indicator/Check-Ind/Check.svg" %}" class="icon filled" />
+          </span>
+        </a>
+        <a class="button btn"
+           title="Delete Member"
           data-hover="show"
           data-api-action="{id}"
           data-api-callback="remove"
@@ -51,7 +63,7 @@
         >
           <span class="icon ixctl icon-delete"></span>
         </a>
-        <a class="button btn" data-action="view_member_details">
+        <a class="button btn" title="View Member Details" data-action="view_member_details">
           <span class="icon ixctl icon-view"></span>
         </a>
         <button class="btn">

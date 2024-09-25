@@ -543,11 +543,71 @@ $ctl.application.Ixctl.Members = $tc.extend(
             });
           });
         }
+
+        // Initialize port status
+        var statusSpan = row.find('span[data-field="status"]');
+        if(data.status=="ok") {
+          statusSpan.attr('data-toggle', 'checked');
+          statusSpan.addClass('checked');
+
+        } else if(data.status=="admin_down") {
+          statusSpan.attr('data-toggle', 'unchecked');
+          statusSpan.removeClass('checked');
+        }
+
+        // Change port status event
+        row.find('a[data-action="toggle_status"]').click((event) => {
+          event.preventDefault();
+          // TODO <saf>: confirm only on disable?
+          const confirmation = confirm("Are you sure you want to toggle this port status?");
+          if (!confirmation) {
+            return;
+          }
+
+          var statusSpan = row.find('span[data-field="status"]');
+          var currentToggle = statusSpan.attr('data-toggle');
+
+          var nextStatus = "ok";
+          statusSpan.attr('data-toggle', 'checked');
+          statusSpan.addClass('checked');
+          if(currentToggle === 'checked') {
+            nextStatus = "admin_down";
+            statusSpan.attr('data-toggle', 'unchecked');
+            statusSpan.removeClass('checked');
+          }
+          let member = row.data("apiobject");
+
+
+          let url = this.$w.list.element.data('api-port-status');
+          url = url.replace("default", $ctl.ixctl.ix_slug());
+          url = url.replace(/0/g, member.id);
+
+          $.ajax({
+            url: url,
+            method: 'PATCH',
+            headers : {
+              "Content-Type" : "application/json",
+              "X-CSRFToken" : twentyc.rest.config.csrf
+            },
+            data: JSON.stringify({
+              status: nextStatus,
+              ipaddr4: member.ipaddr4,  // mandatory field
+              ipaddr6: member.ipaddr6,  // mandatory field
+            }),
+            success: function(response) {
+              // console.log('Success:', response);
+            },
+            error: function(xhr, status, error) {
+              // console.log('Error:', status, error);
+            },
+            async: false
+          });
+        });
       };
 
       this.$w.list.formatters.macaddr_set = (macaddr_set) => {
         return macaddr_set.join("\n");
-      }
+      };
 
       this.$w.list.formatters.macaddr_warnings = (macaddr_warnings, data, col) => {
         // macaddr_warnings is an array of strings
