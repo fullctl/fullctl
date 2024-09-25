@@ -436,6 +436,25 @@ $peerctl.Ix = $tc.extend(
       this.$w.list.formatters.macaddr_set = (value, data) => {
         return value.join("\n");
       }
+      
+      this.$w.list.formatters.macaddr_warnings = (macaddr_warnings, data, col) => {
+        // macaddr_warnings is an array of strings
+        // format into divs
+        if(!macaddr_warnings || macaddr_warnings.length == 0) {
+          col.parent(".row").hide();
+          return "";
+        }
+
+        let container = $('<div>').addClass("macaddr-warnings");
+        macaddr_warnings.forEach((warning) => {
+          container.append(
+            $('<div>').addClass("message-warning marg-bot-sm").append(
+              $('<span>').text(warning)
+            )
+          );
+        });
+        return container;
+      }
 
       this.$w.list.formatters.row = (row, data) => {
         row.find(".ix-header").attr("data-ix-header", data.ref_ix_id);
