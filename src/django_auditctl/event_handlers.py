@@ -4,6 +4,7 @@ from datetime import timedelta
 from functools import wraps
 
 import fullctl.service_bridge.devicectl as devicectl
+import fullctl.service_bridge.ixctl as ixctl
 from django.conf import settings
 from fullctl.django.mail import send_plain
 from fullctl.service_bridge.client import url_join
@@ -274,3 +275,57 @@ class RblsrvDataHandler(BaseHandler):
 
     def __call__(self):
         pass
+
+
+@register_handler(r"^v0.1\/[^\/]+\/config\/liveness\/[0-9\.]+$")
+class ConfigLivenessDataHandler(BaseHandler):
+    """
+    Handles Config Liveness Data events
+    """
+
+    class HandleRef:
+        tag = "config_liveness"
+
+    def __call__(self):
+        self.heartbeat()
+
+
+@register_handler(r"^v0.1\/[^\/]+\/bgp\/stat\/[0-9\.]+\/[0-9]+$")
+class BGPSessionStateDataHandler(BaseHandler):
+    """
+    Handles BGP Sesssion State Data events
+    """
+
+    class HandleRef:
+        tag = "bgp_stat"
+
+    def __call__(self):
+        self.heartbeat()
+        components = self.event.data.get("components", [])
+        member_bridge = ixctl.InternetExchangeMember()
+        for component in components:
+            member_bridge.set_event_reference(
+                asn=component.get("asn"),
+                address=component.get("address"),
+                routeserver_router_id=component.get("routeserver_router_id"),
+                event_reference=self.event.id,
+            )
+
+
+@register_handler(r"^v0.1\/[^\/]+\/bgp\/stat\/aggregate\/[0-9\.]+$")
+class BGPSessionStateAggregateDataHandler(BaseHandler):
+    """
+    Handles BGP Session State Aggregate Data events
+    """
+
+    class HandleRef:
+        tag = "bgp_stat_aggregate"
+
+    def __call__(self):
+        self.heartbeat()
+        components = self.event.data.get("components", [])
+        routeserver = ixctl.Routeserver()
+        component = components[0]
+        routeserver.set_event_reference(
+            component.get("routeserver_router_id"), self.event.id
+        )
