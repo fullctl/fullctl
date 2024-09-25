@@ -4,14 +4,20 @@ pydantic schema for audictl api posts
 
 import re
 from functools import wraps
-from typing import List, Optional, Union
+from typing import Annotated, List, Optional, Union
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, BeforeValidator, HttpUrl, TypeAdapter
 
 __all__ = ["Component", "RblsrvComponent", "ErrorDetails", "NoData", "DeviceConfigData"]
 
 # Dictionary to store registered Pydantic models
 MODEL_REGISTRY = {}
+
+HttpUrlTypeAdapter = TypeAdapter(HttpUrl)
+Url = Annotated[
+    str,
+    BeforeValidator(lambda value: HttpUrlTypeAdapter.validate_python(value) and value),
+]
 
 
 def register_model(pattern):
@@ -69,7 +75,7 @@ class Component(BaseModel):
 
     name: Union[str, None] = None
     id: Union[str, int]
-    url: Union[HttpUrl, None] = None
+    url: Union[Url, None] = None
     blob: Union[str, None] = None
     kind: str
 
@@ -114,7 +120,7 @@ class ErrorDetails(BaseModel):
 
     message: str
     components: List[ErrorComponent] = list()
-    url: Union[HttpUrl, None] = None
+    url: Union[Url, None] = None
 
 
 @register_model(r"^default$")
@@ -126,7 +132,7 @@ class NoData(BaseModel):
 class DeviceConfigData(BaseModel):
     diff: Union[str, None] = None
     components: List[Component] = list()
-    url: Union[HttpUrl, None] = None
+    url: Union[Url, None] = None
 
 
 @register_model(r"^v0.1\/[^\/]+\/traffic\/.+$")

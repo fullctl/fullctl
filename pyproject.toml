@@ -19,7 +19,7 @@ auditctl = "auditctl.cli:main"
 [tool.poetry.dependencies]
 python = "^3.9"
 fullctl = { git = "https://github.com/fullctl/fullctl.git", branch = "prep-release" }
-pydantic = ">=2"
+pydantic = ">=2.7.4"
 
 # websockets
 websockets = "^11.0.2"
