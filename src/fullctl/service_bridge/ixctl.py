@@ -6,7 +6,10 @@ except ImportError:
     DEFAULT_SERVICE_KEY = ""
 
 import ipaddress
+from typing import Union
+from uuid import UUID
 
+import fullctl.service_bridge.auditctl as auditctl
 import fullctl.service_bridge.pdbctl as pdbctl
 from fullctl.service_bridge.client import Bridge, DataObject, url_join
 
@@ -76,7 +79,7 @@ class InternetExchangeMember(Ixctl):
         ref_tag = "member"
         data_object_cls = InternetExchangeMemberObject
 
-    def set_mac_address(self, asn:int, ip:str, macaddr_set:list[str], source):
+    def set_mac_address(self, asn: int, ip: str, macaddr_set: list[str], source):
         data = {"macaddr_set": macaddr_set, "source": source}
 
         ip = ipaddress.ip_interface(ip).ip
@@ -95,7 +98,13 @@ class InternetExchangeMember(Ixctl):
 
         self.put(f"data/member/sync/{asn}/{member_ip}/{router_ip}/md5", data=data)
 
-    def traffic(self, pk:int, start_time:str|int=None, duration:int=None, step:int=None):
+    def traffic(
+        self,
+        pk: int,
+        start_time: str | int = None,
+        duration: int = None,
+        step: int = None,
+    ):
         params = {}
         if start_time:
             params["start_time"] = start_time
@@ -111,7 +120,15 @@ class InternetExchangeMember(Ixctl):
             params=params,
         )
 
-    def traffic_asn_pair(self, pk:int, asn_src:int, asn_dst:int, start_time:int, duration:int, step:int):
+    def traffic_asn_pair(
+        self,
+        pk: int,
+        asn_src: int,
+        asn_dst: int,
+        start_time: int,
+        duration: int,
+        step: int,
+    ):
         return self.get(
             f"data/member/{pk}/traffic_asn_pair",
             params={
@@ -122,6 +139,30 @@ class InternetExchangeMember(Ixctl):
                 "step": step,
             },
         )
+
+    def set_event_reference(
+        self,
+        asn: Union[str, int],
+        address: str,
+        routeserver_router_id: str,
+        event_reference: Union[UUID, str],
+    ):
+        """
+        Updates the ix members event reference
+
+        Arguments:
+            asn (`str`, `int`) -- the asn of the ix member
+            address (`str`) -- the ip address of the ix member, can be either ipv4 or ipv6
+            routeserver_router_id (`str`) -- router id of the routeserver i.e. 127.0.0.1
+            event_reference (`str`) -- reference to the event id
+        """
+        return self.put(
+            f"data/member/set-event-reference/{asn}/",
+            json={
+                "event": str(event_reference),
+                "address": address,
+                "routeserver_router_id": routeserver_router_id,
+            },
 
     def metric(self, pk: int):
         return self.get(
@@ -145,3 +186,31 @@ class Routeserver(Ixctl):
     class Meta(Ixctl.Meta):
         ref_tag = "routeserver"
         data_object_cls = RouteserverObject
+
+    def set_event_reference(self, router_id: str, event_reference: Union[UUID, str]):
+        """
+        Updates the router server's event reference
+
+        Arguments:
+            router_id (`str`) -- router id i.e. 127.0.0.1
+            event_reference (`str`) -- reference to the event id
+        """
+        return self.put(
+            f"data/routeserver/set-event-reference/{router_id}/",
+            json={"event": str(event_reference)},
+        )
+
+
+class RouteserverMemberObject(IxctlEntity):
+    description = "Ixctl Route Server Member"
+    relationships = {
+        "rs": {"bridge": Routeserver, "filter": ("id", "routeserver")},
+        "member": {"bridge": InternetExchangeMember, "filter": ("id", "ix_member")},
+        "_event": {"bridge": auditctl.Event, "filter": ("id", "event")},
+    }
+
+
+class RouteserverMember(Ixctl):
+    class Meta(Ixctl.Meta):
+        ref_tag = "routeserver_member"
+        data_object_cls = RouteserverMemberObject

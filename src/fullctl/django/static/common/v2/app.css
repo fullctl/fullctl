@@ -2006,3 +2006,15 @@ button.badge-btn:disabled {
 .right {
     text-align: right;
 }
+
+.up .icon-triangle-fill-up {
+  background-color: green;
+}
+
+.down .icon-triangle-fill-down {
+  background-color: red;
+}
+
+.warn .icon-triangle-fill-down {
+  background-color: yellow;
+}
