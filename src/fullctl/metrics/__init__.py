@@ -53,13 +53,15 @@ class Metrics:
         self.auth = auth
 
     @classmethod
-    def validate_period(cls, period: str):
+    def validate_period(cls, period: str | int):
         """
         Validate the period string
 
         Arguments:
 
         - period: The period string, e.g. "-1d", "1h", "5m" etc.
+          if an integer is passed, it is considered valid as well
+          and assumed to be in seconds (or nanoseconds)
 
         Raises:
 
@@ -67,6 +69,9 @@ class Metrics:
         """
 
         if pytimeparse2 is None:
+            return
+
+        if isinstance(period, int):
             return
 
         try:
