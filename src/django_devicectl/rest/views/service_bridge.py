@@ -130,7 +130,7 @@ class Device(DataViewSet):
 @route
 class Port(DataViewSet):
     path_prefix = "/data"
-    allowed_http_methods = ["GET"]
+    allowed_http_methods = ["GET", "PATCH"]
     valid_filters = [
         ("ids", "id__in"),
         ("org", "virtual_port__logical_port__instance__org__remote_id"),
@@ -183,6 +183,38 @@ class Port(DataViewSet):
         ports = slz.save()
 
         return Response(Serializers.port(ports, many=True).data)
+
+    @action(
+        detail=False,
+        methods=["PATCH"],
+        url_path="(?P<pk>[^/.]+)/status"
+    )
+    def status(self, request, pk, *args, **kwargs):
+        """
+        Update the status of the physical ports associated with a given virtual port.
+
+        This method handles PATCH requests to update the status of physical ports
+        associated with a specified virtual port. The status is provided in the request
+        data and is applied to all physical ports linked to the identified virtual port.
+
+        Args:
+          request (Request): The HTTP request object, containing the new status in
+              the request data.
+          pk (str): The primary key of the virtual port to identify the virtual port
+              whose physical ports' status needs to be updated.
+          *args: Variable length argument list.
+          **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+          Response: A JSON response containing the updated status of the physical ports.
+        """
+        port = self.get_object()
+        status = request.data["status"]
+
+        physical_ports = port.virtual_port.physical_ports
+        physical_ports.update(status=status)
+
+        return Response(Serializers.physical_port(physical_ports, many=True).data)
 
 
 @route
