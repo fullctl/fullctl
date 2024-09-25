@@ -26,9 +26,19 @@
       </div>
     </div>
 
+    <div class="row">
+      <div class="col-12">
+        <div class="alert alert-info">
+          {% blocktrans %}
+          You can add multiple MAC addresses. Each MAC address must be on a new line.
+          {% endblocktrans %}
+        </div>
+      </div>
+    </div>
+
     <div class="row mb-3">
       <div class="col-12" data-api-submit="yes">
-        <label class="form-label" for="macaddr_set">{% trans "MAC-Addresses" %}</label>
+        <label class="form-label" for="macaddr_set">{% trans "MAC Addresses" %}</label>
         <textarea class="form-control" id="macaddr-set" name="macaddr_set" rows="3">
 
         </textarea>

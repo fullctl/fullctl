@@ -185,6 +185,7 @@ class Port(serializers.Serializer):
     device = serializers.SerializerMethodField()
     mac_address = serializers.SerializerMethodField()
     macaddr_set = serializers.SerializerMethodField()
+    macaddr_warnings = serializers.SerializerMethodField()
     is_route_server_peer = serializers.SerializerMethodField()
     md5 = serializers.SerializerMethodField()
 
@@ -342,6 +343,10 @@ class Port(serializers.Serializer):
     @models.ref_fallback([])
     def get_macaddr_set(self, instance):
         return instance.port_info_object.macaddr_set
+
+    @models.ref_fallback([])
+    def get_macaddr_warnings(self, instance):
+        return instance.port_info_object.ref.macaddr_warnings
 
     @models.ref_fallback(False)
     def get_is_route_server_peer(self, instance):
@@ -543,6 +548,10 @@ class PortUpdate(serializers.Serializer):
     def validate_macaddr_set(self, macaddr_set: list[str]):
         if not macaddr_set:
             return []
+
+        # check for duplicates
+        if len(macaddr_set) != len(set(macaddr_set)):
+            raise ValidationError("Duplicate mac addresses found")
 
         validate_mac_addresses(macaddr_set)
 
