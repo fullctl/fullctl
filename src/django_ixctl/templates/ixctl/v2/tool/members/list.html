@@ -23,8 +23,14 @@
     <tr data-template="row">
       <td data-field="asn" rowspan="2"></td>
       <td data-field="display_name" class="highlight"></td>
-      <td data-field="ipaddr4"></td>
-      <td data-field="ipaddr6"></td>
+      <td>
+        <div data-field="ipaddr4"></div>
+        <div class="bgp_stat_v4" data-element="bgp_stat_v4"></div>
+      </td>
+      <td>
+        <div data-field="ipaddr6"></div>
+        <div class="bgp_stat_v6" data-element="bgp_stat_v6"></div>
+      </td>
       <td data-field="speed"></td>
       <td data-field="prefix_set_name"></td>
       <td data-action="show_port_metrics">

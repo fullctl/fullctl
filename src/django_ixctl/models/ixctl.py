@@ -1,8 +1,8 @@
+import ipaddress
 import os.path
 import re
 import subprocess
 import tempfile
-import ipaddress
 from datetime import datetime
 from secrets import token_urlsafe
 
@@ -18,6 +18,7 @@ try:
 except ImportError:
     from yaml import Dumper, Loader
 
+import fullctl.service_bridge.auditctl as auditctl
 import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.prefixctl as prefixctl
@@ -32,7 +33,7 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django_grainy.decorators import grainy_model
 from django_inet.models import ASNField
-from fullctl.django.fields.service_bridge import ReferencedObjectField
+from fullctl.django.fields.service_bridge import ReferencedObjectField, ReferencedObjectUUIDField
 from fullctl.django.inet.validators import validate_as_set
 from fullctl.django.models.abstract.base import HandleRefModel, PdbRefModel
 from fullctl.django.models.concrete import Instance, Organization
@@ -553,7 +554,6 @@ class InternetExchangeMember(PdbRefModel):
 
     @property
     def as_macro(self):
-
         if self.as_macro_negate is True:
             return ""
 
@@ -771,6 +771,13 @@ class Routeserver(HandleRefModel):
         null=True, blank=True, help_text=_("Extra arouteserver config")
     )
 
+    event = ReferencedObjectUUIDField(
+        bridge=auditctl.Event,
+        null=True,
+        blank=False,
+        help_text=_("auditCtl event reference"),
+    )
+
     class Meta:
         db_table = "ixctl_rs"
         unique_together = (("ix", "router_id"), ("ix", "name"))
@@ -951,7 +958,6 @@ class Routeserver(HandleRefModel):
         return f"Routeserver {self.name} AS{self.asn}"
 
     def configure_whitelist_routes(self, ars_clients: dict):
-
         """
         Configures whitelist routes for clients
 
@@ -1004,6 +1010,29 @@ class Routeserver(HandleRefModel):
                 white_list_route = client["cfg"]["filtering"]["irrdb"]["white_list_route"]
                 white_list_route.append({"prefix": str(prefix), "asn": member.asn, "length": prefix.prefixlen})
 
+    @classmethod
+    def preload_events(cls, routeservers):
+        """
+        Preloads auditctl event information
+
+        Argument(s):
+        - routeservers (`list` of `RouteServer`): routeservers to load events for
+        """
+        event_ids = [str(routeserver.event) for routeserver in routeservers if routeserver.event]
+        events = auditctl.Event().objects(ids=event_ids)
+        if not events:
+            return
+
+        events = {event.id: event for event in events}
+        for routeserver in routeservers:
+            if not routeserver.event:
+                continue
+
+            event = events.get(str(routeserver.event))
+            if not event:
+                continue
+
+            routeserver._event_object = event
             
 
 @reversion.register
@@ -1142,14 +1171,12 @@ class RouteserverConfig(HandleRefModel):
             else:
                 raise OSError(f"Process returned {process.returncode}")
 
-
     def generate_markdown(
         self, 
         general_config_file: str, 
         clients_config_file: str, 
         output_file: str
     ):
-
         """
         Generates device markdown information using arouteserver
 
@@ -1159,8 +1186,6 @@ class RouteserverConfig(HandleRefModel):
         - clients_config_file (`str`): path to clients config file
         - output_file (`str`): path to output markdown file
         """
-        
-        
         self.run_ars_command(
             "md",
             general_config_file,
@@ -1169,15 +1194,15 @@ class RouteserverConfig(HandleRefModel):
         )
 
         with open(output_file) as fh:
-            self.doc_md = fh.read() 
+            self.doc_md = fh.read()
 
     def generate_config(
-        self, 
+        self,
         ars_type: str,
-        general_config_file:str,
-        clients_config_file:str,
-        output_file:str
-    ):  
+        general_config_file: str,
+        clients_config_file: str,
+        output_file: str,
+    ):
         """
         Generates a device config using arouteserver
 
@@ -1205,8 +1230,8 @@ class RouteserverConfig(HandleRefModel):
             extra_params += ["--ip-ver", "4"]
         elif ars_type == "bird2":
             ars_type = "bird"
-            extra_params += ["--target-version", "2.0.10"] 
-        
+            extra_params += ["--target-version", "2.0.10"]
+
         # no reasonable way found to call an arouteserver
         # python api - so lets just run the command
         self.run_ars_command(
@@ -1352,3 +1377,52 @@ class Network(PdbRefModel):
 
     def __str__(self):
         return f"{self.name} (AS{self.asn})"
+
+
+class RouteserverMember(models.Model):
+    routeserver = models.ForeignKey(
+        Routeserver,
+        on_delete=models.CASCADE,
+        related_name="ix_members",
+    )
+    ix_member = models.ForeignKey(
+        InternetExchangeMember,
+        on_delete=models.CASCADE,
+        related_name="routeservers",
+    )
+    event = ReferencedObjectUUIDField(
+        bridge=auditctl.Event,
+        null=True,
+        blank=False,
+        help_text=_("auditCtl event reference"),
+    )
+
+    class Meta:
+        db_table = "ixctl_rs_members"
+        verbose_name = _("Members to Routeservers Relationship")
+        verbose_name_plural = _("Members to Routeservers Relationship")
+        unique_together = ('ix_member', 'routeserver')
+    
+    @classmethod
+    def preload_events(cls, routeserver_members):
+        """
+        Preloads auditctl event information
+
+        Argument(s):
+        - routeserver_members (`list` of `RouteServerMembers`): routeserver_members to load events for
+        """
+        event_ids = [str(routeserver_member.event) for routeserver_member in routeserver_members if routeserver_member.event]
+        events = auditctl.Event().objects(ids=event_ids)
+        if not events:
+            return
+
+        events = {event.id: event for event in events}
+        for routeserver_member in routeserver_members:
+            if not routeserver_member.event:
+                continue
+
+            event = events.get(str(routeserver_member.event))
+            if not event:
+                continue
+
+            routeserver_member._event_object = event

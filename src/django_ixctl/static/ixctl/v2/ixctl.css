@@ -64,3 +64,8 @@ p[data-field="macaddr_set"] {
 tr.secondary td.property div.row div p[data-field="macaddr_set"] {
   margin-left: 0px;
 }
+
+.bgp_stat_v6, .bgp_stat_v4, .bgp_stat_aggregate {
+  margin-top: 5px;
+  text-wrap: nowrap
+}

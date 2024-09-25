@@ -1,3 +1,5 @@
+from uuid import UUID
+
 import fullctl.service_bridge.devicectl as devicectl
 from django.db.models import Q
 from fullctl.django.rest.decorators import grainy_endpoint
@@ -9,6 +11,7 @@ from fullctl.django.rest.views.service_bridge import (
     StatusViewSet,
 )
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
 import django_ixctl.models.ixctl as models
@@ -100,6 +103,7 @@ class InternetExchangeMember(DataViewSet):
         class Port:
             def __init__(self, _id) -> None:
                 self.id = int(_id)
+
         member = self.get_queryset().filter(port=Port(value)).first()
         return qset.filter(ix_id=member.ix_id, status="ok").exclude(id=member.id)
 
@@ -132,16 +136,13 @@ class InternetExchangeMember(DataViewSet):
 
         return qset.filter(id__in=ids)
 
-    def filter_search(self, qset, value:str):
+    def filter_search(self, qset, value: str):
         """
         Filters by member ASN or name (network name)
         """
-        return qset.filter(
-            Q(asn__startswith=value)
-            | Q(name__icontains=value)
-        )
+        return qset.filter(Q(asn__startswith=value) | Q(name__icontains=value))
 
-    def filter_distinct(self, qset, value:str):
+    def filter_distinct(self, qset, value: str):
         """
         Apply distinct filter to queryset for a given field
         """
@@ -228,7 +229,7 @@ class InternetExchangeMember(DataViewSet):
                 start_time=start_time,
                 duration=duration,
                 step=step,
-                traffic_source = member.ix.graph_traffic_source
+                traffic_source=member.ix.graph_traffic_source,
             )
         )
 
@@ -258,6 +259,34 @@ class InternetExchangeMember(DataViewSet):
                 step=step,
             )
         )
+
+    @action(
+        detail=False,
+        methods=["PUT"],
+        url_path="set-event-reference/(?P<asn>[^/]+)",
+    )
+    @grainy_endpoint(namespace="service_bridge")
+    def set_event_reference(self, request, asn):
+        address = request.data.get("address")
+        try:
+            member = models.InternetExchangeMember.objects.get(
+                Q(ipaddr4=address) | Q(ipaddr6=address),
+                asn=int(asn),
+                is_rs_peer=True,
+                ix__verified=True,
+            )
+        except models.InternetExchangeMember.MultipleObjectsReturned as ex:
+            raise NotFound({"non_field_errors": [str(ex)]})
+        routeserver = models.Routeserver.objects.get(
+            router_id=request.data.get("routeserver_router_id")
+        )
+        routeserver_member, _ = models.RouteserverMember.objects.get_or_create(
+            ix_member=member, routeserver=routeserver
+        )
+        routeserver_member.event = UUID(request.data.get("event"))
+        routeserver_member.save()
+        serializer = self.serializer_class(instance=member)
+        return Response(serializer.data)
 
     @action(detail=True, methods=["GET"])
     @grainy_endpoint(namespace="service_bridge")
@@ -298,6 +327,7 @@ class RouteServer(DataViewSet):
     allowed_http_methods = ["GET"]
     valid_filters = [
         ("ix", "ix_id"),
+        ("ixs", "ix__in"),
         ("ix_verified", "ix__verified"),
         ("asn", "asn"),
         ("asns", "asn__in"),
@@ -320,3 +350,27 @@ class RouteServer(DataViewSet):
 
     def filter_peer_asn(self, qset, value):
         return qset.filter(ix__verified=True, ix__member_set__asn=value).distinct("id")
+
+    @action(
+        detail=False,
+        methods=["PUT"],
+        url_path="set-event-reference/(?P<router_id>[^/]+)",
+    )
+    @grainy_endpoint(namespace="service_bridge")
+    def set_event_reference(self, request, router_id):
+        routeserver = models.Routeserver.objects.get(router_id=router_id)
+        routeserver.event = UUID(request.data.get("event"))
+        routeserver.save()
+        serializer = self.serializer_class(instance=routeserver)
+        return Response(serializer.data)
+
+
+@route
+class RouteserverMember(DataViewSet):
+    path_prefix = "/data"
+    allowed_http_methods = ["GET"]
+    queryset = models.RouteserverMember.objects.all()
+    serializer_class = Serializers.routeserver_member
+    valid_filters = [
+        ("rss", "routeserver__in"),
+    ]

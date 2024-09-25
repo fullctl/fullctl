@@ -18,7 +18,10 @@
     <tr data-template="row" data-routeserver_config_url="{% url "ixctl_api:config/routeserver-plain" org_tag=request.org.slug ix_tag="__ix_slug__" name="__rs_name__" %}">
       <td rowspan="2" data-field="asn"></td>
       <td data-field="display_name" class="highlight"></td>
-      <td data-field="router_id"></td>
+      <td>
+          <div data-field="router_id"></div>
+          <div class="bgp_stat_aggregate" data-element="bgp_stat_aggregate"></div>
+      </td>
       <td data-field="controls" class="options | right">
         <span data-field="routeserver_config_status"></span>
 
@@ -107,6 +110,10 @@
           <div class="col-auto field">
             {% trans "Config generated at" %}:
             <span class="highlight" data-field="routeserver_config_generated_time"></span>
+          </div>
+          <div class="col-auto field">
+            {% trans "Config last fetched at" %}:
+            <span class="highlight" data-field="config_last_fetched_time"></span>
           </div>
           <div class="col-auto field">
             {% trans "Config Status" %}:
