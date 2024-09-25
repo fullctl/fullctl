@@ -3,6 +3,7 @@ from fullctl.django.tasks import register
 
 import django_auditctl.models.auditctl as models
 from django_auditctl.event_handlers import get_handler_by_tag, get_handlers
+from django_auditctl.heartbeat import process_overdue
 
 
 @register
@@ -48,3 +49,21 @@ class ExecuteEventHandler(Task):
             raise KeyError(f"handler {self.handler_tag} not found")
         handler = handler(self.event)
         handler()
+
+
+@register
+class HearbeatCheck(Task):
+    class Meta:
+        proxy = True
+
+    class HandleRef:
+        tag = "task_heartbeat_check"
+
+    class TaskMeta:
+        limit = 1
+
+    def generate_limit_id(self):
+        return "heartbeat_check"
+
+    def run(self, *args, **kwargs):
+        process_overdue()

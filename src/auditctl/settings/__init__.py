@@ -92,6 +92,14 @@ settings_manager.set_option("EVENT_STREAM_PORT", 7148)
 # Heartbeat interval - how long before an alert is sent - 15 minutes
 settings_manager.set_option("HEARTBEAT_EXPECTED_INTERVAL", 60 * 15)
 
+# Heartbeat interval - how long before an alert is sent - 6 minutes for traffic
+settings_manager.set_option("HEARTBEAT_EXPECTED_INTERVAL_TRAFFIC", 60 * 6)
+
+# Default max age before events are considered stale and will be pruned
+# by the prune_old_auditlog_events management command (if no max_age is provided)
+# Default is 90 days (in days)
+settings_manager.set_option("EVENT_MAX_AGE", 90)
+
 # FINALIZE
 
 settings_manager.set_default_append()

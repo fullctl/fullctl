@@ -1,5 +1,6 @@
 import json
 import re
+from datetime import timedelta
 from functools import wraps
 
 import fullctl.service_bridge.devicectl as devicectl
@@ -82,6 +83,9 @@ class BaseHandler:
     A base class for event handler classes. Raises a NotImplementedError when called.
     """
 
+    class Heartbeat:
+        interval = timedelta(seconds=settings.HEARTBEAT_EXPECTED_INTERVAL)
+
     class HandleRef:
         tag = "base_handler"
 
@@ -115,6 +119,9 @@ class BaseHandler:
         object_id = self.event.object_id
         heartbeat, created = models.Heartbeat.objects.get_or_create(object_id=object_id)
         if not created:
+            heartbeat.save()
+        else:
+            heartbeat.interval = self.Heartbeat.interval
             heartbeat.save()
 
 
@@ -245,3 +252,25 @@ class DeviceOperationalStatus(ForwardToService):
 
         for report in reports:
             device.push_referee_report(report["id"], report["report"])
+
+
+@register_handler(r"^v0.1\/[^\/]+\/traffic\/.+$")
+class TrafficHandler(BaseHandler):
+    class Heartbeat:
+        interval = timedelta(seconds=settings.HEARTBEAT_EXPECTED_INTERVAL_TRAFFIC)
+
+    class HandleRef:
+        tag = "devicectl_traffic"
+
+    def __call__(self):
+        self.heartbeat()
+
+
+@register_handler(r"^v0.1\/[^\/]+\/rblsrv\/.+$")
+class RblsrvDataHandler(BaseHandler):
+    """
+    Handles Alerting Rblsrv Data events
+    """
+
+    def __call__(self):
+        pass

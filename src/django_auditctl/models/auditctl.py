@@ -1,5 +1,7 @@
 import uuid
+from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -97,6 +99,21 @@ class Event(HandleRefModel):
     def __repr__(self):
         return f"Event({self.id})"
 
+    def to_dict(self):
+        """Dict representation of the Event instance."""
+        return {
+            'id': str(self.id),
+            'created': self.created.isoformat(),
+            'updated': self.updated.isoformat(),
+            'object_id': self.object_id,
+            'status': self.status,
+            'user': self.user.username if self.user else '',
+            'org': self.org.name if self.org else '',
+            'source': self.source,
+            'data': self.data,
+            'error': self.error,
+        }
+
 
 @grainy_model("audit")
 class EventTask(HandleRefModel):
@@ -173,6 +190,14 @@ class Heartbeat(HandleRefModel):
         max_length=255,
         unique=True,
         help_text=_("Object ID to perform hearbeat checks for"),
+    )
+
+    interval = models.DurationField(
+        null=True,
+        default=timedelta(seconds=settings.HEARTBEAT_EXPECTED_INTERVAL),
+        help_text=_(
+            "Interval before heartbeat is considered overdue, defaults to settings.HEARTBEAT_EXPECTED_INTERVAL"
+        ),
     )
 
     class Meta:

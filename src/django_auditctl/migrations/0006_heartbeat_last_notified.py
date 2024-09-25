@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('django_auditctl', '0005_heartbeat'),
+        ("django_auditctl", "0005_heartbeat"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='heartbeat',
-            name='last_notified',
-            field=models.DateTimeField(blank=True, help_text='Timestamp of the last notification sent', null=True),
+            model_name="heartbeat",
+            name="last_notified",
+            field=models.DateTimeField(
+                blank=True,
+                help_text="Timestamp of the last notification sent",
+                null=True,
+            ),
         ),
     ]
