@@ -8,7 +8,7 @@ from typing import List, Union
 
 from pydantic import BaseModel, HttpUrl
 
-__all__ = ["Component", "ErrorDetails", "NoData", "DeviceConfigData"]
+__all__ = ["Component", "RblsrvComponent", "ErrorDetails", "NoData", "DeviceConfigData"]
 
 # Dictionary to store registered Pydantic models
 MODEL_REGISTRY = {}
@@ -74,6 +74,21 @@ class Component(BaseModel):
     kind: str
 
 
+class RblsrvComponent(BaseModel):
+    """
+    Pydantic model for a RblsrvComponent.
+
+    Attributes:
+        kind (str): The type of the component.
+        load_date (str): The date the component was loaded.
+        target (str): The prefix.
+    """
+
+    target: Union[str, None] = None
+    load_date: Union[str, None] = None
+    kind: str
+
+
 class ErrorComponent(Component):
     """
     Pydantic model for a Component.
@@ -112,3 +127,13 @@ class DeviceConfigData(BaseModel):
     diff: Union[str, None] = None
     components: List[Component] = list()
     url: Union[HttpUrl, None] = None
+
+
+@register_model(r"^v0.1\/[^\/]+\/traffic\/.+$")
+class TrafficData(BaseModel):
+    components: List[Component] = list()
+
+
+@register_model(r"^v0.1\/[^\/]+\/rblsrv\/.+$")
+class RblsrvData(BaseModel):
+    components: List[RblsrvComponent] = list()

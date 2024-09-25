@@ -1,7 +1,5 @@
-from datetime import timedelta
-
 import structlog
-from django.conf import settings
+from django.db.models import DateTimeField, ExpressionWrapper, F
 from django.utils import timezone
 from fullctl.django.models.concrete import Organization
 
@@ -22,17 +20,15 @@ def overdue():
     Returns Heartbeat queryset of overdue heartbeats.
     """
 
-    # Get the idle time from settings
-    idle_time = settings.HEARTBEAT_EXPECTED_INTERVAL
+    log.info("checking for overdue heartbeats")
 
-    log.info("checking for overdue heartbeats", idle_time=idle_time)
+    # Calculate the datetime for comparison
+    now_minus_interval = ExpressionWrapper(
+        timezone.now() - F("interval"), output_field=DateTimeField()
+    )
 
-    # Get the current time
-    current_time = timezone.now()
-    offset = current_time - timedelta(seconds=idle_time)
-
-    # Get the heartbeat objects
-    return Heartbeat.objects.filter(updated__lte=offset)
+    # Get the heartbeat objects where updated <= now_minus_interval
+    return Heartbeat.objects.filter(updated__lte=now_minus_interval)
 
 
 def process_overdue():

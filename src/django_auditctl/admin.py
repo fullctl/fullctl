@@ -42,6 +42,6 @@ class OrganizationEmailAlertAdmin(admin.ModelAdmin):
 
 @admin.register(Heartbeat)
 class HeartbeatAdmin(admin.ModelAdmin):
-    list_display = ("id", "object_id", "updated")
+    list_display = ("id", "object_id", "updated", "interval")
     search_fields = ("object_id",)
     list_filter = ("updated",)
