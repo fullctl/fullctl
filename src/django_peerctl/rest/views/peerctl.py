@@ -1,4 +1,5 @@
 import ipaddress
+from collections import defaultdict
 
 import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.ixctl as ixctl
@@ -383,6 +384,37 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
             data = sorted(data, key=lambda x: x["ix_simple_name"])[::-1]
         else:
             data = sorted(data, key=lambda x: x["ix_name"])
+
+        ixs = {port.get("ix") for port in data}
+        routeservers = ixctl.Routeserver().objects(ixs=list(ixs)) if ixs else []
+        routeserver_ids = {routeserver.id for routeserver in routeservers}
+        routeserver_members = (
+            list(ixctl.RouteserverMember().objects(rss=list(routeserver_ids)))
+            if routeserver_ids
+            else []
+        )
+
+        event_rs_id_map = defaultdict(list)
+        asn_event_map = {}
+        for routeserver_member in routeserver_members:
+            key = (
+                routeserver_member.member.asn,
+                routeserver_member.member.ipaddr4,
+                routeserver_member.member.ipaddr6,
+            )
+            asn_event_map[key] = routeserver_member._event
+            event_rs_id_map[str(routeserver_member.event)].append(
+                routeserver_member.rs.id
+            )
+
+        for port in data:
+            port["bgp_stat"] = None
+            key = (port.get("asn"), port.get("ip4"), port.get("ip6"))
+            event = asn_event_map.get(key)
+            if event and port.get("is_route_server_peer"):
+                port["bgp_stat"] = {
+                    rs: event.data.components for rs in event_rs_id_map[str(event.id)]
+                }
 
         return Response(data)
 
