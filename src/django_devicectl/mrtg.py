@@ -24,25 +24,25 @@ LABEL_PREFIX = "ctl_"
 TRAFFIC_GRAPH_QUERY_BASE = """
 sum by (metric) (
     label_replace(
-        sum(mrtg_bps_in{{{tags_in}}}[{step}]),
+        sum(mrtg_bps_in{{{tags_in}}}[{step}]) or vector(0),
         "metric", "bps_in", "", ""
     )
 ) or
 sum by (metric) (
     label_replace(
-        sum(mrtg_bps_out{{{tags_out}}}[{step}]),
+        sum(mrtg_bps_out{{{tags_out}}}[{step}]) or vector(0),
         "metric", "bps_out", "", ""
     )
 ) or
 sum by (metric) (
     label_replace(
-        max(mrtg_bps_in_max{{{tags_in}}}[{step}]),
+        max(mrtg_bps_in_max{{{tags_in}}}[{step}]) or vector(0),
         "metric", "bps_in_max", "", ""
     )
 ) or
 sum by (metric) (
     label_replace(
-        max(mrtg_bps_out_max{{{tags_out}}}[{step}]),
+        max(mrtg_bps_out_max{{{tags_out}}}[{step}]) or vector(0),
         "metric", "bps_out_max", "", ""
     )
 )

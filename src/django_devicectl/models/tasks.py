@@ -757,6 +757,7 @@ class AuditCtlIXTrafficReceived(Task):
     def run(self, *args, **kwargs):
         traffic_data = kwargs.get("data")
         base_event_id = f"v0.1/{self.org.slug}/traffic/ix/"
+        traffic_data_empty = True
         for ix_id, ports in self.exchanges():
             ix = ixctl.InternetExchange().object(ix_id)
             event_id = f"{base_event_id}{ix_id}/{ix.slug}/received"
@@ -769,25 +770,9 @@ class AuditCtlIXTrafficReceived(Task):
             ]
 
             if not ix_traffic_data:
-                auditctl.Event().create(
-                    {
-                        "org": self.org.slug,
-                        "object_id": event_id,
-                        "status": "error",
-                        "source": "devicectl",
-                        "error": {
-                            "message": "No data points in traffic data (empty list)",
-                            "components": [
-                                {
-                                    "kind": "ix",
-                                    "id": ix_id,
-                                    "name": ix.name,
-                                }
-                            ],
-                        },
-                    }
-                )
                 continue
+
+            traffic_data_empty = False
 
             auditctl.Event().create(
                 {
@@ -809,6 +794,20 @@ class AuditCtlIXTrafficReceived(Task):
                         ]
                     },
                 },
+            )
+
+        if traffic_data_empty:
+            auditctl.Event().create(
+                {
+                    "org": self.org.slug,
+                    "object_id": event_id,
+                    "status": "error",
+                    "source": "devicectl",
+                    "error": {
+                        "message": "No data points in traffic data (empty list)",
+                        "components": [],
+                    },
+                }
             )
 
 

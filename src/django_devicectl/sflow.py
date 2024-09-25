@@ -327,7 +327,6 @@ def query_graph_asn_pair(
     metrics = metrics_client()
 
     step = int(step) if isinstance(step, str) else step
-    step_max = step_size_for_max(step)
 
     query = f"""
     label_replace(
@@ -413,8 +412,6 @@ def asn_table(result: QueryResult, asn_names: dict[int, str]) -> list[dict]:
 
     result_data = []
     asn_data = {}
-
-    print(result.data.result)
 
     for item in result.data.result:
         metric = item.metric
