@@ -132,6 +132,16 @@ class Port(Devicectl):
             },
         )
 
+    def set_ports_status(
+            self, pk, status
+    ):
+        return self.patch(
+            f"data/port/{pk}/status",
+            json={
+                "status": status,
+            },
+        )
+
 
 class PortInfo(Devicectl):
     class Meta(Devicectl.Meta):
@@ -149,6 +159,7 @@ class VirtualPort(Devicectl):
 
         if duration:
             params["duration"] = duration
+
 
         if step:
             params["step"] = step
