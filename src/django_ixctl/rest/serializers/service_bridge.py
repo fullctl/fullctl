@@ -38,9 +38,9 @@ class InternetExchange(ModelSerializer):
     def get_org_id(self, ix):
         return ix.instance.org.permission_id
 
-
     def get_org_slug(self, ix):
         return ix.instance.org.slug
+
 
 @register
 class InternetExchangeMember(ModelSerializer):
@@ -143,6 +143,7 @@ class InternetExchangeMember(ModelSerializer):
     def get_org_id(self, member):
         return member.ix.instance.org.permission_id
 
+
 @register
 class Routeserver(ModelSerializer):
     ix = serializers.SerializerMethodField()
@@ -158,6 +159,7 @@ class Routeserver(ModelSerializer):
             "name",
             "asn",
             "router_id",
+            "event",
         ]
 
     def get_ix(self, member):
@@ -167,3 +169,12 @@ class Routeserver(ModelSerializer):
 
     def get_pdb_ix_id(self, member):
         return member.ix.pdb_id
+
+
+@register
+class RouteserverMember(ModelSerializer):
+    ref_tag = "routeserver_member"
+
+    class Meta:
+        model = models.RouteserverMember
+        fields = "__all__"

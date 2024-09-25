@@ -44,8 +44,8 @@
                 </div>
 
               </div>
-              <div 
-              data-element="graphs_container" 
+              <div
+              data-element="graphs_container"
               id="member_port_traffic_graph"
               data-api-base="{% url "proxies-api-devicectl-virtual-port-traffic" org_tag=request.org.slug pk="0" %}"
               data-api-base-vm-mrtg="{% url "proxies-api-devicectl-port-traffic-vm-mrtg" org_tag=request.org.slug port_id="0" %}"
@@ -70,7 +70,7 @@
                   <div data-element="dev_tools" class="marg-top-lg">
                     <h4>Developer Tools</h4>
                     Loaded from: <span data-element="graph_traffic_source"></span>
-  
+
                     <button class="secondary btn btn-sm" data-element="force_rrd_mrtg">Toggle RRD / MRTG</button>
                     <button class="secondary btn btn-sm" data-element="force_vm_mrtg">Toggle VictoriaMetrics / MRTG</button>
                     <button class="secondary btn btn-sm" data-element="force_vm_sflow">Toggle VictoriaMetrics / sFlow</button>
@@ -102,6 +102,38 @@
 
             </div>
 
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <table
+                class="table list-table"
+                data-api-base="{% url "ixctl_api:member-list" org_tag=request.org.slug ix_tag="default" %}"
+                id="bgp_stats_list"
+              >
+                <thead>
+                  <tr>
+                    <th></th>
+                  </tr>
+                  <tr>
+                    <th></th>
+                    <th>{% trans "State" %}</th>
+                    <th>{% trans "Received" %}</th>
+                    <th>{% trans "Advertised" %}</th>
+                    <th>{% trans "Last Changed" %}</th>
+                  </tr>
+                </thead>
+                <tbody class="list-body"></tbody>
+                <tbody class="templates">
+                    <tr data-template="row">
+                        <td data-field="address"></td>
+                        <td data-field="state"></td>
+                        <td data-field="routes_imported"></td>
+                        <td data-field="routes_exported"></td>
+                        <td data-field="last_change"></td>
+                    </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

@@ -315,7 +315,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
 
         return payload;
       });
-      
+
       $(this.form).on("fill:before", (ev, data) => {
         // macaddr_set comes in as an array, we need to join it into a string
         data.macaddr_set = data.macaddr_set.join("\n");
@@ -489,6 +489,59 @@ $ctl.application.Ixctl.Members = $tc.extend(
 
         if(!grainy.check(data.grainy, "d")) {
           row.find('a[data-api-method="DELETE"]').hide();
+        }
+
+        if (data.is_rs_peer && data.bgp_stat) {
+          const bgp_stats_v4 = row.find('[data-element="bgp_stat_v4"]');
+          const bgp_stats_v6 = row.find('[data-element="bgp_stat_v6"]');
+          Object.keys(data.bgp_stat).forEach((routeserver, routeserver_index) => {
+            data.bgp_stat[routeserver].forEach((stat, _) => {
+              const {
+                up = false,
+                last_change = "",
+                state = "",
+                routes_imported = 0,
+                routes_exported = 0,
+                address = "",
+                routeserver_hostname = ""
+              } = stat;
+
+              // Tooltip
+              let tooltip_data = `${routeserver_hostname}<br>`;
+              tooltip_data = `${tooltip_data}Session: ${state}<br>`;
+              tooltip_data = `${tooltip_data}Routes Received: ${routes_imported}<br>`;
+              tooltip_data = `${tooltip_data}Routes Advertised: ${routes_exported}<br>`;
+              tooltip_data = `${tooltip_data}${up ? "Up" : "Down"} Since: ${last_change}<br>`;
+              const bgp_stat = $('<div>');
+              bgp_stat.attr("data-bs-toggle", "tooltip")
+                .attr("data-bs-placement", "top")
+                .attr("data-bs-html", true)
+                .attr("title", tooltip_data);
+
+              // Tooltip Container
+              const node = $('<div class="d-flex align-items-center">');
+              node.append($('<span>').text(`RS${routeserver_index + 1}: `));
+              if (up) {
+                node.append($('<span class="icon icon-triangle-fill-up">'));
+                node.addClass("up");
+              } else {
+                node.append($('<span class="icon icon-triangle-fill-down">'));
+                node.addClass("down");
+              }
+              node.append(
+                $('<span class="dotted-underline">').text(
+                  `${routes_imported} / ${routes_exported}`
+                )
+              );
+              bgp_stat.html(node);
+              new bootstrap.Tooltip(bgp_stat);
+              if (address.includes(":")) {
+                 bgp_stats_v6.append(bgp_stat)
+              } else {
+                bgp_stats_v4.append(bgp_stat)
+              }
+            });
+          });
         }
       };
 
@@ -819,7 +872,7 @@ $ctl.application.Ixctl.Traffic = $tc.extend(
           this.force_traffic_source = "rrd_mrtg";
           this.sync();
         });
-        
+
         this.$e.force_vm_mrtg.click(() => {
           this.force_traffic_source = "vm_mrtg";
           this.sync();
@@ -863,7 +916,7 @@ $ctl.application.Ixctl.Traffic = $tc.extend(
 
         end_date,
         duration,
-        
+
         // title
         fullctl.ixctl.ix_object().name + " Total Traffic",
 
@@ -916,7 +969,11 @@ $ctl.application.Ixctl.MemberDetails = $tc.extend(
         return form;
       });
 
+      this.widget("bgp_stats_list", ($e) => {
+        return new twentyc.rest.List($("#bgp_stats_list"));
+      });
 
+      this.$w.bgp_stats_list.element.hide();
     },
 
     // Function to show member details
@@ -930,6 +987,7 @@ $ctl.application.Ixctl.MemberDetails = $tc.extend(
       this.$e.refresh_traffic_graph.hide();
 
       $.fn.reset_metric_table();
+      this.hide_summary_table();
 
       $("#tab-member").tab("show")
 
@@ -947,6 +1005,12 @@ $ctl.application.Ixctl.MemberDetails = $tc.extend(
 
           this.$e.menu.find('.ip4').text(member.ipaddr4);
           this.$w.member.fill(member);
+
+          // Fill bgp stats
+          if (member.bgp_stat) {
+            this.show_summary_table(member.bgp_stat);
+          }
+
           this.$e.body.parents(".tool").find('#date_range_select').val("24");
           this.show_graph_controls(member).indicate_graph_loading().show_graphs(member);
           //this.show_metric(member);
@@ -955,6 +1019,48 @@ $ctl.application.Ixctl.MemberDetails = $tc.extend(
         }
       );
 
+    },
+
+    hide_summary_table: function () {
+      this.$w.bgp_stats_list.list_body.empty();
+      $("#bgp_stats_list thead tr:first th:not(:first)").remove();
+      $("#bgp_stats_list thead tr:eq(1) th").each(function(index) {
+          if (index > 4) {
+            $(this).remove();
+          }
+      });
+      $("#bgp_stats_list tbody tr:eq(1) td").each(function(index) {
+          if (index > 4) {
+            $(this).remove();
+          }
+      });
+      this.$w.bgp_stats_list.element.hide();
+    },
+
+    show_summary_table: function (data) {
+      const routeservers = Object.keys(data);
+      routeservers.forEach((routeserver_hostname, index) => {
+        $("#bgp_stats_list thead tr:first").append(
+          `<th colspan="4" class="text-center">${routeserver_hostname}</th>`
+        )
+        if (index > 0) {
+          // const copied_headers = $("#bgp_stats_list thead tr:eq(1) th:nth-last-child(-n+4)");
+          $(`#bgp_stats_list thead tr:eq(${index})`).append(
+            "<th>State</th><th>Received</th><th>Advertised</th><th>Last Changed</th>"
+          );
+        }
+        data[routeserver_hostname].forEach((stat, idx) => {
+          if (index == 0) {
+            this.$w.bgp_stats_list.insert(stat);
+          } else {
+            const {state, routes_imported, routes_exported, last_change} = stat;
+            $(`#bgp_stats_list tbody tr:eq(${idx})`).append(
+              `<td>${state}</td><td>${routes_imported}</td><td>${routes_exported}</td><td>${last_change}</td>`
+            );
+          }
+        });
+      });
+      this.$w.bgp_stats_list.element.show();
     },
 
     // Function to indicate loading

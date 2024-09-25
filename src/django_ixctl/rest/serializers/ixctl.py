@@ -261,7 +261,6 @@ class InternetExchangeMember(ModelSerializer):
 
     @property
     def prefix_sets_by_slug(self) -> dict[str, prefixctl.PrefixSet]:
-
         """
         Returns prefix sets cached by slugs for all members being
         serialized. If the cache does not exist, it will be created.
@@ -502,7 +501,6 @@ class Routeserver(ModelSerializer):
             "routeserver_config_error",
         ]
 
-
     def validate_extra_config(self, value):
         try:
             data = yaml.load(value, Loader=Loader)
@@ -631,6 +629,40 @@ class OperationalStatusSerializer(serializers.Serializer):
     operational_status = serializers.CharField()
 
     class Meta:
-        fields = [
-            "operational_status"
-        ]
+        fields = ["operational_status"]
+
+
+@register
+class BGPState(serializers.Serializer):
+    up = serializers.CharField()
+    last_change = serializers.CharField()
+    state = serializers.CharField()
+    protocol = serializers.CharField()
+    name = serializers.CharField()
+    asn = serializers.CharField()
+    address = serializers.CharField()
+    routeserver_router_id = serializers.CharField()
+    routeserver_hostname = serializers.CharField()
+    router_id = serializers.CharField(required=False, default=None)
+    routes_imported = serializers.IntegerField(required=False, default=0)
+    routes_exported = serializers.IntegerField(required=False, default=0)
+    import_updates_received = serializers.IntegerField(required=False, default=0)
+    import_updates_rejected = serializers.IntegerField(required=False, default=0)
+    import_updates_filtered = serializers.IntegerField(required=False, default=0)
+    import_updates_ignored = serializers.IntegerField(required=False, default=0)
+    import_updates_accepted = serializers.IntegerField(required=False, default=0)
+    import_withdraws_received = serializers.IntegerField(required=False, default=0)
+    import_withdraws_rejected = serializers.IntegerField(required=False, default=0)
+    import_withdraws_ignored = serializers.IntegerField(required=False, default=0)
+    import_withdraws_accepted = serializers.IntegerField(required=False, default=0)
+    export_updates_received = serializers.IntegerField(required=False, default=0)
+    export_updates_rejected = serializers.IntegerField(required=False, default=0)
+    export_updates_filtered = serializers.IntegerField(required=False, default=0)
+    export_updates_accepted = serializers.IntegerField(required=False, default=0)
+    export_withdraws_received = serializers.IntegerField(required=False, default=0)
+    export_withdraws_accepted = serializers.IntegerField(required=False, default=0)
+
+    ref_tag = "bgp_state"
+
+    class Meta:
+        fields = "__all__"

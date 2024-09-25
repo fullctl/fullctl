@@ -68,6 +68,54 @@ $ctl.application.Ixctl.Routeservers = $tc.extend(
           var badge = row.find('.status-badge').data("widget");
           badge.load();
         });
+
+        if (data.bgp_stat_aggregate) {
+          const bgp_stat_aggregates = row.find('[data-element="bgp_stat_aggregate"]');
+          for (let index = 0; index < data.bgp_stat_aggregate.length; index++) {
+            const {
+              routes_imported = 0,
+              routes_exported = 0,
+              established_connections_count = 0,
+              configured_connections_count = 0,
+              ip_version = ""
+            } = data.bgp_stat_aggregate[index];
+            const ip_version_capitalized = ip_version == "ipv4" ? "IPv4" : "IPv6";
+
+            // Tooltip
+            let tooltip_data = `${ip_version_capitalized} Routes Received: ${routes_imported}<br>`;
+            tooltip_data = `${tooltip_data}${ip_version_capitalized} Routes Advertised: ${routes_exported}<br>`;
+            tooltip_data = `${tooltip_data}${ip_version_capitalized} Established: ${established_connections_count}<br>`;
+            tooltip_data = `${tooltip_data}${ip_version_capitalized} Configured: ${configured_connections_count}<br>`;
+            const bgp_stat_aggregate = $('<div>');
+            bgp_stat_aggregate.attr("data-bs-toggle", "tooltip")
+              .attr("data-bs-placement", "top")
+              .attr("data-bs-html", true)
+              .attr("title", tooltip_data);
+
+            // Tooltip Container
+            const node = $('<div class="d-flex align-items-center">');
+            node.append($('<span>').text(`${ip_version_capitalized}: `));
+            if (established_connections_count == configured_connections_count) {
+              node.append($('<span class="icon icon-triangle-fill-up">'));
+              node.addClass("up");
+            } else if (established_connections_count == 0) {
+              node.append($('<span class="icon icon-triangle-fill-down">'));
+              node.addClass("down");
+            } else {
+              node.append($('<span class="icon icon-triangle-fill-down">'));
+              node.addClass("warn");
+            }
+            node.append(
+              $('<span class="dotted-underline">').text(
+                `${established_connections_count} / ${configured_connections_count} . ${routes_imported} / ${routes_exported}`
+              )
+            );
+
+            bgp_stat_aggregate.html(node);
+            new bootstrap.Tooltip(bgp_stat_aggregate);
+            bgp_stat_aggregates.append(bgp_stat_aggregate);
+          }
+        }
       };
 
       // set up the route server config generator status badge

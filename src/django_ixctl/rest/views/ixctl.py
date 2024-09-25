@@ -1,6 +1,11 @@
+from collections import defaultdict
+from datetime import datetime
+
 import fullctl.service_bridge.aaactl as aaactl
+import fullctl.service_bridge.auditctl as auditctl
 import fullctl.service_bridge.pdbctl as pdbctl
 from django.conf import settings
+from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from fullctl.django.auditlog import auditlog
 from fullctl.django.rest.api_schema import PeeringDBImportSchema
@@ -9,7 +14,7 @@ from fullctl.django.rest.decorators import load_object
 from fullctl.django.rest.filters import CaseInsensitiveOrderingFilter
 from fullctl.django.rest.mixins import CachedObjectMixin, OrgQuerysetMixin
 from fullctl.django.rest.renderers import PlainTextRenderer
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -17,7 +22,7 @@ import django_ixctl.models as models
 import django_ixctl.rest.filters as filters
 from django_ixctl.rest.decorators import grainy_endpoint
 from django_ixctl.rest.route.ixctl import route
-from django_ixctl.rest.serializers.ixctl import Serializers, OperationalStatusSerializer
+from django_ixctl.rest.serializers.ixctl import OperationalStatusSerializer, Serializers
 
 
 class IxOrgQuerysetMixin:
@@ -104,7 +109,6 @@ class InternetExchange(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericView
     @auditlog()
     @grainy_endpoint(namespace="ix.{request.org.permission_id}.{ix.pk}")
     def update(self, request, org, ix, instance, auditlog=None, *args, **kwargs):
-
         data = request.data
 
         data["instance"] = instance.id
@@ -288,12 +292,32 @@ class Member(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet):
         members = list(models.InternetExchangeMember.preload_networks(queryset))
 
         serializer = Serializers.member(
-            instance=members,
-            many=True,
-            context={"instance":instance}
+            instance=members, many=True, context={"instance": instance}
         )
+        member_ids = [member.id for member in members]
+        routeserver_members = models.RouteserverMember.objects.filter(
+            ix_member__in=member_ids
+        )
+        models.RouteserverMember.preload_events(routeserver_members)
 
-        return Response(serializer.data)
+        member_routeserver_member_map = defaultdict(list)
+        for routeserver_member in routeserver_members:
+            member_routeserver_member_map[routeserver_member.ix_member.id].append(
+                routeserver_member
+            )
+
+        members_data = serializer.data
+        for member in members_data:
+            member["bgp_stat"] = None
+            routeserver_members = member_routeserver_member_map.get(member.get("id"))
+            if routeserver_members:
+                member["bgp_stat"] = {
+                    str(
+                        routeserver_member.routeserver.router_id
+                    ): routeserver_member._event_object.data.components
+                    for routeserver_member in routeserver_members
+                }
+        return Response(members_data)
 
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
     @auditlog()
@@ -373,9 +397,7 @@ class Member(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet):
         models.InternetExchangeMember.preload_ports(org, members)
 
         serializer = Serializers.member_detail(
-            instance=members,
-            many=True,
-            context={"instance":instance}
+            instance=members, many=True, context={"instance": instance}
         )
 
         return Response(serializer.data)
@@ -387,13 +409,25 @@ class Member(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet):
     )
     def retrieve(self, request, org, instance, ix, member_id, member, *args, **kwargs):
         serializer = Serializers.member_detail(
-            instance=member,
-            context={"instance":instance}
+            instance=member, context={"instance": instance}
         )
 
         models.InternetExchangeMember.preload_ports(org, [member])
+        member_data = serializer.data
+        member_data["bgp_stat"] = None
 
-        return Response(serializer.data)
+        routeserver_members = models.RouteserverMember.objects.filter(
+            ix_member__in=[member.id]
+        )
+        if routeserver_members:
+            models.RouteserverMember.preload_events(routeserver_members)
+            member_data["bgp_stat"] = {}
+            for routeserver_member in routeserver_members:
+                components = routeserver_member._event_object.data.components
+                member_data["bgp_stat"][
+                    components[0].get("routeserver_hostname")
+                ] = components
+        return Response(member_data)
 
 
 @route
@@ -414,13 +448,30 @@ class Routeserver(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet
         queryset = self.get_queryset().order_by("name")
         ordering_filter = CaseInsensitiveOrderingFilter(["name", "asn", "router_id"])
         queryset = ordering_filter.filter_queryset(request, queryset, self)
-
         serializer = Serializers.routeserver(
             instance=queryset,
             many=True,
         )
+        models.Routeserver.preload_events(queryset)
+        liveness_event = auditctl.Event().get_last_updated_config_liveness_event(
+            org.slug
+        )
 
-        return Response(serializer.data)
+        routeserver_event_map = {}
+        for routeserver in queryset:
+            routeserver_event_map[routeserver.id] = routeserver._event_object
+
+        routeservers = serializer.data
+        for routeserver in routeservers:
+            routeserver["bgp_stat_aggregate"] = None
+            routeserver["config_last_fetched_time"] = None
+            event = routeserver_event_map.get(routeserver.get("id"))
+            if event:
+                routeserver["bgp_stat_aggregate"] = event.data.components
+                routeserver["config_last_fetched_time"] = datetime.fromisoformat(
+                    liveness_event[0].get("created")
+                ).strftime("%Y-%m-%d %H:%M:%S")
+        return Response(routeservers)
 
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
     @auditlog()
@@ -466,15 +517,19 @@ class Routeserver(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet
         r = Response(Serializers.routeserver(instance=routeserver).data)
         routeserver.delete()
         return r
-    
+
     @action(detail=True, methods=["POST"])
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
     @load_object("routeserver", models.Routeserver, ix="ix", id="routeserver_id")
-    @grainy_endpoint(namespace="routeserver.{request.org.permission_id}.{ix.pk}.{routeserver_id}",)
-    def operational_status(self, request, org, instance, ix, routeserver, *args, **kwargs):
+    @grainy_endpoint(
+        namespace="routeserver.{request.org.permission_id}.{ix.pk}.{routeserver_id}",
+    )
+    def operational_status(
+        self, request, org, instance, ix, routeserver, *args, **kwargs
+    ):
         serializer = OperationalStatusSerializer(data=request.data)
         if serializer.is_valid():
-            operational_status = serializer.validated_data.get('operational_status')
+            operational_status = serializer.validated_data.get("operational_status")
             routeserver.operational_status = operational_status
             routeserver.save()
             serializer = Serializers.routeserver(
@@ -484,6 +539,72 @@ class Routeserver(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet
             return Response(serializer.data)
         else:
             return Response(serializer.errors, status=400)
+
+
+@route
+class BGPSessionState(viewsets.GenericViewSet):
+    """
+    Endpoint for updating and deleting bgp session state
+    based on peer asn, and peer ip
+    """
+
+    serializer_class = Serializers.bgp_state
+    ref_tag = "bgp_state"
+    ix_tag_needed = False
+
+    @action(
+        detail=False,
+        methods=["put"],
+        url_path="(?P<routeserver_router_id>[^/]+)/(?P<asn>[^/]+)/update",
+    )
+    def update_bgp_state(self, request, routeserver_router_id, asn, *args, **kwargs):
+        """
+        Handles saving of bgp state data
+        Unique sessions are identified by peer asn + peer ip
+        """
+        serializer = self.serializer_class(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+
+        address = serializer.validated_data.get("address")
+        member = models.InternetExchangeMember.objects.get(
+            Q(ipaddr4=address) | Q(ipaddr6=address),
+            asn=int(asn),
+            is_rs_peer=True,
+        )
+        routeserver = models.Routeserver.objects.get(router_id=routeserver_router_id)
+        routeserver_member, _ = models.RouteserverMember.objects.get(
+            ix_member=member, routeserver=routeserver
+        )
+        models.RouteserverMember.preload_events([routeserver_member])
+        auditctl.Event().partial_update(
+            routeserver_member._event_object,
+            {"data": {"message": "ok", "components": serializer.validated_data}},
+        )
+        return Response(serializer.data)
+
+    @action(
+        detail=False,
+        methods=["delete"],
+        url_path="(?P<routeserver_router_id>[^/]+)/(?P<asn>[^/]+)/delete",
+    )
+    @grainy_endpoint(namespace="verified.asn.{asn}.?")
+    def delete_bgp_state(self, request, routeserver_router_id, asn, *args, **kwargs):
+        """
+        Handles deletion of bgp state data
+        Unique sessions are identified by peer asn + peer ip
+        """
+        member = models.InternetExchangeMember.objects.get(
+            asn=int(asn),
+            is_rs_peer=True,
+        )
+        routeserver = models.Routeserver.objects.get(router_id=routeserver_router_id)
+        routeserver_member, _ = models.RouteserverMember.objects.get(
+            ix_member=member, routeserver=routeserver
+        )
+        models.RouteserverMember.preload_events([routeserver_member])
+        auditctl.Event().destroy(routeserver_member._event_object)
+        routeserver_member.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @route
