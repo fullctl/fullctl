@@ -87,7 +87,12 @@ class InternetExchangeMember(ModelSerializer):
         if hasattr(self, "_macaddresses"):
             return self._macaddresses
 
-        exchanges = set([member.ix for member in self.instance])
+        if isinstance(self.instance, models.InternetExchangeMember):
+            members = [self.instance]
+        else:
+            members = self.instance
+
+        exchanges = set([member.ix for member in members])
         macaddresses = models.MacAddress.objects.filter(member__ix__in=exchanges).select_related("member")
 
         self._macaddresses = {
