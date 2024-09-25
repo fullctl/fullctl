@@ -54,6 +54,8 @@ class InternetExchangeMember(ModelSerializer):
         read_only=True,
     )
 
+    macaddr_warnings = serializers.SerializerMethodField()
+
     class Meta:
         model = models.InternetExchangeMember
         fields = [
@@ -71,9 +73,61 @@ class InternetExchangeMember(ModelSerializer):
             "is_rs_peer",
             "macaddr",
             "macaddr_set",
+            "macaddr_warnings",
             "md5",
             "port",
         ]
+
+    @property
+    def macaddresses(self) -> dict[str, models.MacAddress]:
+        """
+        Returns mac addresses cached.
+        If the cache does not exist, it will be created.
+        """
+        if hasattr(self, "_macaddresses"):
+            return self._macaddresses
+
+        exchanges = set([member.ix for member in self.instance])
+        macaddresses = models.MacAddress.objects.filter(member__ix__in=exchanges).select_related("member")
+
+        self._macaddresses = {
+            "by_mac": {},
+            "by_member": {},
+        }
+
+        for mac in macaddresses:
+            ix_id = mac.member.ix_id
+            self._macaddresses["by_mac"].setdefault(ix_id, {}).setdefault(str(mac.address), []).append(mac.member)
+            self._macaddresses["by_member"].setdefault(ix_id, {}).setdefault(mac.member.id, []).append(str(mac.address))
+
+        print(self._macaddresses)
+
+        return self._macaddresses
+
+    def get_macaddr_warnings(self, obj):
+        """
+        Checks if macaddr_set contains any mac addresses
+        that exist on another member
+        """
+
+        # collect member's mac addresses from self.macaddresses
+        macaddr_set = self.macaddresses["by_member"].get(obj.ix_id, {}).get(obj.id, [])
+
+        if not macaddr_set:
+            return []
+
+        warnings = []
+
+        for macaddr in macaddr_set:
+            warnings.extend(
+                [
+                    f"MAC address {macaddr} also exists on AS{member.asn} - {member.ipaddr4}" 
+                    for member in self.macaddresses["by_mac"].get(obj.ix_id, {}).get(macaddr,[]) 
+                    if member.id != obj.id
+                ]
+            )
+
+        return warnings
 
     def get_ix(self, member):
         if "ix" in self.context.get("joins", []):

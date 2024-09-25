@@ -350,7 +350,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
           url: "/autocomplete/device/port?org="+fullctl.org.slug,
 
           // place holder text for the search field
-          placeholder: "Search IP, device, port or location names.",
+          placeholder: "Begin typing to search IP, device, port or location names",
 
           // if session is specifed, preselect it's port
           initial: (callback) => {
@@ -393,7 +393,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
           url: "/autocomplete/prefix/prefix_set?require_slug=1&org="+fullctl.org.slug,
 
           // place holder text for the search field
-          placeholder: "Search Prefix Set by name or slug",
+          placeholder: "Begin typing to Search Prefix Sets by name or slug",
 
           // if session is specifed, preselect it's prefix set
           initial: (callback) => {
@@ -494,6 +494,25 @@ $ctl.application.Ixctl.Members = $tc.extend(
 
       this.$w.list.formatters.macaddr_set = (macaddr_set) => {
         return macaddr_set.join("\n");
+      }
+
+      this.$w.list.formatters.macaddr_warnings = (macaddr_warnings, data, col) => {
+        // macaddr_warnings is an array of strings
+        // format into divs
+        if(!macaddr_warnings || macaddr_warnings.length == 0) {
+          col.parent(".row").hide();
+          return "";
+        }
+
+        let container = $('<div>').addClass("macaddr-warnings");
+        macaddr_warnings.forEach((warning) => {
+          container.append(
+            $('<div>').addClass("message-warning marg-bot-sm").append(
+              $('<span>').text(warning)
+            )
+          );
+        });
+        return container;
       }
 
       this.$w.list.formatters.speed = $ctl.formatters.pretty_speed;

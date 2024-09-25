@@ -62,6 +62,15 @@
         <input type="text" class="form-control" id="member-ipaddr6" name="ipaddr6" />
       </div>
     </div>
+    <div class="row">
+      <div class="col-12">
+        <div class="alert alert-info">
+          {% blocktrans %}
+          You can add multiple MAC addresses. Each MAC address must be on a new line.
+          {% endblocktrans %}
+        </div>
+      </div>
+    </div>
     <div class="row mb-3">
       <div class="col-12" data-api-submit="yes">
         <label class="form-label" for="member-macaddr">{% trans "MAC Addresses" %}</label>
