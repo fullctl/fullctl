@@ -24,6 +24,9 @@ from django_ixctl.rest.decorators import grainy_endpoint
 from django_ixctl.rest.route.ixctl import route
 from django_ixctl.rest.serializers.ixctl import OperationalStatusSerializer, Serializers
 
+import structlog
+logger = structlog.getLogger('django_structlog')
+
 
 class IxOrgQuerysetMixin:
     """
@@ -430,6 +433,69 @@ class Member(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet):
                         components[0].get("routeserver_hostname")
                     ] = components
         return Response(member_data)
+
+    @action(detail=False,
+            methods=["PATCH"],
+            url_path=r"(?P<member_id>[\d]+)/status",  # noqa: W605
+            )
+    @load_object("ix",
+                 models.InternetExchange,
+                 instance="instance",
+                 slug="ix_tag")
+    @load_object("member",
+                 models.InternetExchangeMember,
+                 ix="ix",
+                 id="member_id")
+    @grainy_endpoint(
+        namespace="member.{request.org.permission_id}.{ix.pk}",
+    )
+    def status(self, request, org, instance, ix, member_id, member, *args, **kwargs):
+        """
+        Update the status of a specified Internet Exchange Member.
+
+        This method handles PATCH requests to update the status of an Internet Exchange
+        member. It performs the following tasks:
+          1. Retrieves and deserializes the supplied request data.
+          2. Validates the deserialized data.
+          3. Updates the member's status if the data is valid.
+          4. Returns a serialized representation of the updated member.
+
+        Note:
+          This method is decorated with several decorators:
+          - `@action`: Configures this method as a custom endpoint for PATCH requests.
+          - `@load_object`: Retrieves the InternetExchange and InternetExchangeMember instances.
+          - `@grainy_endpoint`: Applies granular permission control.
+
+        Args:
+          request (Request): The request object containing the data to update.
+          org (Organization): The organization associated with the request.
+          instance (InternetExchange): The InternetExchange instance.
+          ix (InternetExchange): The loaded InternetExchange object.
+          member_id (int): The ID of the InternetExchangeMember to update.
+          member (InternetExchangeMember): The InternetExchangeMember instance to update.
+          *args: Variable length argument list.
+          **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+          Response: A Response object containing the serialized data of the updated member
+          if the serializer is valid. Otherwise, returns the serializer errors.
+        """
+        serializer = self.serializer_class(member,
+                                           data=request.data,
+                                           partial=True,
+                                           context={"instance": instance},)
+        if serializer.is_valid():
+            # Update the member status
+            updated_instance = serializer.save()
+            updated_serializer = self.serializer_class(updated_instance)
+
+            # Update the physical ports status in deviceCtl
+            models.InternetExchangeMember.set_ports_status(member=member,
+                                                           status=request.data.get("status"),)
+            return Response(updated_serializer.data)
+
+        logger.debug(f"{serializer.errors=}")
+        return Response(serializer.errors)
 
 
 @route

@@ -424,6 +424,12 @@ class InternetExchangeMember(PdbRefModel):
         help_text=_("deviceCtl port reference"),
     )
 
+    status = models.CharField(
+        max_length=12,
+        default="ok",
+        choices=django_ixctl.enum.PORT_STATE
+    )
+
     class PdbRef(PdbRefModel.PdbRef):
         pdbctl = pdbctl.NetworkIXLan
 
@@ -532,6 +538,27 @@ class InternetExchangeMember(PdbRefModel):
 
             member.port._object = port
 
+    @classmethod
+    def set_ports_status(cls, member, status: str):
+        """
+        Update the status of a member's ports in deviceCtl.
+
+        Args:
+            member: The member object that contains the `port` attribute.
+            status (str): The new status to be applied to the member's port.
+
+        Returns:
+            None
+        """
+        if not member.port:
+            return
+
+        member.status = status
+        member.save()
+
+        devicectl.Port().set_ports_status(status=status,
+                                          pk=member.port.id)
+
     @property
     def display_name(self):
         return self.name or f"AS{self.asn}"
@@ -630,13 +657,13 @@ class InternetExchangeMember(PdbRefModel):
             return str(self.mac_addresses.all()[0].address)
         except IndexError:
             return None
-        
+
     # setter for macaddr field
     @macaddr.setter
     def macaddr(self, value:str):
         if not value or not self.id:
             return
-        
+
         self.mac_addresses.all().delete()
 
         MacAddress.objects.get_or_create(member=self, address=value)
@@ -654,13 +681,13 @@ class InternetExchangeMember(PdbRefModel):
     def macaddr_set(self, macs:list[str]):
         if not self.id:
             return
-            
+
         # delete all existing mac addresses
         self.mac_addresses.all().delete()
 
         if not macs:
             return
-        
+
         self.mac_addresses.bulk_create(
             MacAddress(member=self, address=mac) for mac in macs
         )
@@ -1175,9 +1202,9 @@ class RouteserverConfig(HandleRefModel):
                 raise OSError(f"Process returned {process.returncode}")
 
     def generate_markdown(
-        self, 
-        general_config_file: str, 
-        clients_config_file: str, 
+        self,
+        general_config_file: str,
+        clients_config_file: str,
         output_file: str
     ):
         """
@@ -1189,6 +1216,8 @@ class RouteserverConfig(HandleRefModel):
         - clients_config_file (`str`): path to clients config file
         - output_file (`str`): path to output markdown file
         """
+
+
         self.run_ars_command(
             "md",
             general_config_file,

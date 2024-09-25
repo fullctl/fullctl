@@ -17,6 +17,9 @@ from rest_framework.response import Response
 import django_ixctl.models.ixctl as models
 from django_ixctl.rest.serializers.service_bridge import Serializers
 
+import structlog
+logger = structlog.getLogger("django_structlog")
+
 
 @route
 class Status(StatusViewSet):
@@ -70,7 +73,7 @@ class InternetExchangePrefix(DataViewSet):
 @route
 class InternetExchangeMember(DataViewSet):
     path_prefix = "/data"
-    allowed_http_methods = ["GET"]
+    allowed_http_methods = ["GET", "PATCH"]
     valid_filters = [
         ("ids", "id__in"),
         ("org", "ix__instance__org__remote_id"),
@@ -90,7 +93,7 @@ class InternetExchangeMember(DataViewSet):
 
     join_xl = {"ix": ("ix",), "ix_name": ("ix",)}
 
-    queryset = models.InternetExchangeMember.objects.filter(status="ok").select_related(
+    queryset = models.InternetExchangeMember.objects.filter(status__in=["ok", "admin_down"]).select_related(
         "ix", "ix__instance", "ix__instance__org"
     )
     serializer_class = Serializers.member
@@ -105,7 +108,7 @@ class InternetExchangeMember(DataViewSet):
                 self.id = int(_id)
 
         member = self.get_queryset().filter(port=Port(value)).first()
-        return qset.filter(ix_id=member.ix_id, status="ok").exclude(id=member.id)
+        return qset.filter(ix_id=member.ix_id, status__in=["ok", "admin_down"]).exclude(id=member.id)
 
     def filter_mutual(self, qset, value):
         asn = value
@@ -147,6 +150,53 @@ class InternetExchangeMember(DataViewSet):
         Apply distinct filter to queryset for a given field
         """
         return qset.distinct(value)
+
+    @action(
+        detail=False,
+        methods=["PATCH"],
+        url_path="sync/(?P<member_id>[^/.]+)/(?P<member_port>[^/]+)/status",
+    )
+    @grainy_endpoint(namespace="service_bridge")
+    def status(self, request, member_id, member_port, *args, **kwargs):
+        """
+        Updates the status of a specific member port.
+
+        This method is an API endpoint that handles PATCH requests to update the
+        status of a specified member port. The URL pattern expects the `member_id`
+        and `member_port` to be included in the URL path.
+
+        Args:
+          request (Request): The HTTP request object containing the status data.
+          member_id (str): The ID of the member whose port status is being updated.
+          member_port (str): The port of the member whose status is being updated.
+          *args: Variable length argument list.
+          **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+          Response: A Response object containing serialized data of the updated
+          member instance.
+
+        Raises:
+          BadRequest: If the status is not provided in the request data or if
+          the member does not exist.
+
+        Example:
+          PATCH /sync/<member_id>/<member_port>/status
+          {
+            "status": "admin_down"
+          }
+        """
+
+        status = request.data.get("status")
+
+        member = models.InternetExchangeMember.objects.filter(
+            ix__verified=True, id=member_id
+        ).first()
+
+        models.InternetExchangeMember().set_ports_status(member=member,
+                                                         status=status)
+
+        return Response(Serializers.member(instance=member, many=False).data)
 
     @action(
         detail=False,
