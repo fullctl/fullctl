@@ -109,7 +109,7 @@ var $peerctl = $ctl.application.Peerctl = $tc.extend(
       $('#tab-ix').on('shown.bs.tab', () => {
         this.$t.ix.sync();
       });
-      
+
       // init AS table tool
       this.tool("as_table", ()=> {
         return new $peerctl.ASTable(this.$t.port_form);
@@ -431,7 +431,7 @@ $peerctl.Ix = $tc.extend(
 
       this.$w.list.format_request_url = (url) => {
         return url +"?ixi=1&load_md5=1";
-      }
+      };
 
       this.$w.list.formatters.macaddr_set = (value, data) => {
         return value.join("\n");
@@ -475,7 +475,7 @@ $peerctl.Ix = $tc.extend(
 
         if(data.ref_source == "ixctl"){
           row.addClass("ixctl-port");
-          this.show_graph_controls(row, data)
+          this.show_graph_controls(row, data);
         }
 
         row.attr("id", "ix-port-"+data.id);
@@ -541,6 +541,72 @@ $peerctl.Ix = $tc.extend(
           });
         }
 
+
+        // Initialize port status
+        var statusSpan = row.find('span[data-field="status"]');
+        if(data.status=="ok") {
+          statusSpan.attr('data-toggle', 'checked');
+          statusSpan.addClass('checked');
+
+        } else if(data.status=="admin_down") {
+          statusSpan.attr('data-toggle', 'unchecked');
+          statusSpan.removeClass('checked');
+        }
+
+        // Change port status event
+        row.find('button[data-action="toggle_status"]').click((event) => {
+          event.preventDefault();
+          // TODO <saf>: confirm only on disable?
+          const confirmation = confirm("Are you sure you want to toggle this port status?");
+          if (!confirmation) {
+            return;
+          }
+
+          var statusSpan = row.find('span[data-field="status"]');
+          var currentToggle = statusSpan.attr('data-toggle');
+          var nextStatus = "ok";
+          statusSpan.attr('data-toggle', 'checked');
+          statusSpan.addClass('checked');
+          if(currentToggle === 'checked') {
+            nextStatus = "admin_down";
+            statusSpan.attr('data-toggle', 'unchecked');
+            statusSpan.removeClass('checked');
+          }
+
+         // Toggle the display of the divs with data-true and data-false
+          const trueDiv = statusSpan.find('div[data-true]');
+          const falseDiv = statusSpan.find('div[data-false]');
+          if (trueDiv.is(':visible')) {
+            trueDiv.hide();
+            falseDiv.show();
+          } else {
+            falseDiv.hide();
+            trueDiv.show();
+          }
+
+
+          let url = this.$w.list.element.data('api-port-status');
+          url = url.replace(/0/g, data.id);
+
+          $.ajax({
+            url: url,
+            method: 'PATCH',
+            headers : {
+              "Content-Type" : "application/json",
+              "X-CSRFToken" : twentyc.rest.config.csrf
+            },
+            data: JSON.stringify({
+              status: nextStatus,
+            }),
+            success: function(response) {
+              // console.log('Success:', response);
+            },
+            error: function(xhr, status, error) {
+              // console.log('Error:', status, error);
+            },
+            async: false
+          });
+        });
       };
 
       // format speed
@@ -764,7 +830,7 @@ $peerctl.ModalIxPort = $tc.extend(
         });
         return payload;
       });
-      
+
       $(form).on("fill:before", (ev, data) => {
         // macaddr_set comes in as an array, we need to join it into a string
         data.macaddr_set = data.macaddr_set.join("\n");
@@ -793,21 +859,21 @@ $peerctl.ModalIxPort = $tc.extend(
 
 /**
  * This is the port form class for controlling the selected ports.
- * 
+ *
  * The following attributes are note worthy
  * - port_filter: This is the select filter with autocomplete enabled
  * - port_elements: Other controls except port_filter
- * 
+ *
  * It can be displayed as follows:
- * 
+ *
  * $('#<tab_to_display_the_form>').on('show.bs.tab', () => {
  *  this.$t.port_form.show_port_form();
  * });
- * 
+ *
  * this.$t.port_form being the tool location after it's initialization.
- * 
+ *
  * PortForm can be injected into any tool to hook into it's onchange like
- * 
+ *
  * <port_form_ref_after_injection>.port_filter.element.on("change", () => {
  *  Your logic here...
  * });
@@ -816,7 +882,7 @@ $peerctl.ModalIxPort = $tc.extend(
  * @namespace fullctl.peerctl
  */
 $peerctl.PortForm = $tc.define(
-  "PortForm", 
+  "PortForm",
   {
     PortForm: function(){
       this.ports = {};
@@ -1545,7 +1611,6 @@ $peerctl.IsRouteServerPeerInput = $tc.extend(
   twentyc.rest.Checkbox
 );
 
-
 $peerctl.ASSetInput = $tc.extend(
   "ASSetInput",
   {
@@ -1557,7 +1622,6 @@ $peerctl.ASSetInput = $tc.extend(
   },
   twentyc.rest.Input
 );
-
 
 $peerctl.PeerSessionList = $tc.extend(
   "PeerSessionList",

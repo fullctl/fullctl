@@ -30,6 +30,9 @@ from django_peerctl.rest.route.peerctl import route
 from django_peerctl.rest.serializers.peerctl import Serializers, ValidationError
 from django_peerctl.utils import load_exchanges, verified_asns
 
+import structlog
+logger = structlog.getLogger("django_structlog")
+
 
 @route
 class Network(CachedObjectMixin, viewsets.ModelViewSet):
@@ -551,6 +554,19 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
         is_route_server_peer = request.data.get("is_route_server_peer")
         try:
             port.set_is_route_server_peer(is_route_server_peer)
+        except Exception as exc:
+            return BadRequest({"non_field_errors": [[str(exc)]]})
+
+        serializer = self.serializer_class(port)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["patch"], url_path="(?P<port_pk>[^/.]+)/status")
+    @grainy_endpoint(namespace="verified.asn.{asn}.?")
+    def set_status(self, request, port_pk, *args, **kwargs):
+        port = models.Port().object(port_pk)
+        status = request.data.get("status")
+        try:
+            port.set_status(status)
         except Exception as exc:
             return BadRequest({"non_field_errors": [[str(exc)]]})
 
