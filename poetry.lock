@@ -1050,7 +1050,7 @@ woff = ["brotli (>=1.0.1)", "brotlicffi (>=0.8.0)", "zopfli (>=0.1.4)"]
 
 [[package]]
 name = "fullctl"
-version = "1.15.0-rc.6"
+version = "1.15.0-rc.9"
 description = "Core classes and functions for service applications"
 optional = false
 python-versions = "^3.9"
@@ -1087,7 +1087,7 @@ whitenoise = ">=6"
 type = "git"
 url = "https://github.com/fullctl/fullctl.git"
 reference = "prep-release"
-resolved_reference = "6f5695d2cc8e5c7cc367a6f9fb6c69e162524478"
+resolved_reference = "787252004dab1ca01ee8f24b342b80295fb56340"
 
 [[package]]
 name = "gitdb"
