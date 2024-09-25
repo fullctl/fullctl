@@ -207,10 +207,12 @@ class InternetExchangeMember(ModelSerializer):
         required=False,
     )
 
+    macaddr_warnings = serializers.SerializerMethodField()
+
     display_name = serializers.CharField(read_only=True)
     prefix_set_name = serializers.SerializerMethodField()
     port_name = serializers.SerializerMethodField()
-
+    
     class Meta:
         model = models.InternetExchangeMember
         fields = [
@@ -226,6 +228,7 @@ class InternetExchangeMember(ModelSerializer):
             "ipaddr6",
             "macaddr",
             "macaddr_set",
+            "macaddr_warnings",
             "as_macro",
             "as_macro_override",
             "as_macro_negate",
@@ -277,6 +280,36 @@ class InternetExchangeMember(ModelSerializer):
         self._prefix_sets_by_slug = {prefixset.slug: prefixset for prefixset in prefix_sets}
         return self._prefix_sets_by_slug
 
+    @property
+    def macaddresses(self) -> dict[str, models.MacAddress]:
+        """
+        Returns mac addresses cached.
+        If the cache does not exist, it will be created.
+        """
+        if hasattr(self, "_macaddresses"):
+            return self._macaddresses
+
+        # get the ix instance
+        # self.instance may be a single instance or a queryset
+
+        if isinstance(self.instance, models.InternetExchangeMember):
+            ix = self.instance.ix
+        else:
+            ix = self.instance[0].ix
+
+        macaddresses = models.MacAddress.objects.filter(member__ix=ix).select_related("member")
+
+        self._macaddresses = {
+            "by_mac": {},
+            "by_member": {},
+        }
+
+        for mac in macaddresses:
+            self._macaddresses["by_mac"].setdefault(str(mac.address), []).append(mac.member)
+            self._macaddresses["by_member"].setdefault(mac.member.id, []).append(str(mac.address))
+
+        return self._macaddresses
+
     def validate_ipaddr4(self, ipaddr4):
         if not ipaddr4:
             return None
@@ -299,6 +332,10 @@ class InternetExchangeMember(ModelSerializer):
         if not macaddr_set:
             return []
         
+        # check for duplicates within the passed list
+        if len(macaddr_set) != len(set(macaddr_set)):
+            raise ValidationError("Duplicate mac addresses found")
+
         validate_mac_addresses(macaddr_set)
 
         return macaddr_set
@@ -375,6 +412,25 @@ class InternetExchangeMember(ModelSerializer):
             return port.virtual_port_name
         except AttributeError:
             return None
+
+    def get_macaddr_warnings(self, obj):
+        """
+        Checks if macaddr_set contains any mac addresses
+        that exist on another member
+        """
+
+        # collect member's mac addresses from self.macaddresses
+        macaddr_set = self.macaddresses["by_member"].get(obj.id, [])
+
+        if not macaddr_set:
+            return []
+
+        warnings = []
+
+        for macaddr in macaddr_set:
+            warnings.extend([f"MAC address {macaddr} also exists on AS{member.asn} - {member.ipaddr4}" for member in self.macaddresses["by_mac"].get(macaddr,[]) if member.id != obj.id])
+
+        return warnings
 
     @property
     def ports(self) -> dict[str, devicectl.Port]:
