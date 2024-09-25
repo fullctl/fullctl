@@ -13,6 +13,9 @@ import fullctl.service_bridge.auditctl as auditctl
 import fullctl.service_bridge.pdbctl as pdbctl
 from fullctl.service_bridge.client import Bridge, DataObject, url_join
 
+import structlog
+logger = structlog.getLogger(__name__)
+
 CACHE = {}
 
 
@@ -97,6 +100,10 @@ class InternetExchangeMember(Ixctl):
         router_ip = ipaddress.ip_interface(router_ip).ip
 
         self.put(f"data/member/sync/{asn}/{member_ip}/{router_ip}/md5", data=data)
+
+    def set_ports_status(self, status: str, member_id: int, member_port: int):
+        return self.patch(f"data/member/sync/{member_id}/{member_port}/status",
+                          data={"status": str(status)})
 
     def traffic(
         self,
