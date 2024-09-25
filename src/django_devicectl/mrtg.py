@@ -34,15 +34,15 @@ sum by (metric) (
         "metric", "bps_out", "", ""
     )
 ) or
-sum by (metric) (
+max by (metric) (
     label_replace(
-        max(mrtg_bps_in_max{{{tags_in}}}[{step}]) or vector(0),
+        sum(mrtg_bps_in_max{{{tags_in}}}[{step}]) or vector(0),
         "metric", "bps_in_max", "", ""
     )
 ) or
-sum by (metric) (
+max by (metric) (
     label_replace(
-        max(mrtg_bps_out_max{{{tags_out}}}[{step}]) or vector(0),
+        sum(mrtg_bps_out_max{{{tags_out}}}[{step}]) or vector(0),
         "metric", "bps_out_max", "", ""
     )
 )
