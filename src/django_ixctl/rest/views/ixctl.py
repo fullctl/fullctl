@@ -311,12 +311,13 @@ class Member(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet):
             member["bgp_stat"] = None
             routeserver_members = member_routeserver_member_map.get(member.get("id"))
             if routeserver_members:
-                member["bgp_stat"] = {
-                    str(
-                        routeserver_member.routeserver.router_id
-                    ): routeserver_member._event_object.data.components
-                    for routeserver_member in routeserver_members
-                }
+                for routeserver_member in routeserver_members:
+                    if hasattr(routeserver_member, "_event_object"):
+                        member["bgp_stat"] = {
+                            str(
+                                routeserver_member.routeserver.router_id
+                            ): routeserver_member._event_object.data.components
+                        }
         return Response(members_data)
 
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
@@ -423,10 +424,11 @@ class Member(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet):
             models.RouteserverMember.preload_events(routeserver_members)
             member_data["bgp_stat"] = {}
             for routeserver_member in routeserver_members:
-                components = routeserver_member._event_object.data.components
-                member_data["bgp_stat"][
-                    components[0].get("routeserver_hostname")
-                ] = components
+                if hasattr(routeserver_member, "_event_object"):
+                    components = routeserver_member._event_object.data.components
+                    member_data["bgp_stat"][
+                        components[0].get("routeserver_hostname")
+                    ] = components
         return Response(member_data)
 
 
@@ -459,7 +461,11 @@ class Routeserver(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet
 
         routeserver_event_map = {}
         for routeserver in queryset:
-            routeserver_event_map[routeserver.id] = routeserver._event_object
+            routeserver_event_map[routeserver.id] = (
+                routeserver._event_object
+                if hasattr(routeserver, "_event_object")
+                else None
+            )
 
         routeservers = serializer.data
         for routeserver in routeservers:
@@ -468,9 +474,13 @@ class Routeserver(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet
             event = routeserver_event_map.get(routeserver.get("id"))
             if event:
                 routeserver["bgp_stat_aggregate"] = event.data.components
-                routeserver["config_last_fetched_time"] = datetime.fromisoformat(
-                    liveness_event[0].get("created")
-                ).strftime("%Y-%m-%d %H:%M:%S")
+                routeserver["config_last_fetched_time"] = (
+                    datetime.fromisoformat(liveness_event[0].get("created")).strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+                    if liveness_event
+                    else None
+                )
         return Response(routeservers)
 
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")

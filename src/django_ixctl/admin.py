@@ -11,6 +11,7 @@ from django_ixctl.models import (
     PermissionRequest,
     Routeserver,
     RouteserverConfig,
+    RouteserverMember,
 )
 
 # from fullctl.django.models.concrete import OrganizationUser
@@ -29,9 +30,11 @@ class MemberForm(ModelForm):
             return None
         return ipaddr6
 
+
 class MacAddressInline(BaseTabularAdmin):
     model = MacAddress
     extra = 0
+
 
 class InternetExchangeMemberInline(BaseTabularAdmin):
     model = InternetExchangeMember
@@ -117,3 +120,9 @@ class NetworkAdmin(BaseAdmin):
 @admin.register(PermissionRequest)
 class PermissionRequestAdmin(BaseAdmin):
     list_display = ("org", "user", "created", "type")
+
+
+@admin.register(RouteserverMember)
+class RouteserverMemberAdmin(BaseAdmin):
+    list_display = ("routeserver", "ix_member", "event")
+    readonly_fields = ("routeserver", "ix_member", "event")

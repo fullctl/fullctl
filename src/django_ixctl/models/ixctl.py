@@ -1019,6 +1019,9 @@ class Routeserver(HandleRefModel):
         - routeservers (`list` of `RouteServer`): routeservers to load events for
         """
         event_ids = [str(routeserver.event) for routeserver in routeservers if routeserver.event]
+        if not event_ids:
+            return
+        
         events = auditctl.Event().objects(ids=event_ids)
         if not events:
             return
@@ -1412,6 +1415,9 @@ class RouteserverMember(models.Model):
         - routeserver_members (`list` of `RouteServerMembers`): routeserver_members to load events for
         """
         event_ids = [str(routeserver_member.event) for routeserver_member in routeserver_members if routeserver_member.event]
+        if not event_ids:
+            return
+        
         events = auditctl.Event().objects(ids=event_ids)
         if not events:
             return
