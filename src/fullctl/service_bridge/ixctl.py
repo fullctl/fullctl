@@ -163,6 +163,7 @@ class InternetExchangeMember(Ixctl):
                 "address": address,
                 "routeserver_router_id": routeserver_router_id,
             },
+        )
 
     def metric(self, pk: int):
         return self.get(
