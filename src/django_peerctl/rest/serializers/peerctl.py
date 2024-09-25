@@ -19,6 +19,9 @@ import django_peerctl.models as models
 from django_peerctl.autopeer import autopeer_url
 from django_peerctl.helpers import get_best_policy
 
+import structlog
+logger = structlog.getLogger(__name__)
+
 Serializers, register = serializer_registry()
 
 
@@ -180,6 +183,7 @@ class Port(serializers.Serializer):
     ix_name = serializers.SerializerMethodField()
     ix_simple_name = serializers.SerializerMethodField()
     speed = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
     policy4 = serializers.SerializerMethodField()
     policy6 = serializers.SerializerMethodField()
     device = serializers.SerializerMethodField()
@@ -212,6 +216,7 @@ class Port(serializers.Serializer):
             "display_name",
             "net",
             "asn",
+            "status",
             "speed",
             "peers",
             "policy4",
@@ -283,7 +288,6 @@ class Port(serializers.Serializer):
 
     @property
     def federated_services(self):
-
         """
         Retrieves a list of federated services for the ports being
         serialized.
@@ -444,6 +448,10 @@ class Port(serializers.Serializer):
     def get_speed(self, instance):
         return instance.port_info_object.ref.speed
 
+    @models.ref_fallback(0)
+    def get_status(self, instance):
+        return instance.port_info_object.ref.status
+
     def get_device(self, instance):
         if getattr(instance, "device", None):
             return instance.device.__dict__
@@ -521,6 +529,7 @@ class PortUpdate(serializers.Serializer):
             macaddr_set.append(mac_address)
 
         is_route_server_peer = self.validated_data.get("is_route_server_peer")
+        status = self.validated_data.get("status")
 
         # set mac address
         port.set_mac_address(macaddr_set)

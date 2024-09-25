@@ -39,12 +39,15 @@ from django_peerctl.exceptions import (
 )
 from django_peerctl.helpers import get_best_policy, get_peer_contact_email
 from django_peerctl.meta import PeerSessionSchema
-from django_peerctl.models.tasks import SyncIsRsPeer, SyncMacAddress, SyncRouteServerMD5
+from django_peerctl.models.tasks import SyncIsRsPeer, SyncMacAddress, SyncRouteServerMD5, SyncStatus
 from django_peerctl.templating import ip_version, make_variable_name
 
 # naming::
 # handleref tag $model_$model
 # matching fks should use the tag (even tho it would usually be done as _)
+
+import structlog
+logger = structlog.getLogger(__name__)
 
 STATUS_CHOICES = (
     ("open", "open"),
@@ -1254,6 +1257,15 @@ class PortObject(devicectl.DeviceCtlEntity, PolicyHolderMixin):
 
         # TODO: sync to ixctl?
 
+    def set_status(self, status: str):
+        self.port_info_object.status = status
+        self.port_info_object.save()
+
+        if self.asn:
+            SyncStatus.create_task(
+                self.asn, self.port_info_object.ipaddr4, status
+            )
+
     def get_peer_session(self, member):
         """
         Returns the peering session for this port
@@ -1675,6 +1687,19 @@ class PortInfo(sot.ReferenceMixin, Base):
 
     objects = NetManager()
 
+    status = models.CharField(
+        max_length=12,
+        default="ok",
+        choices=(
+            ("ok", _("Ok")),
+            ("pending", _("Pending")),
+            ("deactivated", _("Deactivated")),
+            ("failed", _("Failed")),
+            ("expired", _("Expired")),
+            ("admin_down", _("Admin Down")),
+        )
+    )
+
     class HandleRef:
         tag = "port_info"
 
@@ -1730,7 +1755,11 @@ class PortInfo(sot.ReferenceMixin, Base):
                 net=network, ref_id=member.ref_id, port=port_id
             )
 
-        port_info.ix
+        # is this doing something, preloading the property?
+        try:
+            port_info.ix
+        except Exception as exc:
+            logger.error("port_info.ix failed", exc=exc)
 
         return port_info
 
@@ -1772,7 +1801,6 @@ class PortInfo(sot.ReferenceMixin, Base):
 
         This will do a batched request to ixctl/pdbctl to fetch all at once
         """
-
         ixctl_ref_ids = set()
         pdbctl_ref_ids = set()
         ixctl_members = {}
@@ -1879,7 +1907,7 @@ class PortInfo(sot.ReferenceMixin, Base):
             return self.macaddr_set[0]
         except IndexError:
             return None
-        
+
     # setter for mac_address field
     @mac_address.setter
     def mac_address(self, value:str):
@@ -2014,7 +2042,7 @@ class MacAddress(HandleRefModel):
 
     def __str__(self):
         return f"{self.address}"
-    
+
 class DeviceObject(devicectl.DeviceCtlEntity):
     @property
     def type_label(self):

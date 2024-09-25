@@ -1,6 +1,10 @@
 import fullctl.service_bridge.ixctl as ixctl
+import fullctl.service_bridge.devicectl as devicectl
 from fullctl.django.models.concrete import Task
 from fullctl.django.tasks import register
+
+import structlog
+logger = structlog.getLogger("django_structlog")
 
 
 @register
@@ -89,6 +93,36 @@ class SyncIsRsPeer(Task):
         )
 
         return f"updated {member.id} is_rs_peer to {is_rs_peer}"
+
+
+@register
+class SyncStatus(Task):
+
+    """
+    Syncs the network's port status to ixctl for a member port
+    """
+
+    class Meta:
+        proxy = True
+
+    class HandleRef:
+        tag = "task_sync_status"
+
+    def run(self, asn, ip4, status, *args, **kwargs):
+        member = ixctl.InternetExchangeMember().first(ip=ip4,
+                                                      asn=asn,
+                                                      ix_verified=True)
+
+        if not member:
+            return f"no member found for {asn} {ip4} at any verified ix"
+
+        response = ixctl.InternetExchangeMember().set_ports_status(
+            member_id=member.id,
+            member_port=member.port,
+            status=status,
+        )
+
+        return f"updated {member.id=} {member.port=} to {status=}"
 
 
 @register

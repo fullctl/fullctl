@@ -3,6 +3,7 @@
     class="marg-top-lg"
     data-api-load="yes"
     data-api-base="{% url "peerctl_api:port-list" asn=selected_asn %}"
+    data-api-port-status="{% url "peerctl_api:port-set-status" asn=selected_asn port_pk="0" %}"
     data-template="ix_list"
     >
     <div class="list-header marg-top-lg">
@@ -39,7 +40,7 @@
                     <div class="controls graph-controls" style="display:none">
                         <div class="row mb-3">
                             <div class="col-6">
-     
+
                                 <select class="form-select form-control mb-3" id="date_range_select">
                                     <option value="1">1 hour</option>
                                     <option value="24" selected>24 hours</option>
@@ -84,25 +85,46 @@
                 <div class="col-sm-7 col-md-9 secondary">
                     <div class="property">
                         <div class="field" style="display:block">
-                            <div class="row">
+                          <div class="row">
                                 <div class="col-sm-6 col-md-3">
                                     <div><span>{% trans "Speed" %}</span> <span data-field="speed"></span></div>
-                                    <div><span>{% trans "Is RS Peer" %}</span> <span data-field="is_route_server_peer"></span></div>             
+                                    <div><span>{% trans "Is RS Peer" %}</span> <span data-field="is_route_server_peer"></span></div>
                                 </div>
                                 <div class="col-sm-6 col-md-2">
                                     <div><span>{% trans "Prefix 4" %}</span> <span data-field="maxprefix4"></span></div>
-                                    <div><span>{% trans "Prefix 6" %}</span> <span data-field="maxprefix6"></span></div>             
+                                    <div><span>{% trans "Prefix 6" %}</span> <span data-field="maxprefix6"></span></div>
                                 </div>
                                 <div class="col-sm-6 col-md-2">
                                     <div><span>{% trans "MTU" %}</span> <span data-field="mtu"></span></div>
                                     <div><span>{% trans "MD5" %}</span> <span data-field="md5"></span></div>
                                 </div>
-                                <div class="col-sm-6 col-md-4">
+                                <div class="col-sm-6 col-md-3">
                                     <div><span>{% trans "MAC-Addresses" %}</span> <p data-field="macaddr_set"></p></div>
                                     <div></div>
                                 </div>
-                                <div class="col-sm-12 col-md-1 right">
-                                    <a class="button" data-action="edit"><span class="icon fullctl icon-edit"></span></a>
+                                <div class="col-sm-12 col-md-2 right">
+                                    <div><a class="secondary btn" data-action="edit">Edit <span class="icon fullctl icon-edit"></span></a></div>
+
+                                    {% for service_app in service_applications %}
+                                    {% if service_app.slug == "ixctl" %}
+                                    <div>
+                                      <!-- <div class="row mb-3"> -->
+                                        <!--   <div class="col-3"> -->
+                                          <button class="secondary btn"
+                                                  title="This will disable your port on the IX switch"
+                                                  data-action="toggle_status"
+                                                  >
+                                            <span data-field="status" data-toggle="checked" class="label">
+                                              <span data-false>{% trans "Enable IX Port" %}</span>
+                                              <span data-true>{% trans "Disable IX Port" %}</span>
+                                            </span>
+                                          </button>
+                                          <!--   </div> -->
+                                        <!-- </div> -->
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+
                                 </div>
                             </div>  
                             <div class="row">
@@ -114,11 +136,11 @@
 
                     <div class="row">
                         <div class="col-12">
-                            <div 
-                            class="graph_container" 
+                            <div
+                            class="graph_container"
                             data-element="graph_container"
                             style="height:250px">
-                        
+
                         </div>
                         </div>
                     </div>
