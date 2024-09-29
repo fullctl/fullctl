@@ -76,4 +76,4 @@ RUN ln -s /venv $SERVICE_HOME/venv
 USER $uid
 
 ENTRYPOINT ["/entrypoint"]
-CMD ["uvicorn", "main:app", "--app-dir=src/regctl/api", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["fastapi"]
