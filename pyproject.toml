@@ -26,7 +26,7 @@ uvicorn = ">=0.30.1"
 httpx = ">=0.27.0"
 phonenumbers = ">=8.13"
 googlemaps = ">=4.10"
-redis = ">=5.0.7"
+redis = {extras = ["hiredis"], version = "^5.1.0"}
 rdap = { git = "https://github.com/20c/rdap.git", branch = "regctl" }
 
 [tool.poetry.dev-dependencies]
