@@ -119,7 +119,7 @@ class PrefixSet(CachedObjectMixin, SlugObjectMixin, viewsets.GenericViewSet):
         - kwargs: Additional keyword arguments.
         """
         serializer = Serializers.prefix_set(
-            instance.prefix_set_set.all().order_by("-created"), many=True
+            instance.prefix_set_set.all().prefetch_related("prefix_set").order_by("-created"), many=True
         )
         return Response(serializer.data)
 

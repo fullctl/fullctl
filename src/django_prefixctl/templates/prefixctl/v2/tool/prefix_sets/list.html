@@ -36,11 +36,11 @@
 	      <div class="col field-empty">
 	      </div>
 	      <div class="col-md-auto field">
-		{% trans "Import from IRR" %}:
-		<span data-field="irr_import" data-toggle="checked">
-			<span data-false class="">No</span>
-			<span data-true class="green-text font-weight-bold">Auto</span>
-		</span>
+          {% trans "Import from IRR" %}:
+          <span data-field="irr_import" data-toggle="checked">
+            <span data-false class="">No</span>
+            <span data-true class="green-text font-weight-bold">Auto</span>
+          </span>
 	      </div>
 	    </div>
       </td>
@@ -66,7 +66,7 @@
         </a>
 	      </div>
 	      <div class="col-md-auto field me-1">
-			{% trans "Active" %}: <span class="highlight" data-field="num_prefixes"></span>
+			    {% trans "Active" %}: <span class="highlight" data-field="num_prefixes"></span>
 	      </div>
 	      <div class="col-md-auto field me-1">
           <a class="button" data-action="add_prefixes" class="prefixctl"><span class="label prefixctl">{% trans "Bulk create prefixes" %}</span></a>
@@ -85,6 +85,11 @@
 		      </label>
 	      </div>
 	    </div>
+      <div class="row">
+        <div class="col-12 field alert-warning" data-field="duplicate_prefixes">
+        </div>
+      </div>
+
       </td>
     </tr>
     <tr data-template="row" class="padding-row">

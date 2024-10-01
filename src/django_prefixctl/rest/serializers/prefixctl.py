@@ -96,6 +96,8 @@ class PrefixSet(SlugSerializerMixin, ModelSerializer):
     num_monitors = serializers.SerializerMethodField()
     num_prefixes = serializers.SerializerMethodField()
 
+    duplicate_prefixes = serializers.SerializerMethodField()
+
     class Meta:
         model = models.PrefixSet
         fields = [
@@ -112,7 +114,37 @@ class PrefixSet(SlugSerializerMixin, ModelSerializer):
             "num_monitors",
             "num_prefixes",
             "ux_keep_list_open",
+            "duplicate_prefixes",
         ]
+
+    @property
+    def duplicate_prefix_map(self) -> dict:
+
+        """
+        Preloads a map of duplicate prefixes for all the PrefixSets to be serialized.
+        """
+
+        if hasattr(self, "_duplicate_prefix_map"):
+            return self._duplicate_prefix_map
+
+        if isinstance(self.instance, models.PrefixSet):
+            org_instance = self.instance.instance
+        else:
+            try:
+                org_instance = self.instance[0].instance
+            except IndexError:
+                return {}
+
+        prefixes = models.Prefix.objects.filter(prefix_set__instance=org_instance).select_related("prefix_set")
+        prefix_map = {}
+
+        for prefix in prefixes:
+            prefix_map.setdefault(prefix.prefix, []).append(prefix.prefix_set)
+
+        self._duplicate_prefix_map = {k: v for k, v in prefix_map.items() if len(v) > 1}
+
+        return self._duplicate_prefix_map
+        
 
     def get_num_monitors(self, obj):
         """
@@ -152,6 +184,48 @@ class PrefixSet(SlugSerializerMixin, ModelSerializer):
         A list of monitor instances associated with the PrefixSet.
         """
         return list_monitors(obj.instance, prefix_set=obj)
+
+    def get_duplicate_prefixes(self, obj:models.PrefixSet) -> list:
+        """
+        Gets a list of duplicate prefixes associated with the PrefixSet.
+
+        Arguments:
+        obj: The PrefixSet instance.
+
+        Returns:
+        A list of duplicate prefixes in the format:
+
+        ```
+        [
+            {
+                "prefix": "10.10.10.10/32",
+                "prefix_sets": [
+                    {"name": "prefixset1", "id": 1},
+                    {"name": "prefixset2", "id": 2}
+                ]
+            },
+            ...
+        ]
+        ```
+        """
+
+        result = []
+
+        for prefix in obj.prefix_set.all():
+            if prefix.prefix in self.duplicate_prefix_map:
+                
+                other_prefix_sets = [
+                    {"name": prefix_set.name, "id": prefix_set.id} 
+                    for prefix_set in self.duplicate_prefix_map[prefix.prefix] 
+                    if prefix_set != obj
+                ]
+                
+                result.append({
+                    "prefix": str(prefix.prefix),
+                    "prefix_sets": other_prefix_sets,
+                })
+
+        return result
 
     def validate(self, data):
         # if irr_import is enabled, make sure irr_as_set is set
