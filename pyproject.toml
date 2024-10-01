@@ -64,6 +64,9 @@ pyyaml = ">=5"
 munge = ">=1.3.0"
 django-countries = ">=7.6"
 
+# for drf swagger
+inflection = ">=0.5.1"
+
 [tool.poetry.dev-dependencies]
 # tests
 coverage = ">=5"
