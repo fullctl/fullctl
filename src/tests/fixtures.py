@@ -300,7 +300,7 @@ class AccountObjects:
             role=admin_role,
             permissions=PERM_CRUD,
         )
-        
+
         ManagedPermission.apply_roles_all()
 
         self.other_org = Organization.objects.create(

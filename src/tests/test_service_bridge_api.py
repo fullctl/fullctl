@@ -1,14 +1,14 @@
 import json
-import pytest
 
+import pytest
 from django.contrib.auth import authenticate
 from django.urls import reverse
 
 import account.models as models
-from tests.helpers import assert_expected, strip_api_fields
-
-from whitelabel_fullctl.models import OrganizationBranding
 from account.models import Organization
+from tests.helpers import assert_expected, strip_api_fields
+from whitelabel_fullctl.models import OrganizationBranding
+
 
 def test_api_select_best_branding(db, account_objects, settings):
 
@@ -94,4 +94,3 @@ def test_api_select_best_branding(db, account_objects, settings):
     data = response.json()
 
     assert len(data["data"]) == 0
-

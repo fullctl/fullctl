@@ -219,8 +219,12 @@ TEMPLATES[0]["OPTIONS"]["context_processors"] += [
 # BACKEND: PeeringDB
 
 settings_manager.set_option("PDB_ENDPOINT", "https://auth.peeringdb.com")
-settings_manager.set_option("PDB_OAUTH_ACCESS_TOKEN_URL", f"{PDB_ENDPOINT}/oauth2/token/")
-settings_manager.set_option("PDB_OAUTH_AUTHORIZE_URL", f"{PDB_ENDPOINT}/oauth2/authorize/")
+settings_manager.set_option(
+    "PDB_OAUTH_ACCESS_TOKEN_URL", f"{PDB_ENDPOINT}/oauth2/token/"
+)
+settings_manager.set_option(
+    "PDB_OAUTH_AUTHORIZE_URL", f"{PDB_ENDPOINT}/oauth2/authorize/"
+)
 settings_manager.set_option("PDB_OAUTH_PROFILE_URL", f"{PDB_ENDPOINT}/profile/v1")
 settings_manager.set_option("PDB_OAUTH_PROMPT_LINK", "no_asn")
 

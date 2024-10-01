@@ -649,7 +649,9 @@ class Organization(viewsets.ViewSet):
     @auditlog()
     @grainy_endpoint("org.{org.id}")
     def federated_services(self, request, pk, org, auditlog=None):
-        services = federation_models.ServiceFederationSupport.objects.filter(selectable=True)
+        services = federation_models.ServiceFederationSupport.objects.filter(
+            selectable=True
+        )
         serializer = Serializers.federated_service(services, many=True)
         response = Response(serializer.data)
 

@@ -1,5 +1,6 @@
-import reversion
 from copy import deepcopy
+
+import reversion
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
@@ -16,10 +17,10 @@ from fullctl.django.admin import BaseAdmin, UrlActionMixin
 from fullctl.django.context import current_request
 
 from account.impersonate import (
+    allowed_to_impersonate,
     is_impersonating,
     start_impersonation,
     stop_impersonation,
-    allowed_to_impersonate,
 )
 from account.models import (
     APIKey,
@@ -45,8 +46,8 @@ from account.models import (
 from account.models.federation import (
     AuthFederation,
     FederatedServiceURL,
-    ServiceFederationSupport,
     FederatedServiceURLTag,
+    ServiceFederationSupport,
 )
 
 # registered models
@@ -263,7 +264,7 @@ class UserAdmin(UrlActionMixin, GrainyUserAdmin):
     readonly_fields = GrainyUserAdmin.readonly_fields + ("impersonate",)
     search_fields = ("email", "first_name", "last_name", "username")
 
-    actions = GrainyUserAdmin.actions + ("start_impersonation","stop_impersonation")
+    actions = GrainyUserAdmin.actions + ("start_impersonation", "stop_impersonation")
 
     def get_queryset(self, request):
         if is_impersonating(request):
@@ -286,7 +287,7 @@ class UserAdmin(UrlActionMixin, GrainyUserAdmin):
                 return mark_safe(f'<a href="{url}">Stop</a>')
             if request.user == obj:
                 return "Cannot impersonate yourself"
-            
+
         if not allowed_to_impersonate(request.user, obj):
             return "Superuser only"
 
@@ -299,7 +300,7 @@ class UserAdmin(UrlActionMixin, GrainyUserAdmin):
             self.message_user(
                 request, "Please only select one user to impersonate", messages.ERROR
             )
-        
+
         if not allowed_to_impersonate(request.user, queryset.first()):
             self.message_user(
                 request, "You are not allowed to impersonate this user", messages.ERROR
@@ -339,29 +340,31 @@ class UserAdmin(UrlActionMixin, GrainyUserAdmin):
             return
 
         super().save_model(request, obj, form, change)
-        
+
     def get_fieldsets(self, request, obj=None):
         # remove the is_superuser, is_staff fields from the form if the user is not a superuser
         # and the user is not the user being edited
 
-        fieldsets = super(UserAdmin, self).get_fieldsets(request, obj)
+        fieldsets = super().get_fieldsets(request, obj)
         if not obj:
             return fieldsets
 
         if not request.user.is_superuser:
             fieldsets = deepcopy(fieldsets)
             for fieldset in fieldsets:
-                if 'is_superuser' in fieldset[1]['fields']:
-                    if type(fieldset[1]['fields']) == tuple :
-                        fieldset[1]['fields'] = list(fieldset[1]['fields'])
-                    fieldset[1]['fields'].remove('is_superuser')
+                if "is_superuser" in fieldset[1]["fields"]:
+                    if type(fieldset[1]["fields"]) == tuple:
+                        fieldset[1]["fields"] = list(fieldset[1]["fields"])
+                    fieldset[1]["fields"].remove("is_superuser")
 
-                if 'is_staff' in fieldset[1]['fields']:
-                    if type(fieldset[1]['fields']) == tuple :
-                        fieldset[1]['fields'] = list(fieldset[1]['fields'])
-                    fieldset[1]['fields'].remove('is_staff')
+                if "is_staff" in fieldset[1]["fields"]:
+                    if type(fieldset[1]["fields"]) == tuple:
+                        fieldset[1]["fields"] = list(fieldset[1]["fields"])
+                    fieldset[1]["fields"].remove("is_staff")
 
         return fieldsets
+
+
 @admin.register(ContactMessage)
 class ContactMessageAdmin(admin.ModelAdmin):
     list_display = ("name", "email", "service", "type", "created", "updated", "status")
@@ -386,7 +389,14 @@ class ContactMessageAdmin(admin.ModelAdmin):
 
 @admin.register(ServiceFederationSupport)
 class ServiceFederationAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "federation_level", "selectable", "created", "updated")
+    list_display = (
+        "name",
+        "slug",
+        "federation_level",
+        "selectable",
+        "created",
+        "updated",
+    )
     search_fields = ("name", "slug")
 
 
@@ -405,15 +415,23 @@ class AuthFederationAdmin(admin.ModelAdmin):
 
     inlines = (ServiceURLInline,)
 
+
 class FederatedServiceURLTagInline(admin.TabularInline):
     model = FederatedServiceURLTag
     extra = 1
+
 
 @admin.register(FederatedServiceURL)
 class FederatedServiceURLAdmin(admin.ModelAdmin):
     list_display = ("service", "org", "url")
     readonly_fields = ("org",)
-    search_fields = ("service__name", "service__slug", "url", "auth__org__name", "auth__org__slug")
+    search_fields = (
+        "service__name",
+        "service__slug",
+        "url",
+        "auth__org__name",
+        "auth__org__slug",
+    )
     inlines = (FederatedServiceURLTagInline,)
 
     def org(self, obj):

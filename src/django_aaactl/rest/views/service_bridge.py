@@ -1,11 +1,15 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.route.service_bridge import route
-from fullctl.django.rest.views.service_bridge import DataViewSet, SystemViewSet, MethodFilter
+from fullctl.django.rest.views.service_bridge import (
+    DataViewSet,
+    MethodFilter,
+    SystemViewSet,
+)
 from oauth2_provider.models import AccessToken
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.conf import settings
 
 import account.models as account_models
 import applications.models as application_models
@@ -112,6 +116,7 @@ class Service(AaactlDataViewSet):
 
         return Response(serializer.data)
 
+
 @route
 class FederatedServiceURL(AaactlDataViewSet):
     path_prefix = "/data"
@@ -126,8 +131,13 @@ class FederatedServiceURL(AaactlDataViewSet):
     autocomplete = "service"
     allow_unfiltered = True
 
-    queryset = account_models.FederatedServiceURL.objects.all().select_related("service", "auth").prefetch_related("tags")
+    queryset = (
+        account_models.FederatedServiceURL.objects.all()
+        .select_related("service", "auth")
+        .prefetch_related("tags")
+    )
     serializer_class = Serializers.federated_service_url
+
 
 @route
 class Product(AaactlDataViewSet):
@@ -232,10 +242,7 @@ class Contact(AaactlDataViewSet):
 class OrganizationBranding(AaactlDataViewSet):
     path_prefix = "/data"
     allowed_http_methods = ["GET"]
-    valid_filters = [
-        ("org", "org__slug"),
-        ("best", MethodFilter("best_branding"))
-    ]
+    valid_filters = [("org", "org__slug"), ("best", MethodFilter("best_branding"))]
     allow_unfiltered = True
 
     queryset = branding_models.OrganizationBranding.objects.all()
@@ -255,5 +262,5 @@ class OrganizationBranding(AaactlDataViewSet):
 
         if global_branding_org:
             return qset.filter(org__slug=global_branding_org)
-        
+
         return qset.none()

@@ -143,7 +143,9 @@ class ServiceFederationSupport(HandleRefModel):
     )
     selectable = models.BooleanField(
         default=True,
-        help_text=_("Whether this service can be selected by organizations for federation."),
+        help_text=_(
+            "Whether this service can be selected by organizations for federation."
+        ),
     )
 
     class Meta:
@@ -202,7 +204,7 @@ class FederatedServiceURL(HandleRefModel):
 
 class FederatedServiceURLTag(HandleRefModel):
     """
-    Represents a tag for a federated service URL. This is 
+    Represents a tag for a federated service URL. This is
     used for quick federation identification based on tags.
     """
 

@@ -4,10 +4,11 @@ Superuser user impersonation
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
+from django_grainy.util import Permissions
 
 from account.models import Impersonation
 from account.session import set_selected_org
-from django_grainy.util import Permissions
+
 
 def allowed_to_impersonate(user: User, other_user: User = None) -> bool:
 
@@ -24,6 +25,7 @@ def allowed_to_impersonate(user: User, other_user: User = None) -> bool:
 
     return user.is_superuser or Permissions(user).check("impersonate", "c")
 
+
 def is_impersonating(request):
     """
     Returns whether or not the supplied request is currently impersonating a user
@@ -35,7 +37,9 @@ def is_impersonating(request):
 
     if getattr(request, "impersonating", None):
         # Only superusers are ever able to impersonate anyone
-        if not allowed_to_impersonate(request.impersonating.superuser, request.impersonating.user):
+        if not allowed_to_impersonate(
+            request.impersonating.superuser, request.impersonating.user
+        ):
             return None
 
         return request.impersonating.user

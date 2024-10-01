@@ -14,10 +14,10 @@ from oauth2_provider.oauth2_backends import get_oauthlib_core
 from rest_framework_simplejwt.tokens import RefreshToken
 
 import account.forms
-from common.util import format_logo_url
 from account.models import EmailConfirmation, Invitation, PasswordReset
 from account.session import set_selected_org
 from applications.models import Service
+from common.util import format_logo_url
 from whitelabel_fullctl.models import OrganizationBranding
 
 # Create your views here.

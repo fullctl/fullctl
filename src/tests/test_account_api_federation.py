@@ -324,7 +324,9 @@ def test_service_bridge_federated_service_urls_list(db, account_objects):
     api_url = reverse(
         "service_bridge_api:service-bridge-data-federated_service_url-list",
     )
-    response = account_objects.api_client.get(f"{api_url}?org={account_objects.org.slug}&tags=test-tag")
+    response = account_objects.api_client.get(
+        f"{api_url}?org={account_objects.org.slug}&tags=test-tag"
+    )
 
     assert response.status_code == 200
     data = response.json()
@@ -337,7 +339,9 @@ def test_service_bridge_federated_service_urls_list(db, account_objects):
 
     # now test a non existent tag
 
-    response = account_objects.api_client.get(f"{api_url}?org={account_objects.org.slug}&tags=non-existent-tag")
+    response = account_objects.api_client.get(
+        f"{api_url}?org={account_objects.org.slug}&tags=non-existent-tag"
+    )
     assert response.status_code == 200
     data = response.json()
     assert len(data["data"]) == 0

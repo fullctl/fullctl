@@ -5,8 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
 import account.forms
-from whitelabel_fullctl.models import OrganizationBranding
 from common.util import format_logo_url
+from whitelabel_fullctl.models import OrganizationBranding
 
 # Create your views here.
 
