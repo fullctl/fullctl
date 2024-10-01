@@ -193,6 +193,66 @@ $ctl.application.Prefixctl.PrefixSets = $tc.extend(
 
       let prefixSets = {};
 
+      // duplicate prefix notifications
+
+      // formatter that renders the warning messages for duplicate prefixes
+      this.$w.list.formatters.duplicate_prefixes = (duplicate_prefixes, data, col) => {
+        if(!duplicate_prefixes || duplicate_prefixes.length == 0) {
+          col.parent(".row").hide();
+          return "";
+        } else {
+          col.parent(".row").show();
+        }
+
+        let container = $('<div>').addClass("duplicate-prefixes");
+        duplicate_prefixes.forEach((dupe_prefix) => {
+
+          // dupe_prefix.prefix_sets is a list of dicts with `name` and `id`
+          // compile into a comma separated string where the last delimiter is "and"
+
+          let prefix_set_names = dupe_prefix.prefix_sets.map((prefix_set) => `"${prefix_set.name}"`).join(", ");
+          prefix_set_names = prefix_set_names.replace(/,([^,]*)$/, ' and$1');
+
+          container.append(
+            // can add `message-warning` as class if we want to render it as warning
+            // taking out for now.
+            $('<div>').addClass("marg-bot-sm").append(
+              $('<span>').text(`Prefix ${dupe_prefix.prefix} also exists in: ${prefix_set_names}.`)
+            )
+          );
+        });
+        return container;
+      }
+
+      // handler to sync the duplicate prefix display with the API
+      // this fires a single API request to get the duplicate prefixes for a prefix set
+      const sync_dupe_prefixes = (prefix_set) => {
+        $.ajax({
+          method: "GET",
+          url: this.$w.list.base_url + "/" + prefix_set.id
+        }).then((response) => {
+          const data = response.data[0];
+          const row = this.$w.list.find_row(prefix_set.id);
+          const col = row.find('[data-field="duplicate_prefixes"]');
+          const dupe_prefix_node = this.$w.list.formatters.duplicate_prefixes(
+            data.duplicate_prefixes, data, col
+          );
+          col.empty().append(dupe_prefix_node);
+        });
+      };
+
+      // wire up prefix addition and removal events to sync the duplicate prefix display
+      $(this.$w.list).on("prefix-added", (ev, prefix_set) => {
+        debugger;
+        sync_dupe_prefixes(prefix_set);
+      });
+
+      $(this.$w.list).on("prefix-removed", (ev, prefix_set) => {
+        sync_dupe_prefixes(prefix_set);
+      });
+      
+      // prefix set list row formatting
+
       this.$w.list.formatters.row = (row, data) => {
         row.find('a[data-action="edit_prefix_set"]').click(() => {
           this.prompt_edit_prefix_set(row.data("apiobject"))
@@ -227,7 +287,12 @@ $ctl.application.Prefixctl.PrefixSets = $tc.extend(
         }
 
         row.find('a[data-action="add_prefixes"]').click(() => {
-          new $ctl.application.Prefixctl.ModalBulkAddPrefixes(row.data("apiobject"));
+          const modal = new $ctl.application.Prefixctl.ModalBulkAddPrefixes(row.data("apiobject"));
+          // prefixes have been changed, require a refresh of the duplicate prefixes
+          // warnings.
+          $(modal).on("bulk-add", (ev, prefix_set) => {
+            sync_dupe_prefixes(prefix_set);
+          });
         });
 
         row.find('.searchbar').focus(() => {
@@ -533,7 +598,15 @@ $ctl.application.Prefixctl.PrefixSetList = $tc.extend(
           list.element.find('.mask-length-range-col').toggleClass("hidden")
       });
 
-      $(form).on('api-write:success', () => { list.load() });
+      $(form).on('api-write:success', () => { 
+        list.load();
+        $(this).trigger("prefix-added", [prefix_set]);
+      });
+
+      $(list).on('remove:before', (e, data) => {
+        $(this).trigger("prefix-removed", [prefix_set]);
+      });
+
       $(list).on("load:after", () => {
         list.element.find('.inner-list>div').each(function() {
           let prefix = $(this).find('.prefix').text()
@@ -917,6 +990,7 @@ $ctl.application.Prefixctl.ModalBulkAddPrefixes = $tc.extend(
             $ctl.prefixctl.$t.prefix_sets.expand_prefixes(prefix_set);
           else
             $ctl.prefixctl.$t.prefix_sets.refresh_prefix_list(prefix_set);
+          $(modal).trigger("bulk-add", [prefix_set]);
           modal.hide();
         }
       );

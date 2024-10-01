@@ -115,7 +115,7 @@ def test_update_prefixset_irr_import(db, account_objects):
     assert prefixset.irr_import is False
 
     # update prefixset field irr_import
-    request_data = {"name": prefixset.name, "irr_import": True, "irr_as_set": "aaaaaa"}
+    request_data = {"name": prefixset.name, "irr_import": True, "irr_as_set": "AS123"}
     url = reverse(
         "prefixctl_api:prefix_set-detail",
         kwargs={"org_tag": org.slug, "pk": prefixset.id},
@@ -739,3 +739,119 @@ def test_delete_monitor_from_asn_set(db, account_objects):
 
     assert response.status_code == 200
     assert asn_set.asn_monitor_set.all().count() == 0
+
+
+def test_prefix_set_dupe_prefix_notifications(db, account_objects):
+    """
+    create two prefix sets
+    add the same prefix to both
+
+    request prefix set list from api
+    confirm that duplicate_prefixes is there and contains
+    the prefix that was added to both sets
+    
+    ```
+    "duplicate_prefixes": [
+        {
+          "prefix": "122.254.76.0/24",
+          "prefix_sets": [
+            {
+              "name": "Test idempotency",
+              "id": 131
+            },
+            {
+              "name": "Test less specific IRR objects",
+              "id": 124
+            },
+          ]
+        }
+    ],
+    ```
+    """
+
+    prefixset = account_objects.prefixset
+    prefixset2 = models.PrefixSet.objects.create(
+        instance=prefixset.instance,
+        name="Test PrefixSet 2",
+        description="Test Prefixes",
+    )
+
+    prefix = account_objects.prefix
+
+    models.Prefix.objects.create(
+        prefix_set=prefixset2,
+        prefix=prefix.prefix,
+        mask_length_range="exact",
+    )
+
+    client = account_objects.api_client
+
+    response = client.get(
+        reverse(
+            "prefixctl_api:prefix_set-list",
+            kwargs={"org_tag": account_objects.org.slug},
+        )
+    )
+
+    data = response.json()["data"]
+
+    assert response.status_code == 200
+
+    assert len(data) == 2
+
+    assert "duplicate_prefixes" in data[0]
+
+    assert len(data[0]["duplicate_prefixes"]) == 1
+
+    # which id is at data[0] ?
+
+    prefixset_id = data[0]["id"]
+
+    assert data[0]["duplicate_prefixes"][0] == {
+        "prefix": prefix.prefix,
+        "prefix_sets": [
+            {
+                "name": prefixset2.name if prefixset_id == prefixset.id else prefixset.name,
+                "id": prefixset2.id if prefixset_id == prefixset.id else prefixset.id,
+            }
+        ],
+    }
+
+    assert "duplicate_prefixes" in data[1]
+
+    assert len(data[1]["duplicate_prefixes"]) == 1
+
+    assert data[1]["duplicate_prefixes"][0] == {
+        "prefix": prefix.prefix,
+        "prefix_sets": [
+            {
+                "name": prefixset.name if prefixset_id == prefixset.id else prefixset2.name,
+                "id": prefixset.id if prefixset_id == prefixset.id else prefixset2.id,
+            }
+        ],
+    }
+
+    # now remove the prefix from prefixset2
+
+    prefixset2.prefix_set.all().delete()
+
+    response = client.get(
+        reverse(
+            "prefixctl_api:prefix_set-list",
+            kwargs={"org_tag": account_objects.org.slug},
+        )
+    )
+
+    data = response.json()["data"]
+
+    assert response.status_code == 200
+
+    assert len(data) == 2
+
+    assert "duplicate_prefixes" in data[0]
+
+    assert len(data[0]["duplicate_prefixes"]) == 0
+
+    assert "duplicate_prefixes" in data[1]
+
+    assert len(data[1]["duplicate_prefixes"]) == 0
