@@ -7,7 +7,45 @@ from account.views.auth import valid_frontend_redirect
 def test_login(db, client_anon):
     response = client_anon.get(reverse("account:auth-login"))
     assert response.status_code == 200
+    assert "Register New Account" in response.content.decode()
 
+def test_login_no_signup_link(db, client_anon, settings):
+    settings.ENABLE_ACCOUNT_REGISTRATION=0
+    response = client_anon.get(reverse("account:auth-login"))
+    assert response.status_code == 200
+    assert "Register New Account" not in response.content.decode()
+
+def test_login_signup_link_through_invitation(db, account_objects, client_anon, settings):
+    settings.ENABLE_ACCOUNT_REGISTRATION=0
+    invite = models.Invitation.objects.create(
+        org=account_objects.org, created_by=account_objects.user, email="test@localhost"
+    )
+
+    response = client_anon.get(
+        reverse("account:auth-login") + f"?invite={invite.secret}"
+    )
+
+    assert response.status_code == 200
+    assert "Register New Account" in response.content.decode()
+    assert "You have been invited to join the organization" in response.content.decode()
+
+def test_register_disabled(db, client_anon, settings):
+    settings.ENABLE_ACCOUNT_REGISTRATION = 0
+    response = client_anon.get(reverse("account:auth-register"))
+    assert response.status_code == 404
+
+def test_register_through_invitation(db, account_objects, client_anon, settings):
+    settings.ENABLE_ACCOUNT_REGISTRATION = 0
+    invite = models.Invitation.objects.create(
+        org=account_objects.org, created_by=account_objects.user, email="test@localhost"
+    )
+
+    response = client_anon.get(
+        reverse("account:auth-register") + f"?invite={invite.secret}"
+    )
+
+    assert response.status_code == 200
+    assert "You have been invited to join the organization" in response.content.decode()
 
 def test_org_branding_slug_filtering(db, client_anon, account_objects, settings):
     settings.BRANDING_ORG = account_objects.org.slug

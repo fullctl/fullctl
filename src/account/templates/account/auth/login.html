@@ -12,18 +12,30 @@
   <h4>{% trans "Authenticate with" %}</h4>
   {% include "account/auth/oauth.html" %}
   </div>
-
+     
   <!-- LOGIN -->
 
   <div class="col-xs-12 col-sm-6 col-md-4">
+  {% if invite %}
+  <div class="alert alert-info">
+    {% blocktrans with invite.org.label as org_label %}
+    You have been invited to join the organization "{{ org_label }}". Please login to accept the invitation. If you do not have an account, you can create one by clicking the "Register New Account" button below.
+    {% endblocktrans %}
+  </div>
+  {% endif %}
+  
   {% if password_login_enabled %}
-      {% if show_register_link %}
+      {% if show_register_link or invite %}
       <p>Explore our products by registering a free account.<br/><br/>
       {% endif %}
       Signing in from PeeringDB is preferred because it associates authorized ASNs with your account.
       <br/><br/>
-      {% if show_register_link %}
-        <a href="{% url 'account:auth-register' %}?next={{ request.GET.next|urlencode }}">{% trans "Register New Account" %}</a>
+      {% if show_register_link or invite %}
+        {% if invite %}
+          <a href="{% url 'account:auth-register' %}?next={{ request.GET.next|urlencode }}&invite={{ invite.secret }}">{% trans "Register New Account" %}</a>
+        {% else %}
+          <a href="{% url 'account:auth-register' %}?next={{ request.GET.next|urlencode }}">{% trans "Register New Account" %}</a>
+        {% endif %}
       {% endif %}
     </p>
     <h4>{% trans "Login" %}</h4>

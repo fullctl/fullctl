@@ -4,4 +4,4 @@ To accept this invitation please follow the link below. If you do not wish to ac
 
 {{ invite.url }}
 
-FullCtl Account Services
+{{ signature }}
