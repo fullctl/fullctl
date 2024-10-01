@@ -45,6 +45,8 @@ def login(request):
     http_host = request.get_host()
     org_branding_components = {}
 
+    has_invite_secret = request.GET.get("invite")
+
     if request.user.is_authenticated:
         messages.info(request, _("Already logged in"))
         return redirect(reverse("account:controlpanel"))
@@ -74,6 +76,15 @@ def login(request):
 
     else:
         form = account.forms.Login()
+
+        # if invite secret is set, attempt to load the invite
+        if has_invite_secret:
+            try:
+                invite = Invitation.objects.get(secret=has_invite_secret)
+                env.update(invite=invite)
+            except Invitation.DoesNotExist:
+                messages.error(request, _("Invitation not found"))
+                return redirect("/")
 
     if branding_org:
         org_branding = OrganizationBranding.objects.filter(
@@ -206,10 +217,21 @@ def register(request):
     env = {}
     org_branding = {}
     branding_org = getattr(settings, "BRANDING_ORG", None)
+    has_invite_secret = request.GET.get("invite")
     http_host = request.get_host()
     org_branding_components = {}
+    invite = None
 
-    if not settings.ENABLE_ACCOUNT_REGISTRATION:
+    if has_invite_secret:
+        try:
+            invite = Invitation.objects.get(secret=has_invite_secret)
+            env.update(invite=invite)
+        except Invitation.DoesNotExist:
+            messages.error(request, _("Invitation not found"))
+            return redirect("/")
+
+    # we only allow registration if the setting is enabled or an invite is present
+    if not settings.ENABLE_ACCOUNT_REGISTRATION and not invite:
         # registration is disabled, return a 404
         raise Http404
 
@@ -231,6 +253,10 @@ def register(request):
 
     else:
         form = account.forms.RegisterUser()
+
+        # if invitation we can set the email field
+        if invite:
+            form.fields["email"].initial = invite.email
 
     if branding_org:
         org_branding = OrganizationBranding.objects.filter(
@@ -291,7 +317,8 @@ def accept_invite(request, secret):
 
     if not request.user.is_authenticated:
         return redirect(
-            reverse("account:auth-login") + f"?next={request.get_full_path()}"
+            reverse("account:auth-login")
+            + f"?next={request.get_full_path()}&invite={secret}"
         )
 
     invite.complete(request.user)

@@ -25,3 +25,7 @@ Values:
 - `never` never show it
 - `no_asn` Only show if there are no ASN authorizations **default**
 - `always` always show if there are no linked PDB accounts
+
+### EMAIL_SIGNATURE (FullCtl Account Services)
+
+The signature to use for all outgoing emails.

@@ -910,6 +910,7 @@ class Invitation(HandleRefModel):
                     "inviting_person": inviting_person,
                     "org": self.org,
                     "host": settings.AAACTL_URL,
+                    "signature": settings.EMAIL_SIGNATURE,
                 },
             ).content.decode("utf-8"),
         )
