@@ -224,7 +224,11 @@ class InternetExchangeMember(ModelSerializer):
     port_name = serializers.SerializerMethodField()
 
     status = serializers.ChoiceField(
-        choices=django_ixctl.enum.PORT_STATE
+        choices=django_ixctl.enum.PORT_STATE,
+        allow_blank=True,
+        allow_null=True,
+        required=False,
+        default="ok",
     )
 
     class Meta:
