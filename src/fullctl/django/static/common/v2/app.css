@@ -204,6 +204,11 @@ button:focus {
   width: 50px;
 }
 
+div.dt-processing>div {
+  display: none;
+}
+
+div.dt-processing,
 .loading-indicator,
 .loading-shim:after {
   content: '';
@@ -2017,4 +2022,15 @@ button.badge-btn:disabled {
 
 .warn .icon-triangle-fill-down {
   background-color: yellow;
+}
+
+.bgp_stat_v6, .bgp_stat_v4, .bgp_stat_aggregate {
+  margin-top: 5px;
+  text-wrap: nowrap;
+  cursor: default;
+}
+
+.light_level_stat {
+  text-wrap: nowrap;
+  cursor: default;
 }
