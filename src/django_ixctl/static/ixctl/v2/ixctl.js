@@ -556,7 +556,9 @@ $ctl.application.Ixctl.Members = $tc.extend(
         }
 
         // Change port status event
-        row.find('a[data-action="toggle_status"]').click((event) => {
+        row.find('a[data-action="toggle_status"]')
+        .attr("title", data.status == "ok" ? "Disable Port" : "Enable Port")
+        .click((event) => {
           event.preventDefault();
           // TODO <saf>: confirm only on disable?
           const confirmation = confirm("Are you sure you want to toggle this port status?");
@@ -596,6 +598,8 @@ $ctl.application.Ixctl.Members = $tc.extend(
             }),
             success: function(response) {
               // console.log('Success:', response);
+              row.find('a[data-action="toggle_status"]')
+              .attr("title", response.data[0].status == "ok" ? "Disable Port" : "Enable Port");
             },
             error: function(xhr, status, error) {
               // console.log('Error:', status, error);
