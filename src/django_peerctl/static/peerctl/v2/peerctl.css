@@ -340,10 +340,6 @@ div.menu #network-search-result-name {
   font-size: 1rem;
 }
 
-.bgp_stat_v6, .bgp_stat_v4 {
-  margin-top: 5px;
-}
-
 p[data-field="macaddr_set"] {
   white-space: pre-wrap;
   margin-left: 0px !important;

@@ -541,6 +541,8 @@ $peerctl.Ix = $tc.extend(
           });
         }
 
+        let url = this.templates.ix_list.data('api-metric-base');
+        $.fn.show_metric_list(url, row, data);
 
         // Initialize port status
         var statusSpan = row.find('span[data-field="status"]');

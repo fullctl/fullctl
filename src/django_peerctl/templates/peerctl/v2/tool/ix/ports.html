@@ -4,6 +4,7 @@
     data-api-load="yes"
     data-api-base="{% url "peerctl_api:port-list" asn=selected_asn %}"
     data-api-port-status="{% url "peerctl_api:port-set-status" asn=selected_asn port_pk="0" %}"
+    data-api-metric-base="{% url "peerctl_api:port-ix-metric" asn=selected_asn pk=0 %}"
     data-template="ix_list"
     >
     <div class="list-header marg-top-lg">
@@ -29,11 +30,18 @@
 
             <div class="row port-display">
                 <div class="col-sm-5 col-md-3">
-                    <div class="port-link mb-3" data-element="ips">
-                        <h5 data-field="ip4" class="highlight action"></h5>
-                        <div class="bgp_stat_v4" data-element="bgp_stat_v4"></div>
-                        <div data-field="ip6" class="small-info action"></div>
-                        <div class="bgp_stat_v6" data-element="bgp_stat_v6"></div>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="port-link mb-3" data-element="ips">
+                                <h5 data-field="ip4" class="highlight action"></h5>
+                                <div class="bgp_stat_v4" data-element="bgp_stat_v4"></div>
+                                <div data-field="ip6" class="small-info action"></div>
+                                <div class="bgp_stat_v6" data-element="bgp_stat_v6"></div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="light_level_stat" data-element="light_level_stat"></div>
+                        </div>
                     </div>
 
                     <!-- graph controls -->
