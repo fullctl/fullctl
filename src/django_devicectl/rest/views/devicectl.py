@@ -1,13 +1,10 @@
 import json
 import os
 import time
-import structlog
-from flatten_json import flatten
-
 
 import fullctl.service_bridge.pdbctl as pdbctl
+import structlog
 from django.conf import settings
-from django.utils import timezone
 from fullctl.django.auditlog import auditlog
 from fullctl.django.decorators import service_bridge_sync
 from fullctl.django.rest.core import BadRequest
@@ -18,7 +15,7 @@ from fullctl.django.rest.mixins import (  # ContainerQuerysetMixin,; OrgQueryset
 )
 from fullctl.django.rest.renderers import PlainTextRenderer
 from fullctl.graph.mrtg import rrd as mrtg_rrd
-from rest_framework import viewsets, status
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -27,7 +24,8 @@ import django_devicectl.traffic as traffic
 from django_devicectl.rest.decorators import grainy_endpoint
 from django_devicectl.rest.route.devicectl import route
 from django_devicectl.rest.serializers.devicectl import Serializers
-import django_devicectl.rest.serializers.devicectl as serializers
+
+from .common import extract_metric_data_from_ports
 
 logger = structlog.get_logger("django_structlog")
 
@@ -1282,9 +1280,6 @@ class ACL(CachedObjectMixin, viewsets.GenericViewSet):
 
         Returns the created ACL entry with its unique identifier.
         """
-        device = models.Device.objects.get(
-            instance=instance, id=request.data.get("device")
-        )
         request.data["instance"] = instance.id
 
         serializer = Serializers.acl(data=request.data)
@@ -1329,31 +1324,21 @@ class MetricDevice(viewsets.GenericViewSet):
         id="port_id",
     )
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
-    def port(self,
-             request,
-             org,
-             instance,
-             port_id,
-             virtual_port,
-             *args,
-             **kwargs,):
+    def port(
+        self,
+        request,
+        org,
+        instance,
+        port_id,
+        virtual_port,
+        *args,
+        **kwargs,
+    ):
         """Returns metric data points in Key-Value format for dataTable.
 
         This endpoint is used for details dataTable in ixCtl and peerCtl.
         """
-        result = []
-
         ports = Serializers.physical_port(
             virtual_port.physical_ports.all(), many=True
         ).data
-
-        for port in ports:
-            flat_data = port.get("metric")
-            kv = [
-                {"device": port.get("device_name"), "resource": x, "value": y}
-                for x, y in flat_data.items()
-            ]
-
-            result.extend(kv)
-
-        return Response(result)
+        return Response(extract_metric_data_from_ports(ports))
