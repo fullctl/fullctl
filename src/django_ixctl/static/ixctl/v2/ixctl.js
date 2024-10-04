@@ -1041,6 +1041,10 @@ $ctl.application.Ixctl.MemberDetails = $tc.extend(
 
       this.member_id = member_id;
 
+      this.$e.menu.find('[data-element="button_api_view_member_detail"]').attr(
+        "href", `${this.$w.member.base_url}/${member_id}/?pretty`.replace("default", $ctl.ixctl.ix_slug())
+      )
+
       this.$e.graphs_container.empty().append(
         fullctl.template("graph_placeholder")
       );
@@ -1078,7 +1082,6 @@ $ctl.application.Ixctl.MemberDetails = $tc.extend(
           $.fn.show_metric_table(url, member);
         }
       );
-
     },
 
     hide_summary_table: function () {
