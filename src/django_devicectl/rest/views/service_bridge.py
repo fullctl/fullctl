@@ -1,4 +1,5 @@
 import fullctl.service_bridge.ixctl as ixctl
+import structlog
 from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.route.service_bridge import route
 from fullctl.django.rest.views.service_bridge import (
@@ -11,14 +12,14 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 import django_devicectl.models.devicectl as models
+import django_devicectl.mrtg as mrtg
+import django_devicectl.sflow as sflow
 from django_devicectl.rest.serializers.service_bridge import Serializers
 from django_devicectl.rest.views.devicectl import PortTrafficMixin
 
-import django_devicectl.mrtg as mrtg
-import django_devicectl.sflow as sflow
+from .common import extract_metric_data_from_ports
 
-import structlog
-logger = structlog.getLogger('django_structlog')
+logger = structlog.getLogger("django_structlog")
 
 
 @route
@@ -194,11 +195,7 @@ class Port(DataViewSet):
 
         return Response(Serializers.port(ports, many=True).data)
 
-    @action(
-        detail=False,
-        methods=["PATCH"],
-        url_path="(?P<pk>[^/.]+)/status"
-    )
+    @action(detail=False, methods=["PATCH"], url_path="(?P<pk>[^/.]+)/status")
     def status(self, request, pk, *args, **kwargs):
         """
         Update the status of the physical ports associated with a given virtual port.
@@ -283,7 +280,6 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
         # - vm_sflow
         traffic_source = request.GET.get("traffic_source")
 
-
         virtual_port = self.get_queryset().get(id=pk)
         data = {}
 
@@ -297,17 +293,29 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
         elif traffic_source == "vm_mrtg":
             # VICTORIAMETRICS MRTG
             data = mrtg.query_graph_port_total(
-                org_id=virtual_port.org.remote_id, port_id=pk, step=step, start=start_time, end=None
+                org_id=virtual_port.org.remote_id,
+                port_id=pk,
+                step=step,
+                start=start_time,
+                end=None,
             ).model_dump()
         elif traffic_source == "vm_sflow":
             # VICTORIAMETRICS SFLOW
             data = sflow.query_graph_port_total(
-                org_id=virtual_port.org.remote_id, port_id=pk, step=step, start=start_time, end=None
+                org_id=virtual_port.org.remote_id,
+                port_id=pk,
+                step=step,
+                start=start_time,
+                end=None,
             ).model_dump()
 
         return Response(data)
 
-    @action(detail=True, methods=["get"], url_path="traffic/asn/(?P<asn_src>[^/.]+)/(?P<asn_dst>[^/.]+)")
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="traffic/asn/(?P<asn_src>[^/.]+)/(?P<asn_dst>[^/.]+)",
+    )
     def traffic_asn_pair(self, request, pk, asn_src, asn_dst, *args, **kwargs):
 
         """
@@ -354,16 +362,22 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
         virtual_port = self.get_queryset().get(id=pk)
         data = {}
 
-        start = request.query_params.get("start_time") or request.query_params.get("start", "-15m")
+        start = request.query_params.get("start_time") or request.query_params.get(
+            "start", "-15m"
+        )
         end = request.query_params.get("end", None)
         step = request.query_params.get("step", 300)
 
         port = virtual_port.port
 
-        member = ixctl.InternetExchangeMember().first(ports=[port.id], org=virtual_port.org.remote_id)
+        member = ixctl.InternetExchangeMember().first(
+            ports=[port.id], org=virtual_port.org.remote_id
+        )
 
         if not member:
-            return BadRequest({"error": "No member found with the specified port in IxCtl"})
+            return BadRequest(
+                {"error": "No member found with the specified port in IxCtl"}
+            )
 
         members = ixctl.InternetExchangeMember().objects(peers=member.id)
         asn_names = {m.asn: m.name for m in members}
@@ -378,7 +392,7 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
                 start=start,
                 end=end,
             ),
-            asn_names=asn_names
+            asn_names=asn_names,
         )
         return Response(data)
 
@@ -400,23 +414,11 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
         """
         Returns current metric data for the virtual port
         """
-        result = []
         virtual_port = self.get_queryset().get(id=pk)
-
         ports = Serializers.physical_port(
             virtual_port.physical_ports.all(), many=True
         ).data
-
-        for port in ports:
-            flat_data = port.get("metric")
-            kv = [
-                {"device": port.get("device_name"), "resource": x, "value": y}
-                for x, y in flat_data.items()
-            ]
-
-            result.extend(kv)
-
-        return Response(result)
+        return Response(extract_metric_data_from_ports(ports))
 
 
 @route
