@@ -100,6 +100,14 @@ settings_manager.set_option("HEARTBEAT_EXPECTED_INTERVAL_TRAFFIC", 60 * 6)
 # Default is 90 days (in days)
 settings_manager.set_option("EVENT_MAX_AGE", 90)
 
+# METRICS
+
+# Global off switch for metric collection
+settings_manager.set_option("EVENT_METRICS_ENABLED", True)
+
+# Prefix added to all measurement names
+settings_manager.set_option("EVENT_METRIC_PREFIX", "auditctl_")
+
 # FINALIZE
 
 settings_manager.set_default_append()

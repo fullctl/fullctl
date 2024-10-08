@@ -8,6 +8,17 @@ from typing import Annotated, List, Optional, Union
 
 from pydantic import BaseModel, BeforeValidator, HttpUrl, TypeAdapter
 
+from django_auditctl.metrics import (
+    ComponentFields,
+    ComponentTags,
+    MetricsMixin, 
+    Metric,
+    MetricsMultiComponentMixin, 
+    MetricsSelectiveComponentMixin,
+)
+
+from django_auditctl.models.auditctl import Event
+
 __all__ = ["Component", "RblsrvComponent", "ErrorDetails", "NoData", "DeviceConfigData"]
 
 # Dictionary to store registered Pydantic models
@@ -60,6 +71,24 @@ def get_model_from_registry(unique_id):
             return model_cls
     return None
 
+def get_event_data(event:Event, schema_cls:BaseModel) -> BaseModel | None:
+    """
+    Convert an Event object to a Pydantic model.
+
+    Args:
+        event (Event): The Event object to convert.
+        schema_cls (BaseModel): The Pydantic model class to convert the Event object to.
+
+    Returns:
+        BaseModel: The Pydantic model object.
+        None: If the event has no data or error.
+    """
+    if event.data:
+        return schema_cls(**event.data)
+    elif event.error:
+        return ErrorDetails(**event.error)
+    else:
+        return None
 
 class Component(BaseModel):
     """
@@ -74,7 +103,7 @@ class Component(BaseModel):
     """
 
     name: Union[str, None] = None
-    id: Union[str, int]
+    id: Union[str, int, None] = None
     url: Union[Url, None] = None
     blob: Union[str, None] = None
     kind: str
@@ -106,7 +135,7 @@ class ErrorComponent(Component):
         error (str): The error associated with the component.
     """
 
-    error: str = None
+    error: str | None = None
 
 
 class ErrorDetails(BaseModel):
@@ -122,27 +151,64 @@ class ErrorDetails(BaseModel):
     components: List[ErrorComponent] = list()
     url: Union[Url, None] = None
 
+class EventData(BaseModel, MetricsMixin):
+
+    @classmethod
+    def get_event_data(cls, event:Event) -> BaseModel | None:
+        return get_event_data(event, cls)
+
 
 @register_model(r"^default$")
-class NoData(BaseModel):
+class NoData(EventData):
     pass
 
 
 @register_model(r"^v0.1\/[^\/]+\/config\/.+$")
-class DeviceConfigData(BaseModel):
+class DeviceConfigData(EventData, MetricsSelectiveComponentMixin):
     diff: Union[str, None] = None
     components: List[Component] = list()
     url: Union[Url, None] = None
 
+    @classmethod
+    def metric_name(cls) -> str:
+        return "device_config"
+
+
+    @classmethod
+    def metric_tags(cls) -> list[ComponentTags]:
+        return [
+            ComponentTags(kind="device", tags=["id", "name"])
+        ]
+
 
 @register_model(r"^v0.1\/[^\/]+\/traffic\/.+$")
-class TrafficData(BaseModel):
+class TrafficData(EventData, MetricsSelectiveComponentMixin):
     components: List[Component] = list()
+
+    @classmethod
+    def metric_name(cls) -> str:
+        return "traffic"
+
+    @classmethod
+    def metric_tags(cls) -> list[ComponentTags]:
+        return [
+            ComponentTags(kind="ix", tags=["id", "name"])
+        ]
 
 
 @register_model(r"^v0.1\/[^\/]+\/rblsrv\/.+$")
-class RblsrvData(BaseModel):
+class RblsrvData(EventData, MetricsSelectiveComponentMixin):
     components: List[RblsrvComponent] = list()
+
+    @classmethod
+    def metric_name(cls) -> str:
+        return "rblsrv"
+
+    @classmethod
+    def metric_tags(cls) -> list[ComponentTags]:
+        return [
+            ComponentTags(kind="prefix", tags=["prefix"])
+        ]
 
 
 class ConfigLivenessComponent(BaseModel):
@@ -159,9 +225,12 @@ class ConfigLivenessComponent(BaseModel):
 
 
 @register_model(r"^v0.1\/[^\/]+\/config\/+\/liveness\/[0-9\.]+$")
-class ConfigLivenessData(BaseModel):
+class ConfigLivenessData(EventData):
     components: List[ConfigLivenessComponent] = list()
 
+    @classmethod
+    def metric_name(cls) -> str:
+        return "config_liveness"
 
 class BGPSessionStateComponent(BaseModel):
     """
@@ -211,8 +280,53 @@ class BGPSessionStateComponent(BaseModel):
 
 
 @register_model(r"^v0.1\/[^\/]+\/bgp\/stat\/[0-9\.]+\/[0-9]+$")
-class BGPSessionStateData(BaseModel):
+class BGPSessionStateData(EventData, MetricsMultiComponentMixin):
     components: List[BGPSessionStateComponent] = list()
+
+    @classmethod
+    def metric_name(cls) -> str:
+        return "bgp_stat"
+
+    @classmethod
+    def metric_tags(cls) -> list[ComponentTags] | list[str]:
+        
+        return [
+            "routeserver_router_id",
+            "routeserver_hostname",
+            "router_id",
+            "name",
+            "asn",
+            "address",
+            "protocol",
+            "state",
+        ]
+        
+
+    @classmethod
+    def metric_fields(cls) -> list[ComponentFields] | list[str]:
+
+        return [
+            "up",
+            "routes_imported",
+            "routes_exported",
+            "import_updates_received",
+            "import_updates_rejected",
+            "import_updates_filtered",
+            "import_updates_ignored",
+            "import_updates_accepted",
+            "import_withdraws_received",
+            "import_withdraws_rejected",
+            "import_withdraws_ignored",
+            "import_withdraws_accepted",
+            "export_updates_received",
+            "export_updates_rejected",
+            "export_updates_filtered",
+            "export_updates_accepted",
+            "export_withdraws_received",
+            "export_withdraws_accepted",
+        ]
+
+
 
 
 class BGPSessionStateAggregateDataComponent(BaseModel):
@@ -238,7 +352,28 @@ class BGPSessionStateAggregateDataComponent(BaseModel):
     ip_version: str
     routeserver_hostname: str
 
-
 @register_model(r"^v0.1\/[^\/]+\/bgp\/stat\/aggregate\/[0-9\.]+$")
-class BGPSessionStateAggregateData(BaseModel):
+class BGPSessionStateAggregateData(EventData, MetricsSelectiveComponentMixin):
     components: List[BGPSessionStateAggregateDataComponent] = list()
+
+    @classmethod
+    def metric_name(cls) -> str:
+        return "bgp_stat_aggregate"
+
+    @classmethod
+    def metric_tags(cls) -> list[ComponentTags] | list[str]:
+        return [
+            "routeserver_router_id",
+            "routeserver_hostname",
+            "ip_version",
+        ]
+
+    @classmethod
+    def metric_fields(cls) -> list[ComponentFields] | list[str]:
+        return [
+            "routes_imported",
+            "routes_exported",
+            "established_connections_count",
+            "configured_connections_count",
+        ]
+        

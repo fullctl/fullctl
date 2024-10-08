@@ -12,12 +12,19 @@ from fullctl.service_bridge.client import url_join
 import django_auditctl.models.auditctl as models
 from django_auditctl.rest.serializers.auditctl import Serializers
 from django_auditctl.util import object_id_to_parts
+import django_auditctl.schema as schema
+from django_auditctl.metrics import Metric
+from fullctl.metrics import Metrics
+
+import structlog
 
 __all__ = [
     "register_handler",
     "get_handlers",
     "get_handler_by_tag",
 ]
+
+log = structlog.get_logger(__name__)
 
 # Dictionary to store event handlers
 HANDLER_REGISTRY = {}
@@ -109,6 +116,19 @@ class BaseHandler:
     @property
     def qualifies(self):
         return True
+
+    @property
+    def schema(self) -> schema.EventData:
+        """
+        Returns the schema for the event object_id.
+        """
+
+        if hasattr(self, "_schema"):
+            return self._schema
+
+        self._schema = schema.get_model_from_registry(self.event.object_id)
+
+        return self._schema
 
     def __init__(self, event):
         self.event = event
@@ -328,4 +348,101 @@ class BGPSessionStateAggregateDataHandler(BaseHandler):
         component = components[0]
         routeserver.set_event_reference(
             component.get("routeserver_router_id"), self.event.id
+        )
+
+
+@register_handler(r"^v0.1\/[^\/]+\/.+$")
+class InsertMetrics(BaseHandler):
+    """
+    A class that inherits from the BaseHandler class and inserts
+    metrics for events.
+    """
+
+    class HandleRef:
+        tag = "insert_metrics"
+
+    @property
+    def qualifies(self):
+
+        if not settings.EVENT_METRICS_ENABLED:
+            return False
+
+        if not settings.TIMESERIES_DB_URL:
+            log.warning(
+                "TIMESERIES_DB_URL not set, skipping metrics insertion, set EVENT_METRICS_ENABLED to False to disable this warning"
+            )
+            return False
+
+        try:
+            return self.schema.metrics_enabled()
+        except AttributeError:
+            log.warning(f"metrics_enabled not implemented for {self.schema.__name__}")
+            return False
+
+    def __call__(self):
+        """
+        Inserts metrics for the event.
+        """
+
+        if not self.qualifies:
+            return
+
+        auth = (
+            (settings.TIMESERIES_DB_USER, settings.TIMESERIES_DB_PASSWORD)
+            if settings.TIMESERIES_DB_USER
+            else None
+        )
+
+        metrics_client = Metrics(settings.TIMESERIES_DB_URL, auth=auth)
+
+        metric_data = self.schema.get_metric_fields_and_tags(self.event)
+
+        if not isinstance(metric_data, list):
+            metric_data = [metric_data]
+
+        for metric in metric_data:
+            self.insert_metric(metric, metrics_client)
+
+    def insert_metric(self, metric_data: dict, metrics_client: Metrics):
+
+        if not metric_data:
+            log.warning(
+                f"get_metric_fields_and_tags returned None for {self.event.object_id} ({self.event.id})"
+            )
+            return
+
+        if not isinstance(metric_data, Metric):
+            log.warning(
+                f"get_metric_fields_and_tags did not return a Metric instance for {self.event.object_id} ({self.event.id})"
+            )
+            return
+
+        if not metric_data.fields:
+            log.warning(
+                f"No metrics (fields) in MetricsMeta instance for {self.event.object_id} ({self.event.id}) returned by get_metric_fields_and_tags"
+            )
+            return
+
+        # require ctl_org_id and ctl_object_id in tags
+
+        if "ctl_org_id" not in metric_data.tags:
+            metric_data.tags["ctl_org_id"] = self.event.org_id
+
+        if "ctl_object_id" not in metric_data.tags:
+            metric_data.tags["ctl_object_id"] = self.event.object_id
+
+        log.info(
+            f"Inserting metrics for {self.event.object_id}", metric_data=metric_data
+        )
+
+        metrics_client.write_many(
+            [
+                {
+                    "measurement": f"{settings.EVENT_METRIC_PREFIX}{metric_data.name}",
+                    "fields": metric_data.fields,
+                    "tags": metric_data.tags,
+                    # to seconds
+                    "timestamp": int(self.event.created.timestamp()),
+                }
+            ]
         )
