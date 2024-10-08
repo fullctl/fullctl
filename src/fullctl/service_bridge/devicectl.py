@@ -132,6 +132,16 @@ class Port(Devicectl):
             },
         )
 
+    def set_ports_status(
+            self, pk, status
+    ):
+        return self.patch(
+            f"data/port/{pk}/status",
+            json={
+                "status": status,
+            },
+        )
+
 
 class PortInfo(Devicectl):
     class Meta(Devicectl.Meta):
@@ -149,7 +159,8 @@ class VirtualPort(Devicectl):
 
         if duration:
             params["duration"] = duration
-        
+
+
         if step:
             params["step"] = step
 
@@ -178,6 +189,16 @@ class VirtualPort(Devicectl):
                 "duration": duration,
                 "step": step,
             },
+        )
+
+    def metric(self, pk):
+        return self.get(
+            f"data/virtual_port/{pk}/metric",
+        )
+
+    def metric_table(self, pk):
+        return self.get(
+            f"data/virtual_port/{pk}/metric_table",
         )
 
 class IPAddress(Devicectl):

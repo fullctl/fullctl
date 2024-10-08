@@ -1,6 +1,7 @@
 from logging import getLogger
+from uuid import UUID
 
-from django.db.models import CharField, PositiveIntegerField
+from django.db.models import CharField, PositiveIntegerField, UUIDField
 
 from fullctl.django.fields import CastOnAssignDescriptor
 from fullctl.service_bridge.context import service_bridge_context
@@ -94,7 +95,6 @@ class ReferencedObjectFieldMixin:
             services = []
 
         def get_bridge():
-
             if bridge:
                 return bridge()
 
@@ -169,3 +169,21 @@ class ReferencedObjectCharField(ReferencedObjectFieldMixin, CharField):
     """
 
     base_type = str
+
+
+class ReferencedObjectUUIDField(ReferencedObjectFieldMixin, UUIDField):
+    """
+    References an object on another fullctl service via the
+    service bridge using a uuid field
+    """
+
+    base_type = UUID
+
+    def to_python(self, value):
+        if value is None:
+            return None
+
+        if isinstance(value, ReferencedObject):
+            return value.id
+
+        return ReferencedObject(self.bridge, value, self.remote_lookup, self.services)

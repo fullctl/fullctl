@@ -293,6 +293,11 @@
             .attr("stroke-width", 1);
 
 
+        // calculate legend spacing based on total width and number of items
+        // with a min width of 120
+
+        let legendSpacing = Math.max(120, width / 4);
+
         // Add legend
         const legend = svg.append("g")
             .attr("font-family", "sans-serif")
@@ -307,7 +312,7 @@
                 {key: "bps_out_peak", label: "OUT Peak: " + format_y_axis(bps_out_peak)}
             ])
             .enter().append("g")
-            .attr("transform", function(d, i) { return "translate(" + (i * 120) + ",0)"; }); // Make legend horizontal
+            .attr("transform", function(d, i) { return "translate(" + (i * legendSpacing) + ",0)"; }); // Make legend horizontal
 
 
         legend.append("rect")
@@ -503,7 +508,8 @@
         title,
         selector,
         get_url,
-        proxy
+        proxy,
+        prepare_params = (params) => {}
     ) {
         if(!graph_traffic_source) {
         // legacy default
@@ -563,7 +569,7 @@
                 // and describes the total time period between start and end
 
                 if(duration <= 3600) {
-                    params.push('step=60');
+                    params.push('step=300');
                 } else if(duration <= 86400) {
                     params.push('step=300');
                 } else if(duration <= 86400 * 30) {
@@ -577,6 +583,10 @@
                 params.push('step=300');
                 params.push('start=-24h');
             }
+        }
+
+        if(prepare_params) {
+            prepare_params(params);
         }
     
         if (params.length > 0) {

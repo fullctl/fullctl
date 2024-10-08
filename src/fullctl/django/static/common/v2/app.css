@@ -204,6 +204,11 @@ button:focus {
   width: 50px;
 }
 
+div.dt-processing>div {
+  display: none;
+}
+
+div.dt-processing,
 .loading-indicator,
 .loading-shim:after {
   content: '';
@@ -1779,7 +1784,7 @@ img.service-link ~ span.icon {
  */
 
 .select2-selection__placeholder {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 div.autocomplete-item {
@@ -1834,6 +1839,11 @@ div.autocomplete-controls {
 .select2-container--default .select2-selection--single .select2-selection__arrow {
   right: 4px;
   top: initial;
+}
+
+.select2-container .select2-selection--single .select2-selection__rendered {
+  padding-bottom: 3px;
+  padding-top: 3px;
 }
 
 /* table display */
@@ -2000,4 +2010,27 @@ button.badge-btn:disabled {
 }
 .right {
     text-align: right;
+}
+
+.up .icon-triangle-fill-up {
+  background-color: green;
+}
+
+.down .icon-triangle-fill-down {
+  background-color: red;
+}
+
+.warn .icon-triangle-fill-down {
+  background-color: yellow;
+}
+
+.bgp_stat_v6, .bgp_stat_v4, .bgp_stat_aggregate {
+  margin-top: 5px;
+  text-wrap: nowrap;
+  cursor: default;
+}
+
+.light_level_stat {
+  text-wrap: nowrap;
+  cursor: default;
 }

@@ -53,13 +53,15 @@ class Metrics:
         self.auth = auth
 
     @classmethod
-    def validate_period(cls, period: str):
+    def validate_period(cls, period: str | int):
         """
         Validate the period string
 
         Arguments:
 
         - period: The period string, e.g. "-1d", "1h", "5m" etc.
+          if an integer is passed, it is considered valid as well
+          and assumed to be in seconds (or nanoseconds)
 
         Raises:
 
@@ -67,6 +69,9 @@ class Metrics:
         """
 
         if pytimeparse2 is None:
+            return
+
+        if isinstance(period, int):
             return
 
         try:
@@ -253,6 +258,7 @@ class Metrics:
         end: str | None = None,
         timeout: str | None = None,
         keep_metric_names: bool = False,
+        max_lookback: str | None = None,
     ) -> QueryResult:
         """
         Query a metric range from Victoriametrics
@@ -267,7 +273,7 @@ class Metrics:
         - end: the ending timestamp of the time range for query evaluation. If the end isn’t set, then the end is automatically set to the current time.
         - timeout: optional query timeout. For example, timeout=5s. Query is canceled when the timeout is reached. By default the timeout is set to the value of -search.maxQueryDuration command-line flag passed to single-node VictoriaMetrics or to vmselect component in VictoriaMetrics cluster.
         - keep_metric_names: If True, the metric names are preserved in the result. If False, the metric names are removed from the result.
-
+        - max_lookback: optional maximum lookback duration for the query. This affects the interpolation of missing data points. A small value like `1s` will for example ensure no data points are interpolated more than 1 second away from the actual data points.
         Examples:
 
         ## Query all cpu_usage metrics for the last day
@@ -290,11 +296,10 @@ class Metrics:
         if timeout:
             params["timeout"] = timeout
 
-        data = requests.get(url, params=params, auth=self.auth).json()
+        if max_lookback:
+            params["max_lookback"] = max_lookback
 
-        print("")
-        print(query)
-        print("")
+        data = requests.get(url, params=params, auth=self.auth).json()
 
         return QueryResult(**data)
 

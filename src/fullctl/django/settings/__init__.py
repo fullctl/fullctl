@@ -489,6 +489,15 @@ class SettingsManager(confu.util.SettingsManager):
         # URL to POST Feature Request form to
         self.set_option("POST_FEATURE_REQUEST_URL", "/api/account/user/contact_message")
 
+        # Disable feature request
+        self.set_bool("DISABLE_FEATURE_REQUEST", False)
+
+        # Disable help menu
+        self.set_bool("DISABLE_HELP_MENU", False)
+
+        # Disable contact us link
+        self.set_bool("DISABLE_CONTACT_US", False)
+
         # Docs URL
         self.set_option("DOCS_URL", "https://docs.fullctl.com")
 
@@ -499,6 +508,9 @@ class SettingsManager(confu.util.SettingsManager):
         self.set_option(
             "TERMS_OF_SERVICE_URL", "https://www.fullctl.com/legal#section=collapseToS"
         )
+
+        # PDB_OAUTH_PROMPT_LINK
+        self.set_option("PDB_OAUTH_PROMPT_LINK", "no_asn")
 
     # TODO: review implementation
     def set_languages_docs(self):

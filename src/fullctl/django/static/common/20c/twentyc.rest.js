@@ -850,6 +850,15 @@ twentyc.rest.Widget = twentyc.cls.extend(
         return;
       var i;
       var error_node = $('<div>').addClass("validation-error");
+      
+      // clicking the error node should close it
+      error_node.click(function() {
+        $(this).detach();
+      });
+
+      // error node cursor should be a pointer
+      error_node.css("cursor", "pointer");
+
       var input = this.element.find('[name="'+key+'"]');
       input.addClass("validation-error-indicator")
       for(i = 0; i < errors.length; i++) {
@@ -857,6 +866,9 @@ twentyc.rest.Widget = twentyc.cls.extend(
       }
       if(input.attr("type") != "checkbox")
         error_node.insertAfter(input);
+
+      // move error node so bottom is aligned flush with top of input
+      error_node.css("top", (input.offset().top - error_node.outerHeight() - error_node.offset().top) + "px");
     },
 
     /**

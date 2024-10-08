@@ -41,3 +41,12 @@ class Auditctl(Bridge):
 class Event(Auditctl):
     class Meta(Auditctl.Meta):
         ref_tag = "event"
+
+    def get_last_updated_config_liveness_event(self, org_slug: str):
+        """
+        Get the config liveness event for an org
+
+        Arguments:
+            org_slug (`str`) -- org slug
+        """
+        return self.get(f"data/event/v0.1/{org_slug}/config/liveness/")

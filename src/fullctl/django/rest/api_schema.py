@@ -28,10 +28,25 @@ class BaseSchema(AutoSchema):
     def field_instance(self):
         return {"type": "integer", "description": "Organization workspace instance id"}
 
+    @property
+    def field_macaddr_warnings(self):
+        return {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "description": "Warning message for duplicate MAC addresses"
+            }
+        }
+
     def map_field(self, field):
         if hasattr(self, f"field_{field.field_name}"):
             return getattr(self, f"field_{field.field_name}")
+
+        if isinstance(field, (serializers.ListField, serializers.ListSerializer)):
+            return {"type": "array", "items": self.map_field(field.child)}
+
         return super().map_field(field)
+
 
     def get_operation_type(self, *args):
         """
