@@ -734,7 +734,8 @@ $ctl.application.Ixctl.Members = $tc.extend(
       const tool = this;
       let non_active_members = 0;
       let non_md5_members = 0;
-      this.$w.list.list_body.find("tr:not(.secondary)").each(function() {
+      const members = this.$w.list.list_body.find("tr:not(.secondary)");
+      members.each(function() {
         const data = $(this).data("apiobject");
         if (!tool.$w.list.is_member_active(data)) {
           non_active_members += 1;
@@ -746,6 +747,7 @@ $ctl.application.Ixctl.Members = $tc.extend(
 
       this.$e.menu.find('[data-element="filter_non_active_members"] .value').text(non_active_members);
       this.$e.menu.find('[data-element="filter_md5_members"] .value').text(non_md5_members);
+      this.$e.menu.find('[data-element="members_count"] .value').text(members.length);
     },
 
     sync : function() {
