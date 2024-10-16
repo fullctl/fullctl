@@ -376,6 +376,8 @@ class InsertMetrics(BaseHandler):
         try:
             return self.schema.metrics_enabled()
         except AttributeError:
+            if not self.schema:
+                return False
             log.warning(f"metrics_enabled not implemented for {self.schema.__name__}")
             return False
 
