@@ -110,6 +110,13 @@ settings_manager.set_option("GOOGLE_ANALYTICS_ID", "")
 # each case number will be stored in the member's meta field.
 settings_manager.set_option("MEMBER_CASE_NUMBERS_ENABLED", False)
 
+# Port size choices (gb)
+settings_manager.set_option("PORT_SIZES", [1,10,100])
+settings_manager.set_option("DEFAULT_PORT_SIZE", 1)
+
+# upper limit of ports that can be created
+settings_manager.set_option("PORT_LIMIT", 8)
+
 # FINALIZE
 
 settings_manager.set_default_append()

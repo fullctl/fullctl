@@ -113,10 +113,55 @@
         <label for="member-is-rs-peer" class="form-check-label">{% trans "Route Server" %}</label>
       </div>
     </div>
+
+    <!-- port size, lag, port quantity in a single row 
+    
+    - port size (drop down from PORT_SIZES)
+    - lag (checkbox)
+    - port quantity (drop down from PORT_QUANTITIES)
+    -->
+
     <div class="row mb-3">
-      <div class="col-12" data-api-submit="yes">
-        <label class="form-label" for="member-speed">{% trans "Speed" %}*</label>
-        <input type="text" class="form-control" id="member-speed" name="speed" />
+      <div class="col-12">
+        <h6>{% trans "Port Configuration" %}</h6>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-4" data-api-submit="yes">
+        <label class="form-label" for="member-port-size">{% trans "Size" %}</label>
+        <span class="modal-control">
+          <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+          <select id="member-port-size" name="port_size" class="form-control">
+            {% for size in select_ix.port_sizes %}
+            <option value="{{ size }}">{{ size }}G</option>
+            {% endfor %}
+          </select>
+        </span>
+      </div>
+      <div class="col-4" data-api-submit="yes">
+        <input type="checkbox" class="form-check-input" id="member-lag" name="lag" />
+        <label for="member-lag" class="form-check-label">{% trans "LAG" %}</label>
+      </div>
+      <div class="col-4" data-api-submit="yes">
+        <label class="form-label" for="member-port-quantity">{% trans "Quantity" %}</label>
+        <span class="modal-control">
+          <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+          <select disabled id="member-port-quantity" name="port_quantity" class="form-control">
+            {% for num in PORT_QUANTITIES %}
+            <option value="{{ num }}">{{ num }}</option>
+            {% endfor %}
+          </select>
+        </span>
+      </div>
+    </div>
+
+
+    <!-- speed -->
+
+    <div class="row mb-3">
+      <div class="col-12">
+        <span data-api-field="speed"></span>
       </div>
     </div>
 

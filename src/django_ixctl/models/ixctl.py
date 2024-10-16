@@ -3,6 +3,7 @@ import os.path
 import re
 import subprocess
 import tempfile
+import pydantic
 from datetime import datetime
 from secrets import token_urlsafe
 
@@ -27,6 +28,7 @@ import structlog
 import yaml
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -40,6 +42,8 @@ from netfields import CidrAddressField, InetAddressField, MACAddressField
 
 import django_ixctl.enum
 import django_ixctl.models.tasks
+from django_ixctl.models.util import set_port_fields_from_speed
+from django_ixctl.validators import validate_ix_config
 
 logger = structlog.get_logger(__name__)
 
@@ -157,6 +161,11 @@ class InternetExchange(PdbRefModel):
         default="",
         blank=True,
     )
+
+    config = models.JSONField(
+        null=True, blank=True, default=dict, help_text=_("Extra ix specific configuration"),
+        validators=[validate_ix_config]
+    ) 
 
     class PdbRef(PdbRefModel.PdbRef):
         pdbctl = pdbctl.InternetExchange
@@ -303,6 +312,15 @@ class InternetExchange(PdbRefModel):
     def org(self):
         return self.instance.org
 
+    @property
+    def port_sizes(self):
+        # check self.configs["port_sizes"] first
+        # if not set, return settings.PORT_SIZES
+        if not self.config:
+            return settings.PORT_SIZES
+
+        return self.config.get("port_sizes") or settings.PORT_SIZES
+
     def __str__(self):
         return f"{self.name} ({self.id})"
 
@@ -398,7 +416,21 @@ class InternetExchangeMember(PdbRefModel):
     as_macro_negate = models.BooleanField(default=False)
     md5 = models.CharField(max_length=255, null=True, blank=True)
     is_rs_peer = models.BooleanField(default=False)
-    speed = models.PositiveIntegerField()
+
+    port_size = models.PositiveIntegerField(
+        help_text=_("Port size"),
+        # we cannot set a default, since the valid choices may vary
+        # depending on the exchange or the settings.PORT_SIZES value
+    )
+
+    port_quantity = models.PositiveSmallIntegerField(
+        default=1,
+        help_text=_("Number of ports"),
+        choices=[(i, str(i)) for i in range(1, settings.PORT_LIMIT + 1)]
+    )
+
+    lag = models.BooleanField(default=False)
+
     asn = models.PositiveIntegerField()
     name = models.CharField(max_length=255, blank=True, null=True)
     prefix_set = models.CharField(
@@ -464,9 +496,10 @@ class InternetExchangeMember(PdbRefModel):
         member.ipaddr4 = pdb_object.ipaddr4
         member.ipaddr6 = pdb_object.ipaddr6
         member.is_rs_peer = pdb_object.is_rs_peer
-        member.speed = pdb_object.speed
         member.asn = pdb_object.net.asn
         member.name = pdb_object.net.name
+
+        set_port_fields_from_speed(member, pdb_object.speed)
 
         if save:
             member.save()
@@ -579,6 +612,21 @@ class InternetExchangeMember(PdbRefModel):
 
         return get_as_set(self.as_macro)
         # return [as_set.strip() for as_set in re.split(r"[, ]+", self.as_macro)]
+
+    @property
+    def speed(self) -> int:
+        """
+        Calculates speed from port_size * port_quantity
+        
+        Returns speed in Mb.
+
+        Port size is in Gb so we multiply by 1000.
+        """
+
+        if self.port_size is None:
+            return 0
+
+        return self.port_size * self.port_quantity * 1000
 
     @property
     def as_macro(self):
@@ -695,6 +743,10 @@ class InternetExchangeMember(PdbRefModel):
 
     def __str__(self):
         return f"AS{self.asn} - {self.ipaddr4} - {self.ipaddr6} ({self.id})"
+
+
+
+
 
 
 @reversion.register()

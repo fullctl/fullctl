@@ -334,6 +334,35 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       )
       type_select.load((member?member.ixf_member_type:null));
 
+      // handle port quantity select
+      // when `lag` is false, disable the port quantity select
+      form.element.find('#member-lag').change(function() {
+        var lag = $(this).prop('checked');
+        form.element.find('#member-port-quantity').prop('disabled', !lag);
+      });
+
+      // if lag is currently true, enable the port quantity select
+      if(member && member.lag) {
+        form.element.find('#member-port-quantity').prop('disabled', false);
+      }
+
+      // if port quantity is changed to > 1, enforce lag to true
+      // and prevent user from changing it back to false
+
+      form.element.find('#member-port-quantity').change(function() {
+        var quantity = Number($(this).val());
+        if(quantity > 1) {
+          form.element.find('#member-lag').prop('checked', true).prop('disabled', true);
+        } else {
+          form.element.find('#member-lag').prop('disabled', false);
+        }
+      });
+
+      // if port quantity is > 1, enforce lag to true
+      if(member && member.port_quantity > 1) {
+        form.element.find('#member-lag').prop('checked', true).prop('disabled', true);
+      }
+
       // setup port auto complete
       fullctl.ext.select2.init_autocomplete(
 

@@ -270,6 +270,9 @@ class InternetExchangeMember(ModelSerializer):
             "prefix_set_name",
             "port",
             "port_name",
+            "port_size",
+            "port_quantity",
+            "lag",
             "meta",
         ]
 
@@ -441,6 +444,19 @@ class InternetExchangeMember(ModelSerializer):
             raise ValidationError(_("Port not found"))
 
         return port_object.id
+
+    def validate_port_quantity(self, port_quantity):
+
+        # if lag is set, port quantity must be greater than 1
+        # if lag is not set, port quantity must be 1
+        # validated data is not available at this point
+
+        lag = self.initial_data.get("lag", False)
+
+        if not lag and port_quantity != 1:
+            raise ValidationError(_("Must be 1 if LAG is not set"))
+
+        return port_quantity
 
     def validate(self, data:dict) -> dict:
 
