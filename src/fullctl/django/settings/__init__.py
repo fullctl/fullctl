@@ -236,6 +236,14 @@ class SettingsManager(confu.util.SettingsManager):
             "DATA_UPLOAD_MAX_MEMORY_SIZE", 2621440
         )
 
+        # Auditctl API action logging
+        # can be set to a list ref tags to log POST / PUT / DELETE actions
+        # to auditctl
+        # export AUDITCTL_LOG_API_ACTIONS="member,ix"
+        # or specific actions
+        # export AUDITCTL_LOG_API_ACTIONS="member:create,member:update"
+        self.set_option("AUDITCTL_LOG_API_ACTIONS", [])
+
         # eval from default.py file
         filename = os.path.join(os.path.dirname(__file__), "default.py")
         self.try_include(filename)
