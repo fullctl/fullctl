@@ -36,6 +36,11 @@
           "perms": "",
           "label": "",
           "override": null
+        },
+        "service_bridge.*": {
+          "perms": "",
+          "label": "",
+          "override": null
         }
       }
     }
