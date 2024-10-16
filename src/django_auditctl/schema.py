@@ -6,7 +6,7 @@ import re
 from functools import wraps
 from typing import Annotated, List, Optional, Union
 
-from pydantic import BaseModel, BeforeValidator, HttpUrl, TypeAdapter
+from pydantic import BaseModel, BeforeValidator, HttpUrl, TypeAdapter, Field
 
 from django_auditctl.metrics import (
     ComponentFields,
@@ -151,7 +151,12 @@ class ErrorDetails(BaseModel):
     components: List[ErrorComponent] = list()
     url: Union[Url, None] = None
 
+
 class EventData(BaseModel, MetricsMixin):
+
+    @classmethod
+    def error_schema(cls) -> ErrorDetails:
+        return ErrorDetails
 
     @classmethod
     def get_event_data(cls, event:Event) -> BaseModel | None:
@@ -161,6 +166,58 @@ class EventData(BaseModel, MetricsMixin):
 @register_model(r"^default$")
 class NoData(EventData):
     pass
+
+
+
+class ApiActionRequest(Component):
+    """
+    Pydantic model for an ApiActionRequest.
+
+    Attributes:
+        method (str): The HTTP method of the request.
+    """
+
+    username: str
+    action: str
+    payload: dict
+    service: str
+    ref_tag: str
+    kind: str = "request"
+
+class ApiActionResponse(Component):
+    """
+    Pydantic model for an ApiActionResponse.
+
+    Attributes:
+        status_code (int): The HTTP status code of the response.
+    """
+
+    status_code: int
+    kind: str = "response"
+
+class ApiActionErrorDetails(ErrorDetails):
+    """
+    Pydantic model for an ApiActionErrorDetails.
+
+    Attributes:
+        message (str): The error message.
+        components (List[Component]): A list of related components, default is an empty list.
+    """
+    components: list[ApiActionRequest | ApiActionResponse] = Field(default_factory=list)
+
+# log service api actions (create, delete, update)
+@register_model(r"v0.1\/[^\/]+\/action\/.+$")
+class ApiActionData(EventData):
+    components: list[ApiActionRequest | ApiActionResponse] = Field(default_factory=list)
+
+    @classmethod
+    def error_schema(cls) -> ApiActionErrorDetails:
+        return ApiActionErrorDetails
+
+    @classmethod
+    def metrics_enabled(cls) -> bool:
+        # TODO: do we want to emit metrics for this event?
+        return False
 
 
 @register_model(r"^v0.1\/[^\/]+\/config\/.+$")

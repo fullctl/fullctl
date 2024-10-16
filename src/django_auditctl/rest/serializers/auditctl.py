@@ -69,13 +69,17 @@ class DynamicPydanticSerializer(PydanticSerializer):
     class Meta:
         pass
 
-    def __init__(self, schema_id="default", *args, **kwargs):
+    def __init__(self, schema_id:str="default", error_schema:bool=False, *args, **kwargs):
         # Get the Pydantic model from the registry
 
-        self.Meta.model = schema.get_model_from_registry(schema_id)
+        model = schema.get_model_from_registry(schema_id)
+        if not model:
+            model = schema.get_model_from_registry("default")
 
-        if not self.Meta.model:
-            self.Meta.model = schema.get_model_from_registry("default")
+        if not error_schema:
+            self.Meta.model = model
+        else:
+            self.Meta.model = model.error_schema()
 
         # Call the parent constructor
         super().__init__(*args, **kwargs)
@@ -90,16 +94,17 @@ class DynamicPydanticField(serializers.Field):
     through a schema_id property onf the request.
     """
 
-    def __init__(self, schema_id="default", *args, **kwargs):
+    def __init__(self, schema_id:str="default", error_schema:bool=False, *args, **kwargs):
         self.schema_id = schema_id
+        self.error_schema = error_schema
         super().__init__(*args, **kwargs)
 
     def to_internal_value(self, data):
-        serializer = DynamicPydanticSerializer(schema_id=self.schema_id)
+        serializer = DynamicPydanticSerializer(schema_id=self.schema_id, error_schema=self.error_schema)
         return serializer.to_internal_value(data)
 
     def to_representation(self, value):
-        serializer = DynamicPydanticSerializer(schema_id=self.schema_id)
+        serializer = DynamicPydanticSerializer(schema_id=self.schema_id, error_schema=self.error_schema)
         return serializer.to_representation(value)
 
 
@@ -121,7 +126,7 @@ class Event(ModelSerializer):
 
     # error takes JSON data, so we need to validate it
     # using pydantic
-    error = ErrorDetails(required=False, allow_null=True)
+    error = DynamicPydanticField(required=False, allow_null=True, error_schema=True)
 
     # data takes JSON data, and is validated using
     # pydantic with a DynamicPydanticSerializer because the
