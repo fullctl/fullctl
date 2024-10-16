@@ -48,6 +48,7 @@ TEMPLATES[0]["OPTIONS"]["context_processors"] += [
     "fullctl.django.context_processors.permissions",
     "fullctl.django.context_processors.conf",
     "django_ixctl.context_processors.trial_available",
+    "django_ixctl.context_processors.ixctl_settings",
 ]
 
 # Fullctl service integration
@@ -102,6 +103,12 @@ REST_FRAMEWORK = {
 # OUTSIDE SERVICES
 
 settings_manager.set_option("GOOGLE_ANALYTICS_ID", "")
+
+# IXCTL
+
+# if True then member save and edit forms will add a field for case numbers
+# each case number will be stored in the member's meta field.
+settings_manager.set_option("MEMBER_CASE_NUMBERS_ENABLED", False)
 
 # FINALIZE
 

@@ -11,7 +11,6 @@ try:
 except ImportError:
     from pydantic.v1.utils import deep_update
 
-
 try:
     from yaml import CDumper as Dumper
     from yaml import CLoader as Loader
@@ -429,6 +428,8 @@ class InternetExchangeMember(PdbRefModel):
         default="ok",
         choices=django_ixctl.enum.PORT_STATE
     )
+
+    meta = models.JSONField(null=True, blank=True, help_text=_("Meta data"), default=dict)
 
     class PdbRef(PdbRefModel.PdbRef):
         pdbctl = pdbctl.NetworkIXLan

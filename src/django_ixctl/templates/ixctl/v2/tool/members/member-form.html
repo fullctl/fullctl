@@ -5,6 +5,14 @@
   data-api-method="POST"
   >
   <div class="container-fluid">
+    {% if MEMBER_CASE_NUMBERS_ENABLED %}
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label class="form-label" for="case_number">{% trans "Case Number" %}</label>
+        <input type="text" class="form-control" id="case_number" name="case_number" />
+      </div>
+    </div>
+    {% endif %}
     <div class="row mb-3">
       <div class="col-12" data-api-submit="yes">
         <label class="form-label" for="member-name">{% trans "Name" %}</label>
