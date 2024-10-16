@@ -21,6 +21,10 @@
 - `PREFIXCTL_URL` - host url for prefixctl service (e.g., "https://prefix.fullctl.com")
 - `DEVICECTL_URL` - host url for devicectl service (e.g., "https://device.fullctl.com")
 
+### Logging
+
+- `AUDITCTL_LOG_API_ACTIONS` - set up logging of REST api actions to auditctl. Should be a comma separated list of ref tags or ref_tag:action pairs. For example, `ix` or `ix,member` or `ix:create,ix:delete,member:delete`. 
+
 ### Operational
 
 - `HOST_URL` - will be used when creating links back to the service in instances where the host cannot be retrieved from a http request.
