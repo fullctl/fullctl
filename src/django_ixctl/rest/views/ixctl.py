@@ -12,7 +12,7 @@ from fullctl.django.rest.api_schema import PeeringDBImportSchema
 from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.decorators import load_object
 from fullctl.django.rest.filters import CaseInsensitiveOrderingFilter
-from fullctl.django.rest.mixins import CachedObjectMixin, OrgQuerysetMixin
+from fullctl.django.rest.mixins import CachedObjectMixin, OrgQuerysetMixin, AuditCtlActionLogMixin
 from fullctl.django.rest.renderers import PlainTextRenderer
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -246,7 +246,7 @@ class Prefix(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet):
 
 
 @route
-class Member(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet):
+class Member(AuditCtlActionLogMixin, CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet):
     """
     list:
         Return all member instances.
@@ -269,6 +269,32 @@ class Member(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet):
     ix_tag_needed = True
     filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.InternetExchangeMemberFilter
+
+    def auditctl_log_append_path(self, request, action:str, **kwargs) -> list[str]:
+        """
+        Append the path to the auditctl log
+        """
+        
+        path = []
+
+        if action in ["update", "destroy"]:
+            member = self.get_object()
+            path = [
+                str(member.asn),
+                str(member.ipaddr4),
+            ] 
+        elif action == "create":
+            path = [
+                request.data.get("asn"),
+                request.data.get("ipaddr4"),
+            ]
+
+        if settings.MEMBER_CASE_NUMBERS_ENABLED:
+            case_number = request.data.get("case_number", "")
+            if case_number:
+                path.append(str(case_number))
+
+        return path
 
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
     @grainy_endpoint(

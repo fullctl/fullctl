@@ -7,6 +7,7 @@ import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.prefixctl as prefixctl
 import yaml
+from django.conf import settings
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 from django_inet.rest import IPAddressField
@@ -231,6 +232,15 @@ class InternetExchangeMember(ModelSerializer):
         default="ok",
     )
 
+    # conditional field#
+    if settings.MEMBER_CASE_NUMBERS_ENABLED:
+        case_number = serializers.CharField(
+            allow_blank=False,
+            allow_null=False,
+            required=True,
+            write_only=True,
+        )
+
     class Meta:
         model = models.InternetExchangeMember
         fields = [
@@ -260,7 +270,13 @@ class InternetExchangeMember(ModelSerializer):
             "prefix_set_name",
             "port",
             "port_name",
+            "meta",
         ]
+
+
+        if settings.MEMBER_CASE_NUMBERS_ENABLED:
+            fields.append("case_number")
+
         validators = [
             SoftRequiredValidator(
                 fields=("ipaddr4", "ipaddr6"),
@@ -327,6 +343,27 @@ class InternetExchangeMember(ModelSerializer):
             self._macaddresses["by_member"].setdefault(mac.member.id, []).append(str(mac.address))
 
         return self._macaddresses
+
+    @property
+    def ports(self) -> dict[str, devicectl.Port]:
+        """
+        Returns ports cached.
+        If the cache does not exist, it will be created.
+        """
+        if hasattr(self, "_ports"):
+            return self._ports
+
+        instance = self.context.get("instance")
+        if instance:
+            org_id = instance.org.id
+        else:
+            org_id = None
+
+        ports = devicectl.Port().objects(org_id=org_id)
+
+        self._ports = {port.id: port for port in list(ports)}
+        return self._ports
+
 
     def validate_ipaddr4(self, ipaddr4):
         if not ipaddr4:
@@ -405,6 +442,33 @@ class InternetExchangeMember(ModelSerializer):
 
         return port_object.id
 
+    def validate(self, data:dict) -> dict:
+
+        # if case numbers are enabled push them into meta under
+        # a case_number key (list)
+
+        if settings.MEMBER_CASE_NUMBERS_ENABLED:
+            case_number = data.get("case_number")
+            meta = data.get("meta", {})
+            if case_number:
+                meta.setdefault("case_number", []).append(case_number)
+                data["meta"] = meta
+            data.pop("case_number", None)
+
+        return data
+
+    def to_representation(self, instance: models.InternetExchangeMember) -> dict:
+        """
+        Override to_representation to remove meta.case_number if
+        settings.MEMBER_CASE_NUMBERS_ENABLED is False
+        """
+        data = super().to_representation(instance)
+        if not settings.MEMBER_CASE_NUMBERS_ENABLED:
+            if data.get("meta") and "case_number" in data.get("meta"):
+                del data.meta["case_number"]
+        return data
+
+
     def get_prefix_set_name(self, obj):
         if not obj.prefix_set:
             return None
@@ -451,26 +515,8 @@ class InternetExchangeMember(ModelSerializer):
 
         return warnings
 
-    @property
-    def ports(self) -> dict[str, devicectl.Port]:
-        """
-        Returns ports cached.
-        If the cache does not exist, it will be created.
-        """
-        if hasattr(self, "_ports"):
-            return self._ports
 
-        instance = self.context.get("instance")
-        if instance:
-            org_id = instance.org.id
-        else:
-            org_id = None
-
-        ports = devicectl.Port().objects(org_id=org_id)
-
-        self._ports = {port.id: port for port in list(ports)}
-        return self._ports
-
+        
 
 @register
 class InternetExchangeMemberDetail(InternetExchangeMember):
