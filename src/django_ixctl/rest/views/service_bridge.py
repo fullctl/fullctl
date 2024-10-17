@@ -1,6 +1,7 @@
 from uuid import UUID
 
 import fullctl.service_bridge.devicectl as devicectl
+import structlog
 from django.db.models import Q
 from fullctl.django.rest.decorators import grainy_endpoint
 from fullctl.django.rest.route.service_bridge import route
@@ -17,7 +18,6 @@ from rest_framework.response import Response
 import django_ixctl.models.ixctl as models
 from django_ixctl.rest.serializers.service_bridge import Serializers
 
-import structlog
 logger = structlog.getLogger("django_structlog")
 
 
@@ -186,17 +186,19 @@ class InternetExchangeMember(DataViewSet):
             "status": "admin_down"
           }
         """
-
-        status = request.data.get("status")
-
         member = models.InternetExchangeMember.objects.filter(
             ix__verified=True, id=member_id
         ).first()
 
-        models.InternetExchangeMember().set_ports_status(member=member,
-                                                         status=status)
+        serializer = self.serializer_class(member, data=request.data, partial=True)
+        if serializer.is_valid():
+            models.InternetExchangeMember().set_ports_status(
+                member=member, status=serializer.validated_data.get("status")
+            )
+            return Response(Serializers.member(instance=member, many=False).data)
 
-        return Response(Serializers.member(instance=member, many=False).data)
+        logger.debug(f"{serializer.errors=}")
+        return Response(serializer.errors)
 
     @action(
         detail=False,

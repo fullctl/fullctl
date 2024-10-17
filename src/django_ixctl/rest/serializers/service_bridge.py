@@ -3,6 +3,7 @@ from fullctl.django.rest.serializers import ModelSerializer
 from rest_framework import serializers
 
 import django_ixctl.models.ixctl as models
+from django_ixctl.enum import PORT_STATE
 
 Serializers, register = serializer_registry()
 
@@ -56,6 +57,14 @@ class InternetExchangeMember(ModelSerializer):
 
     macaddr_warnings = serializers.SerializerMethodField()
 
+    status = serializers.ChoiceField(
+        choices=PORT_STATE,
+        allow_blank=True,
+        allow_null=True,
+        required=False,
+        default="ok",
+    )
+
     class Meta:
         model = models.InternetExchangeMember
         fields = [
@@ -76,6 +85,7 @@ class InternetExchangeMember(ModelSerializer):
             "macaddr_warnings",
             "md5",
             "port",
+            "status",
         ]
 
     @property
@@ -92,8 +102,10 @@ class InternetExchangeMember(ModelSerializer):
         else:
             members = self.instance
 
-        exchanges = set([member.ix for member in members])
-        macaddresses = models.MacAddress.objects.filter(member__ix__in=exchanges).select_related("member")
+        exchanges = {member.ix for member in members}
+        macaddresses = models.MacAddress.objects.filter(
+            member__ix__in=exchanges
+        ).select_related("member")
 
         self._macaddresses = {
             "by_mac": {},
@@ -102,8 +114,12 @@ class InternetExchangeMember(ModelSerializer):
 
         for mac in macaddresses:
             ix_id = mac.member.ix_id
-            self._macaddresses["by_mac"].setdefault(ix_id, {}).setdefault(str(mac.address), []).append(mac.member)
-            self._macaddresses["by_member"].setdefault(ix_id, {}).setdefault(mac.member.id, []).append(str(mac.address))
+            self._macaddresses["by_mac"].setdefault(ix_id, {}).setdefault(
+                str(mac.address), []
+            ).append(mac.member)
+            self._macaddresses["by_member"].setdefault(ix_id, {}).setdefault(
+                mac.member.id, []
+            ).append(str(mac.address))
 
         print(self._macaddresses)
 
@@ -126,8 +142,10 @@ class InternetExchangeMember(ModelSerializer):
         for macaddr in macaddr_set:
             warnings.extend(
                 [
-                    f"MAC address {macaddr} also exists on AS{member.asn} - {member.ipaddr4}" 
-                    for member in self.macaddresses["by_mac"].get(obj.ix_id, {}).get(macaddr,[]) 
+                    f"MAC address {macaddr} also exists on AS{member.asn} - {member.ipaddr4}"
+                    for member in self.macaddresses["by_mac"]
+                    .get(obj.ix_id, {})
+                    .get(macaddr, [])
                     if member.id != obj.id
                 ]
             )
