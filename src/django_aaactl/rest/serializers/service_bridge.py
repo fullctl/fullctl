@@ -281,6 +281,7 @@ class OrganizationBrandingSerializer(ModelSerializer):
     org_name = serializers.SerializerMethodField()
     light_logo_url = serializers.SerializerMethodField()
     dark_logo_url = serializers.SerializerMethodField()
+    favicon_url = serializers.SerializerMethodField()
 
     class Meta:
         model = branding_models.OrganizationBranding
@@ -292,6 +293,7 @@ class OrganizationBrandingSerializer(ModelSerializer):
             "css",
             "light_logo_url",
             "dark_logo_url",
+            "favicon_url",
         ]
 
     @property
@@ -309,3 +311,6 @@ class OrganizationBrandingSerializer(ModelSerializer):
 
     def get_dark_logo_url(self, obj):
         return format_logo_url(obj.dark_logo_url)
+
+    def get_favicon_url(self, obj):
+        return format_logo_url(obj.favicon_url)

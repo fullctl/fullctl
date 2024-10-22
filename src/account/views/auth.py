@@ -101,6 +101,7 @@ def login(request):
             "css": org_branding.css,
             "dark_logo_url": format_logo_url(org_branding.dark_logo_url),
             "light_logo_url": format_logo_url(org_branding.light_logo_url),
+            "favicon_url": format_logo_url(org_branding.favicon_url),
             "custom_org": True,
         }
 
@@ -273,6 +274,7 @@ def register(request):
             "css": org_branding.css,
             "dark_logo_url": format_logo_url(org_branding.dark_logo_url),
             "light_logo_url": format_logo_url(org_branding.light_logo_url),
+            "favicon_url": format_logo_url(org_branding.favicon_url),
             "custom_org": True,
         }
 
