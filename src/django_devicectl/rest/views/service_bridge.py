@@ -215,13 +215,18 @@ class Port(DataViewSet):
         Returns:
           Response: A JSON response containing the updated status of the physical ports.
         """
-        port = self.get_object()
-        status = request.data["status"]
+        port_status_seriailizer = Serializers.port_status(data=request.data)
+        if port_status_seriailizer.is_valid():
+            port = self.get_object()
+            physical_ports = port.virtual_port.physical_ports
+            physical_ports.update(
+                status=port_status_seriailizer.validated_data.get("status")
+            )
 
-        physical_ports = port.virtual_port.physical_ports
-        physical_ports.update(status=status)
+            return Response(Serializers.physical_port(physical_ports, many=True).data)
 
-        return Response(Serializers.physical_port(physical_ports, many=True).data)
+        logger.debug(f"{port_status_seriailizer.errors=}")
+        return Response(port_status_seriailizer.errors)
 
 
 @route
@@ -317,7 +322,6 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
         url_path="traffic/asn/(?P<asn_src>[^/.]+)/(?P<asn_dst>[^/.]+)",
     )
     def traffic_asn_pair(self, request, pk, asn_src, asn_dst, *args, **kwargs):
-
         """
         Query sflow data for a specific asn pair
         """
@@ -343,7 +347,6 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
 
     @action(detail=True, methods=["get"], url_path="traffic/asn-table")
     def traffic_asn_table(self, request, pk, *args, **kwargs):
-
         """
         Aggregate sflow data to get traffic from the specified ASNs to all other ASNs
         at the specified port.
