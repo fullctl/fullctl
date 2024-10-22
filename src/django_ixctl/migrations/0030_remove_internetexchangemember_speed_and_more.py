@@ -26,7 +26,7 @@ def set_port_size_and_quantity(apps, schema_editor):
 
     InternetExchangeMember = apps.get_model("django_ixctl", "InternetExchangeMember")
 
-    max_port_quantity = settings.PORT_LIMIT
+    max_port_quantity = settings.PORT_LIMIT_MAX
 
     # port sizes sorted in descending order
     port_sizes = sorted(settings.PORT_SIZES, reverse=True)
