@@ -217,6 +217,8 @@ div.dt-processing,
   height: 84%;
   width: 100%;
   max-height: 84px;
+  position: inherit;
+  top: 0;
 }
 
 .loading-indicator-container.fixed {
