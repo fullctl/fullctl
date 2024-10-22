@@ -4,6 +4,7 @@ from datetime import datetime
 import fullctl.service_bridge.aaactl as aaactl
 import fullctl.service_bridge.auditctl as auditctl
 import fullctl.service_bridge.pdbctl as pdbctl
+import structlog
 from django.conf import settings
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
@@ -12,7 +13,11 @@ from fullctl.django.rest.api_schema import PeeringDBImportSchema
 from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.decorators import load_object
 from fullctl.django.rest.filters import CaseInsensitiveOrderingFilter
-from fullctl.django.rest.mixins import CachedObjectMixin, OrgQuerysetMixin, AuditCtlActionLogMixin
+from fullctl.django.rest.mixins import (
+    AuditCtlActionLogMixin,
+    CachedObjectMixin,
+    OrgQuerysetMixin,
+)
 from fullctl.django.rest.renderers import PlainTextRenderer
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -24,8 +29,7 @@ from django_ixctl.rest.decorators import grainy_endpoint
 from django_ixctl.rest.route.ixctl import route
 from django_ixctl.rest.serializers.ixctl import OperationalStatusSerializer, Serializers
 
-import structlog
-logger = structlog.getLogger('django_structlog')
+logger = structlog.getLogger("django_structlog")
 
 
 class IxOrgQuerysetMixin:
@@ -460,18 +464,13 @@ class Member(AuditCtlActionLogMixin, CachedObjectMixin, IxOrgQuerysetMixin, view
                     ] = components
         return Response(member_data)
 
-    @action(detail=False,
-            methods=["PATCH"],
-            url_path=r"(?P<member_id>[\d]+)/status",  # noqa: W605
-            )
-    @load_object("ix",
-                 models.InternetExchange,
-                 instance="instance",
-                 slug="ix_tag")
-    @load_object("member",
-                 models.InternetExchangeMember,
-                 ix="ix",
-                 id="member_id")
+    @action(
+        detail=False,
+        methods=["PATCH"],
+        url_path=r"(?P<member_id>[\d]+)/status",  # noqa: W605
+    )
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @load_object("member", models.InternetExchangeMember, ix="ix", id="member_id")
     @grainy_endpoint(
         namespace="member.{request.org.permission_id}.{ix.pk}",
     )
@@ -506,18 +505,22 @@ class Member(AuditCtlActionLogMixin, CachedObjectMixin, IxOrgQuerysetMixin, view
           Response: A Response object containing the serialized data of the updated member
           if the serializer is valid. Otherwise, returns the serializer errors.
         """
-        serializer = self.serializer_class(member,
-                                           data=request.data,
-                                           partial=True,
-                                           context={"instance": instance},)
+        serializer = self.serializer_class(
+            member,
+            data=request.data,
+            partial=True,
+            context={"instance": instance},
+        )
         if serializer.is_valid():
             # Update the member status
             updated_instance = serializer.save()
             updated_serializer = self.serializer_class(updated_instance)
 
             # Update the physical ports status in deviceCtl
-            models.InternetExchangeMember.set_ports_status(member=member,
-                                                           status=request.data.get("status"),)
+            models.InternetExchangeMember.set_ports_status(
+                member=member,
+                status=serializer.validated_data.get("status"),
+            )
             return Response(updated_serializer.data)
 
         logger.debug(f"{serializer.errors=}")
