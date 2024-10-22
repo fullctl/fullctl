@@ -109,6 +109,9 @@ def account_service(request):
             "css": branding.css,
             "dark_logo_url": branding.dark_logo_url,
             "light_logo_url": branding.light_logo_url,
+            # using getattr for backwards compatibility with
+            # old aaactl versions
+            "favicon_url": getattr(branding, "favicon_url", None),
             "custom_org": True,
             "show_logo": branding.show_logo,
         }
