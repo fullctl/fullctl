@@ -126,6 +126,10 @@ class InternetExchange(PdbRefModel):
         ),
     )
 
+    limit_mac_addresses = models.BooleanField(default=False, help_text=_("Limit MAC addresses"))
+
+    learned_mac_addresses = models.BooleanField(default=False, help_text=_("MAC addresses are learned from devicectl"))
+
     mtu = models.PositiveSmallIntegerField(
         null=True,
         blank=True,
@@ -426,10 +430,15 @@ class InternetExchangeMember(PdbRefModel):
     port_quantity = models.PositiveSmallIntegerField(
         default=1,
         help_text=_("Number of ports"),
-        choices=[(i, str(i)) for i in range(1, settings.PORT_LIMIT + 1)]
+        choices=[(i, str(i)) for i in range(1, settings.PORT_LIMIT_MAX + 1)]
     )
 
     lag = models.BooleanField(default=False)
+
+    macaddr_limit = models.PositiveSmallIntegerField(
+        help_text=_("MAC limit - if the parent ix is set to use MAC limiting"),
+        default=1
+    )
 
     asn = models.PositiveIntegerField()
     name = models.CharField(max_length=255, blank=True, null=True)

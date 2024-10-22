@@ -64,3 +64,8 @@ p[data-field="macaddr_set"] {
 tr.secondary td.property div.row div p[data-field="macaddr_set"] {
   margin-left: 0px;
 }
+
+textarea.form-control.learned-mac-addresses {
+  background-color: transparent !important;
+  border: none;
+}

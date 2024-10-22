@@ -70,22 +70,70 @@
         <input type="text" class="form-control" id="member-ipaddr6" name="ipaddr6" />
       </div>
     </div>
-    <div class="row">
+
+    <!-- mac addresses -->
+
+    <div class="row" >
       <div class="col-12">
         <div class="alert alert-info">
-          {% blocktrans %}
-          You can add multiple MAC addresses. Each MAC address must be on a new line.
-          {% endblocktrans %}
+          {% if not select_ix.learned_mac_addresses %}
+            {% blocktrans %}
+            You can add multiple MAC addresses. Each MAC address must be on a new line.
+            {% endblocktrans %}
+          {% else %}
+            {% blocktrans %}
+            MAC addresses are automatically learned from the switch.
+            {% endblocktrans %}
+          {% endif %}
         </div>
       </div>
     </div>
     <div class="row mb-3">
       <div class="col-12" data-api-submit="yes">
         <label class="form-label" for="member-macaddr">{% trans "MAC Addresses" %}</label>
+        {% if select_ix.learned_mac_addresses %}
+          <textarea disabled class="form-control learned-mac-addresses" id="member-macaddr-set" name="macaddr_set" rows="3"></textarea>
+        {% else %}
+          <textarea class="form-control" id="member-macaddr-set" name="macaddr_set" rows="3"></textarea>
+        {% endif %}
 
-        <textarea class="form-control" id="member-macaddr-set" name="macaddr_set" rows="3"></textarea>
       </div>
     </div>
+
+      <!-- mac limit -->
+
+      {% if select_ix.limit_mac_addresses %}
+      <div class="row macaddr-limit-warning" style="display:none;">
+        <div class="col-12">
+          <div class="alert alert-error">
+            {% blocktrans %}
+            Number of mac addresses exceeds your specified limit.
+            {% endblocktrans %}
+          </div>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes">
+          <label class="form-label" for="member-macaddr-limit">{% trans "MAC Limit" %}</label>
+          <!-- select 1 to 9 -->
+          <span class="modal-control">
+            <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+            <select
+              class="form-control"
+              id="member-macaddr-limit"
+              name="macaddr_limit"
+              >
+              {% for num in MAC_LIMITS %}
+              <option value="{{ num }}">{{ num }}</option>
+              {% endfor %}
+            </select>
+          </span>
+        </div>
+      </div>
+      {% endif %}
+
+    <!-- MD5 -->
+
     <div class="row mb-3">
       <div class="col-12" data-api-submit="yes">
         <label class="form-label" for="member-md5">{% trans "MD5" %}</label>

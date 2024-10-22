@@ -14,7 +14,7 @@ def set_port_fields_from_speed(member, speed:int):
     - member: InternetExchangeMember object
     - speed: int, speed in Mb
     """
-    max_port_quantity = settings.PORT_LIMIT
+    max_port_quantity = settings.PORT_LIMIT_MAX
     port_sizes = sorted(settings.PORT_SIZES, reverse=True)
 
     if speed is None or speed == 0:

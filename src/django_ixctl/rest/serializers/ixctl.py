@@ -156,6 +156,8 @@ class InternetExchange(ModelSerializer):
             "notes",
             "public_view",
             "graph_traffic_source",
+            "learned_mac_addresses",
+            "limit_mac_addresses",
         ]
         extra_kwargs = {
             "slug": {
@@ -220,6 +222,14 @@ class InternetExchangeMember(ModelSerializer):
 
     macaddr_warnings = serializers.SerializerMethodField()
 
+    # defaults to 1 if not set, but will be ignored if 
+    # parent ix is not limiting mac addresses
+    macaddr_limit = serializers.IntegerField(
+        allow_null=True,
+        required=False,
+        default=1,
+    )
+
     display_name = serializers.CharField(read_only=True)
     prefix_set_name = serializers.SerializerMethodField()
     port_name = serializers.SerializerMethodField()
@@ -257,6 +267,7 @@ class InternetExchangeMember(ModelSerializer):
             "macaddr",
             "macaddr_set",
             "macaddr_warnings",
+            "macaddr_limit",
             "as_macro",
             "as_macro_override",
             "as_macro_negate",
@@ -458,6 +469,39 @@ class InternetExchangeMember(ModelSerializer):
 
         return port_quantity
 
+    def _validate_macaddr_limit(self, macaddr_limit, validated_data):
+        """
+        If ix.limit_mac_addresses is False no validation is needed
+
+        If ix.limit_mac_addresses is True, macaddr_limit must be set
+        to a value between 1 and settings.MAC_LIMIT_MAX and be greater or 
+        equal to the length of macaddr_set
+
+        If ix.learned_mac_addresses is True, macaddr_set needs to be checked
+        from the port.virtual_port_macaddr_set not from the data.
+        """
+
+        ix = validated_data.get("ix")
+
+        if not ix.limit_mac_addresses:
+            return 1
+
+        if not macaddr_limit:
+            raise ValidationError(_("MAC address limit is required"))
+
+        if macaddr_limit < 1 or macaddr_limit > settings.MAC_LIMIT_MAX:
+            raise ValidationError(_("MAC address limit must be between 1 and {settings.MAC_LIMIT_MAX}").format(settings=settings))
+
+        macaddr_set = validated_data.get("macaddr_set", [])
+
+        if ix.learned_mac_addresses and validated_data.get("port"):
+            macaddr_set = self.ports.get(validated_data.get("port")).virtual_port_macaddr_set
+
+        if len(macaddr_set) > macaddr_limit:
+            raise ValidationError({"macaddr_limit": _("MAC address limit must be greater than or equal to the number of MAC addresses")})
+
+        return macaddr_limit
+
     def validate(self, data:dict) -> dict:
 
         # if case numbers are enabled push them into meta under
@@ -471,6 +515,12 @@ class InternetExchangeMember(ModelSerializer):
                 data["meta"] = meta
             data.pop("case_number", None)
 
+        # validate macaddr_limit
+        data["macaddr_limit"] = self._validate_macaddr_limit(
+            data.get("macaddr_limit"),
+            data
+        )
+
         return data
 
     def to_representation(self, instance: models.InternetExchangeMember) -> dict:
@@ -482,6 +532,23 @@ class InternetExchangeMember(ModelSerializer):
         if not settings.MEMBER_CASE_NUMBERS_ENABLED:
             if data.get("meta") and "case_number" in data.get("meta"):
                 del data.meta["case_number"]
+
+        # if the parent ix has learned mac addresses enabled
+        # we want to substitute the macaddr_set with the mac addresses
+        # from port.virtual_port_macaddr_set
+
+        if instance.ix.learned_mac_addresses:
+            if instance.port:
+                data["macaddr_set"] = self.ports.get(instance.port.id).virtual_port_macaddr_set
+            else:
+                data["macaddr_set"] = []
+            data["macaddr"] = data["macaddr_set"][0] if data["macaddr_set"] else None
+
+        # if the parent ix has turned off limit_mac_addresses
+        # set mac_addr_limit to None
+        if not instance.ix.limit_mac_addresses:
+            data["macaddr_limit"] = None
+
         return data
 
 
@@ -517,6 +584,9 @@ class InternetExchangeMember(ModelSerializer):
         Checks if macaddr_set contains any mac addresses
         that exist on another member
         """
+        # if mac addresses are learned from the port, we don't need to check for duplicates
+        if obj.ix.learned_mac_addresses:
+            return []
 
         # collect member's mac addresses from self.macaddresses
         macaddr_set = self.macaddresses["by_member"].get(obj.id, [])

@@ -41,5 +41,6 @@ def ixctl_settings(request):
 
     return {
         "MEMBER_CASE_NUMBERS_ENABLED": settings.MEMBER_CASE_NUMBERS_ENABLED,
-        "PORT_QUANTITIES": [i for i in range(1, settings.PORT_LIMIT + 1)],
+        "PORT_QUANTITIES": [i for i in range(1, settings.PORT_LIMIT_MAX + 1)],
+        "MAC_LIMITS": [i for i in range(1, settings.MAC_LIMIT_MAX + 1)],
     }

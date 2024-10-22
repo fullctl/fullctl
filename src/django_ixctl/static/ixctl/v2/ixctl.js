@@ -363,7 +363,58 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
         form.element.find('#member-lag').prop('checked', true).prop('disabled', true);
       }
 
-      // setup port auto complete
+      // member-macaddr-limit value is > than macaddr_set.length
+      // show .macaddr-limit-warning
+      form.element.find('#member-macaddr-limit').change(function() {
+        var limit = Number($(this).val());
+        var macaddr_set = modal.member.macaddr_set || [];
+        if(limit < macaddr_set.length) {
+          form.element.find('.macaddr-limit-warning').show();
+        } else {
+          form.element.find('.macaddr-limit-warning').hide();
+        }
+      });
+
+      if(member) {
+        title = "Edit "+member.display_name;
+        form.method = "PUT"
+        form.form_action = member.id;
+        this.sync_form(member.id);
+
+        form.element.find('#member-as-macro').attr('placeholder', member.as_macro)
+
+        form.element.find('input[type="text"],select,input[type="checkbox"]').each(function() {
+          if(!grainy.check(member.grainy+"."+$(this).attr("name"), "u")) {
+            $(this).attr("disabled", true)
+          }
+        });
+
+
+        $(this.form).on("api-write:before", (ev, e, payload) => {
+          payload["ix"] = member.ix;
+          payload["id"] = member.id;
+        });
+      } else {
+        this.init_autocomplete_ports();
+        this.init_autocomplete_prefix_set();
+      }
+
+      $(this.form).on("api-write:success", (ev, e, payload, response) => {
+        $ctl.ixctl.$t.members.$w.list.load();
+        modal.hide();
+      });
+
+      this.Modal("save_right", title, form.element);
+      form.wire_submit(this.$e.button_submit);
+    },
+
+    /**
+     * Initializes the port autocomplete field
+     * @method init_autocomplete_ports
+     */
+
+    init_autocomplete_ports : function() {
+      const form = this.form;
       fullctl.ext.select2.init_autocomplete(
 
         // bind to port <select> element
@@ -383,30 +434,32 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
 
           // if session is specifed, preselect it's port
           initial: (callback) => {
-            if(!member) {
+            if(!this.member) {
               return null;
             }
-            form.get(member.id).then((response,b,c) => {
-              let member = response.content.data[0];
+            if(!this.member.port) {
+              callback({});
+              return;
+            }
 
-              if(!member.port) {
-                callback({});
-                return;
-              }
-
-              callback({
-                id: member.port.id,
-                primary: member.port.display_name,
-                secondary: member.port.virtual_port_name,
-                extra: member.port.device.display_name
-              })
+            callback({
+              id: this.member.port.id,
+              primary: this.member.port.display_name,
+              secondary: this.member.port.virtual_port_name,
+              extra: this.member.port.device.display_name
             })
           }
         }
       );
+    },
 
+    /**
+     * Initializes the prefix-set autocomplete field
+     * @method init_autocomplete_prefix_set
+     */
 
-      // setup prefix-set auto complete
+    init_autocomplete_prefix_set : function() {
+      const form = this.form;
       fullctl.ext.select2.init_autocomplete(
 
         // bind to prefix-set <select> element
@@ -426,55 +479,57 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
 
           // if session is specifed, preselect it's prefix set
           initial: (callback) => {
-            if(!member) {
+            if(!this.member) {
               return null;
             }
-            form.get(member.id).then((response,b,c) => {
-              let member = response.content.data[0];
+            if(!this.member.prefix_set) {
+              callback({});
+              return;
+            }
 
-              if(!member.prefix_set) {
-                callback({});
-                return;
-              }
-
-              callback({
-                id: member.prefix_set,
-                primary: member.prefix_set_name,
-                secondary: member.prefix_set,
-              })
+            callback({
+              id: this.member.prefix_set,
+              primary: this.member.prefix_set_name,
+              secondary: this.member.prefix_set,
             })
           }
         }
       );
+    },
 
-      if(member) {
-        title = "Edit "+member.display_name;
-        form.method = "PUT"
-        form.form_action = member.id;
+    /**
+     * Requests the member details from the API and fills the form with the
+     * member's data.
+     * 
+     * @method sync_form
+     * @param {Number} member_id
+     */
+
+    sync_form : function(member_id) {
+      const form = this.form;
+      
+      form.get(member_id).then((response) => {
+        const member = response.first();
+        this.member = member;
+
         form.fill(member);
+        form.apply_data(member);
 
-        form.element.find('#member-as-macro').attr('placeholder', member.as_macro)
-
-        form.element.find('input[type="text"],select,input[type="checkbox"]').each(function() {
-          if(!grainy.check(member.grainy+"."+$(this).attr("name"), "u")) {
-            $(this).attr("disabled", true)
+        // if mac limit is set, show warning if macaddr_set.length > limit
+        if(member && member.macaddr_limit) {
+          var limit = member.macaddr_limit;
+          if(limit < member.macaddr_set.length) {
+            form.element.find('.macaddr-limit-warning').show();
           }
-        });
+        }
+        
+        // setup port auto complete
+        this.init_autocomplete_ports();
 
+        // setup prefix-set auto complete
+        this.init_autocomplete_prefix_set();
 
-        $(this.form).on("api-write:before", (ev, e, payload) => {
-          payload["ix"] = member.ix;
-          payload["id"] = member.id;
-        });
-      }
-
-      $(this.form).on("api-write:success", (ev, e, payload, response) => {
-        $ctl.ixctl.$t.members.$w.list.load();
-        modal.hide();
       });
-
-      this.Modal("save_right", title, form.element);
-      form.wire_submit(this.$e.button_submit);
     }
   },
   $ctl.application.Modal
