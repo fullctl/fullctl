@@ -1,9 +1,9 @@
 from collections.abc import Iterable
-from flatten_json import flatten
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Q
+from django.utils.translation import gettext_lazy as _
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
 from rest_framework import serializers
@@ -341,7 +341,9 @@ class PhysicalPort(ModelSerializer):
         try:
             # Get all metrics from this device
             metric = Metric(
-                models.DeviceMetric.objects.filter(device=obj.device.id).latest("created"),
+                models.DeviceMetric.objects.filter(device=obj.device.id).latest(
+                    "created"
+                ),
                 context={"detailed": True},
             ).data
             # Return only keys with same port name
@@ -482,3 +484,23 @@ class PortTraffic(serializers.ListSerializer):
     child = Traffic()
 
     ref_tag = "port_traffic"
+
+
+PORT_STATE = (
+    ("ok", _("Ok")),
+    ("down", _("Down")),
+    ("admin_down", _("Admin Down")),
+)
+
+
+@register
+class PortStatus(serializers.Serializer):
+    ref_tag = "port_status"
+
+    status = serializers.ChoiceField(
+        choices=PORT_STATE,
+        allow_blank=True,
+        allow_null=True,
+        required=False,
+        default="ok",
+    )
