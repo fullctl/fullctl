@@ -43,6 +43,14 @@ class OrganizationBranding(HandleRefModel):
         help_text=_("URL used to display the light logo on the dashboard."),
         validators=[validate_logo_url_formatting],
     )
+    favicon_url = models.URLField(
+        _("Favicon URL"),
+        max_length=2000,
+        blank=True,
+        null=True,
+        help_text=_("URL used to display the favicon on the application."),
+        validators=[validate_logo_url_formatting],
+    )
     show_logo = models.BooleanField(
         default=False, help_text=_("Show logo in the services drop down")
     )

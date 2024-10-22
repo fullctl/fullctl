@@ -2,6 +2,7 @@ from django.urls import reverse
 
 import account.models as models
 from account.views.auth import valid_frontend_redirect
+from common.util import format_logo_url
 
 
 def test_login(db, client_anon):
@@ -9,14 +10,18 @@ def test_login(db, client_anon):
     assert response.status_code == 200
     assert "Register New Account" in response.content.decode()
 
+
 def test_login_no_signup_link(db, client_anon, settings):
-    settings.ENABLE_ACCOUNT_REGISTRATION=0
+    settings.ENABLE_ACCOUNT_REGISTRATION = 0
     response = client_anon.get(reverse("account:auth-login"))
     assert response.status_code == 200
     assert "Register New Account" not in response.content.decode()
 
-def test_login_signup_link_through_invitation(db, account_objects, client_anon, settings):
-    settings.ENABLE_ACCOUNT_REGISTRATION=0
+
+def test_login_signup_link_through_invitation(
+    db, account_objects, client_anon, settings
+):
+    settings.ENABLE_ACCOUNT_REGISTRATION = 0
     invite = models.Invitation.objects.create(
         org=account_objects.org, created_by=account_objects.user, email="test@localhost"
     )
@@ -29,10 +34,12 @@ def test_login_signup_link_through_invitation(db, account_objects, client_anon, 
     assert "Register New Account" in response.content.decode()
     assert "You have been invited to join the organization" in response.content.decode()
 
+
 def test_register_disabled(db, client_anon, settings):
     settings.ENABLE_ACCOUNT_REGISTRATION = 0
     response = client_anon.get(reverse("account:auth-register"))
     assert response.status_code == 404
+
 
 def test_register_through_invitation(db, account_objects, client_anon, settings):
     settings.ENABLE_ACCOUNT_REGISTRATION = 0
@@ -46,6 +53,7 @@ def test_register_through_invitation(db, account_objects, client_anon, settings)
 
     assert response.status_code == 200
     assert "You have been invited to join the organization" in response.content.decode()
+
 
 def test_org_branding_slug_filtering(db, client_anon, account_objects, settings):
     settings.BRANDING_ORG = account_objects.org.slug
@@ -170,3 +178,16 @@ def test_index_with_branding_org_var_set(db, account_objects, settings):
 
     assert response.status_code == 200
     assert response.context["org_branding"]["name"] == account_objects.org.name
+
+
+def test_org_branding_favicon_url(db, client_anon, account_objects, settings):
+    settings.BRANDING_ORG = account_objects.org.slug
+    favicon_url = "https://{version}{static_path}"
+    account_objects.org_branding.favicon_url = favicon_url
+    account_objects.org_branding.save()
+
+    response = client_anon.get(reverse("account:auth-login"))
+
+    assert response.context["org_branding"]["favicon_url"] == format_logo_url(
+        favicon_url
+    )
