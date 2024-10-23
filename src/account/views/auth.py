@@ -235,12 +235,18 @@ def register(request):
         # registration is disabled, return a 404
         raise Http404
 
+    show_captcha = (
+        getattr(settings, "RECAPTCHA_PUBLIC_KEY", None)
+        and getattr(settings, "RECAPTCHA_SECRET_KEY", None)
+    )
+
     if request.method == "POST":
-        form = account.forms.RegisterUser(data=request.POST)
+        form = account.forms.RegisterUser(data=request.POST, show_captcha=show_captcha)
         if form.is_valid():
             try:
                 del form.cleaned_data["password_confirmation"]
-                del form.cleaned_data["captcha"]
+                if show_captcha:
+                    del form.cleaned_data["captcha"]
                 user = get_user_model().objects.create_user(**form.cleaned_data)
                 fn_login(request, user, backend="django_grainy.backends.GrainyBackend")
                 redirect_next = valid_redirect(
@@ -252,7 +258,7 @@ def register(request):
                 messages.error(request, _("Registration error: {}").format(exc))
 
     else:
-        form = account.forms.RegisterUser()
+        form = account.forms.RegisterUser(show_captcha=show_captcha)
 
         # if invitation we can set the email field
         if invite:
@@ -280,6 +286,7 @@ def register(request):
         register_form=form,
         password_login_enabled=settings.PASSWORD_LOGIN_ENABLED,
         org_branding=org_branding_components,
+        show_captcha=show_captcha,
     )
 
     return render(request, "account/auth/register.html", env)
