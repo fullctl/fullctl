@@ -53,6 +53,11 @@ class RegisterUser(UserInformationBase, forms.Form):
     password_confirmation = forms.CharField(widget=forms.PasswordInput)
     captcha = ReCaptchaField()
 
+    def __init__(self, *args, show_captcha=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not show_captcha:
+            self.fields.pop("captcha")
+
     def clean_password(self):
         password = self.cleaned_data["password"]
 

@@ -41,9 +41,8 @@ settings_manager.set_from_env("SOCIAL_AUTH_OKTA_OPENIDCONNECT_KEY")
 settings_manager.set_from_env("SOCIAL_AUTH_OKTA_OPENIDCONNECT_SECRET")
 settings_manager.set_from_env("SOCIAL_AUTH_OKTA_OPENIDCONNECT_API_URL")
 
-
-settings_manager.set_option("RECAPTCHA_PUBLIC_KEY", "...")
-settings_manager.set_option("RECAPTCHA_SECRET_KEY", "...")
+settings_manager.set_from_env("RECAPTCHA_PUBLIC_KEY")
+settings_manager.set_from_env("RECAPTCHA_SECRET_KEY")
 
 settings_manager.set_from_env("STRIPE_PUBLIC_KEY")
 settings_manager.set_from_env("STRIPE_SECRET_KEY")
