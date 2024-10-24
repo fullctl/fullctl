@@ -23,6 +23,7 @@ def conf(request):
         "disable_help_menu": getattr(settings, "DISABLE_HELP_MENU", False),
         "disable_contact_us": getattr(settings, "DISABLE_CONTACT_US", False),
         "docs_url": settings.DOCS_URL,
+        "service_docs_url": getattr(settings, f"{settings.SERVICE_TAG.upper()}_DOCS_URL", None),
         "legal_url": settings.LEGAL_URL,
         "terms_of_service_url": settings.TERMS_OF_SERVICE_URL,
         "current_year": datetime.now().year,

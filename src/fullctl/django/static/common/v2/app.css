@@ -359,6 +359,18 @@ div.loading-anim {
   margin-bottom: 5px;
 }
 
+.marg-right-sm {
+  margin-right: 5px;
+}
+
+.marg-right-md {
+  margin-right: 12px;
+}
+
+.marg-right-lg {
+  margin-right: 24px;
+}
+
 .marg-sm {
   margin-top: 5px;
   margin-bottom: 5px;
@@ -780,6 +792,13 @@ span.icon {
   -webkit-mask-repeat: no-repeat;
 }
 
+span.icon-md {
+  width: 24px;
+  height: 24px;
+  mask-size: cover;
+}
+
+
 span.icon-lg {
   width: 32px;
   height: 32px;
@@ -829,6 +848,11 @@ span.icon-theme-switcher {
 span.icon-help {
   -webkit-mask-image: url(icons/help.svg);
   mask-image: url(icons/help.svg);
+}
+
+span.icon-info {
+  -webkit-mask-image: url(icons/info.svg);
+  mask-image: url(icons/info.svg);
 }
 
 span.icon-caret-y {
