@@ -92,6 +92,9 @@ REST_FRAMEWORK = {
 # IRR IMPORT FREQUENCY (per prefix set that has it enabled), 12 hours
 settings_manager.set_option("IRR_IMPORT_FREQUENCY", 3600 * 12)
 
+# PREFIXCTL DOCS
+settings_manager.set_option("PREFIXCTL_DOCS_URL", "https://docs.fullctl.com/prefixctl/PrefixCtl-Definitions/")
+
 # OUTSIDE SERVICES
 
 settings_manager.set_option("GOOGLE_ANALYTICS_ID", "")
