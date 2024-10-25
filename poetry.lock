@@ -1327,13 +1327,13 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pluginmgr"
-version = "1.2.0"
+version = "1.2.1"
 description = "lightweight python plugin system supporting config inheritance"
 optional = false
-python-versions = "<4.0,>=3.8"
+python-versions = ">=3.8"
 files = [
-    {file = "pluginmgr-1.2.0-py3-none-any.whl", hash = "sha256:6fef434ee20c441a1c6e44d248a7df8dccd35d5546b2aecd3f12300441ae8fcd"},
-    {file = "pluginmgr-1.2.0.tar.gz", hash = "sha256:42b48f1ea6f961b621ea20b37a350d1ae3811fc294572a3e8ea896cf2f370a66"},
+    {file = "pluginmgr-1.2.1-py3-none-any.whl", hash = "sha256:ee9ca530ad1a369c43cb4486fa6815d2fc99f9bc598d42414f96a98b36fc80c2"},
+    {file = "pluginmgr-1.2.1.tar.gz", hash = "sha256:eb4f78521861224e79ce045e6f97ffa06a347b955e6e69e44716acda4ca024d4"},
 ]
 
 [package.dependencies]
