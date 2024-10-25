@@ -1067,7 +1067,7 @@ woff = ["brotli (>=1.0.1)", "brotlicffi (>=0.8.0)", "zopfli (>=0.1.4)"]
 
 [[package]]
 name = "fullctl"
-version = "1.15.0-rc.11"
+version = "1.15.0-rc.17"
 description = "Core classes and functions for service applications"
 optional = false
 python-versions = "^3.9"
@@ -1105,7 +1105,7 @@ whitenoise = ">=6"
 type = "git"
 url = "https://github.com/fullctl/fullctl.git"
 reference = "prep-release"
-resolved_reference = "704fca7aed330d42ee3d4aadc95f9772c2ef600d"
+resolved_reference = "3fa4001d8aa517c2265281f0086a9c54b60ef770"
 
 [[package]]
 name = "gitdb"
@@ -1987,13 +1987,13 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pluginmgr"
-version = "1.2.0"
+version = "1.2.1"
 description = "lightweight python plugin system supporting config inheritance"
 optional = false
-python-versions = "<4.0,>=3.8"
+python-versions = ">=3.8"
 files = [
-    {file = "pluginmgr-1.2.0-py3-none-any.whl", hash = "sha256:6fef434ee20c441a1c6e44d248a7df8dccd35d5546b2aecd3f12300441ae8fcd"},
-    {file = "pluginmgr-1.2.0.tar.gz", hash = "sha256:42b48f1ea6f961b621ea20b37a350d1ae3811fc294572a3e8ea896cf2f370a66"},
+    {file = "pluginmgr-1.2.1-py3-none-any.whl", hash = "sha256:ee9ca530ad1a369c43cb4486fa6815d2fc99f9bc598d42414f96a98b36fc80c2"},
+    {file = "pluginmgr-1.2.1.tar.gz", hash = "sha256:eb4f78521861224e79ce045e6f97ffa06a347b955e6e69e44716acda4ca024d4"},
 ]
 
 [package.dependencies]
@@ -2868,13 +2868,13 @@ typing = ["mypy (>=1.4)", "rich", "twisted"]
 
 [[package]]
 name = "tinycss2"
-version = "1.3.0"
+version = "1.4.0"
 description = "A tiny CSS parser"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "tinycss2-1.3.0-py3-none-any.whl", hash = "sha256:54a8dbdffb334d536851be0226030e9505965bb2f30f21a4a82c55fb2a80fae7"},
-    {file = "tinycss2-1.3.0.tar.gz", hash = "sha256:152f9acabd296a8375fbca5b84c961ff95971fcfc32e79550c8df8e29118c54d"},
+    {file = "tinycss2-1.4.0-py3-none-any.whl", hash = "sha256:3a49cf47b7675da0b15d0c6e1df8df4ebd96e9394bb905a5775adb0d884c5289"},
+    {file = "tinycss2-1.4.0.tar.gz", hash = "sha256:10c0972f6fc0fbee87c3edb76549357415e94548c1ae10ebccdea16fb404a9b7"},
 ]
 
 [package.dependencies]
