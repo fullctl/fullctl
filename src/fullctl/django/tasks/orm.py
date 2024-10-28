@@ -84,7 +84,7 @@ def tasks_max_time_reached():
             continue
 
         time_delta = timedelta(seconds=task.max_run_time)
-        if (task.created + time_delta) < timezone.now():
+        if (task.updated + time_delta) < timezone.now():
             task.cancel("max run time reached")
             requeue_task(task)
 
