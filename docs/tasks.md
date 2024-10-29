@@ -242,8 +242,26 @@ manage.py fullctl_promote_user vegu -Q
 
 Fetch and process tasks in the task queue using the `fullctl_poll_tasks` command
 
+## Workers
+
 ```sh
 manage.py fullctl_poll_tasks --workers 4
 ```
 
 This will run forever and automatically fetch and process tasks that the environment is qualified to handle.
+
+## Self selecting workers
+
+```sh
+manage.py fullctl_poll_tasks --processes 4
+```
+
+The difference between `--workers` and `--processes` is that `--processes` will spawn worker processes immediately that will poll for tasks themselves. While --workers will maintain a queue of busy and idle workers and assign tasks to them, spawning processes as tasks are assigned.
+
+`--processes` is faster and will likely replace `--workers` in the future.
+
+Its also a good idea to run `--processes` with `--workers` set to 0.
+
+```sh
+manage.py fullctl_poll_tasks --processes 4 --workers 0
+```

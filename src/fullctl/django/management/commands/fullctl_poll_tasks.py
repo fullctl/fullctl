@@ -26,10 +26,12 @@ class Worker:
     Will run fullctl_work_task command async through asyncio.subprocess
     """
 
-    def __init__(self):
+    def __init__(self, self_selecting:bool=False, poll_interval:float=3.0):
         self.id = f"{uuid.uuid4()}"[:8]
         self.task = None
         self.process = None
+        self.self_selecting = self_selecting
+        self.poll_interval = poll_interval
 
     def set_task(self, task):
         if task and self.task:
@@ -45,9 +47,8 @@ class Worker:
         Task is assigned through set_task
         """
 
-        if not self.task:
+        if not self.task and not self.self_selecting:
             return
-        self.task
         if not self.process:
             # no process has been spawned yet, run the command
             await self._run_command()
@@ -64,8 +65,14 @@ class Worker:
             "python",
             "manage.py",
             "fullctl_work_task",
-            f"{task.id}",
         ]
+
+        if task:
+            cmd.append(str(task.id))
+
+        if self.self_selecting:
+            cmd.extend(["--poll-interval", str(self.poll_interval)])
+
         p = await asyncio.create_subprocess_shell(
             " ".join(cmd),
         )
@@ -87,28 +94,52 @@ class Command(CommandInterface):
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
-        parser.add_argument("--workers", help="number of concurrent  workers", type=int)
+        parser.add_argument("-w", "--workers", help="number of concurrent  workers", type=int, default=1)
         parser.add_argument(
             "-i",
             "--poll-interval",
             help="delay between polling for tasks (seconds)",
+            type=float,
+            default=3.0,
+        )
+        parser.add_argument(
+            "-p",
+            "--processes",
+            help="will spawn self selecting workers as subprocesses",
             type=int,
-            default=3,
+            default=0,
         )
 
     def _run(self, *args, **kwargs):
         self.sleep_interval = 0.5
-        self.poll_interval = float(kwargs.get("poll_interval")) or 3
+        self.poll_interval = float(kwargs.get("poll_interval")) or 3.0
         self.all_workers_busy = False
-        self.workers_num = int(kwargs.get("workers") or 1)
+        self.workers_num = int(kwargs.get("workers"))
+        self.processes = int(kwargs.get("processes"))
 
         self.log_info(
-            f"Starting task queue poller, {self.workers_num} workers, poll interval {self.poll_interval} seconds, sleep interval {self.sleep_interval} seconds"
+            f"Starting task queue poller, {self.workers_num} workers, {self.processes} self-selecting workers, poll interval {self.poll_interval} seconds, sleep interval {self.sleep_interval} seconds"
         )
 
         self.workers = [Worker() for i in range(0, self.workers_num)]
+        
+        # instanctatie self selecting workers
+        self.self_selecting_workers = [
+            Worker(self_selecting=True, poll_interval=self.poll_interval) 
+            for i in range(0, self.processes)
+        ]
 
         async def _main():
+            # spawn self selecting workers as subprocesses
+            if self.self_selecting_workers:
+                self.log_info(f"Spawning {len(self.self_selecting_workers)} self selecting workers")
+                await asyncio.gather(
+                    *[
+                        asyncio.create_task(worker.work())
+                        for worker in self.self_selecting_workers
+                    ]
+                )
+
             await asyncio.gather(
                 asyncio.create_task(self._poll_tasks()),
                 asyncio.create_task(self._process_workers()),
@@ -128,10 +159,16 @@ class Command(CommandInterface):
                 log.exception("Error processing workers", exc=exc)
 
     async def _poll_tasks(self):
+        if not self.workers:
+            self.log_info("Since workers are configured to 0, will not poll for tasks, but idle instead.")
+        
         while True:
             task = None
             try:
                 await asyncio.sleep(self.poll_interval)
+
+                if not self.workers:
+                    continue
 
                 if not self.worker_available:
                     if not self.all_workers_busy:
