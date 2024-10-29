@@ -20,7 +20,13 @@ def test_task_with_max_run_time():
     orm.claim_task(task)
 
     task.created = task.created - timezone.timedelta(seconds=7200)
-    task.save()
+    task.updated = task.created
+    try:
+        # set updated auto_now to false
+        task._meta.get_field("updated").auto_now = False
+        task.save()
+    finally:
+        task._meta.get_field("updated").auto_now = True
 
     orm.tasks_max_time_reached()
 
