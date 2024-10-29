@@ -133,11 +133,12 @@ class UpdateTrafficGraphs(Task):
         tag = "task_update_virtual_port_traffic_graphs"
 
     class TaskMeta:
-        qualifiers = [
-            # in order to avoid any race conditions when inserting
-            # data into graphs, we limit concurrency to 1 per org
-            OrgConcurrencyLimit(1),
-        ]
+        if settings.GRAPHS_RRD_ENABLED:
+            qualifiers = [
+                # in order to avoid any race conditions when inserting
+                # data into graphs, we limit concurrency to 1 per org
+                OrgConcurrencyLimit(1),
+            ]
 
     @property
     def context_model(self):
@@ -155,6 +156,44 @@ class UpdateTrafficGraphs(Task):
         else:
             raise ValueError(f"Unknown context model {ref_tag}")
 
+    @property
+    def members(self) -> dict:
+        """
+        Returns a dictionary of ixctl members indexed by port id.
+
+        Will cache the result in the instance to avoid multiple lookups.
+        """
+        if hasattr(self, "_members"):
+            return self._members
+
+        port_ids = []
+        all_data = self.param["kwargs"].get("update", [])
+        for data in all_data:
+            virtual_port = self.context_model.objects.get(id=data["id"])
+            port_ids.append(virtual_port.port.id)
+
+        self._members = {m.port: m for m in ixctl.InternetExchangeMember().objects(ports=port_ids, org=self.org.remote_id)}
+
+        return self._members
+
+    @property
+    def exchanges(self) -> dict:
+        """
+        Returns a dictionary of ixctl exchanges indexed by ix id.
+
+        Will cache the result in the instance to avoid multiple lookups.
+        """
+        if hasattr(self, "_exchanges"):
+            return self._exchanges
+
+        exchange_ids = set()
+        for member in self.members.values():
+            exchange_ids.add(member.ix_id)
+
+        exchange_ids = list(exchange_ids)
+        self._exchanges = {ix.id: ix for ix in ixctl.InternetExchange().objects(ids=exchange_ids)}
+        return self._exchanges
+
     def run(self, *args, **kwargs):
         processed_port_ids = set()
         for data in sorted(kwargs.get("update", []), key=lambda x: int(x["timestamp"])):
@@ -169,7 +208,7 @@ class UpdateTrafficGraphs(Task):
             self.import_mrtg(data)
             processed_port_ids.add(data["id"])
 
-        if self.context_model == models.PhysicalPort:
+        if self.context_model == models.PhysicalPort and settings.GRAPHS_RRD_ENABLED:
             UpdateDeviceTrafficGraphs.create_task(
                 org=self.org,
                 *processed_port_ids,
@@ -179,9 +218,21 @@ class UpdateTrafficGraphs(Task):
                 org=self.org,
                 data=kwargs.get("update", []),
             )
-            UpdateIxctlIxTrafficGraphs.create_task(
-                org=self.org,
-            )
+            if settings.GRAPHS_RRD_ENABLED:
+                # Will aggregate IX traffic graphs for RRD
+                # then call RenderTrafficGraphs when done
+                UpdateIxctlIxTrafficGraphs.create_task(
+                    org=self.org,
+                )
+            else:
+                # Going to VM only we can directly render the graphs
+                # without needing to aggregate further
+                objects_to_render = [f"ixctl-ix-{ix.id}" for ix in self.exchanges.values()]
+                RenderTrafficGraphs.create_task(
+                    *objects_to_render,
+                    org=self.org,
+                )
+
 
     def update_victoriametrics(self, all_data:list[dict]):
 
@@ -198,13 +249,7 @@ class UpdateTrafficGraphs(Task):
             "ctl_org": self.org.slug,
         }
 
-        port_ids = []
-        for data in all_data:
-            virtual_port = self.context_model.objects.get(id=data["id"])
-            port_ids.append(virtual_port.port.id)
-
-        members = {m.port: m for m in ixctl.InternetExchangeMember().objects(ports=port_ids, org=self.org.remote_id)}
-
+        members = self.members
 
         # collect ix ids from ixctl
         points = []
@@ -247,6 +292,9 @@ class UpdateTrafficGraphs(Task):
         Update the RRD file for the given context object with the given data point (single data point)
         """
 
+        if not settings.GRAPHS_RRD_ENABLED:
+            return
+
         context_obj = self.context_model.objects.get(id=data["id"])
         bps_in = data["bps_in"]
         bps_out = data["bps_out"]
@@ -280,6 +328,9 @@ class UpdateTrafficGraphs(Task):
         Import MRTG log lines into RRD file for the given context object
         """
 
+        if not settings.GRAPHS_RRD_ENABLED:
+            return
+
         context_obj = self.context_model.objects.get(id=data["id"])
 
         # check if graph file already exists
@@ -309,6 +360,10 @@ class UpdateTrafficGraphs(Task):
 
 @register
 class UpdateDeviceTrafficGraphs(Task):
+    """
+    RRD aggregation task for device traffic graphs
+    """
+
     class Meta:
         proxy = True
 
@@ -323,6 +378,9 @@ class UpdateDeviceTrafficGraphs(Task):
         ]
 
     def run(self, *args, **kwargs):
+        if not settings.GRAPHS_RRD_ENABLED:
+            return
+
         self.aggregate_device_graphs(args)
 
     def aggregate_device_graphs(self, port_ids):
@@ -359,6 +417,8 @@ class UpdateDeviceTrafficGraphs(Task):
 @register
 class UpdateIxctlIxTrafficGraphs(Task):
     """
+    RRD aggregation task for IX traffic graphs
+
     Will update all IX traffic graphs (ixctl)
 
     This will use the service bridge to query what exchange the devices belong to and then
@@ -379,6 +439,9 @@ class UpdateIxctlIxTrafficGraphs(Task):
         ]
 
     def run(self, *args, **kwargs):
+        if not settings.GRAPHS_RRD_ENABLED:
+            return
+
         graph_files = self.aggregate_ix_graphs()
 
         RenderTrafficGraphs.create_task(*graph_files, org=self.org)
@@ -449,8 +512,9 @@ class RenderTrafficGraphs(Task):
             _, obj_type, obj_id = obj.split(".")[0].split('-')
             self.render_from_victoriametrics(obj_id, obj_type)
 
-        for graph_file in args:
-            self.render_from_rrd(graph_file)
+        if settings.GRAPHS_RRD_ENABLED:
+            for graph_file in args:
+                self.render_from_rrd(graph_file)
 
         self.signal_ix_traffic_processed()
 
