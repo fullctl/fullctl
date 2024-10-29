@@ -184,6 +184,8 @@ def render_graph(data, selector="#graph", title_label="", service=None, save_pat
     # Save the resized image to a BytesIO object
     buf_resized = io.BytesIO()
     img_resized.save(buf_resized, format="png")
+    # close figure to prevent memory leak
+    plt.close(fig)
     buf_resized.seek(0)
 
     return buf_resized.getvalue()
