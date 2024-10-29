@@ -1721,13 +1721,13 @@ signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
 name = "ogr"
-version = "0.50.1"
+version = "0.50.2"
 description = "One API for multiple git forges."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "ogr-0.50.1-py3-none-any.whl", hash = "sha256:b273af03daec6fad903aef07cd971e3f8024d2d75ab4d95cc5c2d934e3b35ba9"},
-    {file = "ogr-0.50.1.tar.gz", hash = "sha256:05435310726d2756ae5f215ddafb74ed602e248c797a74b86ff6a060d99b980e"},
+    {file = "ogr-0.50.2-py3-none-any.whl", hash = "sha256:2e6717b1a161e8b248ad5d1a6504c71ec02722e19c93a01dd177c6ecfac2df62"},
+    {file = "ogr-0.50.2.tar.gz", hash = "sha256:38628f1796a2daea526619c452c45e26c6e725a61d70eb727a2556a394016965"},
 ]
 
 [package.dependencies]
@@ -2439,13 +2439,13 @@ six = ">=1.5"
 
 [[package]]
 name = "python-gitlab"
-version = "4.13.0"
+version = "5.0.0"
 description = "A python wrapper for the GitLab API"
 optional = false
-python-versions = ">=3.8.0"
+python-versions = ">=3.9.0"
 files = [
-    {file = "python_gitlab-4.13.0-py3-none-any.whl", hash = "sha256:8299a054fb571da16e1a8c1868fff01f34ac41ea1410c713a4647b3bbb2aa279"},
-    {file = "python_gitlab-4.13.0.tar.gz", hash = "sha256:576bfb0901faca0c6b2d1ff2592e02944a6ec3e086c3129fb43c2a0df56a1c67"},
+    {file = "python_gitlab-5.0.0-py3-none-any.whl", hash = "sha256:2af86a1655385c2afe13e33e79555d5394f8c7912ade04bb6e916e3d21a8716f"},
+    {file = "python_gitlab-5.0.0.tar.gz", hash = "sha256:d156b9810d2a5c2916226cecf354956286a9e8133ee707d6584e40f126329956"},
 ]
 
 [package.dependencies]
@@ -2958,13 +2958,13 @@ zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "virtualenv"
-version = "20.27.0"
+version = "20.27.1"
 description = "Virtual Python Environment builder"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "virtualenv-20.27.0-py3-none-any.whl", hash = "sha256:44a72c29cceb0ee08f300b314848c86e57bf8d1f13107a5e671fb9274138d655"},
-    {file = "virtualenv-20.27.0.tar.gz", hash = "sha256:2ca56a68ed615b8fe4326d11a0dca5dfbe8fd68510fb6c6349163bed3c15f2b2"},
+    {file = "virtualenv-20.27.1-py3-none-any.whl", hash = "sha256:f11f1b8a29525562925f745563bfd48b189450f61fb34c4f9cc79dd5aa32a1f4"},
+    {file = "virtualenv-20.27.1.tar.gz", hash = "sha256:142c6be10212543b32c6c45d3d3893dff89112cc588b7d0879ae5a1ec03a47ba"},
 ]
 
 [package.dependencies]
@@ -2989,13 +2989,13 @@ files = [
 
 [[package]]
 name = "whitenoise"
-version = "6.7.0"
+version = "6.8.1"
 description = "Radically simplified static file serving for WSGI applications"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 files = [
-    {file = "whitenoise-6.7.0-py3-none-any.whl", hash = "sha256:a1ae85e01fdc9815d12fa33f17765bc132ed2c54fa76daf9e39e879dd93566f6"},
-    {file = "whitenoise-6.7.0.tar.gz", hash = "sha256:58c7a6cd811e275a6c91af22e96e87da0b1109e9a53bb7464116ef4c963bf636"},
+    {file = "whitenoise-6.8.1-py3-none-any.whl", hash = "sha256:196ba04ca0a80f4a3f99f88381864f218a28b5fb5b44d29feea484d501fa0ba3"},
+    {file = "whitenoise-6.8.1.tar.gz", hash = "sha256:11042f39f1dcfbb3814726b9364703af6901706582d988e96494cfefdc3a89e2"},
 ]
 
 [package.extras]
