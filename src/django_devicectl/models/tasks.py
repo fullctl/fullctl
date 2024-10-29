@@ -452,6 +452,8 @@ class RenderTrafficGraphs(Task):
         for graph_file in args:
             self.render_from_rrd(graph_file)
 
+        self.signal_ix_traffic_processed()
+
     def render_from_victoriametrics(self, obj_id, obj_type):
         self.ix_graphs = {}
 
@@ -563,19 +565,12 @@ class RenderTrafficGraphs(Task):
             if public:
                 self.ix_graphs.setdefault(obj_id, []).append(image_file_name)
 
-        # Process IX graphs if any
-        for ix_id, graphs in self.ix_graphs.items():
-            AuditCtlIXTrafficProcessed.create_task(
-                org=self.org,
-                ix_id=ix_id,
-                graphs=graphs,
-            )
-
     def render_from_rrd(self, filepath):
         self.ix_graphs = {}
         for period, resolution, suffix in self.periods:
             self._render_from_rrd(filepath, period, resolution, suffix)
 
+    def signal_ix_traffic_processed(self):
         for ix_id, graphs in self.ix_graphs.items():
             AuditCtlIXTrafficProcessed.create_task(
                 org=self.org,
