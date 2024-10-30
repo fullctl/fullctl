@@ -16,7 +16,7 @@ from fullctl.django.models.abstract import (
 )
 from fullctl.django.models.concrete import Instance
 from fullctl.service_bridge import nautobot, netbox
-from netfields.fields import InetAddressField
+from netfields.fields import InetAddressField, MACAddressField
 
 import django_devicectl.referee as referee_util
 
@@ -1038,6 +1038,32 @@ class PortInfo(HandleRefModel):
         self._assign_ip(value)
 
     @property
+    def macaddr_set(self) -> list[str]:
+        """
+        Returns a list of MAC addresses for this port info
+        """
+
+        return [str(mac.address) for mac in self.mac_addresses.all()]
+
+    # setter for macaddr_set field
+    @macaddr_set.setter
+    def macaddr_set(self, macs:list[str]):
+        if not self.id:
+            return
+
+        # delete all existing mac addresses
+        self.mac_addresses.all().delete()
+
+        if not macs:
+            return
+
+        print(f"macs: {macs} - {self}")
+
+        self.mac_addresses.bulk_create(
+            MacAddress(port_info=self, address=mac, instance=self.instance) for mac in macs
+        )
+
+    @property
     def display_name(self):
         if self.ip_address_4:
             return f"{self.ip_address_4}"
@@ -1149,6 +1175,45 @@ class IPAddress(ServiceBridgeReferenceModel):
     def device(self):
         return self.port_info.device
 
+
+@reversion.register()
+@grainy_model(
+    namespace="port_info",
+    namespace_instance="port_info.{instance.org.permission_id}.{instance.id}",
+)
+class MacAddress(HandleRefModel):
+
+    """
+    Describes a MAC address
+    """
+    instance = models.ForeignKey(Instance, related_name="mac_addresses", on_delete=models.CASCADE)
+
+    address = MACAddressField()
+    port_info = models.ForeignKey(
+        PortInfo,
+        on_delete=models.CASCADE,
+        related_name="mac_addresses",
+    )
+
+    class Meta:
+        db_table = "ixctl_mac"
+        verbose_name = _("MAC Address")
+        verbose_name_plural = _("MAC Addresses")
+        unique_together = (("address", "port_info"),)
+
+    class HandleRef:
+        tag = "mac"
+
+    @property
+    def org(self):
+        return self.instance.org
+
+    @property
+    def device(self):
+        return self.port_info.device
+
+    def __str__(self):
+        return f"{self.address}"
 
 @reversion.register()
 @grainy_model(

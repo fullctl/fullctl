@@ -4,7 +4,9 @@ import structlog
 from django.utils.translation import gettext_lazy as _
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
+from fullctl.django.inet.validators import validate_mac_addresses
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from flatten_json import flatten
 
 import django_devicectl.models as models
@@ -320,7 +322,15 @@ class VirtualPort(TagMixin, ModelSerializer):
     port = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
     logical_ports_data = LogicalPort(write_only=True, allow_null=True)
-
+    macaddr_set = serializers.ListSerializer(
+        child=serializers.CharField(),
+        # this needs to be read only for now, since drf doesnt
+        # automatically support writable nested serializers
+        # 
+        # use the batch_set_macaddr serializer to set mac addresses
+        read_only=True,
+        source="port.port_info.macaddr_set",
+    )
     class Meta:
         model = models.VirtualPort
         fields = [
@@ -337,6 +347,7 @@ class VirtualPort(TagMixin, ModelSerializer):
             "tags",
             "acl",
             "acl_name",
+            "macaddr_set",
         ]
 
     def get_acl(self, obj):
@@ -449,6 +460,43 @@ class VirtualPort(TagMixin, ModelSerializer):
         representation["logical_port"] = LogicalPort(logical_port_instance).data
 
         return representation
+
+class VirtualPortMacAddresses(serializers.Serializer):
+    macaddr_set = serializers.ListField(
+        child=serializers.CharField(),
+        required=True,
+    )
+    virtual_port = serializers.PrimaryKeyRelatedField(
+        queryset=models.VirtualPort.objects.all(),
+    )
+
+    class Meta:
+        fields = ["macaddr_set", "virtual_port"]
+
+    def validate_macaddr_set(self, macaddr_set: list[str]):
+        if not macaddr_set:
+            return []
+        
+        # check for duplicates within the passed list
+        if len(macaddr_set) != len(set(macaddr_set)):
+            raise ValidationError("Duplicate mac addresses found")
+
+        validate_mac_addresses(macaddr_set)
+
+        return macaddr_set
+    
+@register
+class SetMacAddressBatch(serializers.Serializer):
+    data = VirtualPortMacAddresses(many=True)
+
+    ref_tag = "batch_set_macaddr"
+
+    def save(self):
+        for row in self.validated_data.get("data", []):
+            virtual_port = row["virtual_port"]
+            macaddr_set = row["macaddr_set"]
+            virtual_port.port.port_info.macaddr_set = macaddr_set
+            virtual_port.port.port_info.save()
 
 
 @register
