@@ -165,6 +165,12 @@ fullctl.brand = {
     {% block "header_right" %}
       {% block "header_account_panel" %}
 
+      {% if service_docs_url %}
+      <div class="d-flex align-items-center h-100 marg-right-md">
+        <a href="{{ service_docs_url }}"><span class="icon icon-md icon-info"></span></a>
+      </div>
+      {% endif %}
+
       <!-- org switcher -->
       <div class="header-control d-flex align-items-center h-100">
         <div
