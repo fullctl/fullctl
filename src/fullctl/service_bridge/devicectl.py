@@ -142,6 +142,11 @@ class Port(Devicectl):
             },
         )
 
+    def unassign(self, pk):
+        return self.post(
+            f"data/port/{pk}/unassign",
+        )
+
 
 class PortInfo(Devicectl):
     class Meta(Devicectl.Meta):
