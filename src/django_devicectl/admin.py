@@ -15,6 +15,7 @@ from django_devicectl.models import (
     Facility,
     IPAddress,
     LogicalPort,
+    MacAddress,
     PhysicalPort,
     Port,
     PortInfo,
@@ -135,6 +136,10 @@ class IPAddressAdmin(VersionAdmin):
     list_display = ("id", "org", "address", "created", "updated")
     search_fields = ("address",)
 
+@admin.register(MacAddress)
+class MacAddressAdmin(VersionAdmin):
+    list_display = ("id", "org", "address", "created", "updated")
+    search_fields = ("address",)
 
 @admin.register(Port)
 class PortAdmin(VersionAdmin):
@@ -152,10 +157,15 @@ class PortAdmin(VersionAdmin):
 
 class IPAddressInline(admin.TabularInline):
     model = IPAddress
-    fields = ("address", "created", "updated")
+    fields = ("address", "instance", "created", "updated")
     readonly_fields = ("created", "updated")
     extra = 0
 
+class MacAddressInline(admin.TabularInline):
+    model = MacAddress
+    fields = ("address", "instance", "created", "updated")
+    readonly_fields = ("created", "updated")
+    extra = 0
 
 @admin.register(PortInfo)
 class PortInfoAdmin(VersionAdmin):
@@ -175,4 +185,4 @@ class PortInfoAdmin(VersionAdmin):
 
     readonly_fields = ("device",)
     search_fields = ("port__virtual_port__logical_port__physical_ports__device__name",)
-    inlines = [IPAddressInline]
+    inlines = [IPAddressInline, MacAddressInline]

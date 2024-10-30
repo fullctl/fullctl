@@ -474,7 +474,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
     @load_object("device", models.Device, instance="instance", id="device_id")
     def virtual_ports(self, request, org, instance, device, *args, **kwargs):
         ordering_filter = CaseInsensitiveOrderingFilter(["name", "vlan_id"])
-        queryset = device.virtual_ports
+        queryset = device.virtual_ports.select_related("logical_port", "port", "port__port_info").prefetch_related("port__port_info__mac_addresses")
         queryset = ordering_filter.filter_queryset(request, queryset, self)
 
         serializer = Serializers.virtual_port(
@@ -951,9 +951,8 @@ class VirtualPort(PortTrafficMixin, CachedObjectMixin, viewsets.GenericViewSet):
         ordering_filter = CaseInsensitiveOrderingFilter(
             ["name", "vlan_id", "logical_port"]
         )
-
         queryset = self.get_queryset().filter(logical_port__instance=instance)
-        queryset = queryset.select_related("logical_port")
+        queryset = queryset.select_related("logical_port", "port", "port__port_info").prefetch_related("port__port_info__mac_addresses")
         queryset = ordering_filter.filter_queryset(request, queryset, self)
 
         serializer = Serializers.virtual_port(
@@ -1051,6 +1050,25 @@ class VirtualPort(PortTrafficMixin, CachedObjectMixin, viewsets.GenericViewSet):
         r = Response(Serializers.virtual_port(instance=virtual_port).data)
         virtual_port.delete()
         return r
+
+
+    @action(
+        detail=False,
+        methods=["post"], 
+        url_path="batch-set-macaddr", 
+        serializer_class=Serializers.batch_set_macaddr
+    )
+    @grainy_endpoint(namespace="virtual_port.{request.org.permission_id}")
+    def batch_set_macaddr(self, request, org, instance, *args, **kwargs):
+        """
+        Batch set MAC addresses for virtual ports
+        """
+        serializer = Serializers.batch_set_macaddr(data=request.data)
+        if not serializer.is_valid():
+            return BadRequest(serializer.errors)
+        serializer.save()
+        return Response(serializer.data)
+
 
     @action(detail=True, methods=["get"])
     @grainy_endpoint(

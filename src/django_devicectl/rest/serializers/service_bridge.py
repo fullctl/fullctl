@@ -155,6 +155,11 @@ class Port(ModelSerializer):
     logical_port_name = serializers.SerializerMethodField()
     virtual_port_description = serializers.SerializerMethodField()
     virtual_port_name = serializers.SerializerMethodField()
+    virtual_port_macaddr_set = serializers.ListSerializer(
+        child=serializers.CharField(),
+        read_only=True,
+        source="port_info.macaddr_set",
+    )
     device = serializers.SerializerMethodField()
     physical_ports = serializers.SerializerMethodField()
 
@@ -176,6 +181,7 @@ class Port(ModelSerializer):
             "logical_port_name",
             "virtual_port_name",
             "virtual_port_description",
+            "virtual_port_macaddr_set",
             "physical_ports",
         ]
 
@@ -258,7 +264,10 @@ class Port(ModelSerializer):
 @register
 class PortInfo(ModelSerializer):
     org_id = serializers.SerializerMethodField()
-
+    macaddr_set = serializers.ListSerializer(
+        child=serializers.CharField(),
+        required=False,
+    )
     class Meta:
         model = models.PortInfo
         fields = [
@@ -271,6 +280,7 @@ class PortInfo(ModelSerializer):
             "is_routeserver_peer",
             "speed",
             "display_name",
+            "macaddr_set",
         ]
 
     def get_org_id(self, port_info):
