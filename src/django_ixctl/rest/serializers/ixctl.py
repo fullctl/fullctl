@@ -495,7 +495,11 @@ class InternetExchangeMember(ModelSerializer):
         macaddr_set = validated_data.get("macaddr_set", [])
 
         if ix.learned_mac_addresses and validated_data.get("port"):
-            macaddr_set = self.ports.get(validated_data.get("port")).virtual_port_macaddr_set
+            try:
+                macaddr_set = self.ports.get(validated_data.get("port")).virtual_port_macaddr_set
+            except AttributeError:
+                # member referenced a port that doesn't exist
+                macaddr_set = []
 
         if len(macaddr_set) > macaddr_limit:
             raise ValidationError({"macaddr_limit": _("MAC address limit must be greater than or equal to the number of MAC addresses")})
@@ -538,7 +542,7 @@ class InternetExchangeMember(ModelSerializer):
         # from port.virtual_port_macaddr_set
 
         if instance.ix.learned_mac_addresses:
-            if instance.port:
+            if instance.port and self.ports.get(instance.port.id):
                 data["macaddr_set"] = self.ports.get(instance.port.id).virtual_port_macaddr_set
             else:
                 data["macaddr_set"] = []
