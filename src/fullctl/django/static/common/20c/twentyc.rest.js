@@ -845,7 +845,7 @@ twentyc.rest.Widget = twentyc.cls.extend(
      * @param {Array} errors list of error strings
      */
 
-    render_error : function(key, errors) {
+    render_error : function(key, errors, group_selector) {
       if(!errors)
         return;
       var i;
@@ -859,7 +859,20 @@ twentyc.rest.Widget = twentyc.cls.extend(
       // error node cursor should be a pointer
       error_node.css("cursor", "pointer");
 
-      var input = this.element.find('[name="'+key+'"]');
+      // key may be a sub group
+      if(!group_selector && this.element.find(`[data-validation-group="${key}"]`).length) {
+        let error_field_prefix = this.element.find(`[data-validation-group="${key}"]`).data("validation-group-field-prefix");
+        for(field_name in errors) {
+          this.render_error(`${error_field_prefix}${field_name}`, errors[field_name], `[data-validation-group="${key}"]`);
+        }
+        return;
+      } 
+
+      if(!group_selector)
+        var input = this.element.find('[name="'+key+'"]');
+      else
+        var input = this.element.find(group_selector).find('[name="'+key+'"]');
+
       input.addClass("validation-error-indicator")
       for(i = 0; i < errors.length; i++) {
         error_node.append($('<p>').text(errors[i]))

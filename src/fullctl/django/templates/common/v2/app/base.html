@@ -422,6 +422,8 @@ You do not have the permissions to view the {{ app_id }} workspace for the {{ or
 
 <div id="modals">
 {% include "common/v2/app/modal.html" %}
+{% block "modals" %}
+{% endblock %}
 </div>
 {% if not permissions.read_instance %}</div>{% endif %}
 </main>

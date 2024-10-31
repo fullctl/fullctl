@@ -337,6 +337,12 @@ class Task(HandleRefModel):
         """
         if self.status == "completed":
             typ = self.task_meta_property("result_type", str)
+            # handle json on dict type
+            if typ == dict:
+                if not self.output:
+                    return {}
+                return json.loads(self.output)
+
             return typ(self.output)
         return None
 
@@ -483,6 +489,11 @@ class Task(HandleRefModel):
         self.save()
 
     def _complete(self, output):
+
+        # if result is a dict we need to json encode it
+        if isinstance(output, dict) and self.task_meta_property("result_type") == dict and output:
+            output = json.dumps(output)
+
         self.output = output
         self.status = "completed"
         self.save()
