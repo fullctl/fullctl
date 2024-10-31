@@ -1332,6 +1332,234 @@ $ctl.application.Devicectl.ModalPhysicalPort = $tc.extend(
 
 // VIRTUAL PORTS
 
+$ctl.application.Devicectl.ModalPortDeletion = $tc.extend(
+  "ModalPortDeletion",
+  {
+    ModalPortDeletion : function(all_ports, selected_ports) {
+      var modal = this;
+      var title = "Delete ports";
+      this.initial_selection = {
+        logical: (selected_ports.logical || []).map(Number),
+        physical: (selected_ports.physical || []).map(Number),
+        virtual: (selected_ports.virtual || []).map(Number)
+      }
+      this.selected_ports = {
+        logical: (selected_ports.logical || []).map(Number),
+        physical: (selected_ports.physical || []).map(Number),
+        virtual: (selected_ports.virtual || []).map(Number)
+      }
+      this.all_ports = all_ports;
+      
+      // Create the content element
+      var content = $ctl.template("port_deletion");
+
+      this.form = new twentyc.rest.Form(content);
+
+      $(this.form).on("payload:after", (ev, payload) => {
+        this.assemble_payload(payload);
+      });
+
+      this.content = content;
+      this.port_list_container = content.find('[data-element="port_list"]');
+      
+      this.build_port_list();
+
+      // Initialize modal
+      this.Modal("delete_right", title, content);
+      
+      this.form.wire_submit(this.$e.button_submit);
+
+      $(this.form).on('api-write:success', () => {
+        modal.hide();
+        $(this).trigger('port-deletion:success');
+      });
+      
+    },
+
+    /**
+     * Converts the form payload which comes in as
+     * logical-<id>: true
+     * physical-<id>: true
+     * virtual-<id>: true
+     * etc.
+     * 
+     * to a more manageable object 
+     * 
+     * {
+     *  logical: [id, id, id],
+     *  physical: [id, id, id],
+     *  virtual: [id, id, id]
+     * }
+     * 
+     * @method assemble_payload
+     * @param {Object} payload
+     */
+    assemble_payload(payload) {
+
+      let selected = {
+        logical: [],
+        physical: [],
+        virtual: []
+      }
+
+      for (let key in payload) {
+        let parts = key.split("-");
+        let type = parts[0];
+        let id = parseInt(parts[1]);
+
+        if (selected[type]) {
+          if(payload[key]) {
+            selected[type].push(id);
+          }
+          delete payload[key];
+        }
+      }
+
+      payload.virtual = selected.virtual;
+      payload.logical = selected.logical;
+      payload.physical = selected.physical;
+    },
+
+    build_port_list() {
+      this.port_list_container.empty();
+      console.log({ports, selected_ports: this.selected_ports});
+
+
+      // holds references to logical ports by physical ports
+      const logphy_map = {};
+
+      // holds references to logical ports by virtual ports
+      const logvirt_map = {};
+
+      for (let port of this.all_ports) {
+        // update reference map
+        if (!logphy_map[port.logical_port.id]) {
+          logphy_map[port.logical_port.id] = [];
+          logvirt_map[port.logical_port.id] = [];
+        }
+
+        // if port is not selected, skip
+        // a port is selected if it is in the selected_ports object
+        // or the initial_selection object
+        // 
+        // all parts need to be checked
+        // 
+        // virtual port id
+        // logical port id
+        // physical port ids (multiple)
+
+        let selected = {
+          virtual: false,
+          logical: false,
+          physical: []
+        }
+
+        if (this.selected_ports.virtual.includes(port.id) || this.initial_selection.virtual.includes(port.id)) {
+          selected.virtual = true;
+        } 
+        if (this.selected_ports.logical.includes(port.logical_port.id) || this.initial_selection.logical.includes(port.logical_port.id)) {
+          selected.logical = true;
+        }
+        for (let physical_port of port.physical_ports) {
+          if (this.selected_ports.physical.includes(physical_port.id) || this.initial_selection.physical.includes(physical_port.id)) {
+            selected.physical.push(physical_port.id);
+          }
+        }
+
+        // if no ports are selected, skip this entry
+        if(!selected.virtual && !selected.logical && selected.physical.length == 0) {
+          continue;
+        }
+
+        logvirt_map[port.logical_port.id].push(port.id);
+
+        // logical port row
+        let row = $ctl.template("logical_port_deletion_row");
+        row.attr("data-port-id", `logical-${port.logical_port.id}`);
+        row.find('[data-field="display_name"]').text(port.logical_port.display_name);
+        let checkbox = row.find('input[type="checkbox"]')
+        checkbox.attr("name", `logical-${port.logical_port.id}`).
+          prop("checked", this.selected_ports.logical.includes(port.logical_port.id));
+        this.port_list_container.append(row);
+
+        // if a logical port is marked for deletion all virtual ports for that logical port
+        // must be marked for deletion as well
+        checkbox.change(function() {
+          let checked = $(this).prop("checked");
+          if(checked) {
+            for(let virtual_port_id of logvirt_map[port.logical_port.id]) {
+              $(`[data-port-id="virtual-${virtual_port_id}"] input[type="checkbox"]`).prop("checked", true).trigger("change").prop("disabled", true);
+              
+            }
+          } else {
+            for(let virtual_port_id of logvirt_map[port.logical_port.id]) {
+              $(`[data-port-id="virtual-${virtual_port_id}"] input[type="checkbox"]`).prop("disabled", false);
+            }
+          }
+        });
+
+
+        // physical port rows
+        for (let physical_port of port.physical_ports) {
+          logphy_map[port.logical_port.id].push(physical_port.id);
+
+          // build row
+          let row = $ctl.template("physical_port_deletion_row");
+          row.attr("data-port-id", `physical-${physical_port.id}`);
+          row.find('[data-field="display_name"]').text(physical_port.display_name);
+          let checkbox = row.find('input[type="checkbox"]')
+          checkbox.attr("name", `physical-${physical_port.id}`).
+            prop("checked", this.selected_ports.physical.includes(physical_port.id));
+
+          // physical ports may be referenced by multiple logical ports
+          // so changing the checkbox state needs to sync to other physical ports with
+          // matching data-port-id values
+          //
+          // if a physical port is marked for deletion (checked) then see if the logical port
+          // should be checked as well (all physical ports for a logical port must be checked)
+          checkbox.change(function() {
+            let checked = $(this).prop("checked");
+            let port_id = `physical-${physical_port.id}`;
+            $(`[data-port-id="${port_id}"] input[type="checkbox"]`).prop("checked", checked);
+
+            // check if the logical port should be checked
+            if(checked) {
+              for(let logical_port_id of logphy_map[port.logical_port.id]) {
+                if(!$(`[data-port-id="physical-${logical_port_id}"] input[type="checkbox"]`).prop("checked")) {
+                  return;
+                }
+              }
+              let log_checkbox = $(`[data-port-id="logical-${port.logical_port.id}"] input[type="checkbox"]`)
+              log_checkbox.prop("checked", true).trigger("change");
+            }
+          
+          });
+
+          this.port_list_container.append(row);
+        }
+
+        // virtual port row
+        row = $ctl.template("virtual_port_deletion_row");
+        row.attr("data-port-id", `virtual-${port.id}`);
+        row.find('[data-field="display_name"]').text(port.display_name);
+        checkbox = row.find('input[type="checkbox"]').
+          attr("name", `virtual-${port.id}`).
+          prop("checked", this.selected_ports.virtual.includes(port.id));
+
+        // if logical port referencing this virtual port is checked, disable the checkbox
+        if(selected.logical) {
+          checkbox.prop("disabled", true).prop("checked", true);
+        }
+
+        this.port_list_container.append(row);
+      }
+    }
+
+  },
+  $ctl.application.Modal
+);
+
+
 $ctl.application.Devicectl.VirtualPorts = $tc.extend(
   "VirtualPorts",
   {
@@ -1339,8 +1567,12 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
       this.Tool("virtual_ports");
     },
     init: function () {
+
+      this.loaded_ports = [];
+
       // v2 - create delete selected button
       this.delete_selected_button = this.$t.button_delete_selected;
+     
       // v2 - create SelectionList
       this.widget("list", ($e) => {
         return new $ctl.widget.SelectionList(
@@ -1359,23 +1591,26 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
           }
         });
 
-        var button_delete = new twentyc.rest.Button(
-          row.find('a[data-element="delete_virtual_port"]')
-        );
-
-        button_delete.format_request_url = (url) => {
-          return url.replace("/0/", "/" + data.id + "/");
-        };
-
-        $(button_delete).on("api-write:success", () => {
-          $ctl.devicectl.sync()
-          this.$w.list.load();
-        });
-
+        var button_delete = row.find('a[data-action="delete_virtual_port"]');
         if (!grainy.check(data.grainy, "d")) {
           button_delete.element.hide();
+        } else {
+          button_delete.click(() => {
+            // show port deletion modal
+            let modal = new $ctl.application.Devicectl.ModalPortDeletion(
+              this.loaded_ports, 
+              {
+                virtual: [data.id],
+                logical: [data.logical_port.id]
+              }
+            )
+            $(modal).on("port-deletion:success", () => {
+              this.$w.list.load();
+            });
+          });
         }
-        row.click(() =>{
+
+        row.find('td').not('.select-checkbox').click(() =>{
           new $ctl.application.Devicectl.PortsViewInformation(data);
         });
       };
@@ -1383,6 +1618,10 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
       this.$w.list.format_request_url = (url) => {
         return url.replace("/0/", "/" + fullctl.devicectl.device_id() + "/");
       };
+
+      $(this.$w.list).on("load:after", (e, response) => {
+        this.loaded_ports = this.$w.list.loaded_ports = response.content.data;
+      })
 
       this.initialize_sortable_headers("name");
     },
@@ -1396,9 +1635,28 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
       // v2 - add/setup delete selected button
       $(this.delete_selected_button).insertBefore(menu.find('[data-element="button_add_virtual_port"]'));
       $(this.delete_selected_button).click(() => {
-        if (confirm("Remove selected Virtual Ports?")) {
-          this.$w.list.delete_selected_list();
+        // selected rows come in as a jquery result
+        let selected_rows = this.$w.list.get_selected_rows();
+
+        // collect selected ports
+        let selected_ports = {
+          virtual: [],
+          logical: [],
         }
+        selected_rows.each((index, row) => {
+          let apiobject = $(row).data("apiobject");
+          selected_ports.virtual.push(apiobject.id);
+          selected_ports.logical.push(apiobject.logical_port.id);
+        });
+        
+        // show port deletion modal
+        let modal = new $ctl.application.Devicectl.ModalPortDeletion(
+          this.loaded_ports,
+          selected_ports
+        );
+        $(modal).on("port-deletion:success", () => {
+          this.$w.list.load();
+        });
       });
 
       menu.find('[data-element="button_add_physical_port"]').click(() => {
@@ -1727,6 +1985,7 @@ $ctl.application.Devicectl.ModalVirtualPort = $tc.extend(
   },
   $ctl.application.Modal
 );
+
 
 
 
