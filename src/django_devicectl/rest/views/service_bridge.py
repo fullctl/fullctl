@@ -228,6 +228,24 @@ class Port(DataViewSet):
         logger.debug(f"{port_status_seriailizer.errors=}")
         return Response(port_status_seriailizer.errors)
 
+    @action(detail=True, methods=["POST"])
+    def unassign(self, request, pk, *args, **kwargs):
+        """
+        Will unassign a virtual / logical port.
+
+        Unassigning here means deleting the virtual port.
+
+        If the virtual port was the only one associated with the logical port,
+        delete the logical port as well.
+
+        The Port instance itself will also be deleted.
+        """
+
+        port = self.get_object()
+        port.delete_chain()
+
+        return Response({"status": "ok"})
+
 
 @route
 class Portinfo(DataViewSet):

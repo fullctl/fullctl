@@ -1320,6 +1320,27 @@ class Port(HandleRefModel):
     def __str__(self):
         return f"Port({self.id}) {self.virtual_port.name}"
 
+    def delete_chain(self, logical_port:bool=True,):
+        """
+        Will delete the Port, PortInfo, VirtualPort.
+
+        If logical_ports is True, will also delete the LogicalPort if no other VirtualPort
+        is using it.
+
+        Arguments:
+
+        - logical_ports (bool): if True, will also delete the LogicalPort
+        """
+
+        if logical_port:
+            logical_port = self.virtual_port.logical_port
+            if not logical_port.virtual_ports.exclude(port=self).exists():
+                logical_port.delete()
+
+        self.virtual_port.delete()
+        self.port_info.delete()
+        self.delete()
+
 
 @reversion.register()
 @grainy_model(
