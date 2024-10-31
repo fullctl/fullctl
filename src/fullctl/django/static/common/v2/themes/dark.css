@@ -62,6 +62,8 @@
   --switch-bg: var(--clr-bg-850);
   --switch-active-clr: var(--clr-accent-400);
 
+  --font-color-legend: var(--clr-primary-300);
+
   --bs-body-color: var(--foreground);
   --bs-body-color-rgb: var(--foreground);
   --bs-body-bg: var(--background);
@@ -121,6 +123,8 @@
   --select2-selected-bg: var(--clr-bg-400);
 
   --theme-switcher-color: var(--clr-primary-900);
+
+  --font-color-legend: var(--clr-primary-800);
 
   color-scheme: light;
 }
@@ -891,7 +895,7 @@ div.autocomplete-item {
 }
 
 .legend {
-  color: var(--clr-primary-300);
+  color: var(--font-color-legend);
 }
 
 /*

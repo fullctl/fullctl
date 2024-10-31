@@ -221,6 +221,24 @@ div.dt-processing,
   top: 0;
 }
 
+.task-status-row {
+  padding-left: 30px;
+  position: relative;
+}
+
+.task-status-row .status,
+.task-status-row .loading-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 24px;
+  height: 24px;
+}
+
+.task-status-row .result {
+  font-size: 14px;
+}
+
 .loading-indicator-container.fixed {
   height: 24px;
   display: inline-block;
@@ -792,12 +810,25 @@ span.icon {
   -webkit-mask-repeat: no-repeat;
 }
 
+div.hierarchy div.item span.icon,
+div.legend span.icon {
+  width: 16px;
+  height: 16px;
+  mask-size: cover;
+  vertical-align: middle;
+}
+
+span.icon-sm {
+  width: 16px;
+  height: 16px;
+  mask-size: cover;
+}
+
 span.icon-md {
   width: 24px;
   height: 24px;
   mask-size: cover;
 }
-
 
 span.icon-lg {
   width: 32px;
@@ -939,6 +970,21 @@ span.icon-location {
 span.icon-report {
   -webkit-mask-image: url(icons/file-earmark-text.svg);
   mask-image: url(icons/file-earmark-text.svg);
+}
+
+span.icon-device {
+  -webkit-mask-image: url(icons/device.svg);
+  mask-image: url(icons/device.svg);
+}
+
+span.icon-logical {
+  -webkit-mask-image: url(icons/logical.svg);
+  mask-image: url(icons/logical.svg);
+}
+
+span.icon-processor {
+  -webkit-mask-image: url(icons/processor.svg);
+  mask-image: url(icons/processor.svg);
 }
 
 span.icon-as {
@@ -2059,4 +2105,33 @@ button.badge-btn:disabled {
 .light_level_stat {
   text-wrap: nowrap;
   cursor: default;
+}
+
+div.legend {
+  font-size: 14px;
+}
+
+div.legend span.legend-label {
+  margin-right: 5px;
+}
+
+div.hierachy {
+  font-size: 14px;
+}
+
+div.hierarchy div.item input[type="checkbox"] {
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+div.hierarchy div.item.l0 {
+  margin-left: 0px;
+}
+
+div.hierarchy div.item.l1 {
+  margin-left: 20px;
+}
+
+div.hierarchy div.item.l2 {
+  margin-left: 40px;
 }
