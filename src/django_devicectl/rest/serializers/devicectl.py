@@ -621,6 +621,56 @@ class PortTrafficMRTGImportBatch(serializers.ListSerializer):
             context_model=context_model,
         )
 
+@register
+class DeletePorts(serializers.Serializer):
+    virtual = serializers.ListField(child=serializers.IntegerField())
+    physical = serializers.ListField(child=serializers.IntegerField())
+    logical = serializers.ListField(child=serializers.IntegerField())
+
+    ref_tag = "delete_ports"
+
+    class Meta:
+        fields = ["virtual", "physical", "logical"]
+
+    def validate_virtual(self, virtual):
+        # load the virtual port instances and check that they belong
+        # to the context["org"] org
+        virtual_ports = models.VirtualPort.objects.filter(
+            id__in=virtual, 
+            logical_port__instance__org=self.context["org"]
+        )
+        return [vp.id for vp in virtual_ports]
+
+    def validate_physical(self, physical):
+        # load the physical port instances and check that they belong
+        # to the context["org"] org
+        physical_ports = models.PhysicalPort.objects.filter(
+            id__in=physical, 
+            device__instance__org=self.context["org"]
+        )
+        return [pp.id for pp in physical_ports]
+
+    def validate_logical(self, logical):
+        # load the logical port instances and check that they belong
+        # to the context["org"] org
+        logical_ports = models.LogicalPort.objects.filter(
+            id__in=logical, 
+            instance__org=self.context["org"]
+        )
+        return [lp.id for lp in logical_ports]
+
+    def save(self):
+        # delete the ports
+        if self.validated_data["logical"]:
+            models.LogicalPort.objects.filter(id__in=self.validated_data["logical"]).delete()
+
+        if self.validated_data["physical"]:
+            models.PhysicalPort.objects.filter(id__in=self.validated_data["physical"]).delete()
+
+        if self.validated_data["virtual"]:
+            models.VirtualPort.objects.filter(id__in=self.validated_data["virtual"]).delete()
+
+
 
 @register
 class Metric(ModelSerializer):

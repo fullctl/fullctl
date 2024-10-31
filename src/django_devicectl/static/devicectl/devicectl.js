@@ -648,15 +648,10 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
           }
         });
 
-        var button_delete = new twentyc.rest.Button(
-          row.find('a[data-element="delete_virtual_port"]')
-        );
-
-        button_delete.format_request_url = (url) => {
-          return url.replace("/0/", "/"+data.id+"/");
-        };
-
-        $(button_delete).on("api-write:success", ()=> { this.sync(); });
+        row.find('a[data-element="delete_virtual_port"]').click(() => {
+          var virtual_port = row.data("apiobject");
+          var modal = new $ctl.application.Devicectl.ModalPortDeletion(virtual_port, [virtual_port.id]);
+        });
 
         if(!grainy.check(data.grainy, "d")) {
           button_delete.element.hide();
@@ -759,6 +754,43 @@ $ctl.application.Devicectl.ModalVirtualPort = $tc.extend(
   $ctl.application.Modal
 );
 
+
+$ctl.application.Devicectl.ModalPortDeletion = $tc.extend(
+  "ModalPortDeletion",
+  {
+    ModalPortDeletion : function(all_port, selected_ports) {
+      var modal = this;
+      var title = "Confirm Port Deletion";
+      this.selected_ports = new Set();
+      
+      // Create the content element
+      var content = $('<div>').addClass('port-deletion-content');
+      
+      // Add warning message
+      content.append(
+        $('<div>')
+          .addClass('alert alert-warning mb-4')
+          .text('Select the ports you want to delete:')
+      );
+      
+      // Initialize modal
+      this.Modal("confirm", title, content);
+      
+      // Update button text
+      this.$e.button_submit.text('Delete Selected Ports');
+      this.$e.button_submit.addClass('btn-danger');
+      
+      // Wire up confirmation
+      this.$e.button_submit.click(() => {
+        // Here you would handle the deletion of selected ports
+        // Can access selected ports through modal.selected_ports
+        modal.hide();
+      });
+    },
+
+  },
+  $ctl.application.Modal
+);
 
 
 $(document).ready(function() {

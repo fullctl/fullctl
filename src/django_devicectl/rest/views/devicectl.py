@@ -1197,6 +1197,23 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
         return Response(self.serializer_class(qset, many=True).data)
 
 
+    @action(detail=False, methods=["post"], url_path="delete-bulk", serializer_class=Serializers.delete_ports)
+    @grainy_endpoint(namespace="port.{request.org.permission_id}")
+    def delete_bulk(self, request, org, instance, *args, **kwargs):
+        """
+        Bulk delete ports by id
+        """
+
+        serializer = Serializers.delete_ports(data=request.data, context={"org": org, "instance": instance})
+
+        if not serializer.is_valid():
+            return BadRequest(serializer.errors)
+
+        serializer.save()
+
+        return Response(serializer.data)
+
+
 @route
 class TrafficGroup(viewsets.GenericViewSet):
     serializer_class = Serializers.device_group_traffic
