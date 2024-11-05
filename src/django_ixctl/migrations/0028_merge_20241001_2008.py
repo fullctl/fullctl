@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("django_ixctl", "0027_alter_internetexchangemember_status"),
         ("django_ixctl", "0027_routeserver_event_routeservermembers"),

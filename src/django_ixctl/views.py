@@ -1,13 +1,13 @@
 from django.conf import settings
-from django.http import Http404, HttpResponse
 from django.db.models import Prefetch
+from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
 from fullctl.django.decorators import load_instance, require_auth
 
 import django_ixctl.exporters.ixf
 from django_ixctl.context_processors import check_trial_available
 from django_ixctl.models import InternetExchange, Routeserver
-from django_ixctl.rest.decorators import require_auth_ix, load_instance_ix
+from django_ixctl.rest.decorators import load_instance_ix, require_auth_ix
 
 # Create your views here.
 
@@ -35,8 +35,11 @@ def view_instance(request, instance, **kwargs):
 def view_instance_load_ix(request, instance, ix_tag, **kwargs):
     try:
         ix = InternetExchange.objects.prefetch_related(
-            'member_set',
-            Prefetch('rs_set', queryset=Routeserver.objects.select_related('routeserverconfig').all())
+            "member_set",
+            Prefetch(
+                "rs_set",
+                queryset=Routeserver.objects.select_related("routeserverconfig").all(),
+            ),
         ).get(instance=instance, slug=ix_tag)
     except InternetExchange.DoesNotExist:
         raise Http404
@@ -55,8 +58,11 @@ def view_instance_load_ix(request, instance, ix_tag, **kwargs):
 def public_view_redirect(request, instance, ix_tag, **kwargs):
     try:
         ix = InternetExchange.objects.prefetch_related(
-            'member_set',
-            Prefetch('rs_set', queryset=Routeserver.objects.select_related('routeserverconfig').all())
+            "member_set",
+            Prefetch(
+                "rs_set",
+                queryset=Routeserver.objects.select_related("routeserverconfig").all(),
+            ),
         ).get(instance=instance, slug=ix_tag)
     except InternetExchange.DoesNotExist:
         raise Http404
@@ -65,6 +71,7 @@ def public_view_redirect(request, instance, ix_tag, **kwargs):
     env["select_ix"] = ix
 
     return render(request, "ixctl/v2/tool/information/public_main.html", env)
+
 
 @require_auth()
 def org_redirect(request):

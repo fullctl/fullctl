@@ -52,7 +52,15 @@ class PrefixInline(admin.TabularInline):
 
 @admin.register(InternetExchange)
 class InternetInternetExchangeAdmin(BaseAdmin):
-    list_display = ("name", "id", "org", "source_of_truth", "graph_traffic_source", "limit_mac_addresses", "learned_mac_addresses")
+    list_display = (
+        "name",
+        "id",
+        "org",
+        "source_of_truth",
+        "graph_traffic_source",
+        "limit_mac_addresses",
+        "learned_mac_addresses",
+    )
     list_filter = ("source_of_truth",)
     readonly_fields = ("org",)
     search_fields = ("name", "instance__org__slug", "instance__org__name")

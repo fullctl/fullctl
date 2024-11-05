@@ -6,11 +6,12 @@ except ImportError:
 import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.prefixctl as prefixctl
+import structlog
 import yaml
 from django.conf import settings
-from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 from django_inet.rest import IPAddressField
+from fullctl.django.inet.validators import validate_mac_address, validate_mac_addresses
 from fullctl.django.models.concrete.tasks import TaskLimitError
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import (
@@ -18,7 +19,6 @@ from fullctl.django.rest.serializers import (
     RequireContext,
     SoftRequiredValidator,
 )
-from fullctl.django.inet.validators import validate_mac_address, validate_mac_addresses
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueTogetherValidator
@@ -27,8 +27,7 @@ import django_ixctl.enum
 import django_ixctl.models as models
 from django_ixctl.peeringdb import import_exchange, import_org
 
-import structlog
-logger = structlog.getLogger('django_structlog')
+logger = structlog.getLogger("django_structlog")
 
 Serializers, register = serializer_registry()
 
@@ -137,7 +136,6 @@ class UpdateLAN(ModelSerializer):
 
 @register
 class InternetExchange(ModelSerializer):
-
     graph_traffic_source = serializers.CharField(read_only=True)
 
     class Meta:
@@ -222,7 +220,7 @@ class InternetExchangeMember(ModelSerializer):
 
     macaddr_warnings = serializers.SerializerMethodField()
 
-    # defaults to 1 if not set, but will be ignored if 
+    # defaults to 1 if not set, but will be ignored if
     # parent ix is not limiting mac addresses
     macaddr_limit = serializers.IntegerField(
         allow_null=True,
@@ -287,7 +285,6 @@ class InternetExchangeMember(ModelSerializer):
             "meta",
         ]
 
-
         if settings.MEMBER_CASE_NUMBERS_ENABLED:
             fields.append("case_number")
 
@@ -325,7 +322,9 @@ class InternetExchangeMember(ModelSerializer):
             org_slug = None
 
         prefix_sets = prefixctl.PrefixSet().objects(org=org_slug)
-        self._prefix_sets_by_slug = {prefixset.slug: prefixset for prefixset in prefix_sets}
+        self._prefix_sets_by_slug = {
+            prefixset.slug: prefixset for prefixset in prefix_sets
+        }
         return self._prefix_sets_by_slug
 
     @property
@@ -345,7 +344,9 @@ class InternetExchangeMember(ModelSerializer):
         else:
             ix = self.instance[0].ix
 
-        macaddresses = models.MacAddress.objects.filter(member__ix=ix).select_related("member")
+        macaddresses = models.MacAddress.objects.filter(member__ix=ix).select_related(
+            "member"
+        )
 
         self._macaddresses = {
             "by_mac": {},
@@ -353,8 +354,12 @@ class InternetExchangeMember(ModelSerializer):
         }
 
         for mac in macaddresses:
-            self._macaddresses["by_mac"].setdefault(str(mac.address), []).append(mac.member)
-            self._macaddresses["by_member"].setdefault(mac.member.id, []).append(str(mac.address))
+            self._macaddresses["by_mac"].setdefault(str(mac.address), []).append(
+                mac.member
+            )
+            self._macaddresses["by_member"].setdefault(mac.member.id, []).append(
+                str(mac.address)
+            )
 
         return self._macaddresses
 
@@ -378,7 +383,6 @@ class InternetExchangeMember(ModelSerializer):
         self._ports = {port.id: port for port in list(ports)}
         return self._ports
 
-
     def validate_ipaddr4(self, ipaddr4):
         if not ipaddr4:
             return None
@@ -400,7 +404,7 @@ class InternetExchangeMember(ModelSerializer):
     def validate_macaddr_set(self, macaddr_set: list[str]):
         if not macaddr_set:
             return []
-        
+
         # check for duplicates within the passed list
         if len(macaddr_set) != len(set(macaddr_set)):
             raise ValidationError("Duplicate mac addresses found")
@@ -423,15 +427,25 @@ class InternetExchangeMember(ModelSerializer):
             source, slug = prefix_set_slug.split("::")
 
             if source != "prefixctl":
-                raise ValidationError(_("Invalid prefix set source: {source}. Source should be `prefixctl`").format(source=source))
+                raise ValidationError(
+                    _(
+                        "Invalid prefix set source: {source}. Source should be `prefixctl`"
+                    ).format(source=source)
+                )
 
         except ValueError:
-            raise ValidationError(_("Invalid prefix set slug. Format should be `prefixctl::<slug>`"))
+            raise ValidationError(
+                _("Invalid prefix set slug. Format should be `prefixctl::<slug>`")
+            )
 
         prefix_set = self.prefix_sets_by_slug.get(slug)
 
         if not prefix_set:
-            raise ValidationError(_("Prefix set `{prefix_set_slug}` not found").format(prefix_set_slug=prefix_set_slug))
+            raise ValidationError(
+                _("Prefix set `{prefix_set_slug}` not found").format(
+                    prefix_set_slug=prefix_set_slug
+                )
+            )
 
         return prefix_set_slug
 
@@ -457,7 +471,6 @@ class InternetExchangeMember(ModelSerializer):
         return port_object.id
 
     def validate_port_quantity(self, port_quantity):
-
         # if lag is set, port quantity must be greater than 1
         # if lag is not set, port quantity must be 1
         # validated data is not available at this point
@@ -474,7 +487,7 @@ class InternetExchangeMember(ModelSerializer):
         If ix.limit_mac_addresses is False no validation is needed
 
         If ix.limit_mac_addresses is True, macaddr_limit must be set
-        to a value between 1 and settings.MAC_LIMIT_MAX and be greater or 
+        to a value between 1 and settings.MAC_LIMIT_MAX and be greater or
         equal to the length of macaddr_set
 
         If ix.learned_mac_addresses is True, macaddr_set needs to be checked
@@ -490,24 +503,35 @@ class InternetExchangeMember(ModelSerializer):
             raise ValidationError(_("MAC address limit is required"))
 
         if macaddr_limit < 1 or macaddr_limit > settings.MAC_LIMIT_MAX:
-            raise ValidationError(_("MAC address limit must be between 1 and {settings.MAC_LIMIT_MAX}").format(settings=settings))
+            raise ValidationError(
+                _(
+                    "MAC address limit must be between 1 and {settings.MAC_LIMIT_MAX}"
+                ).format(settings=settings)
+            )
 
         macaddr_set = validated_data.get("macaddr_set", [])
 
         if ix.learned_mac_addresses and validated_data.get("port"):
             try:
-                macaddr_set = self.ports.get(validated_data.get("port")).virtual_port_macaddr_set
+                macaddr_set = self.ports.get(
+                    validated_data.get("port")
+                ).virtual_port_macaddr_set
             except AttributeError:
                 # member referenced a port that doesn't exist
                 macaddr_set = []
 
         if len(macaddr_set) > macaddr_limit:
-            raise ValidationError({"macaddr_limit": _("MAC address limit must be greater than or equal to the number of MAC addresses")})
+            raise ValidationError(
+                {
+                    "macaddr_limit": _(
+                        "MAC address limit must be greater than or equal to the number of MAC addresses"
+                    )
+                }
+            )
 
         return macaddr_limit
 
-    def validate(self, data:dict) -> dict:
-
+    def validate(self, data: dict) -> dict:
         # if case numbers are enabled push them into meta under
         # a case_number key (list)
 
@@ -521,8 +545,7 @@ class InternetExchangeMember(ModelSerializer):
 
         # validate macaddr_limit
         data["macaddr_limit"] = self._validate_macaddr_limit(
-            data.get("macaddr_limit"),
-            data
+            data.get("macaddr_limit"), data
         )
 
         return data
@@ -543,7 +566,9 @@ class InternetExchangeMember(ModelSerializer):
 
         if instance.ix.learned_mac_addresses:
             if instance.port and self.ports.get(instance.port.id):
-                data["macaddr_set"] = self.ports.get(instance.port.id).virtual_port_macaddr_set
+                data["macaddr_set"] = self.ports.get(
+                    instance.port.id
+                ).virtual_port_macaddr_set
             else:
                 data["macaddr_set"] = []
             data["macaddr"] = data["macaddr_set"][0] if data["macaddr_set"] else None
@@ -554,7 +579,6 @@ class InternetExchangeMember(ModelSerializer):
             data["macaddr_limit"] = None
 
         return data
-
 
     def get_prefix_set_name(self, obj):
         if not obj.prefix_set:
@@ -601,12 +625,16 @@ class InternetExchangeMember(ModelSerializer):
         warnings = []
 
         for macaddr in macaddr_set:
-            warnings.extend([f"MAC address {macaddr} also exists on AS{member.asn} - {member.ipaddr4}" for member in self.macaddresses["by_mac"].get(macaddr,[]) if member.id != obj.id])
+            warnings.extend(
+                [
+                    f"MAC address {macaddr} also exists on AS{member.asn} - {member.ipaddr4}"
+                    for member in self.macaddresses["by_mac"].get(macaddr, [])
+                    if member.id != obj.id
+                ]
+            )
 
         return warnings
 
-
-        
 
 @register
 class InternetExchangeMemberDetail(InternetExchangeMember):

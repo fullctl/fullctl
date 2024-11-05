@@ -93,9 +93,9 @@ class InternetExchangeMember(DataViewSet):
 
     join_xl = {"ix": ("ix",), "ix_name": ("ix",)}
 
-    queryset = models.InternetExchangeMember.objects.filter(status__in=["ok", "admin_down"]).select_related(
-        "ix", "ix__instance", "ix__instance__org"
-    )
+    queryset = models.InternetExchangeMember.objects.filter(
+        status__in=["ok", "admin_down"]
+    ).select_related("ix", "ix__instance", "ix__instance__org")
     serializer_class = Serializers.member
 
     def filter_peers(self, qset, value):
@@ -108,7 +108,9 @@ class InternetExchangeMember(DataViewSet):
                 self.id = int(_id)
 
         member = self.get_queryset().filter(port=Port(value)).first()
-        return qset.filter(ix_id=member.ix_id, status__in=["ok", "admin_down"]).exclude(id=member.id)
+        return qset.filter(ix_id=member.ix_id, status__in=["ok", "admin_down"]).exclude(
+            id=member.id
+        )
 
     def filter_mutual(self, qset, value):
         asn = value

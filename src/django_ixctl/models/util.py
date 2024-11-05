@@ -4,11 +4,12 @@ __all__ = [
     "set_port_fields_from_speed",
 ]
 
-def set_port_fields_from_speed(member, speed:int):
+
+def set_port_fields_from_speed(member, speed: int):
     """
     Will update port_size, lag and port_quantity based on the speed
     on an InternetExchangeMember object
-    
+
     Arguments:
 
     - member: InternetExchangeMember object

@@ -1,10 +1,9 @@
 from django import template
-
-from markdown import markdown
 from django.utils.safestring import mark_safe
-
+from markdown import markdown
 
 register = template.Library()
+
 
 @register.filter(is_safe=True)
 def render_markdown(value):

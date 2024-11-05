@@ -3,7 +3,6 @@ import os.path
 import re
 import subprocess
 import tempfile
-import pydantic
 from datetime import datetime
 from secrets import token_urlsafe
 
@@ -28,13 +27,15 @@ import structlog
 import yaml
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django_grainy.decorators import grainy_model
 from django_inet.models import ASNField
-from fullctl.django.fields.service_bridge import ReferencedObjectField, ReferencedObjectUUIDField
+from fullctl.django.fields.service_bridge import (
+    ReferencedObjectField,
+    ReferencedObjectUUIDField,
+)
 from fullctl.django.inet.validators import validate_as_set
 from fullctl.django.models.abstract.base import HandleRefModel, PdbRefModel
 from fullctl.django.models.concrete import Instance, Organization
@@ -114,9 +115,7 @@ class InternetExchange(PdbRefModel):
     verified = models.BooleanField(
         default=False, help_text=_("Exchange ownership has been verified")
     )
-    notes = models.TextField(
-        null=True, blank=True, help_text=_("Notes")
-    )
+    notes = models.TextField(null=True, blank=True, help_text=_("Notes"))
     public_view = models.BooleanField(default=False)
 
     source_of_truth = models.BooleanField(
@@ -126,9 +125,13 @@ class InternetExchange(PdbRefModel):
         ),
     )
 
-    limit_mac_addresses = models.BooleanField(default=False, help_text=_("Limit MAC addresses"))
+    limit_mac_addresses = models.BooleanField(
+        default=False, help_text=_("Limit MAC addresses")
+    )
 
-    learned_mac_addresses = models.BooleanField(default=False, help_text=_("MAC addresses are learned from devicectl"))
+    learned_mac_addresses = models.BooleanField(
+        default=False, help_text=_("MAC addresses are learned from devicectl")
+    )
 
     mtu = models.PositiveSmallIntegerField(
         null=True,
@@ -167,9 +170,12 @@ class InternetExchange(PdbRefModel):
     )
 
     config = models.JSONField(
-        null=True, blank=True, default=dict, help_text=_("Extra ix specific configuration"),
-        validators=[validate_ix_config]
-    ) 
+        null=True,
+        blank=True,
+        default=dict,
+        help_text=_("Extra ix specific configuration"),
+        validators=[validate_ix_config],
+    )
 
     class PdbRef(PdbRefModel.PdbRef):
         pdbctl = pdbctl.InternetExchange
@@ -391,6 +397,7 @@ class OrganizationDefaultExchange(models.Model):
     def __str__(self):
         return f"{self.org.name} -> {self.ix.name}"
 
+
 @reversion.register()
 @grainy_model(
     namespace="member",
@@ -430,14 +437,14 @@ class InternetExchangeMember(PdbRefModel):
     port_quantity = models.PositiveSmallIntegerField(
         default=1,
         help_text=_("Number of ports"),
-        choices=[(i, str(i)) for i in range(1, settings.PORT_LIMIT_MAX + 1)]
+        choices=[(i, str(i)) for i in range(1, settings.PORT_LIMIT_MAX + 1)],
     )
 
     lag = models.BooleanField(default=False)
 
     macaddr_limit = models.PositiveSmallIntegerField(
         help_text=_("MAC limit - if the parent ix is set to use MAC limiting"),
-        default=1
+        default=1,
     )
 
     asn = models.PositiveIntegerField()
@@ -445,9 +452,7 @@ class InternetExchangeMember(PdbRefModel):
     prefix_set = models.CharField(
         null=True,
         blank=True,
-        help_text=_(
-            "URI for accessing a prefixlist, currently prefixctl::$slug"
-        ),
+        help_text=_("URI for accessing a prefixlist, currently prefixctl::$slug"),
     )
 
     ixf_state = models.CharField(
@@ -465,12 +470,12 @@ class InternetExchangeMember(PdbRefModel):
     )
 
     status = models.CharField(
-        max_length=12,
-        default="ok",
-        choices=django_ixctl.enum.PORT_STATE
+        max_length=12, default="ok", choices=django_ixctl.enum.PORT_STATE
     )
 
-    meta = models.JSONField(null=True, blank=True, help_text=_("Meta data"), default=dict)
+    meta = models.JSONField(
+        null=True, blank=True, help_text=_("Meta data"), default=dict
+    )
 
     class PdbRef(PdbRefModel.PdbRef):
         pdbctl = pdbctl.NetworkIXLan
@@ -599,8 +604,7 @@ class InternetExchangeMember(PdbRefModel):
         member.status = status
         member.save()
 
-        devicectl.Port().set_ports_status(status=status,
-                                          pk=member.port.id)
+        devicectl.Port().set_ports_status(status=status, pk=member.port.id)
 
     @property
     def display_name(self):
@@ -626,7 +630,7 @@ class InternetExchangeMember(PdbRefModel):
     def speed(self) -> int:
         """
         Calculates speed from port_size * port_quantity
-        
+
         Returns speed in Mb.
 
         Port size is in Gb so we multiply by 1000.
@@ -718,7 +722,7 @@ class InternetExchangeMember(PdbRefModel):
 
     # setter for macaddr field
     @macaddr.setter
-    def macaddr(self, value:str):
+    def macaddr(self, value: str):
         if not value or not self.id:
             return
 
@@ -736,7 +740,7 @@ class InternetExchangeMember(PdbRefModel):
 
     # setter for macaddr_set field
     @macaddr_set.setter
-    def macaddr_set(self, macs:list[str]):
+    def macaddr_set(self, macs: list[str]):
         if not self.id:
             return
 
@@ -752,10 +756,6 @@ class InternetExchangeMember(PdbRefModel):
 
     def __str__(self):
         return f"AS{self.asn} - {self.ipaddr4} - {self.ipaddr6} ({self.id})"
-
-
-
-
 
 
 @reversion.register()
@@ -789,6 +789,7 @@ class MacAddress(HandleRefModel):
 
     def __str__(self):
         return f"{self.address}"
+
 
 @reversion.register
 @grainy_model(
@@ -1058,7 +1059,8 @@ class Routeserver(HandleRefModel):
 
         # load members with prefix sets and store by ASN
         members = {
-            member.asn: member for member in self.ix.member_set.filter(prefix_set__isnull=False)
+            member.asn: member
+            for member in self.ix.member_set.filter(prefix_set__isnull=False)
         }
 
         if not members:
@@ -1066,9 +1068,10 @@ class Routeserver(HandleRefModel):
 
         # load prefix sets from prefixctl and store by slug
         prefix_sets = {
-            prefix_set.slug: prefix_set for prefix_set in prefixctl.PrefixSet().objects(
+            prefix_set.slug: prefix_set
+            for prefix_set in prefixctl.PrefixSet().objects(
                 org=self.org.slug,
-                slugs=[member.prefix_set_slug for member in members.values()]
+                slugs=[member.prefix_set_slug for member in members.values()],
             )
         }
 
@@ -1092,12 +1095,22 @@ class Routeserver(HandleRefModel):
                 logger.warning(f"Prefix set `{member.prefix_set_slug}` has no prefixes")
                 continue
 
-            client["cfg"].setdefault("filtering", {}).setdefault("irrdb", {})["white_list_route"] = []
+            client["cfg"].setdefault("filtering", {}).setdefault("irrdb", {})[
+                "white_list_route"
+            ] = []
 
             for _prefix in prefix_set.prefixes:
                 prefix = ipaddress.ip_network(_prefix["prefix"])
-                white_list_route = client["cfg"]["filtering"]["irrdb"]["white_list_route"]
-                white_list_route.append({"prefix": str(prefix), "asn": member.asn, "length": prefix.prefixlen})
+                white_list_route = client["cfg"]["filtering"]["irrdb"][
+                    "white_list_route"
+                ]
+                white_list_route.append(
+                    {
+                        "prefix": str(prefix),
+                        "asn": member.asn,
+                        "length": prefix.prefixlen,
+                    }
+                )
 
     @classmethod
     def preload_events(cls, routeservers):
@@ -1107,10 +1120,12 @@ class Routeserver(HandleRefModel):
         Argument(s):
         - routeservers (`list` of `RouteServer`): routeservers to load events for
         """
-        event_ids = [str(routeserver.event) for routeserver in routeservers if routeserver.event]
+        event_ids = [
+            str(routeserver.event) for routeserver in routeservers if routeserver.event
+        ]
         if not event_ids:
             return
-        
+
         events = auditctl.Event().objects(ids=event_ids)
         if not events:
             return
@@ -1125,7 +1140,7 @@ class Routeserver(HandleRefModel):
                 continue
 
             routeserver._event_object = event
-            
+
 
 @reversion.register
 class RouteserverConfig(HandleRefModel):
@@ -1264,10 +1279,7 @@ class RouteserverConfig(HandleRefModel):
                 raise OSError(f"Process returned {process.returncode}")
 
     def generate_markdown(
-        self,
-        general_config_file: str,
-        clients_config_file: str,
-        output_file: str
+        self, general_config_file: str, clients_config_file: str, output_file: str
     ):
         """
         Generates device markdown information using arouteserver
@@ -1278,7 +1290,6 @@ class RouteserverConfig(HandleRefModel):
         - clients_config_file (`str`): path to clients config file
         - output_file (`str`): path to output markdown file
         """
-
 
         self.run_ars_command(
             "md",
@@ -1367,7 +1378,12 @@ class RouteserverConfig(HandleRefModel):
             fh.write(as_yaml)
 
         # generate device config
-        self.generate_config(routeserver.ars_type, general_config_file, clients_config_file, outfile_config)
+        self.generate_config(
+            routeserver.ars_type,
+            general_config_file,
+            clients_config_file,
+            outfile_config,
+        )
 
         # generate markdown
         self.generate_markdown(general_config_file, clients_config_file, outfile_md)
@@ -1495,8 +1511,8 @@ class RouteserverMember(models.Model):
         db_table = "ixctl_rs_members"
         verbose_name = _("Members to Routeservers Relationship")
         verbose_name_plural = _("Members to Routeservers Relationship")
-        unique_together = ('ix_member', 'routeserver')
-    
+        unique_together = ("ix_member", "routeserver")
+
     @classmethod
     def preload_events(cls, routeserver_members):
         """
@@ -1505,10 +1521,14 @@ class RouteserverMember(models.Model):
         Argument(s):
         - routeserver_members (`list` of `RouteServerMembers`): routeserver_members to load events for
         """
-        event_ids = [str(routeserver_member.event) for routeserver_member in routeserver_members if routeserver_member.event]
+        event_ids = [
+            str(routeserver_member.event)
+            for routeserver_member in routeserver_members
+            if routeserver_member.event
+        ]
         if not event_ids:
             return
-        
+
         events = auditctl.Event().objects(ids=event_ids)
         if not events:
             return

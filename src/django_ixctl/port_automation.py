@@ -6,14 +6,11 @@ process and port automation.
 import fullctl.service_bridge.pdbctl as pdbctl
 
 from django_ixctl.models.ixctl import InternetExchange
-
 from django_ixctl.schema import IXLanConfig
-
 
 __all__ = [
     "get_ix_lan_config",
 ]
-
 
 
 def get_ix_lan_config(ix: int | InternetExchange) -> IXLanConfig:
@@ -39,7 +36,7 @@ def get_ix_lan_config(ix: int | InternetExchange) -> IXLanConfig:
             pdb_ixlan = pdbctl.InternetExchange().first(id=ix.pdb_id)
             if pdb_ixlan:
                 config.mtu = pdb_ixlan.mtu
-        
+
         if not config.prefixes:
             pdb_prefixes = pdbctl.IXLanPrefix().objects(ix=ix.pdb_id)
             for prefix in pdb_prefixes:
