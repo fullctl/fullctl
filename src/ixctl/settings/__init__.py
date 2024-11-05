@@ -111,7 +111,7 @@ settings_manager.set_option("GOOGLE_ANALYTICS_ID", "")
 settings_manager.set_option("MEMBER_CASE_NUMBERS_ENABLED", False)
 
 # Port size choices (gb)
-settings_manager.set_option("PORT_SIZES", [1,10,100])
+settings_manager.set_option("PORT_SIZES", [1, 10, 100])
 settings_manager.set_option("DEFAULT_PORT_SIZE", 1)
 
 # upper limit of ports that can be created

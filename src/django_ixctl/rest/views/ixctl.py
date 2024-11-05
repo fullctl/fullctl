@@ -250,7 +250,12 @@ class Prefix(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet):
 
 
 @route
-class Member(AuditCtlActionLogMixin, CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet):
+class Member(
+    AuditCtlActionLogMixin,
+    CachedObjectMixin,
+    IxOrgQuerysetMixin,
+    viewsets.GenericViewSet,
+):
     """
     list:
         Return all member instances.
@@ -274,11 +279,11 @@ class Member(AuditCtlActionLogMixin, CachedObjectMixin, IxOrgQuerysetMixin, view
     filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.InternetExchangeMemberFilter
 
-    def auditctl_log_append_path(self, request, action:str, **kwargs) -> list[str]:
+    def auditctl_log_append_path(self, request, action: str, **kwargs) -> list[str]:
         """
         Append the path to the auditctl log
         """
-        
+
         path = []
 
         if action in ["update", "destroy"]:
@@ -286,7 +291,7 @@ class Member(AuditCtlActionLogMixin, CachedObjectMixin, IxOrgQuerysetMixin, view
             path = [
                 str(member.asn),
                 str(member.ipaddr4),
-            ] 
+            ]
         elif action == "create":
             path = [
                 request.data.get("asn"),

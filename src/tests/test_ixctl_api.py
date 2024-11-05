@@ -389,6 +389,7 @@ def test_ix_edit_member_invalid(db, pdb_data, account_objects):
         "ipaddr6": ["Input required for IPv4 or IPv6"],
     }
 
+
 def test_edit_member_speed_from_port_size_quantity(db, pdb_data, account_objects):
     ix = account_objects.ix
     client = account_objects.api_client
@@ -458,9 +459,8 @@ def test_edit_member_speed_from_port_size_quantity_lag(db, pdb_data, account_obj
 
     assert ixmember.speed == 30000
 
+
 def test_edit_member_invalid_quantity(db, pdb_data, account_objects):
-
-
     ix = account_objects.ix
     client = account_objects.api_client
     org = account_objects.org
@@ -493,9 +493,7 @@ def test_edit_member_invalid_quantity(db, pdb_data, account_objects):
 
     errors = response.json()["errors"]
 
-    assert errors == {
-        "port_quantity": ["Must be 1 if LAG is not set"]
-    }
+    assert errors == {"port_quantity": ["Must be 1 if LAG is not set"]}
 
 
 def test_list_routeservers(db, pdb_data, account_objects):
@@ -648,7 +646,9 @@ def test_set_operational_status_for_routeserver(db, pdb_data, account_objects):
     payload = {"operational_status": "down"}
 
     response = client.post(
-        reverse("ixctl_api:routeserver-operational-status", args=(org.slug, ix.slug, rs.id)),
+        reverse(
+            "ixctl_api:routeserver-operational-status", args=(org.slug, ix.slug, rs.id)
+        ),
         json.dumps(payload),
         content_type="application/json",
     )
@@ -673,16 +673,20 @@ def test_send_empty_operational_status_object(db, pdb_data, account_objects):
     routeserver = models.Routeserver.objects.filter(id=rs.id).first()
     assert routeserver.operational_status == "operational"
 
-    payload = {} # empty payload with operational_status key
+    payload = {}  # empty payload with operational_status key
 
     response = client.post(
-        reverse("ixctl_api:routeserver-operational-status", args=(org.slug, ix.slug, rs.id)),
+        reverse(
+            "ixctl_api:routeserver-operational-status", args=(org.slug, ix.slug, rs.id)
+        ),
         json.dumps(payload),
         content_type="application/json",
     )
     print(response.json())
     assert response.status_code == 400
-    assert response.json()["errors"]["operational_status"] == ['This field is required.']
+    assert response.json()["errors"]["operational_status"] == [
+        "This field is required."
+    ]
 
     # Changes are persisted to db
     routeserver = models.Routeserver.objects.filter(id=rs.id).first()

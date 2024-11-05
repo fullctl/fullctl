@@ -500,14 +500,14 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
     /**
      * Requests the member details from the API and fills the form with the
      * member's data.
-     * 
+     *
      * @method sync_form
      * @param {Number} member_id
      */
 
     sync_form : function(member_id) {
       const form = this.form;
-      
+
       form.get(member_id).then((response) => {
         const member = response.first();
         this.member = member;
@@ -522,7 +522,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
             form.element.find('.macaddr-limit-warning').show();
           }
         }
-        
+
         // setup port auto complete
         this.init_autocomplete_ports();
 

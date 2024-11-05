@@ -1,12 +1,11 @@
 import django.http
-
-from fullctl.django.rest.decorators import grainy_endpoint as _grainy_endpoint
-from fullctl.django.models import Instance, Organization
-
-import django_ixctl.models as models
 from django.conf import settings
 from django.shortcuts import redirect
 from django.urls import reverse
+from fullctl.django.models import Instance, Organization
+from fullctl.django.rest.decorators import grainy_endpoint as _grainy_endpoint
+
+import django_ixctl.models as models
 
 
 class grainy_endpoint(_grainy_endpoint):
@@ -20,6 +19,7 @@ class grainy_endpoint(_grainy_endpoint):
         if "namespace" not in kwargs:
             self.namespace += ["ixctl"]
 
+
 def validate_public_view_ix_and_instance(request, kwargs):
     try:
         instance = Instance.objects.get(org=request.org)
@@ -27,11 +27,14 @@ def validate_public_view_ix_and_instance(request, kwargs):
         raise django.http.Http404()
 
     try:
-        ix =  models.InternetExchange.objects.get(instance=instance, slug=kwargs["ix_tag"], public_view=True)
+        ix = models.InternetExchange.objects.get(
+            instance=instance, slug=kwargs["ix_tag"], public_view=True
+        )
     except models.InternetExchange.DoesNotExist:
         return None, None
 
     return ix, instance
+
 
 class require_auth_ix:
 
@@ -46,7 +49,10 @@ class require_auth_ix:
 
             if not request.user.is_authenticated:
                 if not local_auth:
-                    public_view_internet_exchange, _ = validate_public_view_ix_and_instance(request, kwargs)
+                    (
+                        public_view_internet_exchange,
+                        _,
+                    ) = validate_public_view_ix_and_instance(request, kwargs)
                     if public_view_internet_exchange:
                         return fn(request, *args, **kwargs)
 
@@ -55,7 +61,10 @@ class require_auth_ix:
                         + f"?next={request.get_full_path()}"
                     )
                 else:
-                    public_view_internet_exchange, _ = validate_public_view_ix_and_instance(request, kwargs)
+                    (
+                        public_view_internet_exchange,
+                        _,
+                    ) = validate_public_view_ix_and_instance(request, kwargs)
                     if public_view_internet_exchange:
                         return fn(request, *args, **kwargs)
 
@@ -67,7 +76,6 @@ class require_auth_ix:
 
         wrapped.__name__ = fn.__name__
         return wrapped
-    
 
 
 class load_instance_ix:
@@ -105,7 +113,10 @@ class load_instance_ix:
                 ):
                     raise django.http.Http404()
                 else:
-                    public_view_internet_exchange, instance = validate_public_view_ix_and_instance(request, kwargs)
+                    (
+                        public_view_internet_exchange,
+                        instance,
+                    ) = validate_public_view_ix_and_instance(request, kwargs)
                     if public_view_internet_exchange:
                         return fn(request, instance, *args, **kwargs)
 

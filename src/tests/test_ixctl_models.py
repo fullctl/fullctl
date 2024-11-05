@@ -175,7 +175,7 @@ def test_routeserver_ars_clients(db, pdb_data, account_objects):
     assert rs.ars_clients == expected
 
 
-def test_routeserver_whitelist_routes(db ,pdb_data, account_objects):
+def test_routeserver_whitelist_routes(db, pdb_data, account_objects):
     rs = account_objects.routeserver
 
     member = account_objects.ix.member_set.filter(asn=63311).first()
@@ -196,6 +196,7 @@ def test_routeserver_whitelist_routes(db ,pdb_data, account_objects):
     print(json.dumps(ars_clients, indent=4))
 
     assert rs.ars_clients == expected
+
 
 def test_routeserver_routeserver_config(db, pdb_data, account_objects):
     rs = account_objects.routeserver

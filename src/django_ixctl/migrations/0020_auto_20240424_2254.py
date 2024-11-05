@@ -4,30 +4,39 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('django_ixctl', '0019_alter_internetexchangeprefix_unique_together'),
+        ("django_ixctl", "0019_alter_internetexchangeprefix_unique_together"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='internetexchange',
-            name='notes',
-            field=models.TextField(blank=True, help_text='Notes', null=True),
+            model_name="internetexchange",
+            name="notes",
+            field=models.TextField(blank=True, help_text="Notes", null=True),
         ),
         migrations.AddField(
-            model_name='internetexchange',
-            name='public_view',
+            model_name="internetexchange",
+            name="public_view",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='routeserver',
-            name='operational_status',
-            field=models.CharField(choices=[('operational', 'Operational'), ('maintenance', 'Maintenance'), ('down', 'Down')], default='operational', max_length=32),
+            model_name="routeserver",
+            name="operational_status",
+            field=models.CharField(
+                choices=[
+                    ("operational", "Operational"),
+                    ("maintenance", "Maintenance"),
+                    ("down", "Down"),
+                ],
+                default="operational",
+                max_length=32,
+            ),
         ),
         migrations.AddField(
-            model_name='routeserverconfig',
-            name='doc_md',
-            field=models.TextField(blank=True, help_text='ARouteserver markdown', null=True),
+            model_name="routeserverconfig",
+            name="doc_md",
+            field=models.TextField(
+                blank=True, help_text="ARouteserver markdown", null=True
+            ),
         ),
     ]

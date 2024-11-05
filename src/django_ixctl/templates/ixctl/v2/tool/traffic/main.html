@@ -9,13 +9,13 @@
 
         <div class="row">
           <!-- graph container -->
-          <div 
+          <div
           class="graph_container col-12 col-sm-9 mb-3"
-          data-element="graph_container" 
-          id="ix_traffic_graph" style="height:350px" 
+          data-element="graph_container"
+          id="ix_traffic_graph" style="height:350px"
           data-api-base="{% url "proxies-api-devicectl-ix-traffic" org_tag=request.org.slug ix_id="0" %}"
-          data-api-base-vm-mrtg="{% url "proxies-api-devicectl-ix-traffic-vm-mrtg" org_tag=request.org.slug ix_id="0" %}" 
-          data-api-base-vm-sflow="{% url "proxies-api-devicectl-ix-traffic-vm-sflow" org_tag=request.org.slug ix_id="0" %}" 
+          data-api-base-vm-mrtg="{% url "proxies-api-devicectl-ix-traffic-vm-mrtg" org_tag=request.org.slug ix_id="0" %}"
+          data-api-base-vm-sflow="{% url "proxies-api-devicectl-ix-traffic-vm-sflow" org_tag=request.org.slug ix_id="0" %}"
           ></div>
 
           <!-- graph controls -->
@@ -63,7 +63,7 @@
                   </div>
                   </div>
                 </button>
-                
+
                 {% if request.user.is_superuser and request.GET.dev %}
                 <!-- dev tools: only available for superusers if ?dev=1 is passed in url params -->
                 <div data-element="dev_tools" class="marg-top-lg">

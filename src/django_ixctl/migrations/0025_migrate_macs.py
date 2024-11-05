@@ -16,6 +16,7 @@ def forward(apps, schema_editor):
             print(f"Migrating mac address for member {member.id}: {member.macaddr}")
             MacAddress.handleref.create(member=member, address=member.macaddr)
 
+
 def backward(apps, schema_editor):
     # backward migration to restore the mac address from the MacAddress model to the
     # InternetExchangeMember.macaddr field and delete the MacAddress objects
@@ -25,14 +26,16 @@ def backward(apps, schema_editor):
     for member in InternetExchangeMember.handleref.all():
         macs = MacAddress.handleref.filter(member=member)
         if macs:
-            print(f"Restoring mac address for member {member.id}: {macs[0].address} to `macaddr` field")
+            print(
+                f"Restoring mac address for member {member.id}: {macs[0].address} to `macaddr` field"
+            )
             member.macaddr = macs[0].address
             member.save()
-    
+
     MacAddress.handleref.all().delete()
 
-class Migration(migrations.Migration):
 
+class Migration(migrations.Migration):
     dependencies = [
         ("django_ixctl", "0024_macaddress"),
     ]

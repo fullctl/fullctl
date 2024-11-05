@@ -44,6 +44,6 @@ IXF_EXPORT_PRIVACY_TYPES = (
 
 OPERATIONAL_STATUS_CHOICES = (
     ("operational", _("Operational")),
-    ("maintenance",_('Maintenance')),
-    ("down",_('Down')),
+    ("maintenance", _("Maintenance")),
+    ("down", _("Down")),
 )
