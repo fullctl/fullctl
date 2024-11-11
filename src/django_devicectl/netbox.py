@@ -89,7 +89,10 @@ def sync_custom_fields():
                 # netbox 1.4.1
                 "slug": "devicectl_id",
                 "label": "deviceCtl ID",
+                # v3
                 "content_types": ["dcim.site"],
+                # v4
+                "object_types": ["dcim.site"],
                 "type": "integer",
                 "description": "deviceCtl reference id",
                 "required": False,
@@ -299,13 +302,24 @@ def pull(org, *args, **kwargs):
     # create / update devices from netbox data
 
     for netbox_device in netbox.Device().objects(limit=NETBOX_PAGE_LIMIT):
-        if netbox_device.device_role.name.lower() not in roles:
+        
+        # v3 has role in .device_role
+        # v4 has role in .role
+        # support both
+        role = getattr(netbox_device, "device_role", getattr(netbox_device, "role", None))
+
+        # v3 returns role as str
+        # v4 returns role as dict (converted to object)
+        if not isinstance(role, str):
+            role = role.name
+
+        if role and role.lower() not in roles:
             continue
 
         device, created = models.Device.objects.get_or_create(
             reference=str(netbox_device.id), instance=instance
         )
-        print(f"[PULL] Netbox device {netbox_device.name} {device.reference} ...")
+        print(f"[PULL] Netbox device {netbox_device.name} {device.reference} ROLE {role} ...")
         references.append(device.reference)
         changed = device.sync_from_reference(ref_obj=netbox_device) or sync_tags(
             netbox_device, device
