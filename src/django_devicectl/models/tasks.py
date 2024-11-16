@@ -508,13 +508,19 @@ class RenderTrafficGraphs(Task):
         tag = "task_render_traffic_graphs"
 
     def run(self, *args, **kwargs):
-        for obj in args:
-            _, obj_type, obj_id = obj.split(".")[0].split('-')
-            self.render_from_victoriametrics(obj_id, obj_type)
+        try:
+            for obj in args:
+                _, obj_type, obj_id = obj.split(".")[0].split('-')
+                self.render_from_victoriametrics(obj_id, obj_type)
+        except Exception as e:
+            log.exception("Error rendering graphs from victoriametrics", e=e)
 
-        if settings.GRAPHS_RRD_ENABLED:
-            for graph_file in args:
-                self.render_from_rrd(graph_file)
+        try:
+            if settings.GRAPHS_RRD_ENABLED:
+                for graph_file in args:
+                    self.render_from_rrd(graph_file)
+        except Exception as e:
+            log.exception("Error rendering graphs from RRD", e=e)
 
         self.signal_ix_traffic_processed()
 
