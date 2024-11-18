@@ -2,7 +2,7 @@ import logging
 import traceback
 
 import reversion
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from fullctl.django.auditlog import auditlog
@@ -124,6 +124,10 @@ class CommandInterface(BaseCommand):
         if self.auditlog_enabled and self.commit:
             auditlog.append_data(output="\n".join(self.output))
             auditlog.log("command")
+
+        # apropriate return code if error
+        if self.error:
+            raise CommandError(self.error)
 
     def log_debug(self, msg):
         self.log.debug(msg)
