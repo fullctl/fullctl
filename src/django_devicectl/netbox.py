@@ -1,5 +1,4 @@
 import fullctl.service_bridge.netbox as netbox
-from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from fullctl.django.models.concrete.service_bridge import service_bridge_action
 from fullctl.service_bridge.context import service_bridge_context
@@ -168,7 +167,10 @@ def interface_is_physical(typ):
     for it.
     """
 
-    for phy_if_name in settings.NETBOX_INTERFACE_PHYSICAL:
+    ctx = service_bridge_context.get()
+    INTERFACE_PHSYICAL = ctx.get_service_config("netbox", "INTERFACE_PHSYICAL") or []
+
+    for phy_if_name in INTERFACE_PHSYICAL:
         if phy_if_name.lower() in typ.lower():
             return True
     return False
