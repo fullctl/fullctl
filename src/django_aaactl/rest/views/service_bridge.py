@@ -20,7 +20,6 @@ from django_aaactl.rest.serializers.service_bridge import Serializers
 
 
 class AaactlDataViewSet(DataViewSet):
-
     """
     Extend a new version of the data set view
     in order to use the aaactl grainy_endpoint decorator
@@ -93,9 +92,9 @@ class Service(AaactlDataViewSet):
             for fed_svc_url in account_models.FederatedServiceURL.objects.filter(
                 auth__org=context["org"]
             ):
-                services[
-                    fed_svc_url.service.slug
-                ] = application_models.Service.from_federated_service_url(fed_svc_url)
+                services[fed_svc_url.service.slug] = (
+                    application_models.Service.from_federated_service_url(fed_svc_url)
+                )
 
         services = list(services.values())
         serializer = self.serializer_class(services, many=True, context=context)
@@ -189,7 +188,6 @@ class User(AaactlDataViewSet):
 
 @route
 class OauthAccessToken(AaactlDataViewSet):
-
     """
     Used to check if a given access token is still valid
     """
@@ -264,3 +262,19 @@ class OrganizationBranding(AaactlDataViewSet):
             return qset.filter(org__slug=global_branding_org)
 
         return qset.none()
+
+
+@route
+class PointOfContact(AaactlDataViewSet):
+    path_prefix = "/data"
+    allowed_http_methods = ["GET", "POST", "PUT"]
+    valid_filters = [
+        ("org", "org__slug"),
+        ("delivery_type", "delivery_type"),
+        ("status", "status"),
+        ("service", "config__services__contains"),
+        ("type", "type"),
+    ]
+    allow_unfiltered = True
+    queryset = account_models.PointOfContact.objects.all().select_related("org")
+    serializer_class = Serializers.poc

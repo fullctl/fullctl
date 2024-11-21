@@ -314,3 +314,19 @@ class OrganizationBrandingSerializer(ModelSerializer):
 
     def get_favicon_url(self, obj):
         return format_logo_url(obj.favicon_url)
+
+
+@register
+class PointOfContactSerializer(ModelSerializer):
+    ref_tag = "poc"
+
+    class Meta:
+        model = account_models.PointOfContact
+        fields = [
+            "id",
+            "org",
+            "delivery_type",
+            "config",
+            "type",
+            "status",
+        ]
