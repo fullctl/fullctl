@@ -1,10 +1,13 @@
 import datetime
+import re
 import secrets
+from typing import List, Literal, Optional
 
 import reversion
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db import models
 from django.shortcuts import render
 from django.urls import reverse
@@ -18,6 +21,9 @@ from django_grainy.models import (
 )
 from django_grainy.util import Permissions
 from fullctl.django.enum import CONTACT_MESSAGE_TYPE
+from pydantic import BaseModel
+from pydantic import ValidationError as PydanticValidationError
+from pydantic import model_validator
 
 from account.models.federation import FederatedServiceURL  # noqa F401
 
@@ -610,7 +616,6 @@ def generate_invite_secret():
 
 @reversion.register
 class UserPermissionOverride(HandleRefModel):
-
     """
     Describes a permission override for a user
     usually set by manually granting a permission level
@@ -641,7 +646,6 @@ class UserPermissionOverride(HandleRefModel):
 
 @reversion.register
 class ManagedPermission(HandleRefModel):
-
     """
     Describes a custom permission definition, allowing
     to add app / service specific permissions to be managed
@@ -783,7 +787,6 @@ class ManagedPermissionRoleAutoGrant(HandleRefModel):
 
 @reversion.register
 class OrganizationManagedPermission(HandleRefModel):
-
     """
     Describes a relationship of an organization to a `restricted` ManagedPermission
     """
@@ -959,7 +962,6 @@ class Impersonation(models.Model):
 
 
 class ContactMessage(HandleRefModel):
-
     """
     A message sent to us from a user or anonymous user
     """
@@ -1007,3 +1009,80 @@ class ContactMessage(HandleRefModel):
                 {"message": self},
             ).content.decode("utf-8"),
         )
+
+
+class PocConfigData(BaseModel):
+    services: Optional[List[Literal["ixctl", "peerctl"]]]
+    delivery_type: str
+    recipients: list[str]
+
+    @model_validator(mode="after")
+    def validate_recipients(self):
+        if len(self.recipients) < 1:
+            raise ValueError(_("Recipients must contain at least one item."))
+
+        if self.delivery_type == "email":
+            for recipient in self.recipients:
+                try:
+                    validate_email(recipient)
+                except ValidationError:
+                    raise ValueError(_(f"'{recipient}' is not a valid email address."))
+
+        return self
+
+
+class PointOfContact(models.Model):
+    org = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="org_poc_set",
+    )
+    delivery_type = models.CharField(
+        default="email",
+        choices=(("email", _("Email")),),
+        help_text=_("The type of message delivery for the alert."),
+    )
+    config = models.JSONField(help_text="Configurations for the alert.")
+    type = models.CharField(
+        default="notifications",
+        choices=(
+            ("general", _("General")),
+            ("notifications", _("Notifications")),
+        ),
+        help_text=_("Point of contact type."),
+    )
+    status = models.CharField(
+        default="ok",
+        choices=(
+            ("ok", _("Ok")),
+            ("inactive", _("Inactive")),
+        ),
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["delivery_type", "type"], name="unique_delivery_type_type_pair"
+            ),
+        ]
+
+    class HandleRef:
+        tag = "poc"
+
+    def clean(self):
+        super().clean()
+        try:
+            PocConfigData(**self.config, delivery_type=self.delivery_type)
+        except PydanticValidationError as ex:
+            raise ValidationError(str(ex))
+
+        if (
+            PointOfContact.objects.exclude(pk=self.pk)
+            .filter(delivery_type=self.delivery_type, type=self.type)
+            .exists()
+        ):
+            raise ValidationError("Delivery method for that contact type already exists.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

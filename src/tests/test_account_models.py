@@ -1,6 +1,14 @@
+import pytest
 from django.contrib.auth import authenticate, get_user_model
+from django.core.exceptions import ValidationError
 
-from account.models import EmailConfirmation, Invitation, PasswordReset
+from account.models import (
+    EmailConfirmation,
+    Invitation,
+    PasswordReset,
+    PocConfigData,
+    PointOfContact,
+)
 
 
 def test_personal_org(db, account_objects):
@@ -106,3 +114,44 @@ def test_auto_user_to_org(db, account_objects, settings):
     )
 
     assert not user.org_user_set.filter(org__slug="test").exists()
+
+
+def test_poc_config_is_valid(db, account_objects):
+    PocConfigData(services=None, delivery_type="email", recipients=["test@test.com"])
+    PocConfigData(
+        services=["ixctl", "peerctl"],
+        delivery_type="email",
+        recipients=["test@test.com"],
+    )
+
+
+def test_poc_config_is_invalid(db, account_objects):
+    with pytest.raises(ValueError):
+        PocConfigData(serices=["ixctl"], delivery_type="email", recipients=[])
+
+    with pytest.raises(ValueError):
+        PocConfigData(
+            serices=["ixctl"], delivery_type="email", recipients=["invalid_email"]
+        )
+
+
+def test_poc(db, account_objects):
+    delivery_type = "email"
+    config = {"services": ["ixctl"], "recipients": ["test@test.com", "email@email.com"]}
+    poc = PointOfContact(
+        org=account_objects.org, delivery_type=delivery_type, config=config
+    )
+    poc.save()
+
+    assert poc.status == "ok"
+    assert poc.type == "notifications"
+
+
+def test_poc_invalid_config(db, account_objects):
+    delivery_type = "email"
+    config = {"services": None, "recipients": []}
+    with pytest.raises(ValidationError):
+        poc = PointOfContact(
+            org=account_objects.org, delivery_type=delivery_type, config=config
+        )
+        poc.save()
