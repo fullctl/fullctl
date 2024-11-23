@@ -4,7 +4,7 @@
     const port_id = member.port ?? member.port_id ?? member.virtual_port;
 
     $.ajax({
-      url: metrics_url.replace(/0/g, port_id)
+      url: metrics_url.replace("/0/", `/${port_id}/`)
     }).done(({data = []}) => {
       const light_level_stat = row.find('[data-element="light_level_stat"]');
 
@@ -79,7 +79,7 @@
       scrollY: '200px',
 
       ajax: {
-        url: url.replace(/0/g, port_id)
+        url: url.replace("/0/", `/${port_id}/`)
       },
 
       columns: [
