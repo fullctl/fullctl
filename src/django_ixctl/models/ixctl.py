@@ -1126,7 +1126,7 @@ class Routeserver(HandleRefModel):
         if not event_ids:
             return
 
-        events = auditctl.Event().objects(ids=event_ids)
+        events = auditctl.Event().get_events_by_ids(event_ids=event_ids)
         if not events:
             return
 
@@ -1529,7 +1529,7 @@ class RouteserverMember(models.Model):
         if not event_ids:
             return
 
-        events = auditctl.Event().objects(ids=event_ids)
+        events = auditctl.Event().get_events_by_ids(event_ids=event_ids)
         if not events:
             return
 
