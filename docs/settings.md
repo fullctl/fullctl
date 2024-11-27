@@ -29,3 +29,7 @@ Values:
 ### EMAIL_SIGNATURE (FullCtl Account Services)
 
 The signature to use for all outgoing emails.
+
+### REDIRECT_TO_SERVICE
+
+The service name to redirect to after successfull login, redirects to `aaactl` if not set.
