@@ -20,6 +20,7 @@
 - `PEERCTL_URL` - host url for peerctl service (e.g., "https://peer.fullctl.com")
 - `PREFIXCTL_URL` - host url for prefixctl service (e.g., "https://prefix.fullctl.com")
 - `DEVICECTL_URL` - host url for devicectl service (e.g., "https://device.fullctl.com")
+- `BRIDGE_OBJECTS_CHUNK_SIZE` - Size of chunks for objects when making bridge requests
 
 ### Logging
 

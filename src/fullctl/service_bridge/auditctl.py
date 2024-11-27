@@ -2,16 +2,20 @@ try:
     from django.conf import settings
 
     DEFAULT_SERVICE_KEY = settings.SERVICE_KEY
+    BRIDGE_OBJECTS_CHUNK_SIZE = settings.BRIDGE_OBJECTS_CHUNK_SIZE
 except ImportError:
     DEFAULT_SERVICE_KEY = ""
+    BRIDGE_OBJECTS_CHUNK_SIZE = 50
 
 import structlog
 
 from fullctl.service_bridge.client import Bridge, DataObject, url_join
+from fullctl.utils import chunk_list
 
 CACHE = {}
 
 logger = structlog.get_logger(__name__)
+
 
 class AuditctlEntity(DataObject):
     description = "AuditCtl Object"
@@ -19,7 +23,6 @@ class AuditctlEntity(DataObject):
 
 
 class Auditctl(Bridge):
-
     """
     Service bridge to auditctl for data
     retrieval
@@ -112,8 +115,7 @@ class Event(Auditctl):
                     "source": service,
                     "data": {
                         "components": components,
-                    }
-
+                    },
                 }
             )
         elif status_code >= 500:
@@ -130,9 +132,9 @@ class Event(Auditctl):
                     "error": {
                         "message": f"Request failed with status code {status_code}\n{error_message}",
                         "components": components,
-                    }
+                    },
                 }
-            ) 
+            )
 
     def get_last_updated_config_liveness_event(self, org_slug: str):
         """
@@ -142,3 +144,14 @@ class Event(Auditctl):
             org_slug (`str`) -- org slug
         """
         return self.get(f"data/event/v0.1/{org_slug}/config/liveness/")
+
+    def get_events_by_ids(self, event_ids):
+        if len(event_ids) <= BRIDGE_OBJECTS_CHUNK_SIZE:
+            return list(self.objects(ids=event_ids))
+
+        events = []
+        for event_ids_chunk in chunk_list(
+            data=event_ids, chunk_size=BRIDGE_OBJECTS_CHUNK_SIZE
+        ):
+            events.extend(list(self.objects(ids=event_ids_chunk)))
+        return events
