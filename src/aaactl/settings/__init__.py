@@ -47,6 +47,8 @@ settings_manager.set_from_env("RECAPTCHA_SECRET_KEY")
 settings_manager.set_from_env("STRIPE_PUBLIC_KEY")
 settings_manager.set_from_env("STRIPE_SECRET_KEY")
 
+settings_manager.set_from_env("REDIRECT_TO_SERVICE", "")
+
 # TODO - normalize to either use the host or not (preferably not)
 LOGIN_URL = "/account/auth/login/"
 LOGIN_REDIRECT_URL = "/account"

@@ -1,3 +1,4 @@
+import logging
 from urllib.parse import urlparse
 
 from django.conf import settings
@@ -14,11 +15,14 @@ from oauth2_provider.oauth2_backends import get_oauthlib_core
 from rest_framework_simplejwt.tokens import RefreshToken
 
 import account.forms
-from account.models import EmailConfirmation, Invitation, PasswordReset
+from account.models import EmailConfirmation, Invitation, Organization, PasswordReset
 from account.session import set_selected_org
 from applications.models import Service
 from common.util import format_logo_url
 from whitelabel_fullctl.models import OrganizationBranding
+
+
+log = logging.getLogger(__name__)
 
 # Create your views here.
 
@@ -37,6 +41,23 @@ def valid_redirect(path, fallback):
     return path
 
 
+def get_fallback_url(user):
+    default = reverse("account:controlpanel")
+    org = Organization.default_org(user)
+    
+    redirect_to_service = getattr(settings, "REDIRECT_TO_SERVICE")
+    if not redirect_to_service:
+        return default
+    
+    try:
+        service = Service.objects.get(name=redirect_to_service)
+        return service.service_url.replace("{org.slug}", org.slug)
+    except Service.DoesNotExist:
+        log.error(f"Service {redirect_to_service} not found.")
+
+    return default
+
+
 def login(request):
     env = {}
     org_branding = {}
@@ -53,9 +74,6 @@ def login(request):
 
     if request.method == "POST":
         form = account.forms.Login(data=request.POST)
-        redirect_next = valid_redirect(
-            request.POST.get("next"), reverse("account:controlpanel")
-        )
         if form.is_valid():
             user = authenticate(
                 request,
@@ -65,6 +83,10 @@ def login(request):
 
             if user is not None:
                 fn_login(request, user)
+                redirect_next = valid_redirect(
+                    path=request.POST.get("next"),
+                    fallback=get_fallback_url(user),
+                )
 
                 # redirect_next is alraedy cleaned and validated
                 # through valid_redirect at this point
@@ -236,9 +258,8 @@ def register(request):
         # registration is disabled, return a 404
         raise Http404
 
-    show_captcha = (
-        getattr(settings, "RECAPTCHA_PUBLIC_KEY", None)
-        and getattr(settings, "RECAPTCHA_SECRET_KEY", None)
+    show_captcha = getattr(settings, "RECAPTCHA_PUBLIC_KEY", None) and getattr(
+        settings, "RECAPTCHA_SECRET_KEY", None
     )
 
     if request.method == "POST":
