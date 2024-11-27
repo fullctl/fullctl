@@ -814,7 +814,7 @@ typing = ["typing-extensions (>=4.12.2)"]
 
 [[package]]
 name = "fullctl"
-version = "1.15.0-rc.23"
+version = "1.15.0-rc.24"
 description = "Core classes and functions for service applications"
 optional = false
 python-versions = "^3.9"
@@ -852,7 +852,7 @@ whitenoise = ">=6"
 type = "git"
 url = "https://github.com/fullctl/fullctl.git"
 reference = "prep-release"
-resolved_reference = "f9fcd32c3a08be849dd83a56e4e1205db83c1ba4"
+resolved_reference = "595416b3520493a5ca8f7c85b9fe9ce86f1ecb78"
 
 [[package]]
 name = "ghp-import"
