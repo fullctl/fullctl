@@ -88,6 +88,7 @@ const selected_asn = "{{ selected_asn }}";
     href="#page-ix">{% trans "IX" %}</a>
   {% endif %}
 
+  {% if show_session_summary %}
   <a class="nav-link"
     id="tab-summary-sessions"
     data-bs-toggle="tab"
@@ -96,6 +97,7 @@ const selected_asn = "{{ selected_asn }}";
     aria-selected="false"
     data-second-tab="#summary-sessions-body"
     href="#page-summary-sessions">{% trans "Summary" %}</a>
+  {% endif %}
 
     <a class="nav-link"
       id="tab-detail-session"
@@ -193,7 +195,7 @@ const selected_asn = "{{ selected_asn }}";
     aria-controls="page-as-table"
     aria-selected="false"
     data-second-tab="#as-table-body"
-    href="#page-as-table">{% trans "AS Table" %}</a>
+    href="#page-as-table">{% trans "Flow Table" %}</a>
 
   {% endif %}
 

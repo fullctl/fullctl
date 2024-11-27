@@ -53,6 +53,7 @@ def view_instance(request, instance, **kwargs):
     env["asns"] = asns
     env["asns_count"] = len(asns)
     env["default_asn"] = default_asn
+    env["show_session_summary"] = getattr(settings, "SHOW_SESSION_SUMMARY")
 
     return render(request, "theme-select.html", env)
 
