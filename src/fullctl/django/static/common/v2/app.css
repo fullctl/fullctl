@@ -2135,3 +2135,7 @@ div.hierarchy div.item.l1 {
 div.hierarchy div.item.l2 {
   margin-left: 40px;
 }
+
+.list-th.sortable-button {
+  width: fit-content;
+}
