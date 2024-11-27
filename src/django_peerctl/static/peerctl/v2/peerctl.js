@@ -1846,7 +1846,11 @@ $peerctl.PeerList = $tc.extend(
         const text_col = $('<div>').text("View on PDB").addClass("col label pe-0");
         const a_container = $('<div>').addClass("row align-items-center").append(text_col).append(icon_col)
 
-        return $('<a>').attr('href', value).addClass("peer_session-active-toggled | secondary btn small ms-auto external").append(a_container);
+        return $('<a>')
+          .attr('href', value)
+          .attr("target", "_blank")
+          .addClass("peer_session-active-toggled | secondary btn small ms-auto external")
+          .append(a_container);
       };
 
       $(this).on("load:after", () => {
