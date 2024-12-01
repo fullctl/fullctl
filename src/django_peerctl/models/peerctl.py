@@ -10,6 +10,7 @@ import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.sot as sot
 import reversion
+import structlog
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.models import Session
@@ -39,14 +40,18 @@ from django_peerctl.exceptions import (
 )
 from django_peerctl.helpers import get_best_policy, get_peer_contact_email
 from django_peerctl.meta import PeerSessionSchema
-from django_peerctl.models.tasks import SyncIsRsPeer, SyncMacAddress, SyncRouteServerMD5, SyncStatus
+from django_peerctl.models.tasks import (
+    SyncIsRsPeer,
+    SyncMacAddress,
+    SyncRouteServerMD5,
+    SyncStatus,
+)
 from django_peerctl.templating import ip_version, make_variable_name
 
 # naming::
 # handleref tag $model_$model
 # matching fks should use the tag (even tho it would usually be done as _)
 
-import structlog
 logger = structlog.getLogger(__name__)
 
 STATUS_CHOICES = (
@@ -114,7 +119,6 @@ class UTC(datetime.tzinfo):
 
 
 class ref_fallback:
-
     """
     use to decorate the value getter method targeted
     by a SerializerMethodField with a default value
@@ -930,7 +934,6 @@ class InternetExchange(sot.ReferenceMixin, Base):
 
 
 class MutualLocation:
-
     """
     Reperesents a mutual location between two networks
     """
@@ -1262,9 +1265,7 @@ class PortObject(devicectl.DeviceCtlEntity, PolicyHolderMixin):
         self.port_info_object.save()
 
         if self.asn:
-            SyncStatus.create_task(
-                self.asn, self.port_info_object.ipaddr4, status
-            )
+            SyncStatus.create_task(self.asn, self.port_info_object.ipaddr4, status)
 
     def get_peer_session(self, member):
         """
@@ -1697,7 +1698,7 @@ class PortInfo(sot.ReferenceMixin, Base):
             ("failed", _("Failed")),
             ("expired", _("Expired")),
             ("admin_down", _("Admin Down")),
-        )
+        ),
     )
 
     class HandleRef:
@@ -1809,7 +1810,7 @@ class PortInfo(sot.ReferenceMixin, Base):
         # collect all ref ids and categorize ixctl or pdbctl
 
         for obj in objects:
-            if not obj.ref_id:
+            if not obj or not obj.ref_id:
                 continue
 
             if obj.ref_source == "pdbctl":
@@ -1910,7 +1911,7 @@ class PortInfo(sot.ReferenceMixin, Base):
 
     # setter for mac_address field
     @mac_address.setter
-    def mac_address(self, value:str):
+    def mac_address(self, value: str):
         if not value or not self.id:
             return
         self.mac_addresses.all().delete()
@@ -1934,7 +1935,7 @@ class PortInfo(sot.ReferenceMixin, Base):
 
     # setter for macaddr_set field
     @macaddr_set.setter
-    def macaddr_set(self, macs:list[str]):
+    def macaddr_set(self, macs: list[str]):
 
         if not self.id:
             return
@@ -1948,7 +1949,6 @@ class PortInfo(sot.ReferenceMixin, Base):
         self.mac_addresses.bulk_create(
             MacAddress(port_info=self, address=mac) for mac in macs
         )
-
 
     def __str__(self):
         return "PortInfo({}): {} {} {}".format(
@@ -2019,7 +2019,6 @@ class PortInfo(sot.ReferenceMixin, Base):
     ),
 )
 class MacAddress(HandleRefModel):
-
     """
     Describes a MAC address
     """
@@ -2042,6 +2041,7 @@ class MacAddress(HandleRefModel):
 
     def __str__(self):
         return f"{self.address}"
+
 
 class DeviceObject(devicectl.DeviceCtlEntity):
     @property
@@ -2293,7 +2293,6 @@ class PeerSession(PolicyHolderMixin, meta.DataMixin, Base):
         tag = "peer_session"
 
     class DataSchema:
-
         """
         Session meta data
         """
@@ -2425,8 +2424,11 @@ class PeerSession(PolicyHolderMixin, meta.DataMixin, Base):
         port_infos = []
 
         for session in sessions:
-            peers_asns.append(session.peer_port.peer_net.peer.asn)
-            port_infos.append(session.peer_port.port_info)
+            peer_port = session.peer_port
+            peers_asns.append(peer_port.peer_net.peer.asn)
+
+            if peer_port.port_info:
+                port_infos.append(peer_port.port_info)
 
         if peers_asns:
             networks = {
@@ -2442,7 +2444,9 @@ class PeerSession(PolicyHolderMixin, meta.DataMixin, Base):
             if not session.port or not session.port.id:
                 continue
 
-            port_infos.append(session.port.object.port_info_object)
+            port_object = session.port.object
+            if port_object and port_object.port_info_object:
+                port_infos.append(port_object.port_info_object)
 
         PortInfo.load_references(port_infos)
 
@@ -2531,7 +2535,6 @@ class PeerSession(PolicyHolderMixin, meta.DataMixin, Base):
 )
 @reversion.register
 class PeerRequest(HandleRefModel):
-
     """
     Describes a peer request from one ASN to another
     """
@@ -2631,7 +2634,6 @@ class PeerRequest(HandleRefModel):
 
 
 class PeerRequestLocation(HandleRefModel):
-
     """
     Describes an exchange location for a peer request
     """
