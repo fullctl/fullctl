@@ -69,3 +69,11 @@ textarea.form-control.learned-mac-addresses {
   background-color: transparent !important;
   border: none;
 }
+
+.port_is_hot {
+  margin-bottom: 5px;
+}
+
+.port-speed {
+  text-align: center;
+}

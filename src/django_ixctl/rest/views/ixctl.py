@@ -1,3 +1,4 @@
+import os
 from collections import defaultdict
 from datetime import datetime
 
@@ -87,6 +88,7 @@ class InternetExchange(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericView
         serializer = Serializers.ix(
             instance=models.InternetExchange.objects.filter(instance=instance),
             many=True,
+            context={"org": org},
         )
         return Response(serializer.data)
 
@@ -96,20 +98,17 @@ class InternetExchange(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericView
         data = request.data
         data["pdb_id"] = None
         data["instance"] = instance.id
-        serializer = Serializers.ix(data=data)
+        serializer = Serializers.ix(data=data, context={"org": org})
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         ix = serializer.save()
 
-        return Response(Serializers.ix(instance=ix).data)
+        return Response(Serializers.ix(instance=ix, context={"org": org}).data)
 
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
     @grainy_endpoint(namespace="ix.{request.org.permission_id}.{ix.pk}")
     def retrieve(self, request, org, ix, instance, *args, **kwargs):
-        serializer = Serializers.ix(
-            instance=ix,
-            many=False,
-        )
+        serializer = Serializers.ix(instance=ix, many=False, context={"org": org})
         return Response(serializer.data)
 
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
@@ -120,10 +119,7 @@ class InternetExchange(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericView
 
         data["instance"] = instance.id
 
-        serializer = Serializers.ix(
-            ix,
-            data=request.data,
-        )
+        serializer = Serializers.ix(ix, data=request.data, context={"org": org})
 
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
@@ -131,7 +127,7 @@ class InternetExchange(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericView
         ix.instance = instance
         ix.save()
 
-        return Response(Serializers.ix(instance=ix).data)
+        return Response(Serializers.ix(instance=ix, context={"org": org}).data)
 
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
     @auditlog()
@@ -139,7 +135,7 @@ class InternetExchange(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericView
     def destroy(self, request, org, ix, instance, auditlog=None, *args, **kwargs):
         ix.delete()
         ix.id = request.data.get("id")
-        return Response(Serializers.ix(instance=ix).data)
+        return Response(Serializers.ix(instance=ix, context={"org": org}).data)
 
     @action(detail=True, methods=["PUT"], serializer_class=Serializers.update_lan)
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
@@ -179,7 +175,7 @@ class InternetExchange(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericView
 
         auditlog.log("ix:import", log_object=ix, **request.data)
 
-        return Response(Serializers.ix(instance=ix).data)
+        return Response(Serializers.ix(instance=ix, context={"org": org}).data)
 
     @action(detail=True, methods=["POST"], serializer_class=Serializers.default_ix)
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
@@ -332,6 +328,42 @@ class Member(
         serializer = Serializers.member(
             instance=members, many=True, context={"instance": instance}
         )
+
+        models.InternetExchangeMember.preload_ports(org, members)
+
+        member_bgp_stat_map = self.get_member_bgp_stat_data(members=members)
+        member_traffic_alert_data_map = self.get_members_traffic_alert_data(
+            members=members
+        )
+
+        for member in serializer.data:
+            member["bgp_stat"] = member_bgp_stat_map.get(member.get("id"))
+            member["traffic_alert_data"] = member_traffic_alert_data_map.get(
+                member.get("id")
+            )
+
+        return Response(serializer.data)
+
+    def get_member_bgp_stat_data(self, members):
+        member_routeserver_member_map = self.get_members_routeserver_member_data(
+            members=members
+        )
+        result = {}
+
+        for member_id, routeserver_members in member_routeserver_member_map.items():
+            data = None
+            if routeserver_members:
+                for routeserver_member in routeserver_members:
+                    if hasattr(routeserver_member, "_event_object"):
+                        data = {
+                            str(
+                                routeserver_member.routeserver.router_id
+                            ): routeserver_member._event_object.data.components
+                        }
+            result[member_id] = data
+        return result
+
+    def get_members_routeserver_member_data(self, members):
         member_ids = [member.id for member in members]
         routeserver_members = models.RouteserverMember.objects.filter(
             ix_member__in=member_ids
@@ -343,20 +375,28 @@ class Member(
             member_routeserver_member_map[routeserver_member.ix_member.id].append(
                 routeserver_member
             )
+        return member_routeserver_member_map
 
-        members_data = serializer.data
-        for member in members_data:
-            member["bgp_stat"] = None
-            routeserver_members = member_routeserver_member_map.get(member.get("id"))
-            if routeserver_members:
-                for routeserver_member in routeserver_members:
-                    if hasattr(routeserver_member, "_event_object"):
-                        member["bgp_stat"] = {
-                            str(
-                                routeserver_member.routeserver.router_id
-                            ): routeserver_member._event_object.data.components
-                        }
-        return Response(members_data)
+    def get_members_traffic_alert_data(self, members):
+        try:
+            traffic_alert_config = models.TrafficAlertConfig.objects.get(
+                ix=members[0].ix
+            )
+        except models.TrafficAlertConfig.DoesNotExist:
+            return {member.id: None for member in members}
+        return {
+            member.id: {
+                "traffic_level": traffic_alert_config.traffic_level,
+                "capacity_alert": member.port._object.capacity_alert,
+                "traffic_poll_time": member.ix.traffic_poll_time,
+                "at_capacity": member.port._object.at_capacity,
+                "time_period": traffic_alert_config.time_period,
+            }
+            if member.port._object
+            else None
+            for member in members
+            if member.port
+        }
 
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
     @auditlog()
@@ -910,3 +950,165 @@ class PermissionRequest(CachedObjectMixin, viewsets.GenericViewSet):
         permreq = serializer.save()
         return Response(serializer.data)
     """
+
+
+@route
+class TrafficAlertConfig(IxOrgQuerysetMixin, viewsets.GenericViewSet):
+    serializer_class = Serializers.traffic_alert_config
+    queryset = models.TrafficAlertConfig.objects.all()
+    ix_tag_needed = True
+    lookup_field = "id"
+    lookup_url_kwarg = "id"
+
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @auditlog()
+    @grainy_endpoint(namespace="ix.{request.org.permission_id}")
+    def create(self, request, org, instance, ix, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @load_object("traffic_alert_config", models.TrafficAlertConfig, ix="ix", id="id")
+    @grainy_endpoint(namespace="ix.{request.org.permission_id}")
+    def retrieve(
+        self, request, org, instance, ix, traffic_alert_config, *args, **kwargs
+    ):
+        serializer = self.serializer_class(instance=traffic_alert_config)
+        return Response(serializer.data)
+
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @load_object("traffic_alert_config", models.TrafficAlertConfig, ix="ix", id="id")
+    @auditlog()
+    @grainy_endpoint(namespace="ix.{request.org.permission_id}")
+    def update(self, request, org, instance, ix, traffic_alert_config, *args, **kwargs):
+        serializer = self.serializer_class(
+            data=request.data, instance=traffic_alert_config, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["GET"])
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @load_object("traffic_alert_config", models.TrafficAlertConfig, ix="ix")
+    @grainy_endpoint(namespace="ix.{request.org.permission_id}")
+    def get_by_ix(
+        self, request, org, instance, ix, traffic_alert_config, *args, **kwargs
+    ):
+        serializer = self.serializer_class(instance=traffic_alert_config)
+        return Response(serializer.data)
+
+
+@route
+class EmailTemplate(IxOrgQuerysetMixin, viewsets.GenericViewSet):
+    serializer_class = Serializers.email_template
+    queryset = models.EmailTemplate.objects.all()
+    ix_tag_needed = True
+    lookup_field = "id"
+    lookup_url_kwarg = "id"
+
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @grainy_endpoint(namespace="ix.{request.org.permission_id}")
+    def list(self, request, org, instance, ix, *args, **kwargs):
+        email_templates = models.EmailTemplate.objects.filter(ix=ix)
+        # if not email_templates:
+        #     email_templates = self.get_default_templates(ix)
+        serializer = self.serializer_class(email_templates, many=True)
+        return Response(serializer.data)
+
+    def get_default_templates(self, ix):
+        email_templates = []
+        for template_type, template_name in models.EMAIL_TEMPLATE_TYPES:
+            email_template = models.EmailTemplate(
+                id=0,
+                ix=ix,
+                type=template_type,
+                name=template_name,
+            )
+            path = os.path.join(
+                email_template.template_loader_paths[0], email_template.template_path
+            )
+            with open(path) as fh:
+                email_template.body = fh.read()
+            email_templates.append(email_template)
+        return email_templates
+
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @auditlog()
+    @grainy_endpoint(namespace="ix.{request.org.permission_id}")
+    def create(self, request, org, instance, ix, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="default_template/(?P<template_type>[^/]+)",
+    )
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @grainy_endpoint(namespace="ix.{request.org.permission_id}")
+    def get_default_by_type(
+        self, request, org, instance, ix, template_type, *args, **kwargs
+    ):
+        email_template = None
+        try:
+            email_template = models.EmailTemplate.objects.get(ix=ix, type=template_type)
+        except models.EmailTemplate.DoesNotExist:
+            for template in self.get_default_templates(ix):
+                if template.type == template_type:
+                    email_template = template
+                    break
+        if not email_template:
+            return Response(status=404)
+        serializer = self.serializer_class(email_template)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["post"], url_path="(?P<template_id>[^/]+)/preview")
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @grainy_endpoint(namespace="ix.{request.org.permission_id}")
+    def preview(self, request, org, instance, ix, template_id, *args, **kwargs):
+        if template_id == "0":
+            email_template = models.EmailTemplate(
+                id=0,
+                ix=ix,
+                name="Preview",
+                type=request.data.get("type"),
+                body=request.data.get("body"),
+            )
+        else:
+            email_template = models.EmailTemplate.objects.get(id=template_id)
+            email_template.body = request.data.get("body")
+        serializer = Serializers.template_preview(instance=email_template)
+        return Response(serializer.data)
+
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @load_object("email_template", models.EmailTemplate, ix="ix", id="id")
+    @grainy_endpoint(namespace="ix.{request.org.permission_id}.{ix.pk}")
+    def retrieve(self, request, org, instance, ix, email_template, *args, **kwargs):
+        serializer = self.serializer_class(instance=email_template)
+        return Response(serializer.data)
+
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @load_object("email_template", models.EmailTemplate, ix="ix", id="id")
+    @auditlog()
+    @grainy_endpoint(namespace="ix.{request.org.permission_id}")
+    def update(self, request, org, instance, ix, email_template, *args, **kwargs):
+        serializer = self.serializer_class(
+            instance=email_template, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @load_object("email_template", models.EmailTemplate, ix="ix", id="id")
+    @auditlog()
+    @grainy_endpoint(namespace="ix.{request.org.permission_id}.{ix.pk}")
+    def destroy(self, request, org, instance, ix, email_template, *args, **kwargs):
+        response = Response(self.serializer_class(instance=email_template).data)
+        email_template.delete()
+        return response

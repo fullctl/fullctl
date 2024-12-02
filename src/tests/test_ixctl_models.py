@@ -243,3 +243,130 @@ def test_routeserver_config_outdated_update_ixmember(db, pdb_data, account_objec
     ixmember.name = "Changed name"
     ixmember.save()
     assert routeserver_config.outdated is True
+
+
+def test_traffic_alert_config_is_valid(db, pdb_data, account_objects):
+    ix = account_objects.ix
+    traffic_alert_config = models.TrafficAlertConfig(
+        ix=ix,
+        traffic_level=0,
+        time_period=43,
+        operator_emails=True,
+        member_emails=True,
+        operator_emails_max_frequency=7,
+        member_emails_max_frequency=30,
+    )
+    traffic_alert_config.save()
+
+    traffic_alert_config.member_emails = False
+    traffic_alert_config.member_emails_max_frequency = None
+    traffic_alert_config.save()
+
+
+def test_traffic_alert_config_is_invalid(db, pdb_data, account_objects):
+    ix = account_objects.ix
+
+    with pytest.raises(ValidationError):
+        models.TrafficAlertConfig(
+            ix=ix,
+            traffic_level=90,
+            time_period=43,
+            operator_emails=True,
+            member_emails=True,
+            operator_emails_max_frequency=7,
+            member_emails_max_frequency=2,
+        ).save()
+
+    with pytest.raises(ValidationError):
+        models.TrafficAlertConfig(
+            ix=ix,
+            traffic_level=90,
+            time_period=43,
+            operator_emails=True,
+            member_emails=True,
+            operator_emails_max_frequency=None,
+            member_emails_max_frequency=7,
+        ).save()
+
+    with pytest.raises(ValidationError):
+        models.TrafficAlertConfig(
+            ix=ix,
+            traffic_level=90,
+            time_period=43,
+            operator_emails=True,
+            member_emails=True,
+            operator_emails_max_frequency=7,
+            member_emails_max_frequency=None,
+        ).save()
+
+    with pytest.raises(ValidationError):
+        models.TrafficAlertConfig(
+            ix=ix,
+            traffic_level=90,
+            time_period=43,
+            operator_emails=True,
+            member_emails=True,
+            operator_emails_max_frequency=6,
+            member_emails_max_frequency=7,
+        ).save()
+
+    with pytest.raises(ValidationError):
+        models.TrafficAlertConfig(
+            ix=ix,
+            traffic_level=784,
+            time_period=43,
+            operator_emails=True,
+            member_emails=True,
+            operator_emails_max_frequency=6,
+            member_emails_max_frequency=7,
+        ).save()
+
+
+def test_email_template_is_valid(db, pdb_data, account_objects):
+    ix = account_objects.ix
+    models.EmailTemplate(
+        ix=ix,
+        name="Traffic Alert Net",
+        body="Test email body for {{ ix.name }}",
+        type="traffic_alert_net",
+    ).save()
+
+    models.EmailTemplate(
+        ix=ix,
+        name="Traffic Alert Net",
+        body="Test email body for {{ ix.name }}",
+        type="traffic_alert_ix",
+    ).save()
+
+
+def test_email_template_is_invalid(db, pdb_data, account_objects):
+    ix = account_objects.ix
+    models.EmailTemplate(
+        ix=ix,
+        name="Traffic Alert Net",
+        body="Test email body for {{ ix.name }}",
+        type="traffic_alert_net",
+    ).save()
+
+    models.EmailTemplate(
+        ix=ix,
+        name="Traffic Alert Net",
+        body="Test email body for {{ ix.name }}",
+        type="traffic_alert_ix",
+    ).save()
+
+    with pytest.raises(ValidationError):
+        models.EmailTemplate(
+            ix=ix,
+            name="Traffic Alert Net",
+            body="Test email body for {{ ix.name }}",
+            type="traffic_alert_ix",
+        ).save()
+
+    with pytest.raises(ValidationError):
+        models.EmailTemplate(
+            ix=ix,
+            name="Traffic Alert Net",
+            body="Test email body for {{ ix.name }}",
+            type="traffic_alert_net",
+        ).save()

@@ -3,12 +3,15 @@ try:
 except ImportError:
     from yaml import Loader
 
+import fullctl.service_bridge.aaactl as aaactl
 import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.prefixctl as prefixctl
 import structlog
 import yaml
 from django.conf import settings
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import validate_email
 from django.utils.translation import gettext_lazy as _
 from django_inet.rest import IPAddressField
 from fullctl.django.inet.validators import validate_mac_address, validate_mac_addresses
@@ -137,6 +140,7 @@ class UpdateLAN(ModelSerializer):
 @register
 class InternetExchange(ModelSerializer):
     graph_traffic_source = serializers.CharField(read_only=True)
+    email_alert_recipients = serializers.CharField(required=False)
 
     class Meta:
         model = models.InternetExchange
@@ -156,6 +160,8 @@ class InternetExchange(ModelSerializer):
             "graph_traffic_source",
             "learned_mac_addresses",
             "limit_mac_addresses",
+            "traffic_poll_time",
+            "email_alert_recipients",
         ]
         extra_kwargs = {
             "slug": {
@@ -186,7 +192,54 @@ class InternetExchange(ModelSerializer):
                 _("You already have an exchange with the identifier `{}`").format(slug)
             )
         cleaned_data["slug"] = slug
+
+        email_alert_recipients = cleaned_data.get("email_alert_recipients")
+        for recipient in email_alert_recipients.strip().split(","):
+            try:
+                validate_email(recipient.strip())
+            except DjangoValidationError:
+                raise ValidationError(
+                    {"email_alert_recipients": _("Please enter valid email addresses.")}
+                )
         return cleaned_data
+
+    def save_email_alert_recipients(self, recipients: str):
+        recipients = [recipient.strip() for recipient in recipients.strip().split(",")]
+        org = self.context.get("org")
+        aaactl.PointOfContact().save_poc(
+            delivery_type="email",
+            recipients=recipients,
+            org_slug=org.slug,
+            org_id=org.id,
+            poc_type="notifications",
+            service="ixctl",
+        )
+
+    def save(self, **kwargs):
+        instance = super().save(**kwargs)
+        if email_alert_recipients := self.validated_data.get("email_alert_recipients"):
+            self.save_email_alert_recipients(recipients=email_alert_recipients)
+        return instance
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["email_alert_recipients"] = self.get_email_alert_recipients()
+        return representation
+
+    def get_email_alert_recipients(self) -> str:
+        org = self.context.get("org")
+        poc_objects = list(
+            aaactl.PointOfContact().objects(
+                org=org.slug,
+                delivery_type="email",
+                status="ok",
+                service="ixctl",
+                type="notifications",
+            )
+        )
+        if not poc_objects:
+            return None
+        return ", ".join(poc_objects[0].config.get("recipients", []))
 
 
 @register
@@ -850,3 +903,55 @@ class BGPState(serializers.Serializer):
 
     class Meta:
         fields = "__all__"
+
+
+@register
+class TrafficAlertConfigSerializer(ModelSerializer):
+    ref_tag = "traffic_alert_config"
+
+    class Meta:
+        model = models.TrafficAlertConfig
+        fields = "__all__"
+
+    def validate(self, data):
+        validated_data = super().validate(data)
+        member_emails_max_frequency = validated_data.get("member_emails_max_frequency")
+        operator_emails_max_frequency = validated_data.get(
+            "operator_emails_max_frequency"
+        )
+
+        if validated_data.get("operator_emails") and not operator_emails_max_frequency:
+            raise ValidationError(_("You must set a frequency for operator emails."))
+
+        if validated_data.get("member_emails") and not member_emails_max_frequency:
+            raise ValidationError(_("You must set a frequency for member emails."))
+
+        return validated_data
+
+
+@register
+class EmailTemplate(ModelSerializer):
+    ref_tag = "email_template"
+
+    class Meta:
+        model = models.EmailTemplate
+        fields = "__all__"
+
+
+@register
+class TemplatePreview(serializers.Serializer):
+    ref_tag = "template_preview"
+
+    body = serializers.SerializerMethodField()
+
+    class Meta:
+        fields = ["body"]
+
+    def get_body(self, obj):
+        try:
+            return obj.render()
+        except Exception as exc:
+            return (
+                "!!! ERROR !!!\nWhen trying to render the template "
+                f"we encountered the following issue:\n\n{exc}\n\nPlease fix and try again."
+            )

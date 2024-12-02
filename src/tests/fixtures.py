@@ -79,6 +79,7 @@ class AccountObjects:
         self.other_user.grainy_permissions.add_permission(
             f"service.ixctl.{self.orgs[1].id}", "crud"
         )
+        user.grainy_permissions.add_permission("service_bridge", "r")
 
         self.org = self.orgs[0]
 
