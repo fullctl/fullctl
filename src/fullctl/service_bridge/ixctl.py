@@ -9,11 +9,12 @@ import ipaddress
 from typing import Union
 from uuid import UUID
 
+import structlog
+
 import fullctl.service_bridge.auditctl as auditctl
 import fullctl.service_bridge.pdbctl as pdbctl
 from fullctl.service_bridge.client import Bridge, DataObject, url_join
 
-import structlog
 logger = structlog.getLogger(__name__)
 
 CACHE = {}
@@ -25,7 +26,6 @@ class IxctlEntity(DataObject):
 
 
 class Ixctl(Bridge):
-
     """
     Service bridge for ixctl data retrieval
     """
@@ -102,8 +102,10 @@ class InternetExchangeMember(Ixctl):
         self.put(f"data/member/sync/{asn}/{member_ip}/{router_ip}/md5", data=data)
 
     def set_ports_status(self, status: str, member_id: int, member_port: int):
-        return self.patch(f"data/member/sync/{member_id}/{member_port}/status",
-                          data={"status": str(status)})
+        return self.patch(
+            f"data/member/sync/{member_id}/{member_port}/status",
+            data={"status": str(status)},
+        )
 
     def traffic(
         self,
@@ -222,3 +224,34 @@ class RouteserverMember(Ixctl):
     class Meta(Ixctl.Meta):
         ref_tag = "routeserver_member"
         data_object_cls = RouteserverMemberObject
+
+
+class TrafficAlertConfigObject(IxctlEntity):
+    description = "Ixctl Traffic Alert Config"
+
+
+class TrafficAlertConfig(Ixctl):
+    class Meta(Ixctl.Meta):
+        ref_tag = "traffic_alert_config"
+        data_object_cls = TrafficAlertConfigObject
+
+
+class TrafficAlertEmailObject(IxctlEntity):
+    description = "Ixctl Traffic Alert Email"
+
+
+class TrafficAlertEmail(Ixctl):
+    class Meta(Ixctl.Meta):
+        ref_tag = "traffic_alert_email"
+        data_object_cls = TrafficAlertEmailObject
+
+    def get_traffic_alert_email(self, ix_id: int, email_type: str, member_id: int):
+        """
+        Get traffic alert email
+
+        Arguments:
+            ix_id (`int`) -- The internet exchange id
+            email_type (`str`) -- Type of traffic alert email i.e. 'traffic_alert_ix'
+            member_id (`int`) -- The member id
+        """
+        return self.get(f"data/traffic_alert_email/{ix_id}/{email_type}/{member_id}")

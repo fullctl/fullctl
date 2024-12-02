@@ -1507,6 +1507,7 @@ div.modal-body div.border-top-seperator {
 div.controls select.form-control,
 div.controls input[type="text"],
 div.controls input[type="password"],
+div.controls input[type="number"],
 div.controls textarea,
 div.controls select {
   font-size: 14px;
@@ -1522,6 +1523,7 @@ div.controls .select2-container--default .select2-selection--single:disabled,
 div.controls textarea:disabled,
 div.controls input[type="text"]:disabled,
 div.controls input[type="password"]:disabled,
+div.controls input[type="number"]:disabled,
 div.controls select:disabled {
   padding: 0px;
 }
@@ -1531,6 +1533,8 @@ div.controls input[type="text"],
 div.controls input[type="text"]:disabled,
 div.controls input[type="password"],
 div.controls input[type="password"]:disabled,
+div.controls input[type="number"],
+div.controls input[type="number"]:disabled,
 div.controls select.form-control {
   padding: 15px 16px;
   height: auto;
@@ -2136,6 +2140,10 @@ div.hierarchy div.item.l2 {
   margin-left: 40px;
 }
 
+.port_is_hot {
+  cursor: default;
+}
+
 .form_feature_request {
   height: 100%;
 }
@@ -2147,7 +2155,6 @@ div.hierarchy div.item.l2 {
 #modal_feature_request>div.modal-dialog>div.modal-content {
   height: inherit;
 }
-
 
 .list-th.sortable-button {
   width: fit-content;
