@@ -428,3 +428,55 @@ class RouteserverMember(DataViewSet):
     valid_filters = [
         ("rss", "routeserver__in"),
     ]
+
+
+@route
+class TrafficAlertConfig(DataViewSet):
+    path_prefix = "/data"
+    allowed_http_methods = ["GET"]
+    queryset = models.TrafficAlertConfig.objects.all()
+    serializer_class = Serializers.traffic_alert_config
+    valid_filters = [
+        ("ix", "ix"),
+        ("ixs", "ix__in"),
+    ]
+
+
+@route
+class TrafficAlertEmail(DataViewSet):
+    ref_tag = "traffic_alert_email"
+    path_prefix = "/data"
+    allowed_http_methods = ["GET"]
+
+    @action(
+        detail=False,
+        url_path="(?P<ix_id>[^/]+)/(?P<email_type>[^/]+)/(?P<member_id>[^/]+)",
+    )
+    @grainy_endpoint(namespace="service_bridge")
+    def get_traffic_alert_email(self, request, ix_id, email_type, member_id):
+        ix = models.InternetExchange.objects.get(id=ix_id)
+        traffic_alert_email_template = models.EmailTemplate.objects.get(
+            ix=ix, type=email_type
+        )
+        member = models.InternetExchangeMember.objects.get(id=member_id)
+
+        if email_type == "traffic_alert_ix":
+            subject = f"High port/LAG utilization notice: {ix.name}"
+
+        elif email_type == "traffic_alert_net":
+            subject = f"High port/LAG utilization notice: {member.name} {member.asn}"
+
+        models.InternetExchangeMember.preload_ports(
+            org=ix.instance.org, members=[member]
+        )
+        if member.port and member.port._object:
+            traffic_alert_email_template.context[
+                "capacity_alert"
+            ] = member.port._object.capacity_alert
+
+        return Response(
+            {
+                "subject": subject,
+                "message": traffic_alert_email_template.render(),
+            }
+        )

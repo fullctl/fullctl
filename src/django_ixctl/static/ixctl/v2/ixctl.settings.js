@@ -28,6 +28,10 @@ $ctl.application.Ixctl.Settings = $tc.extend(
         this.lan_settings();
       });
 
+      menu.find('[data-element="button_traffic_alerts"]').click(()=>{
+        this.traffic_alerts();
+      });
+
       return menu;
     },
 
@@ -46,6 +50,8 @@ $ctl.application.Ixctl.Settings = $tc.extend(
       }
       if(this.active_view == "lan_settings") {
         this.lan_settings();
+      } else if (this.active_view == "traffic_alerts") {
+        this.traffic_alerts();
       } else {
         this.general_settings();
       }
@@ -130,6 +136,88 @@ $ctl.application.Ixctl.Settings = $tc.extend(
         $ctl.ixctl.refresh().then(()=>{
           $ctl.ixctl.select_ix(ix.id);
         });
+      });
+    },
+
+    traffic_alerts: function() {
+      // Load the traffic alert settings page form
+      this.active_view = "traffic_alerts";
+      var ix = $ctl.ixctl.ix_object();
+      var dialog = this.custom_dialog(`Traffic Alert Settings for ${ix.name}`);
+
+      const form = this.widget("form_traffic_alerts", ($e) => {
+        return new twentyc.rest.Form(
+          this.template("form_traffic_alerts", dialog)
+        );
+      });
+
+      this.$w.form_traffic_alerts.fill({"traffic_poll_time": Math.round(ix.traffic_poll_time / 60)});
+
+      this.load_traffic_alerts();
+
+      form.format_request_url = this.format_request_url;
+
+      $(form).on("api-write:before", (form, _, data) => {
+        // Sanitize the request payload data before sending
+        data["ix"] = ix.id;
+
+        if (!data["operator_emails"]) {
+          data["operator_emails_max_frequency"] = null;
+        }
+
+        if (!data["member_emails"]) {
+          data["member_emails_max_frequency"] = null;
+        }
+      });
+
+      this.$w.form_traffic_alerts.element.find("#edit_member_emails").on("click", (e) => {
+        this.handle_member_config(e.target.checked);
+      });
+
+      this.$w.form_traffic_alerts.element.find("#edit_operator_emails").on("click", (e) => {
+        this.handle_operator_config(e.target.checked);
+      });
+    },
+
+    handle_operator_config: function(checked) {
+      // Handles whether to show or hide the operator config settings
+      if (checked) {
+        this.$w.form_traffic_alerts.element.find(".operator_emails_config").show();
+      } else {
+        this.$w.form_traffic_alerts.element.find(".operator_emails_config").hide();
+      }
+    },
+
+    handle_member_config: function(checked) {
+      // Handles whether to show or hide the member config settings
+      if (checked) {
+        this.$w.form_traffic_alerts.element.find(".member_emails_config").show();
+      } else {
+        this.$w.form_traffic_alerts.element.find(".member_emails_config").hide();
+      }
+    },
+
+    load_traffic_alerts: function() {
+      // Get the traffic alert config data for the IX
+      let url = this.$w.form_traffic_alerts.element.data("api-get-by-ix");
+      url = this.format_request_url(url);
+
+      $.ajax({ url })
+      .done(({ data }) => {
+        const traffic_alert_config = data[0];
+        this.$w.form_traffic_alerts.fill(traffic_alert_config);
+        this.$w.form_traffic_alerts.base_url = this.$w.form_traffic_alerts.base_url.replace("id", traffic_alert_config.id);
+        this.handle_member_config(traffic_alert_config.member_emails);
+        this.handle_operator_config(traffic_alert_config.operator_emails);
+      })
+      .fail(err => {
+        if (err.status == 404) {
+          // No exisiting data means we are creating a new one
+          this.$w.form_traffic_alerts.method = "POST";
+          this.$w.form_traffic_alerts.base_url = this.$w.form_traffic_alerts.base_url.replace("id", "");
+          this.handle_member_config(false);
+          this.handle_operator_config(false);
+        }
       });
     },
 

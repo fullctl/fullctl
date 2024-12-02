@@ -1,0 +1,11 @@
+Hello {{ ix.name }} Member,
+
+We are reaching out because we have observed that you have exceeded {{ traffic_alert_config.traffic_level }}% utilization on your port/LAG
+for about {{ downtime }} minutes in the past 30 days.
+
+Please let us know if you have any questions. We would be happy to discuss this further or assist you in adding more capacity.
+
+If you’re ready to upgrade, please contact your account representative.
+
+Best Regards,
+{{ ix.name }} Staff

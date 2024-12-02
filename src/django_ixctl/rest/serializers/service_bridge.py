@@ -34,6 +34,7 @@ class InternetExchange(ModelSerializer):
             "mtu",
             "vlan_id",
             "graph_traffic_source",
+            "traffic_poll_time",
         ]
 
     def get_org_id(self, ix):
@@ -200,4 +201,13 @@ class RouteserverMember(ModelSerializer):
 
     class Meta:
         model = models.RouteserverMember
+        fields = "__all__"
+
+
+@register
+class TrafficAlertConfig(ModelSerializer):
+    ref_tag = "traffic_alert_config"
+
+    class Meta:
+        model = models.TrafficAlertConfig
         fields = "__all__"

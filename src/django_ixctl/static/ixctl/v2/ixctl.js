@@ -628,6 +628,11 @@ $ctl.application.Ixctl.Members = $tc.extend(
           });
         }
 
+        if (data.traffic_alert_data) {
+          const port_is_hot = row.find('[data-element="port_is_hot"]');
+          $.fn.show_traffic_alert(data, port_is_hot);
+        }
+
         // Initialize port status
         var statusSpan = row.find('span[data-field="status"]');
         if(data.status=="ok") {

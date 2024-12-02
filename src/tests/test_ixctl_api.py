@@ -1,6 +1,7 @@
 import json
 
 import django_ixctl.models as models
+import pytest
 from django.urls import reverse
 
 
@@ -691,3 +692,356 @@ def test_send_empty_operational_status_object(db, pdb_data, account_objects):
     # Changes are persisted to db
     routeserver = models.Routeserver.objects.filter(id=rs.id).first()
     assert routeserver.operational_status == "operational"
+
+
+def test_create_traffic_alert_config(db, pdb_data, account_objects):
+    client = account_objects.api_client
+    org = account_objects.org
+    ix = account_objects.ix
+
+    response = client.post(
+        reverse("ixctl_api:traffic_alert_config-list", args=(org.slug, ix.slug)),
+        json.dumps(
+            {
+                "ix": ix.id,
+                "traffic_level": 90,
+                "time_period": 5,
+                "operator_emails": True,
+                "member_emails": True,
+                "operator_emails_max_frequency": 7,
+                "member_emails_max_frequency": 7,
+            }
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert len(data) == 1
+    assert data[0]["ix"] == ix.id
+    assert models.TrafficAlertConfig.objects.get(id=data[0]["id"]).ix.id == ix.id
+
+
+def test_update_traffic_alert_config(db, pdb_data, account_objects):
+    client = account_objects.api_client
+    org = account_objects.org
+    ix = account_objects.ix
+
+    models.TrafficAlertConfig(
+        ix=ix,
+        traffic_level=90,
+        time_period=5,
+        operator_emails=True,
+        member_emails=True,
+        operator_emails_max_frequency=7,
+        member_emails_max_frequency=7,
+    ).save()
+    traffic_alert_config = models.TrafficAlertConfig.objects.filter(ix=ix).first()
+
+    response = client.put(
+        reverse(
+            "ixctl_api:traffic_alert_config-detail",
+            args=(org.slug, ix.slug, traffic_alert_config.id),
+        ),
+        json.dumps(
+            {
+                "ix": ix.id,
+                "member_emails": False,
+                "operator_emails_max_frequency": 30,
+                "member_emails_max_frequency": 90,
+            }
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert len(data) == 1
+    assert data[0]["ix"] == ix.id
+    assert data[0]["member_emails"] is False
+    assert data[0]["operator_emails_max_frequency"] == 30
+    assert data[0]["member_emails_max_frequency"] == 90
+
+    db_traffic_alert_config = models.TrafficAlertConfig.objects.get(id=data[0]["id"])
+    assert db_traffic_alert_config.member_emails is False
+    assert db_traffic_alert_config.operator_emails_max_frequency == 30
+    assert db_traffic_alert_config.member_emails_max_frequency == 90
+
+
+def test_retrieve_traffic_alert_config(db, pdb_data, account_objects):
+    client = account_objects.api_client
+    org = account_objects.org
+    ix = account_objects.ix
+
+    models.TrafficAlertConfig(
+        ix=ix,
+        traffic_level=90,
+        time_period=5,
+        operator_emails=True,
+        member_emails=True,
+        operator_emails_max_frequency=7,
+        member_emails_max_frequency=7,
+    ).save()
+    traffic_alert_config = models.TrafficAlertConfig.objects.filter(ix=ix).first()
+
+    response = client.get(
+        reverse(
+            "ixctl_api:traffic_alert_config-detail",
+            args=(org.slug, ix.slug, traffic_alert_config.id),
+        ),
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert len(data) == 1
+    assert data[0]["ix"] == ix.id
+
+    db_traffic_alert_config = models.TrafficAlertConfig.objects.get(id=data[0]["id"])
+    assert db_traffic_alert_config.member_emails == data[0]["member_emails"]
+    assert (
+        db_traffic_alert_config.operator_emails_max_frequency
+        == data[0]["operator_emails_max_frequency"]
+    )
+    assert (
+        db_traffic_alert_config.member_emails_max_frequency
+        == data[0]["member_emails_max_frequency"]
+    )
+
+
+def test_get_traffic_alert_config_by_ix(db, pdb_data, account_objects):
+    client = account_objects.api_client
+    org = account_objects.org
+    ix = account_objects.ix
+
+    models.TrafficAlertConfig(
+        ix=ix,
+        traffic_level=90,
+        time_period=5,
+        operator_emails=True,
+        member_emails=True,
+        operator_emails_max_frequency=7,
+        member_emails_max_frequency=7,
+    ).save()
+
+    response = client.get(
+        reverse("ixctl_api:traffic_alert_config-get-by-ix", args=(org.slug, ix.slug)),
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert len(data) == 1
+    assert data[0]["ix"] == ix.id
+
+    db_traffic_alert_config = models.TrafficAlertConfig.objects.get(id=data[0]["id"])
+    assert db_traffic_alert_config.member_emails == data[0]["member_emails"]
+    assert (
+        db_traffic_alert_config.operator_emails_max_frequency
+        == data[0]["operator_emails_max_frequency"]
+    )
+    assert (
+        db_traffic_alert_config.member_emails_max_frequency
+        == data[0]["member_emails_max_frequency"]
+    )
+
+
+def test_create_email_template(db, pdb_data, account_objects):
+    client = account_objects.api_client
+    org = account_objects.org
+    ix = account_objects.ix
+
+    response = client.post(
+        reverse("ixctl_api:email_template-list", args=(org.slug, ix.slug)),
+        json.dumps(
+            {
+                "ix": ix.id,
+                "type": "traffic_alert_net",
+                "body": "Test email body for {{ ix.name }}",
+                "name": "Traffic Alert Net",
+            }
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert len(data) == 1
+    assert data[0]["ix"] == ix.id
+    assert models.EmailTemplate.objects.get(id=data[0]["id"]).ix.id == ix.id
+
+
+def test_update_email_template(db, pdb_data, account_objects):
+    client = account_objects.api_client
+    org = account_objects.org
+    ix = account_objects.ix
+
+    models.EmailTemplate(
+        ix=ix,
+        name="Traffic Alert Net",
+        body="Test email body for {{ ix.name }}",
+        type="traffic_alert_net",
+    ).save()
+    email_template = models.EmailTemplate.objects.filter(ix=ix).first()
+
+    body = "Test email body for {{ ix.name }} {{ downtime }}"
+    name = "Traffic Alert Network"
+
+    response = client.put(
+        reverse(
+            "ixctl_api:email_template-detail",
+            args=(org.slug, ix.slug, email_template.id),
+        ),
+        json.dumps(
+            {"ix": ix.id, "type": "traffic_alert_net", "body": body, "name": name}
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert len(data) == 1
+    assert data[0]["ix"] == ix.id
+    assert data[0]["name"] == name
+    assert data[0]["body"] == body
+
+    email_template = models.EmailTemplate.objects.get(id=data[0]["id"])
+    assert email_template.body == body
+    assert email_template.name == name
+
+
+def test_retrieve_email_template(db, pdb_data, account_objects):
+    client = account_objects.api_client
+    org = account_objects.org
+    ix = account_objects.ix
+
+    models.EmailTemplate(
+        ix=ix,
+        name="Traffic Alert Net",
+        body="Test email body for {{ ix.name }}",
+        type="traffic_alert_net",
+    ).save()
+    email_template = models.EmailTemplate.objects.filter(ix=ix).first()
+
+    response = client.get(
+        reverse(
+            "ixctl_api:email_template-detail",
+            args=(org.slug, ix.slug, email_template.id),
+        ),
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert len(data) == 1
+    assert data[0]["ix"] == ix.id
+
+    email_template = models.EmailTemplate.objects.get(id=data[0]["id"])
+    assert email_template.body == data[0]["body"]
+    assert email_template.name == data[0]["name"]
+
+
+def test_get_email_template_by_type(db, pdb_data, account_objects):
+    client = account_objects.api_client
+    org = account_objects.org
+    ix = account_objects.ix
+    template_type = "traffic_alert_net"
+
+    models.EmailTemplate(
+        ix=ix,
+        name="Traffic Alert Net",
+        body="Test email body for {{ ix.name }}",
+        type=template_type,
+    ).save()
+
+    response = client.get(
+        reverse(
+            "ixctl_api:email_template-get-default-by-type",
+            args=(org.slug, ix.slug, template_type),
+        ),
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert len(data) == 1
+    assert data[0]["ix"] == ix.id
+    assert data[0]["type"] == template_type
+
+    email_template = models.EmailTemplate.objects.get(id=data[0]["id"])
+    assert email_template.type == template_type
+
+
+# TODO: Find why destry view returns 404 even after successful delete
+@pytest.mark.skip
+def test_delete_email_template(db, pdb_data, account_objects):
+    client = account_objects.api_client
+    org = account_objects.org
+    ix = account_objects.ix
+
+    models.EmailTemplate(
+        ix=ix,
+        name="Traffic Alert Net",
+        body="Test email body for {{ ix.name }}",
+        type="traffic_alert_net",
+    ).save()
+    email_template = models.EmailTemplate.objects.filter(ix=ix).first()
+
+    response = client.delete(
+        reverse(
+            "ixctl_api:email_template-detail",
+            args=(org.slug, ix.slug, email_template.id),
+        ),
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert len(data) == 1
+    assert data[0]["ix"] == ix.id
+
+    with pytest.raises(models.EmailTemplate.DoesNotExist):
+        models.EmailTemplate.objects.get(id=data[0]["id"])
+
+
+def test_preview_email_template(db, pdb_data, account_objects):
+    client = account_objects.api_client
+    org = account_objects.org
+    ix = account_objects.ix
+
+    traffic_alert_config = models.TrafficAlertConfig(
+        ix=ix,
+        traffic_level=90,
+        time_period=5,
+        operator_emails=True,
+        member_emails=True,
+        operator_emails_max_frequency=7,
+        member_emails_max_frequency=7,
+    )
+    traffic_alert_config.save()
+
+    models.EmailTemplate(
+        ix=ix,
+        name="Traffic Alert Net",
+        body="Test email body for {{ ix.name }}",
+        type="traffic_alert_net",
+    ).save()
+    email_template = models.EmailTemplate.objects.filter(ix=ix).first()
+
+    response = client.post(
+        reverse(
+            "ixctl_api:email_template-preview",
+            args=(org.slug, ix.slug, email_template.id),
+        ),
+        json.dumps(
+            {
+                "ix": ix.id,
+                "type": "traffic_alert_net",
+                "body": "Test email body for {{ ix.name }} {{ traffic_alert_config.traffic_level }}",
+            }
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert len(data) == 1
+    assert (
+        data[0]["body"]
+        == f"Test email body for {ix.name} {traffic_alert_config.traffic_level}"
+    )

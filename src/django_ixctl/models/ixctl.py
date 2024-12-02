@@ -27,6 +27,8 @@ import structlog
 import yaml
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -38,6 +40,7 @@ from fullctl.django.fields.service_bridge import (
 )
 from fullctl.django.inet.validators import validate_as_set
 from fullctl.django.models.abstract.base import HandleRefModel, PdbRefModel
+from fullctl.django.models.abstract.template import TemplateModel
 from fullctl.django.models.concrete import Instance, Organization
 from netfields import CidrAddressField, InetAddressField, MACAddressField
 
@@ -175,6 +178,12 @@ class InternetExchange(PdbRefModel):
         default=dict,
         help_text=_("Extra ix specific configuration"),
         validators=[validate_ix_config],
+    )
+
+    traffic_poll_time = models.PositiveSmallIntegerField(
+        default=300,
+        help_text=_("Time interval to poll traffic data in seconds."),
+        validators=[MinValueValidator(1)],
     )
 
     class PdbRef(PdbRefModel.PdbRef):
@@ -1543,3 +1552,148 @@ class RouteserverMember(models.Model):
                 continue
 
             routeserver_member._event_object = event
+
+
+@reversion.register
+class TrafficAlertConfig(models.Model):
+    ix = models.OneToOneField(
+        InternetExchange,
+        on_delete=models.CASCADE,
+        related_name="org_traffic_alert_config_set",
+    )
+
+    traffic_level = models.PositiveIntegerField(
+        default=90,
+        help_text=_("Percentage of available bandwidth."),
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+    )
+
+    time_period = models.PositiveIntegerField(
+        help_text=_("Period after which notifications are potentially sent (minutes)."),
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(1440),  # 1440 being 1 day in minutes
+        ],
+    )
+
+    operator_emails = models.BooleanField(
+        default=False,
+        help_text=_("Are email alerts to ix operators enabled?"),
+    )
+
+    member_emails = models.BooleanField(
+        default=False,
+        help_text=_("Are email alerts to ix members enabled?"),
+    )
+
+    ALLOWED_MAX_EMAIL_FREQUENCY = [(1, "1"), (7, "7"), (30, "30"), (90, "90")]
+
+    operator_emails_max_frequency = models.PositiveIntegerField(
+        default=None,
+        null=True,
+        blank=True,
+        help_text=_(
+            "Frequency of alert in days (1=daily, 7=weekly, 30=monthly, 90=quarterly)."
+        ),
+        choices=ALLOWED_MAX_EMAIL_FREQUENCY,
+    )
+
+    member_emails_max_frequency = models.PositiveIntegerField(
+        default=None,
+        null=True,
+        blank=True,
+        help_text=_(
+            "Frequency of alert in days (1=daily, 7=weekly, 30=monthly, 90=quarterly)."
+        ),
+        choices=ALLOWED_MAX_EMAIL_FREQUENCY,
+    )
+
+    class HandleRef:
+        tag = "traffic_alert_config"
+
+    class Meta:
+        db_table = "ixctl_traffic_alert_config"
+        verbose_name = _("Traffic Alert Config for IX")
+        verbose_name_plural = _("Traffic Alert Configs for IX")
+
+    def clean(self):
+        super().clean()
+
+        if self.operator_emails and not self.operator_emails_max_frequency:
+            raise ValidationError(
+                {
+                    "operator_emails_max_frequency": _(
+                        "You must set a frequency for operator emails."
+                    )
+                }
+            )
+
+        if self.member_emails and not self.member_emails_max_frequency:
+            raise ValidationError(
+                {
+                    "member_emails_max_frequency": _(
+                        "You must set a frequency for member emails."
+                    )
+                }
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
+EMAIL_TEMPLATE_TYPES = (
+    ("traffic_alert_net", "Traffic Alert Net"),
+    ("traffic_alert_ix", "Traffic Alert IX"),
+)
+
+
+@reversion.register
+class EmailTemplate(TemplateModel):
+    ix = models.ForeignKey(
+        InternetExchange,
+        on_delete=models.CASCADE,
+        related_name="email_template_set",
+    )
+    type = models.CharField(
+        null=False,
+        blank=False,
+        help_text=_("The type of email template."),
+        choices=EMAIL_TEMPLATE_TYPES,
+    )
+
+    class Meta:
+        db_table = "ixctl_email_template"
+        verbose_name = _("Email Template for IX")
+        verbose_name_plural = _("Email Templates for IX")
+        constraints = [
+            models.UniqueConstraint(fields=["ix", "type"], name="unique_ix_type_pair"),
+        ]
+
+    class HandleRef:
+        tag = "email_template"
+
+    def clean(self):
+        super().clean()
+        if (
+            EmailTemplate.objects.exclude(pk=self.pk)
+            .filter(ix=self.ix, type=self.type)
+            .exists()
+        ):
+            raise ValidationError("Template type for that IX already exists.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def get_data(self):
+        data = super().get_data()
+        capacity_alert = self.context.get("capacity_alert", 0)
+        downtime = (self.ix.traffic_poll_time // 60) * capacity_alert
+        traffic_alert_config = TrafficAlertConfig.objects.get(ix=self.ix)
+        data.update(
+            ix=self.ix,
+            downtime=downtime,
+            traffic_alert_config=traffic_alert_config,
+        )
+        return data
