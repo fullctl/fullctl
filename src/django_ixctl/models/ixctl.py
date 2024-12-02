@@ -111,6 +111,8 @@ class InternetExchange(PdbRefModel):
 
     slug = models.SlugField(max_length=64, unique=False, blank=False, null=False)
 
+    facility = models.SlugField(max_length=64, unique=False, blank=True, null=True)
+
     instance = models.ForeignKey(
         Instance, related_name="ix_set", on_delete=models.CASCADE, null=True
     )
@@ -762,6 +764,18 @@ class InternetExchangeMember(PdbRefModel):
         self.mac_addresses.bulk_create(
             MacAddress(member=self, address=mac) for mac in macs
         )
+
+    @property
+    def physical_ports(self) -> list[int]:
+        """
+        If port is set, return a list of physical port ids through
+        port.physical_ports
+        """
+
+        if not self.port or not self.port.object.physical_ports:
+            return []
+
+        return [port["id"] for port in self.port.object.physical_ports]
 
     def __str__(self):
         return f"AS{self.asn} - {self.ipaddr4} - {self.ipaddr6} ({self.id})"

@@ -120,6 +120,11 @@ settings_manager.set_option("PORT_LIMIT_MAX", 8)
 # upper limit of mac limit that can be set
 settings_manager.set_option("MAC_LIMIT_MAX", 9)
 
+# member validation
+
+# Disable or enable extended member validation
+settings_manager.set_option("EXTENDED_MEMBER_VALIDATION", False)
+
 # FINALIZE
 
 settings_manager.set_default_append()

@@ -15,7 +15,7 @@ from django.core.validators import validate_email
 from django.utils.translation import gettext_lazy as _
 from django_inet.rest import IPAddressField
 from fullctl.django.inet.validators import validate_mac_address, validate_mac_addresses
-from fullctl.django.models.concrete.tasks import TaskLimitError
+from fullctl.django.models.concrete.tasks import Task, TaskLimitError
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import (
     ModelSerializer,
@@ -28,6 +28,7 @@ from rest_framework.validators import UniqueTogetherValidator
 
 import django_ixctl.enum
 import django_ixctl.models as models
+import django_ixctl.port_automation as port_automation
 from django_ixctl.peeringdb import import_exchange, import_org
 
 logger = structlog.getLogger("django_structlog")
@@ -158,6 +159,7 @@ class InternetExchange(ModelSerializer):
             "notes",
             "public_view",
             "graph_traffic_source",
+            "facility",
             "learned_mac_addresses",
             "limit_mac_addresses",
             "traffic_poll_time",
@@ -283,7 +285,28 @@ class InternetExchangeMember(ModelSerializer):
 
     display_name = serializers.CharField(read_only=True)
     prefix_set_name = serializers.SerializerMethodField()
+
     port_name = serializers.SerializerMethodField()
+
+    port_set = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        write_only=True,
+        help_text=_(
+            "List of physical ports to be used for the port configuration intent"
+        ),
+    )
+
+    port_config_intent = serializers.ChoiceField(
+        required=False,
+        default=None,
+        allow_null=True,
+        write_only=True,
+        choices=django_ixctl.enum.PORT_CONFIG_INTENT,
+        help_text=_(
+            "Name of the port configuration intent to apply to the port. This needs to be set if you intend to make changes to lag, quantity, or size. Otherwise changes to those fields will raise a validation error."
+        ),
+    )
 
     status = serializers.ChoiceField(
         choices=django_ixctl.enum.PORT_STATE,
@@ -295,10 +318,17 @@ class InternetExchangeMember(ModelSerializer):
 
     # conditional field#
     if settings.MEMBER_CASE_NUMBERS_ENABLED:
+        ALLOW_BLANK = True
         case_number = serializers.CharField(
-            allow_blank=False,
-            allow_null=False,
-            required=True,
+            allow_blank=ALLOW_BLANK,
+            allow_null=ALLOW_BLANK,
+            required=not ALLOW_BLANK,
+            write_only=True,
+        )
+        work_order = serializers.CharField(
+            allow_blank=ALLOW_BLANK,
+            allow_null=ALLOW_BLANK,
+            required=not ALLOW_BLANK,
             write_only=True,
         )
 
@@ -331,15 +361,18 @@ class InternetExchangeMember(ModelSerializer):
             "prefix_set",
             "prefix_set_name",
             "port",
+            "port_config_intent",
             "port_name",
             "port_size",
             "port_quantity",
+            "port_set",
             "lag",
             "meta",
         ]
 
         if settings.MEMBER_CASE_NUMBERS_ENABLED:
             fields.append("case_number")
+            fields.append("work_order")
 
         validators = [
             SoftRequiredValidator(
@@ -427,11 +460,11 @@ class InternetExchangeMember(ModelSerializer):
 
         instance = self.context.get("instance")
         if instance:
-            org_id = instance.org.id
+            org_id = instance.org.remote_id
         else:
             org_id = None
 
-        ports = devicectl.Port().objects(org_id=org_id)
+        ports = devicectl.Port().objects(org=org_id)
 
         self._ports = {port.id: port for port in list(ports)}
         return self._ports
@@ -584,22 +617,206 @@ class InternetExchangeMember(ModelSerializer):
 
         return macaddr_limit
 
+    def _validate_port_config_changes(self, validated_data: dict) -> dict:
+        """
+        Strict validation for port config changes.
+
+        This is to ensure no changes are made to the port unless
+        explicitly and correctly stated through the `port_config_intent`
+        and the `lag`, `port_quantity`, and `port_size` fields.
+        """
+
+        member = self.instance
+        intent = validated_data.get("port_config_intent")
+        lag = validated_data.get("lag")
+        port_quantity = validated_data.get("port_quantity")
+        port_size = validated_data.get("port_size")
+        port_set = validated_data.get("port_set")
+        current_port_set = sorted(member.physical_ports if member else [])
+
+        if (not member or not member or not member.port) and port_set:
+            intent = validated_data["port_config_intent"] = "create"
+
+        if not member and not port_set:
+            # no physical ports selected during member creation
+            # so no port config intent is needed
+
+            intent = validated_data["port_config_intent"] = None
+            return validated_data
+
+        if intent is None:
+            # if port config intent is noop and changes are made to the port
+            # raise a validation error
+
+            NOOP_ERROR = _(
+                "Cannot change {field} with unspecified configuratiom intent"
+            )
+            validation_errors = {}
+            if lag != self.instance.lag:
+                validation_errors["lag"] = NOOP_ERROR.format(field="LAG")
+            if port_quantity != self.instance.port_quantity:
+                validation_errors["port_quantity"] = NOOP_ERROR.format(
+                    field="port quantity"
+                )
+            if port_size != self.instance.port_size:
+                validation_errors["port_size"] = NOOP_ERROR.format(field="port size")
+
+            if validation_errors:
+                raise ValidationError(validation_errors)
+
+        elif intent == "create":
+            # ensure we are actually creating a member
+
+            if member and member.port:
+                raise ValidationError(
+                    {
+                        "port_config_intent": _(
+                            "Use `resize`, `lag-increase` or `lag-decrease` to modify an existing member port"
+                        )
+                    }
+                )
+
+        elif intent == "resize":
+            # when resizing a port, port_set should differ from the current port_set
+            # needs to account for both sets having the same elements but being
+            # sorted differently
+
+            if sorted(port_set) == current_port_set:
+                raise ValidationError(
+                    {
+                        "port_set": _(
+                            "Port set must differ from the current port set, when resizing a port."
+                        )
+                    }
+                )
+
+        elif intent == "lag-increase":
+            # when adding physical ports to a lag we must ensure the following
+            # lag = True
+            # quantity > than current quantity
+            # port_set contains n new ports and n is the difference between the current quantity and the new quantity
+            # this comparison must be done by comparing the sets
+
+            if not lag:
+                raise ValidationError(
+                    {"lag": _("LAG must be set to True when increasing LAG quantity")}
+                )
+
+            if port_quantity <= self.instance.port_quantity:
+                raise ValidationError(
+                    {
+                        "port_quantity": _(
+                            "Port quantity must be greater than the current quantity when increasing LAG quantity"
+                        )
+                    }
+                )
+
+            # get difference between the current port set and the new port set
+            new_ports = set(port_set) - set(current_port_set)
+
+            if len(new_ports) != port_quantity - self.instance.port_quantity:
+                print(
+                    f"{len(new_ports)}, {port_quantity}, {self.instance.port_quantity}, {port_set}, {current_port_set} !!!!!!!"
+                )
+                raise ValidationError(
+                    {
+                        "port_set": _(
+                            "Port set must contain {n} new port(s) when increasing LAG quantity to {quantity}"
+                        ).format(
+                            n=port_quantity - self.instance.port_quantity,
+                            quantity=port_quantity,
+                        )
+                    }
+                )
+
+        elif intent == "lag-decrease":
+            # when removing physical ports from a lag we must ensure the following
+            # lag = True (unless quantity is 1)
+            # quantity < than current quantity
+            # port_set contains n less ports and n is the difference between the current quantity and the new quantity
+            # remaining ports must be contained in the old port set
+
+            if not lag and port_quantity != 1:
+                raise ValidationError(
+                    {"lag": _("LAG must be set to True when decreasing LAG quantity")}
+                )
+
+            if port_quantity >= self.instance.port_quantity:
+                raise ValidationError(
+                    {
+                        "port_quantity": _(
+                            "Port quantity must be less than the current quantity when decreasing LAG quantity"
+                        )
+                    }
+                )
+
+            # get difference between the current port set and the new port set
+            removed_ports = set(current_port_set) - set(port_set)
+
+            if len(removed_ports) != self.instance.port_quantity - port_quantity:
+                raise ValidationError(
+                    {
+                        "port_set": _(
+                            "Port set must contain {n} total ports according to the provided quantity"
+                        ).format(n=port_quantity)
+                    }
+                )
+
+            if removed_ports - set(current_port_set):
+                raise ValidationError(
+                    {
+                        "port_set": _(
+                            "New port set must contain only ports that are part of the current port set when decreasing LAG quantity"
+                        )
+                    }
+                )
+
+        return validated_data
+
+    def validate_case_number(self, case_number: str) -> str:
+        # if case number is specified, so must be the work order
+        if case_number and not self.initial_data.get("work_order"):
+            raise ValidationError(
+                "Please validate the case number and provide a work order."
+            )
+
+        # if case numbers are enabled, case_number is required
+        # when making port assignment changes
+        intent = self.initial_data.get("port_config_intent")
+        port_set = self.initial_data.get("port_set")
+        member = self.instance
+        if (not member or not member or not member.port) and port_set:
+            intent = "create"
+        if (
+            intent in ["create", "resize", "lag-increase", "lag-decrease"]
+            and not case_number
+        ):
+            raise ValidationError(_("Required when making port assignment changes."))
+
+        return case_number
+
     def validate(self, data: dict) -> dict:
         # if case numbers are enabled push them into meta under
         # a case_number key (list)
 
         if settings.MEMBER_CASE_NUMBERS_ENABLED:
             case_number = data.get("case_number")
+            work_order = data.get("work_order")
             meta = data.get("meta", {})
             if case_number:
                 meta.setdefault("case_number", []).append(case_number)
+                meta.setdefault("work_order", []).append(work_order)
                 data["meta"] = meta
-            data.pop("case_number", None)
+            self._case_number = data.pop("case_number", None)
+            self._work_order = data.pop("work_order", None)
 
         # validate macaddr_limit
         data["macaddr_limit"] = self._validate_macaddr_limit(
             data.get("macaddr_limit"), data
         )
+
+        # validate port config changes
+        data = self._validate_port_config_changes(data)
 
         return data
 
@@ -612,6 +829,8 @@ class InternetExchangeMember(ModelSerializer):
         if not settings.MEMBER_CASE_NUMBERS_ENABLED:
             if data.get("meta") and "case_number" in data.get("meta"):
                 del data.meta["case_number"]
+            if data.get("meta") and "work_order" in data.get("meta"):
+                del data.meta["work_order"]
 
         # if the parent ix has learned mac addresses enabled
         # we want to substitute the macaddr_set with the mac addresses
@@ -633,6 +852,36 @@ class InternetExchangeMember(ModelSerializer):
 
         return data
 
+    def save(self):
+        # these need to be popped before saving the member, otherwise
+        # drf will pass them as kwargs to the save method
+        intent = self.validated_data.pop("port_config_intent", None)
+        port_set = self.validated_data.pop("port_set", [])
+
+        member = super().save()
+        # member needs to be saved before we can set the macaddr_set
+        member.macaddr_set = self.validated_data.get("macaddr_set", [])
+
+        # preload ports
+        models.InternetExchangeMember.preload_ports(member.org, [member])
+
+        port_automation.handle_port_assignment(
+            intent,
+            port_set,
+            member,
+            meta={
+                "case_number": self._case_number,
+                "work_order": self._work_order,
+            },
+        )
+
+        if member.port:
+            if intent:
+                member.port.load()
+            port_automation.sync_ip_addresses(member)
+
+        return member
+
     def get_prefix_set_name(self, obj):
         if not obj.prefix_set:
             return None
@@ -643,13 +892,6 @@ class InternetExchangeMember(ModelSerializer):
             return None
 
         return prefix_set.name
-
-    def save(self):
-        member = super().save()
-        # member needs to be saved before we can set the macaddr_set
-        member.macaddr_set = self.validated_data.get("macaddr_set", [])
-
-        return member
 
     def get_port_name(self, member):
         if not member.port:
@@ -687,6 +929,55 @@ class InternetExchangeMember(ModelSerializer):
             )
 
         return warnings
+
+
+@register
+class InternetExchangeMemberValidationRequest(serializers.Serializer):
+    name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+    # these numeric fields are set to char type,
+    # because we're executing the validation logic
+    # inside the task, not through the serializer.
+    asn = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    port = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+    if settings.MEMBER_CASE_NUMBERS_ENABLED:
+        case_number = serializers.CharField(
+            required=False, allow_blank=True, allow_null=True
+        )
+
+    ref_tag = "member_validation_request"
+
+    class Meta:
+        fields = ["name", "asn"]
+        if settings.MEMBER_CASE_NUMBERS_ENABLED:
+            fields.append("case_number")
+
+
+@register
+class InternetExchangeMemberValidationResult(ModelSerializer):
+    ref_tag = "member_validation_result"
+
+    class Meta:
+        model = Task
+        fields = ["id", "op", "status", "result", "error"]
+
+    def validate(self, validated_data: dict):
+        """
+        Loads the task object and checks that the `op` is
+        a valid member validation task
+        """
+
+        valid_task_ops = [
+            "task_get_next_ipv4",
+            "task_verify_organization",
+            "task_verify_case_number",
+        ]
+
+        task = self.instance
+
+        if task.op not in valid_task_ops:
+            raise ValidationError("Invalid task")
 
 
 @register

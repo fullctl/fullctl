@@ -10,6 +10,7 @@ from django.conf import settings
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from fullctl.django.auditlog import auditlog
+from fullctl.django.models.concrete.tasks import Task
 from fullctl.django.rest.api_schema import PeeringDBImportSchema
 from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.decorators import load_object
@@ -20,11 +21,13 @@ from fullctl.django.rest.mixins import (
     OrgQuerysetMixin,
 )
 from fullctl.django.rest.renderers import PlainTextRenderer
+from fullctl.django.tasks import specify_task
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 import django_ixctl.models as models
+import django_ixctl.models.port_automation_tasks as port_automation_tasks
 import django_ixctl.rest.filters as filters
 from django_ixctl.rest.decorators import grainy_endpoint
 from django_ixctl.rest.route.ixctl import route
@@ -301,6 +304,99 @@ class Member(
 
         return path
 
+    @action(
+        detail=False,
+        methods=["POST"],
+        serializer_class=Serializers.member_validation_request,
+        url_path="validate/case-number",
+    )
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @grainy_endpoint(
+        namespace="member.{request.org.permission_id}.{ix.pk}",
+    )
+    def validate_case_number(self, request, org, instance, ix, *args, **kwargs):
+        """
+        Start a generic validation task for the supplied case number
+        and member data.
+
+        Other plugins can listen for this task and perform additional
+        validation steps.
+        """
+
+        serializer = Serializers.member_validation_request(
+            data=request.data, context={"ix": ix}
+        )
+        if not serializer.is_valid():
+            return BadRequest(serializer.errors)
+
+        task = port_automation_tasks.VerifyCaseNumber.create_task(
+            org=org,
+            ix_id=ix.id,
+            member_data=request.data,
+        )
+
+        response_serializer = Serializers.member_validation_result(instance=task)
+        return Response(response_serializer.data)
+
+    @action(
+        detail=False,
+        methods=["POST"],
+        serializer_class=Serializers.member_validation_request,
+        url_path="validate/request-ip-address-pair",
+    )
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @grainy_endpoint(
+        namespace="member.{request.org.permission_id}.{ix.pk}",
+    )
+    def validate_request_ip_address_pair(
+        self, request, org, instance, ix, *args, **kwargs
+    ):
+        """
+        Start a generic validation task that attempts to get the next available
+        IP address pair for the member.
+
+        Other plugins can listen for this task and perform the necessary
+        operations to get the next available IP address pair.
+
+        This does nothing by default and is meant to be extended by other plugins.
+        """
+
+        serializer = Serializers.member_validation_request(
+            data=request.data, context={"ix": ix}
+        )
+        if not serializer.is_valid():
+            return BadRequest(serializer.errors)
+
+        task = port_automation_tasks.GetNextAvailableIPAddresses.create_task(
+            org=org,
+            ix_id=ix.id,
+            member_data=request.data,
+        )
+
+        response_serializer = Serializers.member_validation_result(instance=task)
+        return Response(response_serializer.data)
+
+    @action(
+        detail=False,
+        methods=["GET"],
+        url_path="validate/result/(?P<task_id>[^/]+)",
+        serializer_class=Serializers.member_validation_result,
+    )
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @grainy_endpoint(
+        namespace="member.{request.org.permission_id}.{ix.pk}",
+    )
+    def check_validation_result(
+        self, request, org, instance, ix, task_id, *args, **kwargs
+    ):
+        task = Task.objects.get(id=task_id)
+        task = specify_task(task)
+        if task.org != org:
+            return BadRequest({"error": "Task not found"})
+
+        response_serializer = Serializers.member_validation_result(instance=task)
+        return Response(response_serializer.data)
+
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
     @grainy_endpoint(
         namespace="member.{request.org.permission_id}.{ix.pk}.?",
@@ -427,7 +523,9 @@ class Member(
 
         data = request.data
         data["ix"] = models.InternetExchange.objects.get(instance=instance, id=ix.pk).id
+
         serializer = Serializers.member(data=data, context={"instance": instance})
+
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
 
@@ -442,8 +540,11 @@ class Member(
         namespace="member.{request.org.permission_id}.{ix.pk}.{member.asn}.?",
     )
     def update(self, request, org, instance, ix, member, *args, **kwargs):
-        serializer = request.grainy_update_serializer(
-            Serializers.member, member, context={"instance": instance}
+        # preload ports
+        models.InternetExchangeMember.preload_ports(org, [member])
+
+        serializer = Serializers.member(
+            member, data=request.data, context={"instance": instance}
         )
 
         if not serializer.is_valid():
@@ -451,7 +552,10 @@ class Member(
 
         member = serializer.save()
 
-        return Response(Serializers.member(instance=member).data)
+        serializer.instance = member
+        response = Response(serializer.data)
+
+        return response
 
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
     @load_object("member", models.InternetExchangeMember, ix="ix", id="member_id")
@@ -460,7 +564,20 @@ class Member(
         namespace="member.{request.org.permission_id}.{ix.pk}.{member.asn}",
     )
     def destroy(self, request, org, instance, ix, member, *args, **kwargs):
-        r = Response(Serializers.member(instance=member).data)
+        member_data = Serializers.member(instance=member).data
+        r = Response(member_data)
+
+        # if member.port is set we need to unassign it in deviceCtl
+        if member.port:
+            # at this point we need to mark the physical ports as available
+            # in the various backends
+            if port_automation_tasks.MemberDeletionFinalize.org_has_services(org):
+                port_automation_tasks.MemberDeletionFinalize.create_task(
+                    org=org,
+                    ix_id=ix.id,
+                    member_data=member_data,
+                )
+
         member.delete()
         return r
 
