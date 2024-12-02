@@ -196,6 +196,10 @@ class InternetExchange(ModelSerializer):
         cleaned_data["slug"] = slug
 
         email_alert_recipients = cleaned_data.get("email_alert_recipients")
+
+        if not email_alert_recipients:
+            return cleaned_data
+
         for recipient in email_alert_recipients.strip().split(","):
             try:
                 validate_email(recipient.strip())
