@@ -1584,6 +1584,9 @@ class Port(devicectl.Port):
         for ixi_port in ixi_ports:
             if not ixi_port.port_info_object.ref_id:
                 continue
+            
+            if not ixi_port.port_info_object.ref_ix_id:
+                continue
 
             source, ix_id = ixi_port.port_info_object.ref_ix_id.split(":")
 
