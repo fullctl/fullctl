@@ -6,17 +6,16 @@ import re
 from functools import wraps
 from typing import Annotated, List, Optional, Union
 
-from pydantic import BaseModel, BeforeValidator, HttpUrl, TypeAdapter, Field
+from pydantic import BaseModel, BeforeValidator, Field, HttpUrl, TypeAdapter
 
 from django_auditctl.metrics import (
     ComponentFields,
     ComponentTags,
-    MetricsMixin, 
     Metric,
-    MetricsMultiComponentMixin, 
+    MetricsMixin,
+    MetricsMultiComponentMixin,
     MetricsSelectiveComponentMixin,
 )
-
 from django_auditctl.models.auditctl import Event
 
 __all__ = ["Component", "RblsrvComponent", "ErrorDetails", "NoData", "DeviceConfigData"]
@@ -71,7 +70,8 @@ def get_model_from_registry(unique_id):
             return model_cls
     return None
 
-def get_event_data(event:Event, schema_cls:BaseModel) -> BaseModel | None:
+
+def get_event_data(event: Event, schema_cls: BaseModel) -> BaseModel | None:
     """
     Convert an Event object to a Pydantic model.
 
@@ -89,6 +89,7 @@ def get_event_data(event:Event, schema_cls:BaseModel) -> BaseModel | None:
         return ErrorDetails(**event.error)
     else:
         return None
+
 
 class Component(BaseModel):
     """
@@ -159,14 +160,13 @@ class EventData(BaseModel, MetricsMixin):
         return ErrorDetails
 
     @classmethod
-    def get_event_data(cls, event:Event) -> BaseModel | None:
+    def get_event_data(cls, event: Event) -> BaseModel | None:
         return get_event_data(event, cls)
 
 
 @register_model(r"^default$")
 class NoData(EventData):
     pass
-
 
 
 class ApiActionRequest(Component):
@@ -184,6 +184,7 @@ class ApiActionRequest(Component):
     ref_tag: str
     kind: str = "request"
 
+
 class ApiActionResponse(Component):
     """
     Pydantic model for an ApiActionResponse.
@@ -195,6 +196,7 @@ class ApiActionResponse(Component):
     status_code: int
     kind: str = "response"
 
+
 class ApiActionErrorDetails(ErrorDetails):
     """
     Pydantic model for an ApiActionErrorDetails.
@@ -203,7 +205,9 @@ class ApiActionErrorDetails(ErrorDetails):
         message (str): The error message.
         components (List[Component]): A list of related components, default is an empty list.
     """
+
     components: list[ApiActionRequest | ApiActionResponse] = Field(default_factory=list)
+
 
 # log service api actions (create, delete, update)
 @register_model(r"v0.1\/[^\/]+\/action\/.+$")
@@ -230,12 +234,9 @@ class DeviceConfigData(EventData, MetricsSelectiveComponentMixin):
     def metric_name(cls) -> str:
         return "device_config"
 
-
     @classmethod
     def metric_tags(cls) -> list[ComponentTags]:
-        return [
-            ComponentTags(kind="device", tags=["id", "name"])
-        ]
+        return [ComponentTags(kind="device", tags=["id", "name"])]
 
 
 @register_model(r"^v0.1\/[^\/]+\/traffic\/.+$")
@@ -248,9 +249,7 @@ class TrafficData(EventData, MetricsSelectiveComponentMixin):
 
     @classmethod
     def metric_tags(cls) -> list[ComponentTags]:
-        return [
-            ComponentTags(kind="ix", tags=["id", "name"])
-        ]
+        return [ComponentTags(kind="ix", tags=["id", "name"])]
 
 
 @register_model(r"^v0.1\/[^\/]+\/rblsrv\/.+$")
@@ -263,9 +262,7 @@ class RblsrvData(EventData, MetricsSelectiveComponentMixin):
 
     @classmethod
     def metric_tags(cls) -> list[ComponentTags]:
-        return [
-            ComponentTags(kind="prefix", tags=["prefix"])
-        ]
+        return [ComponentTags(kind="prefix", tags=["prefix"])]
 
 
 class ConfigLivenessComponent(BaseModel):
@@ -288,6 +285,7 @@ class ConfigLivenessData(EventData):
     @classmethod
     def metric_name(cls) -> str:
         return "config_liveness"
+
 
 class BGPSessionStateComponent(BaseModel):
     """
@@ -346,7 +344,7 @@ class BGPSessionStateData(EventData, MetricsMultiComponentMixin):
 
     @classmethod
     def metric_tags(cls) -> list[ComponentTags] | list[str]:
-        
+
         return [
             "routeserver_router_id",
             "routeserver_hostname",
@@ -357,7 +355,6 @@ class BGPSessionStateData(EventData, MetricsMultiComponentMixin):
             "protocol",
             "state",
         ]
-        
 
     @classmethod
     def metric_fields(cls) -> list[ComponentFields] | list[str]:
@@ -384,8 +381,6 @@ class BGPSessionStateData(EventData, MetricsMultiComponentMixin):
         ]
 
 
-
-
 class BGPSessionStateAggregateDataComponent(BaseModel):
     """
     Pydantic model for a bgp session state aggregate data.
@@ -408,6 +403,7 @@ class BGPSessionStateAggregateDataComponent(BaseModel):
     configured_connections_count: int
     ip_version: str
     routeserver_hostname: str
+
 
 @register_model(r"^v0.1\/[^\/]+\/bgp\/stat\/aggregate\/[0-9\.]+$")
 class BGPSessionStateAggregateData(EventData, MetricsSelectiveComponentMixin):
@@ -433,4 +429,31 @@ class BGPSessionStateAggregateData(EventData, MetricsSelectiveComponentMixin):
             "established_connections_count",
             "configured_connections_count",
         ]
-        
+
+
+class TrafficAlertNotificationComponent(BaseModel):
+    """
+    Pydantic model for a Traffic Alert Notification.
+
+    Attributes:
+        id (str): The id of the notification.
+        kind (str): The type of notification i.e. 'email'.
+        subject (str): The notification subject.
+        message (str): The notification message.
+        recipients (list[str]): The list of notification recipients.
+    """
+
+    id: str
+    kind: str
+    subject: str
+    message: str
+    recipients: list[str]
+
+
+@register_model(r"^v0.1\/[^\/]+\/notification\/+\/traffic_alert\/$")
+class TrafficAlertNotificationData(EventData):
+    components: List[TrafficAlertNotificationComponent] = list()
+
+    @classmethod
+    def metric_name(cls) -> str:
+        return "traffic_alert_notification"

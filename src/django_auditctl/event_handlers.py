@@ -5,18 +5,17 @@ from functools import wraps
 
 import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.ixctl as ixctl
+import structlog
 from django.conf import settings
 from fullctl.django.mail import send_plain
+from fullctl.metrics import Metrics
 from fullctl.service_bridge.client import url_join
 
 import django_auditctl.models.auditctl as models
-from django_auditctl.rest.serializers.auditctl import Serializers
-from django_auditctl.util import object_id_to_parts
 import django_auditctl.schema as schema
 from django_auditctl.metrics import Metric
-from fullctl.metrics import Metrics
-
-import structlog
+from django_auditctl.rest.serializers.auditctl import Serializers
+from django_auditctl.util import object_id_to_parts
 
 __all__ = [
     "register_handler",
@@ -148,7 +147,6 @@ class BaseHandler:
 
 @register_handler(r"^v0.1\/[^\/]+\/.+$")
 class EmailAlert(BaseHandler):
-
     """
     A class that inherits from the BaseHandler class and sends email alerts on error events.
 
@@ -204,7 +202,6 @@ class ForwardToService(BaseHandler):
 
 @register_handler(r"^v0.1\/[^\/]+\/config\/device.+$")
 class DeviceOperationalStatus(ForwardToService):
-
     """
     A class that inherits from the ForwardToService class and handles device operational status events.
     """
@@ -448,3 +445,29 @@ class InsertMetrics(BaseHandler):
                 }
             ]
         )
+
+
+@register_handler(r"^v0.1\/[^\/]+\/notification\/+\/traffic_alert\/$")
+class TrafficAlertNotification(BaseHandler):
+    """
+    A class that inherits from the BaseHandler class and sends
+    traffic alert notification for events.
+    """
+
+    class HandleRef:
+        tag = "traffic_alert_notification"
+
+    def __call__(self):
+        """
+        Send notification for the event.
+        """
+        components = self.event.data.get("components", [])
+
+        for component in components:
+            if component.get("kind") == "email":
+                send_plain(
+                    subject=component.get("subject"),
+                    message=component.get("message"),
+                    from_addr=settings.DEFAULT_FROM_EMAIL,
+                    recipients=component.get("recipients"),
+                )
