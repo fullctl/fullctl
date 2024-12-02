@@ -2136,6 +2136,19 @@ div.hierarchy div.item.l2 {
   margin-left: 40px;
 }
 
+.form_feature_request {
+  height: 100%;
+}
+
+#modal_feature_request>div.modal-dialog {
+  height: 96%;
+}
+
+#modal_feature_request>div.modal-dialog>div.modal-content {
+  height: inherit;
+}
+
+
 .list-th.sortable-button {
   width: fit-content;
 }

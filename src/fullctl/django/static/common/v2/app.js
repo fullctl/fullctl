@@ -1410,12 +1410,7 @@ fullctl.application.ModalFeatureRequest = $tc.extend(
       });
 
       // construct modal
-
-      this.Modal("save", (!title ? "Feature Request" : title), form.element);
-
-      // wire form to modal's submit button
-
-      form.wire_submit(this.$e.button_submit);
+      this.Modal("feature_request", (!title ? "Feature Request" : title), form.element);
     }
   },
   fullctl.application.Modal

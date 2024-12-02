@@ -27,6 +27,7 @@ def conf(request):
         "legal_url": settings.LEGAL_URL,
         "terms_of_service_url": settings.TERMS_OF_SERVICE_URL,
         "current_year": datetime.now().year,
+        "feature_request_form_clickup_link": getattr(settings, "FEATURE_REQUEST_FORM_CLICKUP_LINK"),
     }
 
 
