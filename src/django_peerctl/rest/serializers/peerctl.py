@@ -5,12 +5,13 @@ import fullctl.service_bridge.aaactl as aaactl
 import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.sot as sot
+import structlog
 from django.db.models import Count, Q
 from django.utils.translation import gettext_lazy as _
+from fullctl.django.inet.validators import validate_mac_address, validate_mac_addresses
 from fullctl.django.models.concrete.tasks import TaskLimitError
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
-from fullctl.django.inet.validators import validate_mac_address, validate_mac_addresses
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError  # noqa
 
@@ -19,7 +20,6 @@ import django_peerctl.models as models
 from django_peerctl.autopeer import autopeer_url
 from django_peerctl.helpers import get_best_policy
 
-import structlog
 logger = structlog.getLogger(__name__)
 
 Serializers, register = serializer_registry()
@@ -480,7 +480,6 @@ class Port(serializers.Serializer):
 
 @register
 class PortUpdate(serializers.Serializer):
-
     """
     Allows updating of certain fields on a port or related
     to a port
@@ -565,6 +564,7 @@ class PortUpdate(serializers.Serializer):
         validate_mac_addresses(macaddr_set)
 
         return macaddr_set
+
 
 @register
 class Peer(serializers.Serializer):
@@ -1481,7 +1481,6 @@ class UpdatePartialPeerSession(UpdatePeerSession):
 
 @register
 class UpdatePeerSessionMeta(ModelSerializer):
-
     """
     This serializer is used to update session meta data
     """
@@ -1877,10 +1876,11 @@ class PeerSession(ModelSerializer):
         if not obj.port or not obj.port.object:
             return "No port assigned"
 
-        if obj.port.object.port_info_object.ix_name:
-            return obj.port.object.port_info_object.ix_name
-        elif obj.port.object.virtual_port_name:
-            return obj.port.object.virtual_port_name
+        port_object = obj.port.object
+        if port_object.port_info_object:
+            return port_object.port_info_object.ix_name
+        elif port_object.virtual_port_name:
+            return port_object.virtual_port_name
 
         return ""
 
@@ -1892,7 +1892,6 @@ class PeerSession(ModelSerializer):
 
 @register
 class TemplatePreview(serializers.Serializer):
-
     """
     This serializer can be used to preview templates
 
@@ -2000,7 +1999,6 @@ class NetworkSearch(serializers.Serializer):
 
 @register
 class PeeringDBRelationship(serializers.Serializer):
-
     """
     Renders a relationship to a PeeringDB object
     """
