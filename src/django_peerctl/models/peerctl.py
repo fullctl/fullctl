@@ -1552,7 +1552,7 @@ class Port(devicectl.Port):
         # assign port objects to objects
 
         for obj in objects:
-            if obj.port and obj.port.id:
+            if obj.port and obj.port.id and obj.port.id in port_map:
                 obj.port._object = port_map[obj.port.id]
 
                 if isinstance(obj, PortInfo):
@@ -1700,6 +1700,8 @@ class PortInfo(sot.ReferenceMixin, Base):
             ("admin_down", _("Admin Down")),
         ),
     )
+
+    traffic_threshold_alert = models.BooleanField(default=False)
 
     class HandleRef:
         tag = "port_info"
@@ -2441,12 +2443,12 @@ class PeerSession(PolicyHolderMixin, meta.DataMixin, Base):
         Port.load_references(port_infos + sessions, join="device,physical_ports")
 
         for session in sessions:
-            if not session.port or not session.port.id:
-                continue
-
-            port_object = session.port.object
-            if port_object and port_object.port_info_object:
-                port_infos.append(port_object.port_info_object)
+            if (
+                session.port
+                and session.port.object
+                and session.port.object.port_info_object
+            ):
+                port_infos.append(session.port.object.port_info_object)
 
         PortInfo.load_references(port_infos)
 

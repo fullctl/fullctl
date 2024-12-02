@@ -609,6 +609,11 @@ $peerctl.Ix = $tc.extend(
             async: false
           });
         });
+
+        if (data.traffic_alert_data) {
+          const port_is_hot = row.find('[data-element="port_is_hot"]');
+          $.fn.show_traffic_alert(data, port_is_hot);
+        }
       };
 
       // format speed

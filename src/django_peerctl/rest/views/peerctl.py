@@ -1,11 +1,12 @@
 import ipaddress
 from collections import defaultdict
+from typing import List
 
 import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.sot as sot
-from fullctl.service_bridge.client import ServiceBridgeError
+import structlog
 from django.conf import settings
 from django.db.models.functions import Lower
 from django.http import HttpResponse
@@ -13,6 +14,7 @@ from fullctl.django.auth import permissions
 from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.decorators import load_object
 from fullctl.django.rest.mixins import CachedObjectMixin
+from fullctl.service_bridge.client import ServiceBridgeError
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -30,7 +32,6 @@ from django_peerctl.rest.route.peerctl import route
 from django_peerctl.rest.serializers.peerctl import Serializers, ValidationError
 from django_peerctl.utils import load_exchanges, verified_asns
 
-import structlog
 logger = structlog.getLogger("django_structlog")
 
 
@@ -169,7 +170,6 @@ class Networks(CachedObjectMixin, viewsets.GenericViewSet):
 
 @route
 class PolicyPeerGroup(CachedObjectMixin, viewsets.ModelViewSet):
-
     """
     PolicyPeerGroup view set
 
@@ -388,38 +388,91 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
         else:
             data = sorted(data, key=lambda x: x["ix_name"])
 
-        ixs = {port.get("ix") for port in data}
-        routeservers = ixctl.Routeserver().objects(ixs=list(ixs)) if ixs else []
-        routeserver_ids = {routeserver.id for routeserver in routeservers}
+        ix_ids = list({port.get("ix") for port in data})
+        port_bgp_stat_map = self.get_port_bgp_stat_data(ix_ids)
+        port_ix_map = {port.get("id"): port.get("ix") for port in data}
+        port_traffic_alert_data_map = self.get_port_traffic_alert_data(
+            ix_ids, instances, port_ix_map
+        )
+
+        for port in data:
+            key = (port.get("asn"), port.get("ip4"), port.get("ip6"))
+            port["bgp_stat"] = (
+                port_bgp_stat_map.get(key) if port.get("is_route_server_peer") else None
+            )
+            port["traffic_alert_data"] = port_traffic_alert_data_map.get(port.get("id"))
+
+        return Response(data)
+
+    def get_port_bgp_stat_data(
+        self, ix_ids: List[int]
+    ) -> dict[tuple[str, str, str], dict]:
+        """
+        Returns a dictionary with the key being a tuple and value of dictionary
+        - key (`tuple`): (member.asn, member.ipaddr4, member.ipaddr6)
+        - value (`dict`):
+            - key (`int`): routeserver id
+            - value (`list`): [event components]
+        e.g. {
+            (asn, ipaddr4, ipaddr6): {
+                rs.id: [event components]
+            }
+        }
+        """
+        routeservers = ixctl.Routeserver().objects(ixs=ix_ids) if ix_ids else []
+        routeserver_ids = list({routeserver.id for routeserver in routeservers})
         routeserver_members = (
-            list(ixctl.RouteserverMember().objects(rss=list(routeserver_ids)))
+            list(ixctl.RouteserverMember().objects(rss=routeserver_ids))
             if routeserver_ids
             else []
         )
-
-        event_rs_id_map = defaultdict(list)
-        asn_event_map = {}
-        for routeserver_member in routeserver_members:
-            key = (
+        return {
+            (
                 routeserver_member.member.asn,
                 routeserver_member.member.ipaddr4,
                 routeserver_member.member.ipaddr6,
-            )
-            asn_event_map[key] = routeserver_member._event
-            event_rs_id_map[str(routeserver_member.event)].append(
-                routeserver_member.rs.id
-            )
+            ): {
+                routeserver_member.rs.id: routeserver_member._event.data.components,
+            }
+            for routeserver_member in routeserver_members
+        }
 
-        for port in data:
-            port["bgp_stat"] = None
-            key = (port.get("asn"), port.get("ip4"), port.get("ip6"))
-            event = asn_event_map.get(key)
-            if event and port.get("is_route_server_peer"):
-                port["bgp_stat"] = {
-                    rs: event.data.components for rs in event_rs_id_map[str(event.id)]
-                }
+    def get_port_traffic_alert_data(
+        self, ix_ids, ports, port_ix_map
+    ) -> dict[int, dict]:
+        """
+        Returns a map of port.id to traffic alert data
+        - key (`int`): port.id
+        - value (`dict`): traffic_alert_data
+        """
+        traffic_alert_configs = list(ixctl.TrafficAlertConfig().objects(ixs=ix_ids))
+        ixs = list(ixctl.InternetExchange().objects(ids=ix_ids))
+        if not traffic_alert_configs and not ixs:
+            return {}
 
-        return Response(data)
+        ix_traffic_alert_config_map = {
+            traffic_alert_config.ix: traffic_alert_config
+            for traffic_alert_config in traffic_alert_configs
+        }
+        ix_id_map = {ix.id: ix for ix in ixs}
+        result = {}
+        for port in ports:
+            traffic_alert_config = ix_traffic_alert_config_map.get(
+                port_ix_map.get(port.id)
+            )
+            if not traffic_alert_config:
+                result[port.id] = None
+                continue
+            result[port.id] = {
+                "traffic_level": traffic_alert_config.traffic_level,
+                "capacity_alert": port.capacity_alert,
+                "traffic_poll_time": ix_id_map.get(
+                    port_ix_map.get(port.id)
+                ).traffic_poll_time,
+                "at_capacity": port.at_capacity,
+                "time_period": traffic_alert_config.time_period,
+            }
+        return result
 
     @grainy_endpoint(namespace="verified.asn.{asn}.?")
     def retrieve(self, request, asn, pk, *args, **kwargs):
@@ -670,12 +723,16 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
         # the port to an exchange
 
         if not port_info or not port_info.ref_id:
-            return BadRequest({"non_field_errors": ["Port info not found or has no reference"]})
+            return BadRequest(
+                {"non_field_errors": ["Port info not found or has no reference"]}
+            )
 
         # port info reference needs to be from ixctl
 
         if not port_info.ref_source == "ixctl":
-            return BadRequest({"non_field_errors": ["Port info reference is not ixctl"]})
+            return BadRequest(
+                {"non_field_errors": ["Port info reference is not ixctl"]}
+            )
 
         # port info reference needs to be from the same asn as this
         # network (everyone is only allowed to see their own traffic)
@@ -780,6 +837,7 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
                 port_info.ref_id.split(":")[1],
             )
         )
+
 
 # peer view
 # list all peers for a port and asn
@@ -1363,11 +1421,11 @@ class PeerRequest(viewsets.GenericViewSet):
         """
 
         serializer = Serializers.autopeer_enabled(
-            instance=[
-                {"asn": their_asn} for their_asn in settings.AUTOPEER_ENABLED_NETWORKS
-            ]
-            if settings.AUTOPEER_ENABLED
-            else [],
+            instance=(
+                [{"asn": their_asn} for their_asn in settings.AUTOPEER_ENABLED_NETWORKS]
+                if settings.AUTOPEER_ENABLED
+                else []
+            ),
             context={"asn": asn},
             many=True,
         )
@@ -1490,7 +1548,6 @@ class PeerSession(CachedObjectMixin, viewsets.ModelViewSet):
 
 @route
 class UpdatePeerSession(CachedObjectMixin, viewsets.ModelViewSet):
-
     """
     Ultimate endpoint for creating and updating peer session objects
     based on port (ip or id), peer asn, and peer ip

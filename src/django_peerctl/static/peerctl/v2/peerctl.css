@@ -344,3 +344,7 @@ p[data-field="macaddr_set"] {
   white-space: pre-wrap;
   margin-left: 0px !important;
 }
+
+.port_is_hot  {
+  display: inline-block;
+}
