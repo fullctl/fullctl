@@ -243,6 +243,12 @@ class SettingsManager(confu.util.SettingsManager):
         # Size of chunks for objects when making bridge requests
         self.set_option("BRIDGE_OBJECTS_CHUNK_SIZE", 50)
 
+        # FEATURE_REQUEST_FORM_CLICKUP_LINK is the link to the feature request form in clickup
+        self.set_option(
+            "FEATURE_REQUEST_FORM_CLICKUP_LINK", 
+            "https://forms.clickup.com/14289126/f/dm276-8191/22BRHTR36S1XXC7FG7"
+        )
+
         # eval from default.py file
         filename = os.path.join(os.path.dirname(__file__), "default.py")
         self.try_include(filename)
