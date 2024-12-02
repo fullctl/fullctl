@@ -42,8 +42,18 @@ class DataObject:
         return f"{self.source}:{self.id}"
 
     @property
-    def json(self):
+    def json(self) -> str:
+        """
+        Serialize the object to a JSON string
+        """
         return json.dumps(self.__dict__, cls=JSONEncoder)
+
+    @property
+    def json_dict(self) -> dict:
+        """
+        Serialize the object to a dictionary
+        """
+        return json.loads(self.json)
 
     def __init__(self, **kwargs):
         for k, v in kwargs.items():

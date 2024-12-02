@@ -20,6 +20,8 @@ from fullctl.django.models.abstract.base import HandleRefModel
 from fullctl.django.tasks.qualifiers import Dynamic
 from fullctl.django.tasks.util import worker_id
 
+import fullctl.django.tasks.extensions as extensions
+
 __all__ = [
     "LimitAction",
     "TaskClaimed",
@@ -515,7 +517,9 @@ class Task(HandleRefModel):
         t_start = time.time()
         try:
             param = self.param
+            extensions.call(self, "before_run", *param["args"], **param["kwargs"])
             output = self.run(*param["args"], **param["kwargs"])
+            extensions.call(self, "after_run", result=output)
             t_end = time.time()
             self.time = t_end - t_start
             self._complete(output)

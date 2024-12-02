@@ -6,7 +6,9 @@ from django.utils.translation import gettext_lazy as _
 
 __all__ = [
     "validate_ip4",
+    "validate_ip4_interface",
     "validate_ip6",
+    "validate_ip6_interface",
     "validate_prefix",
     "validate_masklength_range",
     "validate_mac_address",
@@ -44,6 +46,11 @@ def validate_ip4(value):
     except ipaddress.AddressValueError:
         raise ValidationError("Invalid IPv4 Address")
 
+def validate_ip4_interface(value):
+    try:
+        ipaddress.IPv4Interface(value)
+    except ipaddress.AddressValueError:
+        raise ValidationError("Invalid IPv4 Interface")
 
 def validate_ip6(value):
     try:
@@ -51,6 +58,11 @@ def validate_ip6(value):
     except ipaddress.AddressValueError:
         raise ValidationError("Invalid IPv6 Address")
 
+def validate_ip6_interface(value):
+    try:
+        ipaddress.IPv6Interface(value)
+    except ipaddress.AddressValueError:
+        raise ValidationError("Invalid IPv6 Interface")
 
 def validate_prefix(value):
     try:
