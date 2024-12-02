@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("django_ixctl", "0035_internetexchange_traffic_poll_time_and_more"),
         ("django_ixctl", "0035_merge_20241025_1058"),
