@@ -1,13 +1,13 @@
 import json
-import structlog
 
+import structlog
 from django.utils.translation import gettext_lazy as _
+from flatten_json import flatten
+from fullctl.django.inet.validators import validate_mac_addresses
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
-from fullctl.django.inet.validators import validate_mac_addresses
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from flatten_json import flatten
 
 import django_devicectl.models as models
 import django_devicectl.models.tasks as tasks
@@ -220,7 +220,9 @@ class PhysicalPort(ModelSerializer):
         try:
             # Get all metrics from this device
             metric = Metric(
-                models.DeviceMetric.objects.filter(device=obj.device.id).latest("created"),
+                models.DeviceMetric.objects.filter(device=obj.device.id).latest(
+                    "created"
+                ),
                 context={"detailed": True},
             ).data
             # Return only keys with same port name
@@ -327,11 +329,12 @@ class VirtualPort(TagMixin, ModelSerializer):
         child=serializers.CharField(),
         # this needs to be read only for now, since drf doesnt
         # automatically support writable nested serializers
-        # 
+        #
         # use the batch_set_macaddr serializer to set mac addresses
         read_only=True,
         source="port.port_info.macaddr_set",
     )
+
     class Meta:
         model = models.VirtualPort
         fields = [
@@ -465,6 +468,7 @@ class VirtualPort(TagMixin, ModelSerializer):
 
         return representation
 
+
 class VirtualPortMacAddresses(serializers.Serializer):
     macaddr_set = serializers.ListField(
         child=serializers.CharField(),
@@ -480,7 +484,7 @@ class VirtualPortMacAddresses(serializers.Serializer):
     def validate_macaddr_set(self, macaddr_set: list[str]):
         if not macaddr_set:
             return []
-        
+
         # check for duplicates within the passed list
         if len(macaddr_set) != len(set(macaddr_set)):
             raise ValidationError("Duplicate mac addresses found")
@@ -488,7 +492,8 @@ class VirtualPortMacAddresses(serializers.Serializer):
         validate_mac_addresses(macaddr_set)
 
         return macaddr_set
-    
+
+
 @register
 class SetMacAddressBatch(serializers.Serializer):
     data = VirtualPortMacAddresses(many=True)
@@ -625,6 +630,7 @@ class PortTrafficMRTGImportBatch(serializers.ListSerializer):
             context_model=context_model,
         )
 
+
 @register
 class DeletePorts(serializers.Serializer):
     virtual = serializers.ListField(child=serializers.IntegerField())
@@ -640,8 +646,7 @@ class DeletePorts(serializers.Serializer):
         # load the virtual port instances and check that they belong
         # to the context["org"] org
         virtual_ports = models.VirtualPort.objects.filter(
-            id__in=virtual, 
-            logical_port__instance__org=self.context["org"]
+            id__in=virtual, logical_port__instance__org=self.context["org"]
         )
         return [vp.id for vp in virtual_ports]
 
@@ -649,8 +654,7 @@ class DeletePorts(serializers.Serializer):
         # load the physical port instances and check that they belong
         # to the context["org"] org
         physical_ports = models.PhysicalPort.objects.filter(
-            id__in=physical, 
-            device__instance__org=self.context["org"]
+            id__in=physical, device__instance__org=self.context["org"]
         )
         return [pp.id for pp in physical_ports]
 
@@ -658,22 +662,26 @@ class DeletePorts(serializers.Serializer):
         # load the logical port instances and check that they belong
         # to the context["org"] org
         logical_ports = models.LogicalPort.objects.filter(
-            id__in=logical, 
-            instance__org=self.context["org"]
+            id__in=logical, instance__org=self.context["org"]
         )
         return [lp.id for lp in logical_ports]
 
     def save(self):
         # delete the ports
         if self.validated_data["logical"]:
-            models.LogicalPort.objects.filter(id__in=self.validated_data["logical"]).delete()
+            models.LogicalPort.objects.filter(
+                id__in=self.validated_data["logical"]
+            ).delete()
 
         if self.validated_data["physical"]:
-            models.PhysicalPort.objects.filter(id__in=self.validated_data["physical"]).delete()
+            models.PhysicalPort.objects.filter(
+                id__in=self.validated_data["physical"]
+            ).delete()
 
         if self.validated_data["virtual"]:
-            models.VirtualPort.objects.filter(id__in=self.validated_data["virtual"]).delete()
-
+            models.VirtualPort.objects.filter(
+                id__in=self.validated_data["virtual"]
+            ).delete()
 
 
 @register

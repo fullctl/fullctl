@@ -474,7 +474,9 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
     @load_object("device", models.Device, instance="instance", id="device_id")
     def virtual_ports(self, request, org, instance, device, *args, **kwargs):
         ordering_filter = CaseInsensitiveOrderingFilter(["name", "vlan_id"])
-        queryset = device.virtual_ports.select_related("logical_port", "port", "port__port_info").prefetch_related("port__port_info__mac_addresses")
+        queryset = device.virtual_ports.select_related(
+            "logical_port", "port", "port__port_info"
+        ).prefetch_related("port__port_info__mac_addresses")
         queryset = ordering_filter.filter_queryset(request, queryset, self)
 
         serializer = Serializers.virtual_port(
@@ -533,26 +535,29 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
 
         ordering_filter = CaseInsensitiveOrderingFilter(["name"])
         queryset = device.physical_ports
-        
+
         # TODO: validate
-        virtual_port_id = request.query_params.get('virtual_port')  
-        size = request.query_params.get('size')
-        unassigned = request.query_params.get('unassigned')
+        virtual_port_id = request.query_params.get("virtual_port")
+        size = request.query_params.get("size")
+        unassigned = request.query_params.get("unassigned")
 
         if size is not None:
             queryset = queryset.filter(size=size)
 
         if unassigned in ["1", "true"]:
-            
+
             # we only want unassigned ports
 
             excluded_logical_port_ids = device.virtual_ports
-            
+
             if virtual_port_id is not None:
                 excluded_logical_port_ids = excluded_logical_port_ids.exclude(
-                    id=virtual_port_id)
+                    id=virtual_port_id
+                )
 
-            excluded_logical_port_ids = excluded_logical_port_ids.values_list("logical_port_id", flat=True)
+            excluded_logical_port_ids = excluded_logical_port_ids.values_list(
+                "logical_port_id", flat=True
+            )
             queryset = queryset.exclude(logical_port_id__in=excluded_logical_port_ids)
 
         queryset = ordering_filter.filter_queryset(request, queryset, self)
@@ -1004,7 +1009,9 @@ class VirtualPort(PortTrafficMixin, CachedObjectMixin, viewsets.GenericViewSet):
             ["name", "vlan_id", "logical_port"]
         )
         queryset = self.get_queryset().filter(logical_port__instance=instance)
-        queryset = queryset.select_related("logical_port", "port", "port__port_info").prefetch_related("port__port_info__mac_addresses")
+        queryset = queryset.select_related(
+            "logical_port", "port", "port__port_info"
+        ).prefetch_related("port__port_info__mac_addresses")
         queryset = ordering_filter.filter_queryset(request, queryset, self)
 
         serializer = Serializers.virtual_port(
@@ -1103,12 +1110,11 @@ class VirtualPort(PortTrafficMixin, CachedObjectMixin, viewsets.GenericViewSet):
         virtual_port.delete()
         return r
 
-
     @action(
         detail=False,
-        methods=["post"], 
-        url_path="batch-set-macaddr", 
-        serializer_class=Serializers.batch_set_macaddr
+        methods=["post"],
+        url_path="batch-set-macaddr",
+        serializer_class=Serializers.batch_set_macaddr,
     )
     @grainy_endpoint(namespace="virtual_port.{request.org.permission_id}")
     def batch_set_macaddr(self, request, org, instance, *args, **kwargs):
@@ -1120,7 +1126,6 @@ class VirtualPort(PortTrafficMixin, CachedObjectMixin, viewsets.GenericViewSet):
             return BadRequest(serializer.errors)
         serializer.save()
         return Response(serializer.data)
-
 
     @action(detail=True, methods=["get"])
     @grainy_endpoint(
@@ -1248,15 +1253,21 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
 
         return Response(self.serializer_class(qset, many=True).data)
 
-
-    @action(detail=False, methods=["post"], url_path="delete-bulk", serializer_class=Serializers.delete_ports)
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="delete-bulk",
+        serializer_class=Serializers.delete_ports,
+    )
     @grainy_endpoint(namespace="port.{request.org.permission_id}")
     def delete_bulk(self, request, org, instance, *args, **kwargs):
         """
         Bulk delete ports by id
         """
 
-        serializer = Serializers.delete_ports(data=request.data, context={"org": org, "instance": instance})
+        serializer = Serializers.delete_ports(
+            data=request.data, context={"org": org, "instance": instance}
+        )
 
         if not serializer.is_valid():
             return BadRequest(serializer.errors)

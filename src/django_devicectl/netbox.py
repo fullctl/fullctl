@@ -304,11 +304,13 @@ def pull(org, *args, **kwargs):
     # create / update devices from netbox data
 
     for netbox_device in netbox.Device().objects(limit=NETBOX_PAGE_LIMIT):
-        
+
         # v3 has role in .device_role
         # v4 has role in .role
         # support both
-        role = getattr(netbox_device, "device_role", getattr(netbox_device, "role", None))
+        role = getattr(
+            netbox_device, "device_role", getattr(netbox_device, "role", None)
+        )
 
         # v3 returns role as str
         # v4 returns role as dict (converted to object)
@@ -321,7 +323,9 @@ def pull(org, *args, **kwargs):
         device, created = models.Device.objects.get_or_create(
             reference=str(netbox_device.id), instance=instance
         )
-        print(f"[PULL] Netbox device {netbox_device.name} {device.reference} ROLE {role} ...")
+        print(
+            f"[PULL] Netbox device {netbox_device.name} {device.reference} ROLE {role} ..."
+        )
         references.append(device.reference)
         changed = device.sync_from_reference(ref_obj=netbox_device) or sync_tags(
             netbox_device, device

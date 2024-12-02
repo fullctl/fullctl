@@ -1,5 +1,4 @@
 import structlog
-
 from django.utils.translation import gettext_lazy as _
 from fullctl.django.rest.decorators import serializer_registry
 from rest_framework import serializers
@@ -8,10 +7,12 @@ logger = structlog.getLogger("django_structlog")
 
 Serializers, register = serializer_registry()
 
+
 def validate_positive_integer(value) -> int:
     if value < 0:
         raise serializers.ValidationError(_("This field must be a positive integer."))
     return value
+
 
 @register
 class SflowData(serializers.Serializer):

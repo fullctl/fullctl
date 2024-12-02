@@ -2,12 +2,7 @@ from django.conf import settings
 from fullctl.metrics import Metrics
 from fullctl.metrics.schema import QueryResult
 
-__all__ = [
-    "save",
-    "total_bytes",
-    "total_packets",
-    "query_graph_metrics"
-]
+__all__ = ["save", "total_bytes", "total_packets", "query_graph_metrics"]
 
 METRIC_TAGS = [
     "org",
@@ -48,10 +43,24 @@ max by (metric) (
 )
 """
 
-def metrics_client() -> Metrics:
-    return Metrics(settings.TIMESERIES_DB_URL, (settings.TIMESERIES_DB_USER, settings.TIMESERIES_DB_PASSWORD) if settings.TIMESERIES_DB_USER else None)
 
-def query_graph_ix_total(org_id: int, ix_id: int, step: str, start:str | int, end:str | int | None = None, **kwargs) -> QueryResult:
+def metrics_client() -> Metrics:
+    return Metrics(
+        settings.TIMESERIES_DB_URL,
+        (settings.TIMESERIES_DB_USER, settings.TIMESERIES_DB_PASSWORD)
+        if settings.TIMESERIES_DB_USER
+        else None,
+    )
+
+
+def query_graph_ix_total(
+    org_id: int,
+    ix_id: int,
+    step: str,
+    start: str | int,
+    end: str | int | None = None,
+    **kwargs,
+) -> QueryResult:
     """
     Queries bits per second for a specific IX (in and out)
 
@@ -73,19 +82,17 @@ def query_graph_ix_total(org_id: int, ix_id: int, step: str, start:str | int, en
     # - max of `mrtg_bps_in_max` and `mrtg_bps_out_max`
     # return 4 series
 
-    tags = f"ctl_org_id=\"{org_id}\", ctl_ix_id=\"{ix_id}\""
+    tags = f'ctl_org_id="{org_id}", ctl_ix_id="{ix_id}"'
 
-    query = TRAFFIC_GRAPH_QUERY_BASE.format(
-        tags_in=tags,
-        tags_out=tags,
-        step=step
-    )
+    query = TRAFFIC_GRAPH_QUERY_BASE.format(tags_in=tags, tags_out=tags, step=step)
 
     return metrics.query_range(query, start=start, end=end, step=step)
-    
 
-def query_graph_port_total(org_id: int, port_id: int, step: str, start:str, end:str, **kwargs) -> QueryResult:
-    
+
+def query_graph_port_total(
+    org_id: int, port_id: int, step: str, start: str, end: str, **kwargs
+) -> QueryResult:
+
     """
     Queries bits per second for a specific port (in and out)
 
@@ -103,8 +110,10 @@ def query_graph_port_total(org_id: int, port_id: int, step: str, start:str, end:
 
     metrics = metrics_client()
 
-    tags_in = f"ctl_org_id=\"{org_id}\", ctl_port_id=\"{port_id}\""
-    tags_out = f"ctl_org_id=\"{org_id}\", ctl_port_id=\"{port_id}\""
+    tags_in = f'ctl_org_id="{org_id}", ctl_port_id="{port_id}"'
+    tags_out = f'ctl_org_id="{org_id}", ctl_port_id="{port_id}"'
 
-    query = TRAFFIC_GRAPH_QUERY_BASE.format(tags_in=tags_in, tags_out=tags_out, step=step)
+    query = TRAFFIC_GRAPH_QUERY_BASE.format(
+        tags_in=tags_in, tags_out=tags_out, step=step
+    )
     return metrics.query_range(query, start=start, end=end, step=step)

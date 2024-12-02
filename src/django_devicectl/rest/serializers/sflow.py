@@ -1,6 +1,6 @@
-import structlog
 import ipaddress
 
+import structlog
 from django.utils.translation import gettext_lazy as _
 from fullctl.django.rest.decorators import serializer_registry
 from rest_framework import serializers
@@ -12,17 +12,19 @@ logger = structlog.getLogger("django_structlog")
 Serializers, register = serializer_registry()
 
 
-def validate_ip_address(value:str) -> str:
+def validate_ip_address(value: str) -> str:
     try:
         ipaddress.ip_address(value)
     except ValueError as e:
         raise serializers.ValidationError(f"Invalid IP address: {value}")
     return value
 
+
 def validate_positive_integer(value) -> int:
     if value < 0:
         raise serializers.ValidationError(_("This field must be a positive integer."))
     return value
+
 
 """
 def validate_line_protocol(value:str) -> str:
@@ -51,6 +53,7 @@ def validate_line_protocol(value:str) -> str:
     return value
 """
 
+
 @register
 class SflowData(serializers.Serializer):
     """
@@ -77,6 +80,7 @@ class SflowData(serializers.Serializer):
 
     def save(self):
         sflow.save([self.validated_data])
+
 
 @register
 class SflowBatch(serializers.Serializer):

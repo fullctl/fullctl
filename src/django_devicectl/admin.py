@@ -136,10 +136,12 @@ class IPAddressAdmin(VersionAdmin):
     list_display = ("id", "org", "address", "created", "updated")
     search_fields = ("address",)
 
+
 @admin.register(MacAddress)
 class MacAddressAdmin(VersionAdmin):
     list_display = ("id", "org", "address", "created", "updated")
     search_fields = ("address",)
+
 
 @admin.register(Port)
 class PortAdmin(VersionAdmin):
@@ -161,11 +163,13 @@ class IPAddressInline(admin.TabularInline):
     readonly_fields = ("created", "updated")
     extra = 0
 
+
 class MacAddressInline(admin.TabularInline):
     model = MacAddress
     fields = ("address", "instance", "created", "updated")
     readonly_fields = ("created", "updated")
     extra = 0
+
 
 @admin.register(PortInfo)
 class PortInfoAdmin(VersionAdmin):

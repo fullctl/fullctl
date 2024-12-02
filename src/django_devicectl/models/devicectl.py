@@ -688,10 +688,10 @@ class PhysicalPort(HandleRefModel):
     @property
     def unused(self) -> bool:
         """
-        physical port is unused if no virtual ports are attached to it 
+        physical port is unused if no virtual ports are attached to it
         through logical port
         """
-            
+
         return not self.logical_port.virtual_ports.exists()
 
     def __str__(self):
@@ -732,6 +732,7 @@ class PhysicalPort(HandleRefModel):
         )
 
         self.set_logical_port(logical_port)
+
 
 @reversion.register()
 @grainy_model(
@@ -1109,7 +1110,7 @@ class PortInfo(HandleRefModel):
 
     # setter for macaddr_set field
     @macaddr_set.setter
-    def macaddr_set(self, macs:list[str]):
+    def macaddr_set(self, macs: list[str]):
         if not self.id:
             return
 
@@ -1122,7 +1123,8 @@ class PortInfo(HandleRefModel):
         print(f"macs: {macs} - {self}")
 
         self.mac_addresses.bulk_create(
-            MacAddress(port_info=self, address=mac, instance=self.instance) for mac in macs
+            MacAddress(port_info=self, address=mac, instance=self.instance)
+            for mac in macs
         )
 
     @property
@@ -1248,7 +1250,10 @@ class MacAddress(HandleRefModel):
     """
     Describes a MAC address
     """
-    instance = models.ForeignKey(Instance, related_name="mac_addresses", on_delete=models.CASCADE)
+
+    instance = models.ForeignKey(
+        Instance, related_name="mac_addresses", on_delete=models.CASCADE
+    )
 
     address = MACAddressField()
     port_info = models.ForeignKey(
@@ -1276,6 +1281,7 @@ class MacAddress(HandleRefModel):
 
     def __str__(self):
         return f"{self.address}"
+
 
 @reversion.register()
 @grainy_model(
@@ -1382,7 +1388,7 @@ class Port(HandleRefModel):
     def __str__(self):
         return f"Port({self.id}) {self.virtual_port.name}"
 
-    def delete_chain(self, logical_port:bool=False):
+    def delete_chain(self, logical_port: bool = False):
         """
         Will delete the Port, PortInfo, VirtualPort.
 

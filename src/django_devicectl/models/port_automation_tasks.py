@@ -1,6 +1,8 @@
-from fullctl.django.tasks import register
 from fullctl.django.models import Organization, Task
-from django_devicectl.models import Port, PhysicalPort
+from fullctl.django.tasks import register
+
+from django_devicectl.models import PhysicalPort, Port
+
 
 @register
 class AssignPort(Task):
@@ -21,18 +23,14 @@ class AssignPort(Task):
 
     class HandleRef:
         tag = "task_assign_port"
-    
+
     @classmethod
     def create_task(
-        cls,
-        org:Organization, 
-        physical_ports:list[PhysicalPort],
-        port:Port,
-        **kwargs
+        cls, org: Organization, physical_ports: list[PhysicalPort], port: Port, **kwargs
     ):
-    
+
         return super().create_task(
-            org=org, 
+            org=org,
             physical_ports=[p.id for p in physical_ports],
             port_id=port.id,
             **kwargs
@@ -44,7 +42,9 @@ class AssignPort(Task):
 
     @property
     def physical_ports(self) -> list[PhysicalPort]:
-        return list(PhysicalPort.objects.filter(id__in=self.param["kwargs"]["physical_ports"]))
+        return list(
+            PhysicalPort.objects.filter(id__in=self.param["kwargs"]["physical_ports"])
+        )
 
     def run(self, *args, **kwargs):
         r = {}
@@ -54,7 +54,6 @@ class AssignPort(Task):
             physical_port.set_logical_port(self.port.virtual_port.logical_port)
 
         return r
-
 
 
 @register
@@ -76,22 +75,24 @@ class UnassignPort(Task):
 
     class HandleRef:
         tag = "task_unassign_port"
-    
+
     @classmethod
     def create_task(
         cls,
-        org:Organization, 
-        port:Port | None = None, 
-        physical_ports:list[PhysicalPort] | None = None, 
+        org: Organization,
+        port: Port | None = None,
+        physical_ports: list[PhysicalPort] | None = None,
         **kwargs
     ):
 
         # if both port and physical_ports are provided, raise an error
         if port and physical_ports:
-            raise ValueError("Both port and physical_ports cannot be provided together.")
+            raise ValueError(
+                "Both port and physical_ports cannot be provided together."
+            )
 
         return super().create_task(
-            org=org, 
+            org=org,
             port_id=port.id if port else None,
             physical_ports=[p.id for p in physical_ports] if physical_ports else None,
             **kwargs
@@ -102,13 +103,16 @@ class UnassignPort(Task):
         if not self.param["kwargs"]["port_id"]:
             return None
         return Port.objects.get(id=self.param["kwargs"]["port_id"])
-    
+
     @property
     def physical_ports(self) -> list[PhysicalPort]:
         if self.param["kwargs"]["physical_ports"]:
-            return list(PhysicalPort.objects.filter(id__in=self.param["kwargs"]["physical_ports"]))
+            return list(
+                PhysicalPort.objects.filter(
+                    id__in=self.param["kwargs"]["physical_ports"]
+                )
+            )
         return list(self.port.virtual_port.logical_port.physical_ports.all())
-    
 
     def run(self, *args, **kwargs):
 
@@ -117,7 +121,10 @@ class UnassignPort(Task):
         if self.port:
             # Port instance was provided, delete the port and its related objects
             self.port.delete_chain()
-            r["devicectl"] = {"status": "ok", "message": "Port unassignment tasks completed."}
+            r["devicectl"] = {
+                "status": "ok",
+                "message": "Port unassignment tasks completed.",
+            }
 
         else:
             for physical_port in self.physical_ports:

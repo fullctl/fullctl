@@ -12,9 +12,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 import django_devicectl.models.devicectl as models
+import django_devicectl.models.port_automation_tasks as port_automation_tasks
 import django_devicectl.mrtg as mrtg
 import django_devicectl.sflow as sflow
-import django_devicectl.models.port_automation_tasks as port_automation_tasks
 from django_devicectl.rest.serializers.service_bridge import Serializers
 from django_devicectl.rest.views.devicectl import PortTrafficMixin
 
@@ -160,14 +160,14 @@ class Port(DataViewSet):
     def filter(self, qset, request):
         qset = super().filter(qset, request)
         qset = qset.select_related(
-            "virtual_port", 
-            "virtual_port__logical_port", 
+            "virtual_port",
+            "virtual_port__logical_port",
             "port_info",
             "port_info__instance",
             "port_info__instance__org",
         )
         qset = qset.prefetch_related(
-            "port_info__ips", 
+            "port_info__ips",
             "virtual_port__logical_port__physical_ports",
             "port_info__mac_addresses",
         )
@@ -286,14 +286,13 @@ class Port(DataViewSet):
         """
 
         port = self.get_object()
-        
+
         port_automation_tasks.UnassignPort.create_task(
             org=port.org,
             port=port,
         )
 
         return Response({"status": "ok"})
-
 
 
 @route
@@ -490,8 +489,12 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
         ).data
         return Response(extract_metric_data_from_ports(ports))
 
-
-    @action(detail=True, methods=["POST"], serializer_class=Serializers.set_ip_addresses, url_path="set-ip-addresses")
+    @action(
+        detail=True,
+        methods=["POST"],
+        serializer_class=Serializers.set_ip_addresses,
+        url_path="set-ip-addresses",
+    )
     def set_ip_addresses(self, request, pk, *args, **kwargs):
         """
         Set IP addresses for the virtual port
@@ -508,6 +511,7 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
 
         serializer.save()
         return Response(serializer.data)
+
 
 @route
 class IPAddress(DataViewSet):
@@ -542,6 +546,7 @@ class IPAddress(DataViewSet):
 
         return data
 
+
 @route
 class PhysicalPort(DataViewSet):
     path_prefix = "/data"
@@ -554,11 +559,16 @@ class PhysicalPort(DataViewSet):
     ]
     allow_unfiltered = False
 
-    queryset = models.PhysicalPort.objects.filter(status="ok").select_related("device", "device__instance", "device__instance__org")
+    queryset = models.PhysicalPort.objects.filter(status="ok").select_related(
+        "device", "device__instance", "device__instance__org"
+    )
     serializer_class = Serializers.physical_port
 
-
-    @action(detail=True, methods=["POST"],serializer_class=Serializers.physical_port_unassignment)
+    @action(
+        detail=True,
+        methods=["POST"],
+        serializer_class=Serializers.physical_port_unassignment,
+    )
     def unassign(self, request, pk, *args, **kwargs):
         """
         Will unassign specific physical port
@@ -583,8 +593,11 @@ class PhysicalPort(DataViewSet):
 
         return Response({"status": "ok"})
 
-    
-    @action(detail=True, methods=["POST"], serializer_class=Serializers.physical_port_assignment)
+    @action(
+        detail=True,
+        methods=["POST"],
+        serializer_class=Serializers.physical_port_assignment,
+    )
     def assign(self, request, pk, *args, **kwargs):
         """
         Will assign specific physical port
