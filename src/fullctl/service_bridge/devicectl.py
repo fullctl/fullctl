@@ -142,9 +142,41 @@ class Port(Devicectl):
             },
         )
 
+    def create_device_port(
+            self, org_slug, name, ports
+    ):
+        return self.post(
+            "data/port/create_device_port",
+            json={
+                "org": org_slug,
+                "name": name,
+                "ports": ports,
+            },
+        )[0]
+
     def unassign(self, pk):
         return self.post(
             f"data/port/{pk}/unassign",
+        )
+
+class PhysicalPort(Devicectl):
+    class Meta(Devicectl.Meta):
+        ref_tag = "physical_port"
+
+    def assign(self, pk:int, port_id:int):
+        return self.post(
+            f"data/physical_port/{pk}/assign",
+            json={
+                "port": port_id,
+            },
+        )
+
+    def unassign(self, pk:int, port_id:int):
+        return self.post(
+            f"data/physical_port/{pk}/unassign",
+            json={
+                "port": port_id,
+            },
         )
 
 
@@ -204,6 +236,15 @@ class VirtualPort(Devicectl):
     def metric_table(self, pk):
         return self.get(
             f"data/virtual_port/{pk}/metric_table",
+        )
+
+    def set_ip_addresses(self, pk:int, ipaddr4:str | None, ipaddr6:str | None):
+        return self.post(
+            f"data/virtual_port/{pk}/set-ip-addresses",
+            json={
+                "ipaddr4": str(ipaddr4) if ipaddr4 else None,
+                "ipaddr6": str(ipaddr6) if ipaddr6 else None,
+            },
         )
 
 class IPAddress(Devicectl):

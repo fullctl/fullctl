@@ -333,6 +333,11 @@ button {
   }
 }
 
+div.validation-error-hint > div {
+  padding: 5px;
+  margin: 5px;
+}
+
 div.validation-error {
   position: absolute;
   top: 3px;
@@ -1207,6 +1212,12 @@ div.menu .button {
   padding: var(--size-50) var(--size-425);
 }
 
+
+.list-table th.checkbox-cell,
+.list-table td.checkbox-cell {
+  width: 50px;
+}
+
 button.solid-active,
 button.solid-inactive {
   padding: 0 var(--size-400);
@@ -1540,15 +1551,24 @@ div.controls textarea {
   padding: 6px 8px;
 }
 
+div.controls h6,
 div.controls label {
   font-size: 14px;
   line-height: 16px;
+  font-weight: normal;
   letter-spacing: 2.4px;
   margin-bottom: 12px;
 }
 
 div.controls .form-check {
   margin-bottom: 15px;
+}
+
+div.controls input[type="radio"]~label {
+  font-size: 20px;
+  letter-spacing: 0;
+  line-height: 24px;
+  margin-left: 5px;
 }
 
 div.controls input[type="checkbox"]~label {

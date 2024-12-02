@@ -27,7 +27,7 @@
  */
 
 function replace_urls_with_links(jQueryResult) {
-  jQueryResult.contents().filter(function() {
+  jQueryResult.contents().find(function() {
     return this.nodeName != "A";
   }).each(function() {
     const text = $(this).text();
@@ -835,6 +835,35 @@ twentyc.rest.Widget = twentyc.cls.extend(
     clear_errors : function() {
       this.element.find('.validation-error').detach();
       this.element.find('.validation-error-indicator').removeClass("validation-error-indicator");
+      this.clear_error_hint();
+    },
+
+    /**
+     * Render general error hint. Reminding the user that there are errors
+     * and that they need to scroll up to see them.
+     * 
+     * This is rendered into the .validation-error-hint element if it exists.
+     * 
+     * @method render_error_hint
+     */
+
+    render_error_hint : function() {
+      if(this.element.find('.error-hint').length)
+        return;
+
+      const MESSAGE = "There are errors with your submission. Please scroll up to see them.";
+
+      this.element.find('.validation-error-hint').append($('<div>').addClass('error-hint').text(MESSAGE));
+    },
+
+    /**
+     * Clears the error hint
+     * 
+     * @method clear_error_hint
+     */
+
+    clear_error_hint : function() {
+      this.element.find('.error-hint').detach();
     },
 
     /**
@@ -850,6 +879,8 @@ twentyc.rest.Widget = twentyc.cls.extend(
         return;
       var i;
       var error_node = $('<div>').addClass("validation-error");
+
+      this.render_error_hint();
       
       // clicking the error node should close it
       error_node.click(function() {
@@ -892,6 +923,7 @@ twentyc.rest.Widget = twentyc.cls.extend(
      */
 
     render_non_field_errors : function(errors) {
+      this.render_error_hint();
       error_node = $('<div>').addClass("alert alert-danger validation-error non-field-errors");
       for(let i = 0; i < errors.length; i++) {
         $(twentyc.rest).trigger("non-field-error", [errors[i], errors, i, error_node, this]);
