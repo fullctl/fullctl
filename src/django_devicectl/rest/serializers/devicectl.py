@@ -199,6 +199,7 @@ class PhysicalPort(ModelSerializer):
             "logical_port_name",
             "description",
             "metric",
+            "size",
         ]
 
     @staticmethod
@@ -426,6 +427,9 @@ class VirtualPort(TagMixin, ModelSerializer):
 
                     if physical_port_instance.name != physical_port.get("name"):
                         physical_port_instance.name = physical_port.get("name")
+
+                    if physical_port_instance.size != physical_port.get("size"):
+                        physical_port_instance.size = physical_port.get("size")
 
                     if physical_port_instance.logical_port.id != int(
                         physical_port.get("logical_port")

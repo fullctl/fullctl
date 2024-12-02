@@ -644,7 +644,9 @@ class PhysicalPort(HandleRefModel):
     )
     name = models.CharField(max_length=255)
     description = DeviceDescriptionField()
+    size = models.PositiveIntegerField(default=0)
 
+    # TODO should probably be NULLable.
     logical_port = models.ForeignKey(
         "django_devicectl.LogicalPort",
         help_text=_("Logical port this physical port is a member of"),
@@ -683,6 +685,15 @@ class PhysicalPort(HandleRefModel):
     def logical_port_name(self):
         return self.logical_port.name
 
+    @property
+    def unused(self) -> bool:
+        """
+        physical port is unused if no virtual ports are attached to it 
+        through logical port
+        """
+            
+        return not self.logical_port.virtual_ports.exists()
+
     def __str__(self):
         return f"PhyscalPort({self.id}) {self.name}"
 
@@ -694,6 +705,33 @@ class PhysicalPort(HandleRefModel):
 
         self.logical_port.setup(instance)
 
+    def set_logical_port(self, logical_port: "LogicalPort"):
+        """
+        Set the logical port for this physical port
+        """
+
+        if self.logical_port_id == logical_port.id:
+            return
+
+        old_logical_port = self.logical_port
+
+        self.logical_port = logical_port
+        self.save()
+
+        # if old logical port has no physical ports, delete it
+        if old_logical_port and not old_logical_port.physical_ports.exists():
+            old_logical_port.delete()
+
+    def unassign(self):
+        """
+        Create a new empty logical port for this physical port
+        """
+
+        logical_port = LogicalPort.objects.create(
+            name=f"{self.name}:lp-001", instance=self.device.instance
+        )
+
+        self.set_logical_port(logical_port)
 
 @reversion.register()
 @grainy_model(
@@ -1344,12 +1382,14 @@ class Port(HandleRefModel):
     def __str__(self):
         return f"Port({self.id}) {self.virtual_port.name}"
 
-    def delete_chain(self, logical_port:bool=True,):
+    def delete_chain(self, logical_port:bool=False):
         """
         Will delete the Port, PortInfo, VirtualPort.
 
         If logical_ports is True, will also delete the LogicalPort if no other VirtualPort
         is using it.
+
+        NOTE: right now deleting the logical port will cascade delete the physical ports
 
         Arguments:
 
