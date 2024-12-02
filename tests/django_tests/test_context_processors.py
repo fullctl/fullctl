@@ -139,13 +139,18 @@ def test_conf(db, dj_account_objects, settings):
         "google_analytics_id": None,
         "cloudflare_analytics_id": "asdf",
         "support_email": "support@localhost",
-        "no_reply_email": "noreply@localhost",
         "contact_us_email": "hello@localhost",
+        "no_reply_email": "noreply@localhost",
         "post_feature_request_url": "test://new-feature",
+        "disable_feature_request": False,
+        "disable_help_menu": False,
+        "disable_contact_us": False,
         "docs_url": "test://docs",
+        "service_docs_url": None,
         "legal_url": "test://legal",
         "terms_of_service_url": "test://terms-of-service",
-        "current_year": datetime.now().year,
+        "current_year": 2024,
+        "feature_request_form_clickup_link": "test://clickup"
     }
 
     conf = context_processors.conf(request)
