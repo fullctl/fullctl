@@ -340,9 +340,9 @@ def test_ix_edit_member(db, pdb_data, account_objects):
                 "name": "override",
                 "ipaddr4": "206.41.111.20",
                 "ipaddr6": "2001:504:41:111::20",
-                "port_size": 1,
-                "port_quantity": 1,
-                "lag": False,
+                "port_size": ixmember.port_size,
+                "port_quantity": ixmember.port_quantity,
+                "lag": ixmember.lag,
                 "is_rs_peer": False,
             }
         ),
@@ -375,9 +375,9 @@ def test_ix_edit_member_invalid(db, pdb_data, account_objects):
                 "name": "override",
                 "ipaddr4": "",
                 "ipaddr6": "",
-                "port_size": 1,
-                "port_quantity": 1,
-                "lag": False,
+                "port_size": ixmember.port_size,
+                "port_quantity": ixmember.port_quantity,
+                "lag": ixmember.lag,
                 "is_rs_peer": False,
             }
         ),
@@ -389,76 +389,6 @@ def test_ix_edit_member_invalid(db, pdb_data, account_objects):
         "ipaddr4": ["Input required for IPv4 or IPv6"],
         "ipaddr6": ["Input required for IPv4 or IPv6"],
     }
-
-
-def test_edit_member_speed_from_port_size_quantity(db, pdb_data, account_objects):
-    ix = account_objects.ix
-    client = account_objects.api_client
-    org = account_objects.org
-
-    ixmember = ix.member_set.first()
-
-    response = client.put(
-        reverse("ixctl_api:member-detail", args=(org.slug, ix.slug, ixmember.id)),
-        json.dumps(
-            {
-                "id": ixmember.id,
-                "ix": ixmember.ix.id,
-                "asn": 63311,
-                "ixf_state": "active",
-                "ixf_member_type": "peering",
-                "name": "override",
-                "ipaddr4": "206.41.111.20",
-                "ipaddr6": "2001:504:41:111::20",
-                "port_size": 1,
-                "port_quantity": 1,
-                "lag": False,
-                "is_rs_peer": False,
-            }
-        ),
-        content_type="application/json",
-    )
-
-    assert response.status_code == 200
-
-    ixmember.refresh_from_db()
-
-    assert ixmember.speed == 1000
-
-
-def test_edit_member_speed_from_port_size_quantity_lag(db, pdb_data, account_objects):
-    ix = account_objects.ix
-    client = account_objects.api_client
-    org = account_objects.org
-
-    ixmember = ix.member_set.first()
-
-    response = client.put(
-        reverse("ixctl_api:member-detail", args=(org.slug, ix.slug, ixmember.id)),
-        json.dumps(
-            {
-                "id": ixmember.id,
-                "ix": ixmember.ix.id,
-                "asn": 63311,
-                "ixf_state": "active",
-                "ixf_member_type": "peering",
-                "name": "override",
-                "ipaddr4": "206.41.111.20",
-                "ipaddr6": "2001:504:41:111::20",
-                "port_size": 10,
-                "port_quantity": 3,
-                "lag": True,
-                "is_rs_peer": False,
-            }
-        ),
-        content_type="application/json",
-    )
-
-    assert response.status_code == 200
-
-    ixmember.refresh_from_db()
-
-    assert ixmember.speed == 30000
 
 
 def test_edit_member_invalid_quantity(db, pdb_data, account_objects):

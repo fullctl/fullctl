@@ -874,8 +874,8 @@ class InternetExchangeMember(ModelSerializer):
             port_set,
             member,
             meta={
-                "case_number": self._case_number,
-                "work_order": self._work_order,
+                "case_number": getattr(self, "_case_number", None),
+                "work_order": getattr(self, "_work_order", None),
             },
         )
 

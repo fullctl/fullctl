@@ -34,6 +34,7 @@ case "$1" in
     export PDBCTL_URL=test://pdbctl
     export AAACTL_URL=test://aaactl
     export AUDITCTL_URL=test://auditctl
+    export DEVICECTL_URL=test://devicectl
     export PREFIXCTL_URL=test://prefixctl
     export MEMBER_CASE_NUMBERS_ENABLED=0
     unset OAUTH_TWENTYC_URL
