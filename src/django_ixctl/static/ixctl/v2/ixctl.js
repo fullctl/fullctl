@@ -292,14 +292,15 @@ $ctl.application.Ixctl.ModalCreateIX = $tc.extend(
 $ctl.application.Ixctl.ModalMember = $tc.extend(
   "ModalMember",
   {
-    ModalMember : function(ix_slug, member) {
+    ModalMember : function(ix_slug, ix_facility, member) {
       var modal = this;
-      var title = "Add Member"
+      var title = "Add Member";
       var form = this.form = new twentyc.rest.Form(
         $ctl.template("form_member")
       );
 
       this.member = member;
+      this.ix_facility = ix_facility;
       form.base_url = form.base_url.replace("/default", "/"+ix_slug);
 
       $(this.form).on("payload:after", (ev, payload) => {
@@ -319,6 +320,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       $(this.form).on("fill:before", (ev, data) => {
         // macaddr_set comes in as an array, we need to join it into a string
         data.macaddr_set = data.macaddr_set.join("\n");
+        data.virtual_port_name = data.port ? data.port.virtual_port_name : "";
         return data;
       });
 
@@ -326,15 +328,17 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
 
       var state_select = new twentyc.rest.Select(
         form.element.find('#member-state')
-      )
+      );
       state_select.load((member?member.ixf_state:null));
 
       var type_select = new twentyc.rest.Select(
         form.element.find('#member-type')
-      )
+      );
       type_select.load((member?member.ixf_member_type:null));
 
+
       // handle port quantity select
+      var quantity = 1;
       // when `lag` is false, disable the port quantity select
       form.element.find('#member-lag').change(function() {
         var lag = $(this).prop('checked');
@@ -350,12 +354,13 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       // and prevent user from changing it back to false
 
       form.element.find('#member-port-quantity').change(function() {
-        var quantity = Number($(this).val());
+        quantity = Number($(this).val());
         if(quantity > 1) {
           form.element.find('#member-lag').prop('checked', true).prop('disabled', true);
         } else {
           form.element.find('#member-lag').prop('disabled', false);
         }
+        modal.port_config_intent();
       });
 
       // if port quantity is > 1, enforce lag to true
@@ -375,6 +380,13 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
         }
       });
 
+      // if button_validate exists in from, wire the button to validate
+      // the form
+      let button_validate = form.element.find("[data-element='button_validate']");
+      button_validate.click(() => {
+        this.validate();
+      });
+
       if(member) {
         title = "Edit "+member.display_name;
         form.method = "PUT"
@@ -391,12 +403,24 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
 
 
         $(this.form).on("api-write:before", (ev, e, payload) => {
+          const intent = this.port_config_intent();
           payload["ix"] = member.ix;
           payload["id"] = member.id;
+          payload["port_config_intent"] = intent;
+
+          // if intent is lag-increase we need to combine
+          // old and new port_set values
+          if(intent == "lag-increase") {
+            const old_ports = this.member.port.physical_ports.map((port) => {
+              return port.id;
+            });
+            const new_ports = payload.port_set;
+            payload.port_set = old_ports.concat(new_ports);
+          }
         });
       } else {
-        this.init_autocomplete_ports();
         this.init_autocomplete_prefix_set();
+        this.init_device_port_select();
       }
 
       $(this.form).on("api-write:success", (ev, e, payload, response) => {
@@ -406,51 +430,214 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
 
       this.Modal("save_right", title, form.element);
       form.wire_submit(this.$e.button_submit);
+
+      this.jquery.on("hidden.bs.modal", () => {
+        console.log("clearing validation checks");
+        this.clear_validation_checks();
+      });
     },
 
     /**
-     * Initializes the port autocomplete field
-     * @method init_autocomplete_ports
+     * Returns the current port config intent action depending
+     * on the choices made and whether or not a member is being
+     * created or edited
+     *
+     * Returns:
+     *
+     * - null if no port config intent is being made on an existing member
+     * - create if a new member is being created
+     * - lag-increase if LAG is true on existing member and the quanity on the input
+     *   greater from the quantity on the member.
+     * - lag-decrease if LAG is true on existing member and the quanity on the input
+     * - resize if not augment and any of size, LAG, or port quantity differ
+     *
+     * @method port_config_intent
+     * @return {String}
      */
 
-    init_autocomplete_ports : function() {
-      const form = this.form;
-      fullctl.ext.select2.init_autocomplete(
+    port_config_intent : function() {
+      const port_set_container = this.form.element.find('[data-element="port_set_container"]');
 
-        // bind to port <select> element
-        form.element.find("#port"),
+      if(!this.member) {
+        $(".port-config-intent").hide();
+        port_set_container.show();
+        return "create";
+      }
 
-        // parent dropdown to form element
-        form.element,
+      const member = this.member;
+      const port = member.port;
 
-        // options
-        {
+      const lag = this.form.element.find('#member-lag').prop('checked');
+      const port_size = Number(this.form.element.find('#member-port-size').val());
+      const port_quantity = Number(this.form.element.find('#member-port-quantity').val());
+      const device = this.form.element.find('#device').val();
+      const current_ports_container = this.form.element.find('[data-element="current_ports"]');
+      const virtual_port_display = this.form.element.find('[data-element="virtual_port_display"]');
+      current_ports_container.show();
 
-          // autocomplete url
-          url: "/autocomplete/device/port?org="+fullctl.org.slug,
-
-          // place holder text for the search field
-          placeholder: "Begin typing to search IP, device, port or location names",
-
-          // if session is specifed, preselect it's port
-          initial: (callback) => {
-            if(!this.member) {
-              return null;
-            }
-            if(!this.member.port) {
-              callback({});
-              return;
-            }
-
-            callback({
-              id: this.member.port.id,
-              primary: this.member.port.display_name,
-              secondary: this.member.port.virtual_port_name,
-              extra: this.member.port.device.display_name
-            })
-          }
+      if(
+        port &&
+        lag &&
+        port_quantity != member.port_quantity &&
+        port_size == member.port_size &&
+        device == port.device_id
+      ) {
+        virtual_port_display.show();
+        port_set_container.show();
+        $(".port-config-intent").hide().filter('.intent-augment').show();
+        if(port_quantity > member.port_quantity) {
+          current_ports_container.show();
+          return "lag-increase";
+        } else {
+          current_ports_container.hide();
+          return "lag-decrease";
         }
+      }
+
+      if(
+        port && (
+          lag != member.lag ||
+          port_quantity != member.port_quantity ||
+          port_size != member.port_size ||
+          device != port.device_id
+        )
+      ) {
+        current_ports_container.hide();
+        virtual_port_display.hide();
+        port_set_container.show();
+        $(".port-config-intent").hide().filter('.intent-resize').show();
+        return "resize";
+      }
+
+      port_set_container.hide();
+      $(".port-config-intent").hide();
+
+      if(port)
+        virtual_port_display.show();
+      else {
+        port_set_container.show();
+      }
+
+      this.sync_validation_button_label();
+
+      return null;
+    },
+
+    /**
+     * Initalizes device and port selection fields
+     * @method init_device_port_select
+     */
+
+    init_device_port_select : function(member) {
+      const form = this.form;
+      const ix_facility = this.ix_facility;
+      const port = member && member.port ? member.port : null;
+      const modal = this;
+      this.device_select = new twentyc.rest.Select(
+        form.element.find('#device')
       );
+      this.device_select.format_request_url = (url) => {
+        return url.replace("__facility_tag__", ix_facility);
+      };
+
+      const device_select = this.device_select;
+
+      device_select.load(port ? port.device_id : null).then(() => {
+        // Initial load with the first option selected
+        const initial_device_selection = form.element.find('#device').val();
+        load_device_ports(initial_device_selection);
+      }).catch((error) => {
+        console.error('Error during load devices:', error);
+      });
+
+      // device port select
+      // when device is selected, all ports are displayed
+      form.element.find('#device').change(function() {
+        load_device_ports($(this).val());
+        modal.port_config_intent();
+      });
+
+      // Change ports also when port size changes
+      form.element.find('#member-port-size').change(function() {
+        var selectedValue = form.element.find('#device').val();
+        load_device_ports(selectedValue);
+        modal.port_config_intent();
+      });
+
+      // Change quantity also triggers load_device_ports
+      form.element.find('#member-port-quantity').change(function() {
+        var selectedValue = form.element.find('#device').val();
+        load_device_ports(selectedValue);
+        modal.port_config_intent();
+      });
+
+      form.element.find('#port_set').change(function() {
+        const quanity = form.element.find('#member-port-quantity').val();
+        var selection_limit = quantity;
+        var selected_options = $(this).find('option:selected');
+
+        if (selected_options.length > selection_limit) {
+          // If the number of selected options exceeds the limit, deselect the last selected option
+          selected_options.each(function(index) {
+            if (index >= selection_limit) {
+              $(this).prop('selected', false);
+            }
+          });
+
+          // Provide feedback to the user
+          alert('You can only select up to ' + selection_limit + ' options at once. Review the "Quantity" parameter.');
+        }
+      });
+
+      function load_device_ports(selectedValue) {
+        // Set the selected option's text into the text field
+        var port_select = new twentyc.rest.Select(
+          form.element.find('#port_set').empty()
+        );
+        port_select.format_request_url = (url) => {
+          member_port_size = form.element.find('#member-port-size').val();
+          url = url + '?size=' + member_port_size;
+          url = url + '&unassigned=true';
+
+          if(modal.port_config_intent() == "lag-decrease") {
+            url = url + `&virtual_port=${port.virtual_port}`;
+          }
+
+          url = url.replace("0", selectedValue);
+          return url;
+        };
+        port_select.load().then(() => {
+          modal.port_config_intent();
+          auto_select_ports();
+        }).catch((error) => {
+          console.error('Error during load ports:', error);
+        });
+      };
+
+      function auto_select_ports() {
+        var n = form.element.find('#member-port-quantity').val();
+        form.element.find('#port_set option').each(function(index) {
+          $(this).prop('selected', index < n);
+        });
+      }
+
+      // Auto selected ports when change the quantity
+      form.element.find('#member-port-quantity').change(function(){
+        auto_select_ports();
+      });
+
+      // Populate current ports from port.physical_ports which
+      // is a list of physical ports with name fields
+      if(port && port.physical_ports) {
+        const current_ports_container = form.element.find('[data-element="current_ports"]');
+        const current_ports_list = current_ports_container.find('.port-list');
+        current_ports_list.empty();
+        port.physical_ports.forEach((port) => {
+          current_ports_list.append(
+            $('<li>').addClass('port').text(port.name)
+          );
+        });
+      }
     },
 
     /**
@@ -523,14 +710,309 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
           }
         }
 
-        // setup port auto complete
-        this.init_autocomplete_ports();
-
         // setup prefix-set auto complete
         this.init_autocomplete_prefix_set();
+        this.init_device_port_select(member);
+
 
       });
+    },
+
+    /**
+     * Run validation
+     * @method validate
+     */
+
+    validate : function() {
+      const payload = {
+        name: this.form.element.find("#member-name").val(),
+        asn: this.form.element.find("#member-asn").val(),
+        case_number: this.form.element.find("#case_number").val(),
+        port: this.form.element.find("#port").val() || "",
+      }
+
+      const headers = {
+        "Content-Type": "application/json",
+        "X-CSRFToken": twentyc.rest.config.csrf
+      }
+
+      const validation_results_node = this.form.element.find('#validation-results');
+      validation_results_node.empty();
+      this.clear_validation_checks();
+
+      validation_results_node.append(
+        $('<h6 class="please-wait">').text("Please wait ...")
+      )
+
+      // show the validaiton results container
+      this.form.element.find('#validation-results-container').show();
+
+      // hide validation button
+      this.form.element.find("[data-element='button_validate']").hide();
+
+
+      // if work order is selected, request next ip
+
+      const selected_work_order = this.form.element.find('input[name="work_order"]:checked').val();
+
+      if(selected_work_order) {
+        payload.work_order = selected_work_order;
+        this.request_next_ip_addresses(headers, payload);
+      } else {
+        this.validate_case_number(headers, payload);
+      }
+
+    },
+
+    /**
+     * Runs async validation task to validate the case number
+     * If successful this will populate the name field and
+     * display the work orders as radio buttons
+     *
+     * @method validate_case_number
+     * @param {*} headers
+     * @param {*} payload
+     */
+
+    validate_case_number : function(headers, payload) {
+      const work_orders_node = this.form.element.find('#work-orders');
+
+      // validate case number and org name
+      work_orders_node.empty()
+
+      if(this.form.element.find("#case_number").length > 0) {
+        $.ajax({
+          url: twentyc.rest.url.url_join(this.form.base_url, "/validate/case-number/"),
+          method: "POST",
+          headers: headers,
+          data: JSON.stringify(payload),
+        }).then((response) => {
+          const task = response.data[0];
+          this.handle_validation_task_update(task);
+          this[`task_poller_${task.op}`] = setInterval(() => {
+            this.check_validation_task(task.id, task.op);
+          }, 1000);
+        });
+      }
+    },
+
+    /**
+     * Runs async validation task to request the next ip addresses
+     *
+     * @method request_next_ip_addresses
+     * @param {*} headers
+     * @param {*} payload
+     */
+
+    request_next_ip_addresses : function(headers, payload) {
+      // validate / autofill ipv4 and ipv6 addresses
+      $.ajax({
+        url: twentyc.rest.url.url_join(this.form.base_url, "/validate/request-ip-address-pair/"),
+        method: "POST",
+        headers: headers,
+        data: JSON.stringify(payload),
+      }).then((response) => {
+        const task = response.data[0];
+        this.handle_validation_task_update(task);
+        this[`task_poller_${task.op}`] = setInterval(() => {
+          this.check_validation_task(task.id, task.op);
+        }, 1000);
+      });
+    },
+
+    /**
+     * Checks the status of a validation task by task ID
+     *
+     * @method check_validation_task
+     */
+
+    check_validation_task : function(taskId, taskOp) {
+      const url = twentyc.rest.url.url_join(this.form.base_url, `/validate/result/${taskId}/`);
+      $.ajax({
+        url: url,
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        }
+      }).then((response) => {
+        const task = response.data[0];
+        this.handle_validation_task_update(task);
+      }).fail((xhr, status, error) => {
+        clearInterval(this[`task_poller_${taskOp}`]);
+        console.error("Error checking validation task", status, error);
+      });
+
+    },
+
+    /**
+     * Syncs the validation button label according to what
+     * is the current validation state
+     *
+     * State 0: nothing validated, clicking the button would validate
+     * case number - label: "Validate"
+     *
+     * State 1: case number validated, clicking the button would request
+     * the next ip addresses - label: "Request Next IP Addresses"
+     *
+     * @method sync_validation_button_label
+     */
+    sync_validation_button_label: function() {
+      const work_orders_node = this.form.element.find('#work-orders');
+      const selected_work_order = work_orders_node.find('input[name="work_order"]:checked').val();
+      const case_number = this.form.element.find("#case_number").val();
+      const button_validate = this.form.element.find("[data-element='button_validate']");
+
+      if(selected_work_order) {
+        button_validate.text("Request IP Addresses");
+      } else {
+        button_validate.text("Validate");
+      }
+    },
+
+    handle_validation_task_update : function(task) {
+
+      $('.please-wait').detach();
+
+      const op_to_label = {
+        task_get_next_ip_addresses: "Next IP Addresses",
+        task_verify_case_number: "Verifying Case Number",
+      }
+
+      const op_to_info_text = {
+        task_get_next_ip_addresses: (task_data) => {
+          return $("<p>").addClass('result').append(
+            $("<div>").text("IPv4: " + task_data.result.ipaddr4),
+            $("<div>").text("IPv6: " + task_data.result.ipaddr6)
+          );
+        }
+      }
+
+      const op_to_action = {
+        // autofill ip addresses if they are empty
+        task_get_next_ip_addresses: (task_data) => {
+          const ip4_field = this.form.element.find("#member-ipaddr4");
+          const ip6_field = this.form.element.find("#member-ipaddr6");
+          if(ip4_field.val() == "" && ip6_field.val() == "") {
+            ip4_field.val(task_data.result.ipaddr4);
+            ip6_field.val(task_data.result.ipaddr6);
+          }
+        },
+
+        // autofill name if it is empty
+        task_verify_case_number: (task_data) => {
+          const name_field = this.form.element.find("#member-name");
+          if(name_field.val() == "") {
+            name_field.val(task_data.result.name);
+          }
+          // we are getting back work orders in `result.work_orders` as
+          // [{"elid":"..", "status":"empty or filled"}, ..]
+          //
+          // Display the ones with status `empty` as radio buttons (only one can be selected)
+          // Display the ones with status `filled` as disabled radio buttons
+
+          const work_orders_node = this.form.element.find('#work-orders');
+          work_orders_node.empty();
+
+          // append a "Work Orders" header
+          work_orders_node.append(
+            $("<h6>").text("Work Order(s)")
+          );
+
+          task_data.result.work_orders.forEach((work_order) => {
+            const work_order_node = $('<div>')
+            const radio = $('<input class="form-check-input">').attr("type", "radio").attr("name", "work_order").val(work_order.elid);
+            if(work_order.status == "filled") {
+              radio.attr("disabled", true);
+            }
+            radio.attr("id", `work_order_${work_order.elid}`);
+            work_order_node.append(radio);
+            work_order_node.append($('<label class="form-check-label">').text(work_order.label).attr("for", `work_order_${work_order.elid}`));
+            work_orders_node.append(work_order_node);
+          });
+
+          // select the first empty work order
+          // to find the first empty work order it needs to be enabled
+          work_orders_node.find('input[type="radio"]').each((index, radio) => {
+            if(!radio.disabled) {
+              radio.checked = true;
+              // update the
+              return false;
+            }
+          });
+        }
+      }
+
+      // if validation result node for task does not exist, create it
+      if(!this.form.element.find(`[data-validation-task="${task.op}"]`).length) {
+        this.form.element.find("#validation-results").append(
+          $('<div>').addClass('task-status-row').attr("data-validation-task", task.op)
+        );
+      }
+
+      var removeInterval = true;
+
+      var infoNode = $('<div>').append(
+        $('<p>').text(op_to_label[task.op])
+      );
+
+      if(task.status === "pending") {
+        infoNode.append($('<div class="loading-indicator">'));
+        removeInterval = false;
+      } else if(task.status === "failed") {
+        // <img src="/s/3.4.0-rc.30/common/icons/Indicator/X-Ind/X.svg" class="icon filled">
+        infoNode.append($('<img>').addClass('status').attr("src", fullctl.static_path + "common/icons/Indicator/X-Ind/X.svg"));
+        infoNode.append($('<p>').addClass('result').text(task.error));
+      } else if(task.status === "completed") {
+        const valid = task.result.valid;
+        if(valid) {
+          infoNode.append($('<img>').addClass('status').attr("src", fullctl.static_path + "common/icons/Indicator/Check-Ind/Check.svg"));
+          if(op_to_info_text[task.op]) {
+            infoNode.append(op_to_info_text[task.op](task));
+          }
+          if(op_to_action[task.op]) {
+            op_to_action[task.op](task);
+          }
+        } else {
+          infoNode.append($('<img>').addClass('status').attr("src", fullctl.static_path + "common/icons/Indicator/X-Ind/X.svg"));
+          infoNode.append($('<p>').addClass('result').text(task.result.message));
+        }
+
+      }
+      const container = $(`[data-validation-task="${task.op}"]`);
+      container.empty().append(infoNode);
+
+      if(removeInterval) {
+        clearInterval(this[`task_poller_${task.op}`]);
+        delete this[`task_poller_${task.op}`];
+        // hide or show validate button based on if there are any pending tasks
+        if(!this.has_validation_checks()) {
+          this.form.element.find("[data-element='button_validate']").show();
+        } else {
+          this.form.element.find("[data-element='button_validate']").hide();
+        }
+      }
+
+      this.sync_validation_button_label();
+    },
+
+    has_validation_checks : function() {
+      // check if any validation checks are currently running
+      return Object.keys(this).some((key) => {
+        return key.startsWith("task_poller_");
+      });
+    },
+
+    clear_validation_checks : function() {
+      // clear existing validation result checks
+      Object.keys(this).forEach((key) => {
+        if(key.startsWith("task_poller_")) {
+          clearInterval(this[key]);
+          delete this[key];
+        }
+      });
     }
+
+
   },
   $ctl.application.Modal
 );
@@ -558,7 +1040,7 @@ $ctl.application.Ixctl.Members = $tc.extend(
 
         row.find('a[data-action="edit_member"]').click(() => {
           var member = row.data("apiobject");
-          new $ctl.application.Ixctl.ModalMember($ctl.ixctl.ix_slug(), member);
+          new $ctl.application.Ixctl.ModalMember($ctl.ixctl.ix_slug(), $ctl.ixctl.ix_object().facility, member);
         }).each(function() {
           if(!grainy.check(data.grainy+".?", "u")) {
             $(this).hide();
@@ -734,7 +1216,7 @@ $ctl.application.Ixctl.Members = $tc.extend(
     menu : function() {
       const menu = this.Tool_menu();
       menu.find('[data-element="button_add_member"]').click(() => {
-        return new $ctl.application.Ixctl.ModalMember($ctl.ixctl.ix_slug());
+        return new $ctl.application.Ixctl.ModalMember($ctl.ixctl.ix_slug(), $ctl.ixctl.ix_object().facility);
       });
 
       // returns a function that will filter the list based on the search term.

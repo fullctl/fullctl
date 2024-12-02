@@ -24,6 +24,12 @@ proxy.setup(
                 "device/<str:org_tag>/<int:pk>/virtual_ports/",
                 "device-virtual-ports",
             ),
+            # physical ports for each device
+            (
+                "device/{org_tag}/{pk}/physical_ports",
+                "device/<str:org_tag>/<int:pk>/physical_ports/",
+                "device-physical-ports",
+            ),
             # traffic graphs
             # LEGACY RRD / MRTG
             (

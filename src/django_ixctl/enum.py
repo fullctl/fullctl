@@ -47,3 +47,11 @@ OPERATIONAL_STATUS_CHOICES = (
     ("maintenance", _("Maintenance")),
     ("down", _("Down")),
 )
+
+PORT_CONFIG_INTENT = (
+    (None, _("No operation")),
+    ("create", _("Create")),
+    ("resize", _("Resize")),
+    ("lag-increase", _("Increase LAG quantity")),
+    ("lag-decrease", _("Decrease LAG quantity")),
+)
