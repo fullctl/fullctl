@@ -206,6 +206,7 @@ class Port(serializers.Serializer):
     ix_portal = serializers.SerializerMethodField()
     ix_graph_traffic_source = serializers.SerializerMethodField()
     virtual_port = serializers.SerializerMethodField()
+    traffic_threshold_alert = serializers.SerializerMethodField()
 
     class Meta:
         fields = [
@@ -238,6 +239,7 @@ class Port(serializers.Serializer):
             "ix_portal",
             "ix_graph_traffic_source",
             "virtual_port",
+            "traffic_threshold_alert",
         ]
 
     # caching
@@ -477,6 +479,9 @@ class Port(serializers.Serializer):
     def get_policy6(self, instance):
         return self.get_policy(instance, 6)
 
+    def get_traffic_threshold_alert(self, instance):
+        return instance.port_info_object.traffic_threshold_alert
+
 
 @register
 class PortUpdate(serializers.Serializer):
@@ -498,6 +503,7 @@ class PortUpdate(serializers.Serializer):
         required=False,
     )
     is_route_server_peer = serializers.BooleanField(required=False)
+    traffic_threshold_alert = serializers.BooleanField(default=False)
 
     ref_tag = "port_update"
 
@@ -509,12 +515,12 @@ class PortUpdate(serializers.Serializer):
             "mac_address",
             "macaddr_set",
             "is_route_server_peer",
+            "traffic_threshold_alert",
         ]
 
     def save(self):
         # port will be a models.PortObject instance
         port = self.context.get("port")
-
         if not port:
             raise KeyError("No `port` object set in serializer context")
 
@@ -528,7 +534,6 @@ class PortUpdate(serializers.Serializer):
             macaddr_set.append(mac_address)
 
         is_route_server_peer = self.validated_data.get("is_route_server_peer")
-        status = self.validated_data.get("status")
 
         # set mac address
         port.set_mac_address(macaddr_set)
@@ -544,6 +549,11 @@ class PortUpdate(serializers.Serializer):
 
         # override is_route_server_peer
         port.port_info_object.set_is_route_server_peer(is_route_server_peer)
+
+        port.port_info_object.traffic_threshold_alert = self.validated_data.get(
+            "traffic_threshold_alert"
+        )
+        port.port_info_object.save()
 
     def validate_mac_address(self, macaddr: str):
         if not macaddr:

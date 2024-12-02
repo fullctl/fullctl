@@ -75,3 +75,15 @@ class Network(DataViewSet):
             pass
 
         return Response(serializer.data)
+
+
+@route
+class PortInfo(DataViewSet):
+    path_prefix = "/data"
+    allowed_http_methods = ["GET"]
+    valid_filters = [
+        ("ref_id", "ref_id"),
+    ]
+    allow_unfiltered = True
+    queryset = models.PortInfo.objects.all()
+    serializer_class = Serializers.port_info

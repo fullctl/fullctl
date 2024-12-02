@@ -21,3 +21,12 @@ class RequestDevicectlSync(serializers.Serializer):
 
     class Meta:
         fields = ["org_id"]
+
+
+@register
+class PortInfo(serializers.ModelSerializer):
+    ref_tag = "port_info"
+
+    class Meta:
+        model = models.PortInfo
+        fields = "__all__"
