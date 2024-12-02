@@ -162,6 +162,8 @@ class Port(ModelSerializer):
     )
     device = serializers.SerializerMethodField()
     physical_ports = serializers.SerializerMethodField()
+    capacity_alert = serializers.SerializerMethodField()
+    at_capacity = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Port
@@ -183,6 +185,8 @@ class Port(ModelSerializer):
             "virtual_port_description",
             "virtual_port_macaddr_set",
             "physical_ports",
+            "capacity_alert",
+            "at_capacity",
         ]
 
     def get_org_id(self, port):
@@ -219,6 +223,12 @@ class Port(ModelSerializer):
 
             return PhysicalPort(instance=physical_ports, many=True).data
         return None
+
+    def get_capacity_alert(self, port):
+        return port.virtual_port.capacity_alert
+
+    def get_at_capacity(self, port):
+        return port.virtual_port.at_capacity
 
     @property
     def devices(self):

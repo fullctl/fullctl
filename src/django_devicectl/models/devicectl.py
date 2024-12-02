@@ -2,6 +2,7 @@ import difflib
 import ipaddress
 
 import reversion
+import structlog
 from django.db import models, transaction
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
@@ -11,8 +12,8 @@ from fullctl.django.inet.fields import DeviceDescriptionField
 from fullctl.django.models.abstract import (
     GeoModel,
     HandleRefModel,
-    ServiceBridgeReferenceModel,
     MetricModel,
+    ServiceBridgeReferenceModel,
 )
 from fullctl.django.models.concrete import Instance
 from fullctl.service_bridge import nautobot, netbox
@@ -20,8 +21,8 @@ from netfields.fields import InetAddressField, MACAddressField
 
 import django_devicectl.referee as referee_util
 
-import structlog
 logger = structlog.getLogger("django_structlog")
+
 
 @reversion.register()
 @grainy_model(
@@ -899,6 +900,29 @@ class VirtualPort(ServiceBridgeReferenceModel):
 
     description = DeviceDescriptionField()
 
+    capacity_alert = models.PositiveIntegerField(
+        default=0,
+        help_text=_("The amount of times the device has been at capacity."),
+    )
+
+    capacity_notified_net = models.DateTimeField(
+        default=None,
+        null=True,
+        help_text=_("The last time a notification was sent for the IX member."),
+    )
+
+    capacity_notified_ix = models.DateTimeField(
+        default=None,
+        null=True,
+        help_text=_("The last time a notification was sent for the IX operator."),
+    )
+
+    at_capacity = models.DateTimeField(
+        default=None,
+        null=True,
+        help_text=_("The last time the device was at capacity above the threshold."),
+    )
+
     class HandleRef:
         tag = "virtual_port"
 
@@ -1350,7 +1374,7 @@ class Port(HandleRefModel):
 class DeviceMetric(MetricModel):
     """Metric model."""
 
-    device = models.OneToOneField( # Only interested in last metric from each device
+    device = models.OneToOneField(  # Only interested in last metric from each device
         Device,
         related_name="metric",
         on_delete=models.CASCADE,
