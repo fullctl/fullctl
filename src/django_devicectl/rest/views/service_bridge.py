@@ -14,6 +14,7 @@ from rest_framework.response import Response
 import django_devicectl.models.devicectl as models
 import django_devicectl.mrtg as mrtg
 import django_devicectl.sflow as sflow
+import django_devicectl.models.port_automation_tasks as port_automation_tasks
 from django_devicectl.rest.serializers.service_bridge import Serializers
 from django_devicectl.rest.views.devicectl import PortTrafficMixin
 
@@ -159,10 +160,16 @@ class Port(DataViewSet):
     def filter(self, qset, request):
         qset = super().filter(qset, request)
         qset = qset.select_related(
-            "virtual_port", "virtual_port__logical_port", "port_info"
+            "virtual_port", 
+            "virtual_port__logical_port", 
+            "port_info",
+            "port_info__instance",
+            "port_info__instance__org",
         )
         qset = qset.prefetch_related(
-            "port_info__ips", "virtual_port__logical_port__physical_ports"
+            "port_info__ips", 
+            "virtual_port__logical_port__physical_ports",
+            "port_info__mac_addresses",
         )
 
         return qset
@@ -194,6 +201,41 @@ class Port(DataViewSet):
             return BadRequest(f"request_dummy_port(): {exception=}")
 
         return Response(Serializers.port(ports, many=True).data)
+
+    @action(
+        detail=False, methods=["POST"], serializer_class=Serializers.create_device_port
+    )
+    def create_device_port(self, request, *args, **kwargs):
+        """
+        Handles the creation of a device port.
+
+        Parameters:
+        - request: The incoming request object containing data for the device port creation.
+        - *args: Additional positional arguments.
+        - **kwargs: Additional keyword arguments.
+
+        Returns:
+        - A Response object containing the serialized data of the created device port if successful.
+        - A BadRequest response with error details if the data is invalid or an exception occurs during saving.
+        """
+        # Extract data from the request
+        data = self.prepare_write_data(request)
+
+        # Validate data using the serializer
+        serializer = self.serializer_class(data=data)
+
+        if not serializer.is_valid():
+            logger.error(f"{serializer.errors=}")
+            return BadRequest(f"{serializer.errors=}")
+
+        try:
+            # If data is valid, save it
+            ports = serializer.save()
+        except Exception as exception:
+            logger.error(exception)
+            return BadRequest(exception)
+
+        return Response(Serializers.port(ports, many=False).data)
 
     @action(detail=False, methods=["PATCH"], url_path="(?P<pk>[^/.]+)/status")
     def status(self, request, pk, *args, **kwargs):
@@ -231,7 +273,7 @@ class Port(DataViewSet):
     @action(detail=True, methods=["POST"])
     def unassign(self, request, pk, *args, **kwargs):
         """
-        Will unassign a virtual / logical port.
+        Will unassign a virtual / logical port, freeing all connected physical ports.
 
         Unassigning here means deleting the virtual port.
 
@@ -239,12 +281,19 @@ class Port(DataViewSet):
         delete the logical port as well.
 
         The Port instance itself will also be deleted.
+
+        The unassign action is created as a task and will be executed asynchronously.
         """
 
         port = self.get_object()
-        port.delete_chain()
+        
+        port_automation_tasks.UnassignPort.create_task(
+            org=port.org,
+            port=port,
+        )
 
         return Response({"status": "ok"})
+
 
 
 @route
@@ -442,6 +491,24 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
         return Response(extract_metric_data_from_ports(ports))
 
 
+    @action(detail=True, methods=["POST"], serializer_class=Serializers.set_ip_addresses, url_path="set-ip-addresses")
+    def set_ip_addresses(self, request, pk, *args, **kwargs):
+        """
+        Set IP addresses for the virtual port
+        """
+        virtual_port = self.get_object()
+        data = request.data
+        data["virtual_port"] = virtual_port.id
+
+        serializer = Serializers.set_ip_addresses(data=data)
+
+        if not serializer.is_valid():
+            logger.error(f"{serializer.errors=}")
+            return BadRequest(f"{serializer.errors=}")
+
+        serializer.save()
+        return Response(serializer.data)
+
 @route
 class IPAddress(DataViewSet):
     path_prefix = "/data"
@@ -474,3 +541,70 @@ class IPAddress(DataViewSet):
             data["port_info"] = port_info.id
 
         return data
+
+@route
+class PhysicalPort(DataViewSet):
+    path_prefix = "/data"
+    allowed_http_methods = ["GET"]
+    valid_filters = [
+        ("ids", "id__in"),
+        ("ref", "reference"),
+        ("org", "device__instance__org__remote_id"),
+        ("org_slug", "device__instance__org__slug"),
+    ]
+    allow_unfiltered = False
+
+    queryset = models.PhysicalPort.objects.filter(status="ok").select_related("device", "device__instance", "device__instance__org")
+    serializer_class = Serializers.physical_port
+
+
+    @action(detail=True, methods=["POST"],serializer_class=Serializers.physical_port_unassignment)
+    def unassign(self, request, pk, *args, **kwargs):
+        """
+        Will unassign specific physical port
+        """
+
+        data = super().prepare_write_data(request)
+
+        physical_port = self.get_object()
+
+        data["physical_port"] = physical_port.id
+
+        serializer = Serializers.physical_port_unassignment(data=data)
+
+        if not serializer.is_valid():
+            logger.error(f"{serializer.errors=}")
+            return BadRequest(f"{serializer.errors=}")
+
+        port_automation_tasks.UnassignPort.create_task(
+            org=physical_port.org,
+            physical_ports=[physical_port],
+        )
+
+        return Response({"status": "ok"})
+
+    
+    @action(detail=True, methods=["POST"], serializer_class=Serializers.physical_port_assignment)
+    def assign(self, request, pk, *args, **kwargs):
+        """
+        Will assign specific physical port
+        """
+        data = super().prepare_write_data(request)
+
+        physical_port = self.get_object()
+
+        data["physical_port"] = physical_port.id
+
+        serializer = Serializers.physical_port_assignment(data=data)
+
+        if not serializer.is_valid():
+            logger.error(f"{serializer.errors=}")
+            return BadRequest(f"{serializer.errors=}")
+
+        port_automation_tasks.AssignPort.create_task(
+            org=physical_port.org,
+            physical_ports=[physical_port],
+            port=serializer.validated_data.get("port"),
+        )
+
+        return Response(serializer.data)

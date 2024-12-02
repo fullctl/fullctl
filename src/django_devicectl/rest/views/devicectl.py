@@ -501,8 +501,60 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
     @grainy_endpoint(namespace="physical_port.{request.org.permission_id}")
     @load_object("device", models.Device, instance="instance", id="device_id")
     def physical_ports(self, request, org, instance, device, *args, **kwargs):
+        """
+        Retrieve and filter physical ports for a given device.
+
+        This method processes a request to obtain a list of physical ports
+        associated with a specified device instance while allowing filtering
+        based on certain query parameters. The ports can be ordered
+        case-insensitively by their name and filtered by 'size' and 'assigned'
+        status.
+
+        Args:
+        request (Request): The HTTP request object, containing query
+            parameters for filtering, such as 'size' and 'assigned'.
+        org (Organization): The organization associated with the request.
+        instance (Instance): The instance related to the device.
+        device (Device): The device from which physical ports are to be
+            retrieved.
+        *args: Additional arguments.
+        **kwargs: Additional keyword arguments.
+
+        Query Parameters:
+        size (str): An optional filter to specify the size of the ports
+            to retrieve.
+        unassigned (bool): An optional flag to only show unassigned ports.
+        virtual_port (int): include physical ports that are assigned to this virtual port
+
+        Returns:
+        Response: A DRF Response object containing serialized data of the
+        filtered list of physical ports associated with the device.
+        """
+
         ordering_filter = CaseInsensitiveOrderingFilter(["name"])
         queryset = device.physical_ports
+        
+        # TODO: validate
+        virtual_port_id = request.query_params.get('virtual_port')  
+        size = request.query_params.get('size')
+        unassigned = request.query_params.get('unassigned')
+
+        if size is not None:
+            queryset = queryset.filter(size=size)
+
+        if unassigned in ["1", "true"]:
+            
+            # we only want unassigned ports
+
+            excluded_logical_port_ids = device.virtual_ports
+            
+            if virtual_port_id is not None:
+                excluded_logical_port_ids = excluded_logical_port_ids.exclude(
+                    id=virtual_port_id)
+
+            excluded_logical_port_ids = excluded_logical_port_ids.values_list("logical_port_id", flat=True)
+            queryset = queryset.exclude(logical_port_id__in=excluded_logical_port_ids)
+
         queryset = ordering_filter.filter_queryset(request, queryset, self)
 
         serializer = Serializers.physical_port(
