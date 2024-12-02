@@ -511,6 +511,7 @@ select.secondary {
 }
 
 div.controls input[type="text"],
+div.controls input[type="number"],
 .input-group.searchbar select.form-select,
 div.controls select.form-control {
   background: transparent;
