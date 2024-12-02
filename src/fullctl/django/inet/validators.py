@@ -46,11 +46,13 @@ def validate_ip4(value):
     except ipaddress.AddressValueError:
         raise ValidationError("Invalid IPv4 Address")
 
+
 def validate_ip4_interface(value):
     try:
         ipaddress.IPv4Interface(value)
     except ipaddress.AddressValueError:
         raise ValidationError("Invalid IPv4 Interface")
+
 
 def validate_ip6(value):
     try:
@@ -58,11 +60,13 @@ def validate_ip6(value):
     except ipaddress.AddressValueError:
         raise ValidationError("Invalid IPv6 Address")
 
+
 def validate_ip6_interface(value):
     try:
         ipaddress.IPv6Interface(value)
     except ipaddress.AddressValueError:
         raise ValidationError("Invalid IPv6 Interface")
+
 
 def validate_prefix(value):
     try:
@@ -79,6 +83,7 @@ def validate_masklength_range(value):
 def validate_mac_address(value: str):
     if not re.match(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", value):
         raise ValidationError("Invalid MAC address")
+
 
 def validate_mac_addresses(value: list[str]):
     for mac in value:

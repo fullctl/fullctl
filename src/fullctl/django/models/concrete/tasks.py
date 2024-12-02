@@ -16,11 +16,10 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 import fullctl.django.tasks
+import fullctl.django.tasks.extensions as extensions
 from fullctl.django.models.abstract.base import HandleRefModel
 from fullctl.django.tasks.qualifiers import Dynamic
 from fullctl.django.tasks.util import worker_id
-
-import fullctl.django.tasks.extensions as extensions
 
 __all__ = [
     "LimitAction",
@@ -493,7 +492,11 @@ class Task(HandleRefModel):
     def _complete(self, output):
 
         # if result is a dict we need to json encode it
-        if isinstance(output, dict) and self.task_meta_property("result_type") == dict and output:
+        if (
+            isinstance(output, dict)
+            and self.task_meta_property("result_type") == dict
+            and output
+        ):
             output = json.dumps(output)
 
         self.output = output

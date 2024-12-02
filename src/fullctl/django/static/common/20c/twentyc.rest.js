@@ -841,9 +841,9 @@ twentyc.rest.Widget = twentyc.cls.extend(
     /**
      * Render general error hint. Reminding the user that there are errors
      * and that they need to scroll up to see them.
-     * 
+     *
      * This is rendered into the .validation-error-hint element if it exists.
-     * 
+     *
      * @method render_error_hint
      */
 
@@ -858,7 +858,7 @@ twentyc.rest.Widget = twentyc.cls.extend(
 
     /**
      * Clears the error hint
-     * 
+     *
      * @method clear_error_hint
      */
 
@@ -881,7 +881,7 @@ twentyc.rest.Widget = twentyc.cls.extend(
       var error_node = $('<div>').addClass("validation-error");
 
       this.render_error_hint();
-      
+
       // clicking the error node should close it
       error_node.click(function() {
         $(this).detach();
@@ -897,7 +897,7 @@ twentyc.rest.Widget = twentyc.cls.extend(
           this.render_error(`${error_field_prefix}${field_name}`, errors[field_name], `[data-validation-group="${key}"]`);
         }
         return;
-      } 
+      }
 
       if(!group_selector)
         var input = this.element.find('[name="'+key+'"]');
@@ -976,7 +976,7 @@ twentyc.rest.Widget = twentyc.cls.extend(
           }
         });
       });
-      
+
       $(this).trigger("payload:after", [data]);
 
       return data;

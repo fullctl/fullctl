@@ -1,6 +1,6 @@
 import functools
-from typing import Any
 from collections.abc import Generator, Iterable
+from typing import Any
 
 
 def rgetattr(obj, attr, *args):

@@ -1,5 +1,5 @@
-import time
 import os
+import time
 import traceback
 
 import psycopg
@@ -8,12 +8,12 @@ import structlog
 from fullctl.django.management.commands.base import CommandInterface
 from fullctl.django.models import Task
 from fullctl.django.tasks.orm import (
-    set_task_as_failed, 
-    specify_task,
-    work_task, 
-    fetch_task,
-    claim_task,
     TaskClaimed,
+    claim_task,
+    fetch_task,
+    set_task_as_failed,
+    specify_task,
+    work_task,
 )
 
 log = structlog.get_logger("django")
@@ -62,7 +62,7 @@ class Command(CommandInterface):
             # is decoupled from the main handler
             super().handle(*args, **kwargs)
 
-            # if task_id was not specified, it means the worker 
+            # if task_id was not specified, it means the worker
             # is "self-selecting" and will poll for tasks
             # based on the poll_interval
             if not self.task_id:
@@ -73,7 +73,7 @@ class Command(CommandInterface):
             log.exception("Error in task run", exc=exc)
             self.handle_outer_error(exc)
 
-    def finalize_task_processing(self, task:int | Task):
+    def finalize_task_processing(self, task: int | Task):
         """
         Handles the finalization of the task processing
         Setting the task as failed if an error occurred
@@ -81,7 +81,7 @@ class Command(CommandInterface):
         Will also transport the error to the task if it the
         error occurred outside of the task execution logic
         """
-        
+
         if isinstance(task, int):
             task = Task.objects.get(id=task)
 
@@ -99,19 +99,17 @@ class Command(CommandInterface):
 
         task.save()
 
-
     def run(self, *args, **kwargs):
         """
         Execute the specified task
         """
         if not self.task_id:
             return
-        
+
         task = specify_task(Task.objects.get(id=self.task_id))
         self.log_info(f"Processing {task}")
         work_task(task)
         self.finalize_task_processing(task)
-
 
     def poll_tasks(self):
         """
@@ -151,7 +149,7 @@ class Command(CommandInterface):
             if isinstance(exc, psycopg.OperationalError):
                 # db issue, give time to recover
                 time.sleep(3)
-            
+
             if task:
                 # set task as failed
                 set_task_as_failed(task, traceback.format_exc())
@@ -159,7 +157,7 @@ class Command(CommandInterface):
                 task = specify_task(Task.objects.get(id=self.task_id))
                 # set task as failed
                 set_task_as_failed(task, traceback.format_exc())
-            
+
         except Exception as exc:
             log.exception(
                 f"Error in task run (error cleanup, retries={retries})", exc=exc

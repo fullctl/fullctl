@@ -1,10 +1,10 @@
 import structlog
-
 from django.conf import settings
 
 import fullctl.service_bridge.auditctl as auditctl
 
 log = structlog.get_logger(__name__)
+
 
 class CachedObjectMixin:
 
@@ -83,6 +83,7 @@ class ContainerQuerysetMixin:
 
         return self.queryset.filter(**filters)
 
+
 class AuditCtlActionLogMixin:
 
     """
@@ -104,8 +105,7 @@ class AuditCtlActionLogMixin:
     object_id. (auditctl event path)
     """
 
-
-    def is_action_enabled_for_logging(self, request, ref_tag:str, action:str) -> bool:
+    def is_action_enabled_for_logging(self, request, ref_tag: str, action: str) -> bool:
 
         """
         Check if a specific action is enabled for logging
@@ -142,13 +142,17 @@ class AuditCtlActionLogMixin:
 
         if not settings.AUDITCTL_LOG_API_ACTIONS:
             return response
-    
+
         try:
-            handler = getattr(self, request.method.lower(), self.http_method_not_allowed)
-            
+            handler = getattr(
+                self, request.method.lower(), self.http_method_not_allowed
+            )
+
             action = handler.__name__
 
-            ref_tag = getattr(self, "ref_tag", getattr(self.serializer_class, "ref_tag", None))
+            ref_tag = getattr(
+                self, "ref_tag", getattr(self.serializer_class, "ref_tag", None)
+            )
 
             if not self.is_action_enabled_for_logging(request, ref_tag, action):
                 return response
@@ -178,4 +182,3 @@ class AuditCtlActionLogMixin:
             log.error(f"Failed to log action to auditctl: {e}")
 
         return response
-

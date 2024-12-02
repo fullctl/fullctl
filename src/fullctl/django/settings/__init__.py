@@ -245,8 +245,8 @@ class SettingsManager(confu.util.SettingsManager):
 
         # FEATURE_REQUEST_FORM_CLICKUP_LINK is the link to the feature request form in clickup
         self.set_option(
-            "FEATURE_REQUEST_FORM_CLICKUP_LINK", 
-            "https://forms.clickup.com/14289126/f/dm276-8191/22BRHTR36S1XXC7FG7"
+            "FEATURE_REQUEST_FORM_CLICKUP_LINK",
+            "https://forms.clickup.com/14289126/f/dm276-8191/22BRHTR36S1XXC7FG7",
         )
 
         # eval from default.py file

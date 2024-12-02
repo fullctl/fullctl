@@ -34,8 +34,8 @@ class BaseSchema(AutoSchema):
             "type": "array",
             "items": {
                 "type": "string",
-                "description": "Warning message for duplicate MAC addresses"
-            }
+                "description": "Warning message for duplicate MAC addresses",
+            },
         }
 
     def map_field(self, field):
@@ -46,7 +46,6 @@ class BaseSchema(AutoSchema):
             return {"type": "array", "items": self.map_field(field.child)}
 
         return super().map_field(field)
-
 
     def get_operation_type(self, *args):
         """

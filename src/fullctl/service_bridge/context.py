@@ -14,6 +14,7 @@ __all__ = [
     "service_available",
 ]
 
+
 @dataclasses.dataclass
 class ServiceBridgeContextState:
     org_slug: str = None
@@ -101,9 +102,9 @@ class ServiceBridgeContext:
     def __exit__(self, *exc):
         service_bridge_context.reset(self.token)
         return False
- 
 
-def service_available(org:object, service_slug:str) -> bool:
+
+def service_available(org: object, service_slug: str) -> bool:
     """
     Returns whether or not the specified service is available for the
     provided `Organization`.

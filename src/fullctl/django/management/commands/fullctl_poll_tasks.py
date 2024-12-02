@@ -26,7 +26,7 @@ class Worker:
     Will run fullctl_work_task command async through asyncio.subprocess
     """
 
-    def __init__(self, self_selecting:bool=False, poll_interval:float=3.0):
+    def __init__(self, self_selecting: bool = False, poll_interval: float = 3.0):
         self.id = f"{uuid.uuid4()}"[:8]
         self.task = None
         self.process = None
@@ -94,7 +94,9 @@ class Command(CommandInterface):
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
-        parser.add_argument("-w", "--workers", help="number of concurrent  workers", type=int, default=1)
+        parser.add_argument(
+            "-w", "--workers", help="number of concurrent  workers", type=int, default=1
+        )
         parser.add_argument(
             "-i",
             "--poll-interval",
@@ -122,17 +124,19 @@ class Command(CommandInterface):
         )
 
         self.workers = [Worker() for i in range(0, self.workers_num)]
-        
+
         # instanctatie self selecting workers
         self.self_selecting_workers = [
-            Worker(self_selecting=True, poll_interval=self.poll_interval) 
+            Worker(self_selecting=True, poll_interval=self.poll_interval)
             for i in range(0, self.processes)
         ]
 
         async def _main():
             # spawn self selecting workers as subprocesses
             if self.self_selecting_workers:
-                self.log_info(f"Spawning {len(self.self_selecting_workers)} self selecting workers")
+                self.log_info(
+                    f"Spawning {len(self.self_selecting_workers)} self selecting workers"
+                )
                 await asyncio.gather(
                     *[
                         asyncio.create_task(worker.work())
@@ -160,8 +164,10 @@ class Command(CommandInterface):
 
     async def _poll_tasks(self):
         if not self.workers:
-            self.log_info("Since workers are configured to 0, will not poll for tasks, but idle instead.")
-        
+            self.log_info(
+                "Since workers are configured to 0, will not poll for tasks, but idle instead."
+            )
+
         while True:
             task = None
             try:

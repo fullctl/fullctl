@@ -24,7 +24,7 @@
 
 ### Logging
 
-- `AUDITCTL_LOG_API_ACTIONS` - set up logging of REST api actions to auditctl. Should be a comma separated list of ref tags or ref_tag:action pairs. For example, `ix` or `ix,member` or `ix:create,ix:delete,member:delete`. 
+- `AUDITCTL_LOG_API_ACTIONS` - set up logging of REST api actions to auditctl. Should be a comma separated list of ref tags or ref_tag:action pairs. For example, `ix` or `ix,member` or `ix:create,ix:delete,member:delete`.
 
 ### Operational
 
