@@ -1,30 +1,32 @@
 import json
 import os
 import time
-
-import structlog
+from datetime import datetime, timedelta
 
 import fullctl.django.tasks.qualifiers as qualifiers
 import fullctl.graph.mrtg.rrd as mrtg_rrd
+import fullctl.service_bridge.aaactl as aaactl
 import fullctl.service_bridge.auditctl as auditctl
 import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.nautobot as nautobot
+import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.peerctl as peerctl
+import structlog
 from django.conf import settings
 from fullctl.django.models import Task
 from fullctl.django.models.concrete import OrganizationFile
 from fullctl.django.tasks import register
 from fullctl.graph.render.traffic import render_graph
-from fullctl.metrics import Metrics
+from fullctl.metrics import Metrics, make_metrics
 from fullctl.metrics.schema import Point
 
-import django_devicectl.sflow as sflow
 import django_devicectl.models.devicectl as models
+import django_devicectl.sflow as sflow
 
 log = structlog.get_logger("django_structlog")
 
-class OrgConcurrencyLimit(qualifiers.Base):
 
+class OrgConcurrencyLimit(qualifiers.Base):
     """
     Limits how many instance of the task can be worked on at
     the same time (per organization)
@@ -55,7 +57,6 @@ class OrgConcurrencyLimit(qualifiers.Base):
 
 @register
 class NautobotPull(Task):
-
     """
     Sync data from nautobot API to devicectl
     """
@@ -172,7 +173,12 @@ class UpdateTrafficGraphs(Task):
             virtual_port = self.context_model.objects.get(id=data["id"])
             port_ids.append(virtual_port.port.id)
 
-        self._members = {m.port: m for m in ixctl.InternetExchangeMember().objects(ports=port_ids, org=self.org.remote_id)}
+        self._members = {
+            m.port: m
+            for m in ixctl.InternetExchangeMember().objects(
+                ports=port_ids, org=self.org.remote_id
+            )
+        }
 
         return self._members
 
@@ -191,7 +197,9 @@ class UpdateTrafficGraphs(Task):
             exchange_ids.add(member.ix_id)
 
         exchange_ids = list(exchange_ids)
-        self._exchanges = {ix.id: ix for ix in ixctl.InternetExchange().objects(ids=exchange_ids)}
+        self._exchanges = {
+            ix.id: ix for ix in ixctl.InternetExchange().objects(ids=exchange_ids)
+        }
         return self._exchanges
 
     def run(self, *args, **kwargs):
@@ -227,22 +235,20 @@ class UpdateTrafficGraphs(Task):
             else:
                 # Going to VM only we can directly render the graphs
                 # without needing to aggregate further
-                objects_to_render = [f"ixctl-ix-{ix.id}" for ix in self.exchanges.values()]
+                objects_to_render = [
+                    f"ixctl-ix-{ix.id}" for ix in self.exchanges.values()
+                ]
                 RenderTrafficGraphs.create_task(
                     *objects_to_render,
                     org=self.org,
                 )
 
-
-    def update_victoriametrics(self, all_data:list[dict]):
+    def update_victoriametrics(self, all_data: list[dict]):
 
         if not all_data:
             return
 
-        metrics = Metrics(
-            settings.TIMESERIES_DB_URL,
-            (settings.TIMESERIES_DB_USER, settings.TIMESERIES_DB_PASSWORD) if settings.TIMESERIES_DB_USER else None
-        )
+        metrics = make_metrics()
 
         tags_base = {
             "ctl_org_id": self.org.remote_id,
@@ -257,7 +263,7 @@ class UpdateTrafficGraphs(Task):
             try:
 
                 virtual_port = self.context_model.objects.get(id=data["id"])
-                
+
                 tags = {
                     **tags_base,
                     "ctl_port_id": data["id"],
@@ -281,11 +287,10 @@ class UpdateTrafficGraphs(Task):
             except Exception as e:
                 log.exception(f"Error processing data point {data}", e=e)
                 continue
-        
+
         if points:
             log.debug("Writing points to victoriametrics", points=points)
             metrics.write_many(points)
-
 
     def update_rrd(self, data):
         """
@@ -488,7 +493,6 @@ class UpdateIxctlIxTrafficGraphs(Task):
 
 @register
 class RenderTrafficGraphs(Task):
-
     """
     Takes a list of rrd files for traffic graphs and renders them into png files
     """
@@ -510,7 +514,7 @@ class RenderTrafficGraphs(Task):
     def run(self, *args, **kwargs):
         try:
             for obj in args:
-                _, obj_type, obj_id = obj.split(".")[0].split('-')
+                _, obj_type, obj_id = obj.split(".")[0].split("-")
                 self.render_from_victoriametrics(obj_id, obj_type)
         except Exception as e:
             log.exception("Error rendering graphs from victoriametrics", e=e)
@@ -527,10 +531,7 @@ class RenderTrafficGraphs(Task):
     def render_from_victoriametrics(self, obj_id, obj_type):
         self.ix_graphs = {}
 
-        metrics = Metrics(
-            settings.TIMESERIES_DB_URL,
-            (settings.TIMESERIES_DB_USER, settings.TIMESERIES_DB_PASSWORD) if settings.TIMESERIES_DB_USER else None
-        )
+        metrics = make_metrics()
 
         object_label = None
         file_prefix = ""
@@ -569,7 +570,12 @@ class RenderTrafficGraphs(Task):
             # Query VictoriaMetrics
             query = metrics.build_query_string(
                 aggregator=None,
-                metrics=["mrtg_bps_in", "mrtg_bps_out", "mrtg_bps_in_max", "mrtg_bps_out_max"],
+                metrics=[
+                    "mrtg_bps_in",
+                    "mrtg_bps_out",
+                    "mrtg_bps_in_max",
+                    "mrtg_bps_out_max",
+                ],
                 tags={
                     f"ctl_{object_label}_id": obj_id,
                     "ctl_org": self.org.slug,
@@ -579,11 +585,16 @@ class RenderTrafficGraphs(Task):
 
             query = f"sum by (__name__) ({query})"
 
-            result = metrics.query_range(query, start=str(start_time), end=str(end_time), step=str(resolution)+"s")
+            result = metrics.query_range(
+                query,
+                start=str(start_time),
+                end=str(end_time),
+                step=str(resolution) + "s",
+            )
 
             # Process the data
             data = []
-                        
+
             # process data so its neat rows of
             # timestamp, bps_in, bps_out, bps_in_max, bps_out_max
 
@@ -604,7 +615,9 @@ class RenderTrafficGraphs(Task):
             data = sorted(data_by_timestamp.values(), key=lambda x: x["timestamp"])
 
             if not data:
-                log.warning(f"No valid data found for {obj_type}-{obj_id} with duration {duration}")
+                log.warning(
+                    f"No valid data found for {obj_type}-{obj_id} with duration {duration}"
+                )
                 continue
 
             # Render the graph
@@ -703,6 +716,7 @@ class RenderTrafficGraphs(Task):
                 public=public,
             )
 
+
 @register
 class RenderSflowTrafficGraphs(Task):
     """
@@ -724,12 +738,12 @@ class RenderSflowTrafficGraphs(Task):
         tag = "task_render_sflow_traffic_graphs"
 
     def run(self, *args, **kwargs):
-        ix_id = kwargs.get('ix_id')
+        ix_id = kwargs.get("ix_id")
         if not ix_id:
             raise ValueError("IX ID is required")
 
         ix = ixctl.InternetExchange().object(ix_id)
-        
+
         for duration, resolution, suffix in self.periods:
             self.render_graph(ix, duration, resolution, suffix)
 
@@ -742,24 +756,26 @@ class RenderSflowTrafficGraphs(Task):
             ix_id=ix.id,
             step=resolution,
             start=start_time,
-            end=end_time
+            end=end_time,
         )
 
         # Process the data
         data = []
         for metric in result.data.result:
-            metric_name = metric.metric['metric']
+            metric_name = metric.metric["metric"]
             for value in metric.values:
                 timestamp, val = value
-                existing = next((item for item in data if item['timestamp'] == timestamp), None)
+                existing = next(
+                    (item for item in data if item["timestamp"] == timestamp), None
+                )
                 if existing:
                     existing[metric_name] = float(val)
                 else:
-                    data_point = {'timestamp': int(timestamp)}
+                    data_point = {"timestamp": int(timestamp)}
                     data_point[metric_name] = float(val)
                     data.append(data_point)
 
-        data.sort(key=lambda x: x['timestamp'])
+        data.sort(key=lambda x: x["timestamp"])
 
         # Render the graph
         png_data = render_graph(
@@ -827,11 +843,14 @@ class AuditCtlIXTrafficReceived(Task):
             ix = ixctl.InternetExchange().object(ix_id)
             event_id = f"{base_event_id}{ix_id}/{ix.slug}/received"
             virtual_ports = [
-                vp.id for vp in models.VirtualPort.objects.filter(port__id__in=ports)
+                vp for vp in models.VirtualPort.objects.filter(port__id__in=ports)
             ]
+            virtual_ports_ids = [vp.id for vp in virtual_ports]
 
             ix_traffic_data = [
-                traffic for traffic in traffic_data if traffic["id"] in virtual_ports
+                traffic
+                for traffic in traffic_data
+                if traffic["id"] in virtual_ports_ids
             ]
 
             if not ix_traffic_data:
@@ -861,6 +880,8 @@ class AuditCtlIXTrafficReceived(Task):
                 },
             )
 
+            self.process_traffic_threshold_alerts(ix, virtual_ports, ix_traffic_data)
+
         if traffic_data_empty:
             auditctl.Event().create(
                 {
@@ -874,6 +895,78 @@ class AuditCtlIXTrafficReceived(Task):
                     },
                 }
             )
+
+    def process_traffic_threshold_alerts(
+        self,
+        ix: ixctl.InternetExchangeObject,
+        virtual_ports: list[models.VirtualPort],
+        ix_traffic_data: list[dict],
+    ):
+        """
+        Process the traffic threshold alert notification
+        for each traffic data per virtual port
+        """
+        ixctl_traffic_alert_config = ixctl.TrafficAlertConfig()
+        traffic_alert_config_objects = list(
+            ixctl_traffic_alert_config.objects(ix=ix.id)
+        )
+
+        try:
+            traffic_alert_config = traffic_alert_config_objects[0]
+        except IndexError:
+            log.debug(f"No traffic alert config for IX {ix.id}")
+            return
+
+        if not traffic_alert_config.traffic_level:
+            log.debug(f"Traffic alert config disabled for IX {ix.id}")
+            return
+
+        ixctl_member = ixctl.InternetExchangeMember()
+        ixctl_traffic_alert_email = ixctl.TrafficAlertEmail()
+        auditctl_event = auditctl.Event()
+        aaactl_poc = aaactl.PointOfContact()
+        pdbctl_ix = pdbctl.InternetExchange()
+        pdbctl_network_contact = pdbctl.NetworkContact()
+        peerctl_port_info = peerctl.PortInfo()
+        members = list(self.ixctl_member.objects(ix=ix.id))
+
+        traffic_threshold_alerts = TrafficThresholdAlerts(
+            org=self.org,
+            metrics=make_metrics(),
+            ix=ix,
+            members=members,
+            traffic_alert_config=traffic_alert_config,
+            member_traffic_alert_notification=MemberTrafficAlertNotification(
+                org=self.org,
+                ixctl_traffic_alert_email=ixctl_traffic_alert_email,
+                auditctl_event=auditctl_event,
+                aaactl_poc=aaactl_poc,
+                ixctl_member=ixctl_member,
+                ix=ix,
+                pdbctl_network_contact=pdbctl_network_contact,
+            ),
+            operator_traffic_alert_notification=OperatorTrafficAlertNotification(
+                org=self.org,
+                ixctl_traffic_alert_email=ixctl_traffic_alert_email,
+                auditctl_event=auditctl_event,
+                aaactl_poc=aaactl_poc,
+                pdbctl_ix=pdbctl_ix,
+                ix=ix,
+            ),
+            peerctl_port_info=peerctl_port_info,
+        )
+
+        for virtual_port in virtual_ports:
+            for traffic_data in ix_traffic_data:
+                if traffic_data.get("id") == virtual_port.id:
+                    traffic_threshold_alerts.process_traffic_threshold_alerts(
+                        virtual_port=virtual_port,
+                        traffic=traffic_data.get("bps_in"),
+                    )
+                    traffic_threshold_alerts.process_traffic_threshold_alerts(
+                        virtual_port=virtual_port,
+                        traffic=traffic_data.get("bps_out"),
+                    )
 
 
 @register
@@ -939,4 +1032,388 @@ class AuditCtlIXTrafficProcessed(Task):
                     ]
                 },
             },
+        )
+
+
+class TrafficAlertNotificationBase:
+    """
+    Traffic Alert Notification Base
+    """
+
+    def __init__(
+        self,
+        org,
+        ixctl_traffic_alert_email: ixctl.TrafficAlertEmail,
+        auditctl_event: auditctl.Event,
+        aaactl_poc: aaactl.PointOfContact,
+        ix: ixctl.InternetExchangeObject,
+    ):
+        self.org = org
+        self.aaactl_poc = aaactl_poc
+        self.ixctl_traffic_alert_email = ixctl_traffic_alert_email
+        self.auditctl_event = auditctl_event
+        self.ix = ix
+
+    @property
+    def alert_email_type(self) -> str:
+        """
+        The email type for the email notification i.e. 'traffic_alert_ix', 'traffic_alert_net'
+        Used to get the email type
+        """
+        raise NotImplementedError("You must set the alert email type.")
+
+    @property
+    def alert_service_type(self) -> str:
+        """
+        The service type for the notification i.e. 'ixctl', 'peerctl'
+        """
+        raise NotImplementedError("You must set the alert service type.")
+
+    def get_pdb_email_notification_recepients(
+        self, virtual_port: models.VirtualPort
+    ) -> list[str] | None:
+        """
+        Gets the email recipients from pdb
+        """
+        return
+
+    def get_poc_email_notification_recepients(self) -> list[str] | None:
+        """
+        Gets the email recipients from aaactl point of contact
+        """
+        try:
+            poc = list(
+                self.aaactl_poc.objects(
+                    org=self.org.slug,
+                    type="notifications",
+                    delivery_type="email",
+                    status="ok",
+                )
+            )[0]
+        except IndexError:
+            return None
+
+        services = poc.config.get("services")
+        if isinstance(services, list) and self.alert_service_type in services:
+            return poc.config.get("recipients")
+        elif services is None:
+            return poc.config.get("recipients")
+        return
+
+    def send_notification(
+        self,
+        notification_type: str,
+        recipients: list[str],
+        member: ixctl.InternetExchangeMemberObject,
+    ) -> None:
+        """
+        Sends the notification depending on the notification type
+        """
+        if notification_type == "email":
+            traffic_alert_email = self.get_traffic_alert_email(member)
+            if not traffic_alert_email:
+                log.exception(
+                    f"Unable to obtain suitable contact point for IX operator traffic alerts. ({self.ix.name} #{self.ix.id})"
+                )
+                return
+            self.send_email(recipients, traffic_alert_email)
+
+    def get_traffic_alert_email(self, member: ixctl.InternetExchangeMemberObject):
+        """
+        Gets the traffic alert email from ixctl
+        """
+        return self.ixctl_traffic_alert_email.get_traffic_alert_email(
+            ix_id=self.ix.id, email_type=self.alert_email_type, member_id=member.id
+        )
+
+    def send_email(
+        self, recipients: list[str], traffic_alert_email: ixctl.TrafficAlertEmailObject
+    ) -> None:
+        """
+        Sends an email via auditctl
+        """
+        event_id = f"v0.1/{self.org.slug}/notification/traffic_alert"
+        self.auditctl_event.create(
+            {
+                "org": self.org.slug,
+                "object_id": event_id,
+                "status": "ok",
+                "source": "devicectl",
+                "data": {
+                    "components": [
+                        {
+                            "id": "",
+                            "kind": "email",
+                            "subject": traffic_alert_email.subject,
+                            "message": traffic_alert_email.message,
+                            "recipients": recipients,
+                        }
+                    ]
+                },
+            },
+        )
+
+    def get_recipients(self, virtual_port: models.VirtualPort) -> list[str] | None:
+        """
+        Gets the nofication recipients first from the aaactl poc
+        if not found then gets it from pdb
+        """
+        recipients = self.get_poc_email_notification_recepients()
+        if not recipients:
+            recipients = self.get_pdb_email_notification_recepients(virtual_port)
+        return recipients
+
+    def process_notification(
+        self,
+        virtual_port: models.VirtualPort,
+        member: ixctl.InternetExchangeMemberObject,
+    ) -> None:
+        """
+        This is the main method that processes the notification
+        Functions include
+            - getting the recipients
+            - sending the notification
+            - updating the notification fields of the virtual ports
+        """
+        recipients = self.get_recipients(virtual_port)
+        if not recipients:
+            log.exception(
+                f"No recipients in traffic alert contact point for IX. ({self.ix.name} #{self.ix.id})"
+            )
+            return
+        self.send_notification(
+            notification_type="email", recipients=recipients, member=member
+        )
+
+
+class OperatorTrafficAlertNotification(TrafficAlertNotificationBase):
+    """
+    Sends Traffic Alert Notification for IX Operators
+    """
+
+    def __init__(
+        self,
+        org,
+        ixctl_traffic_alert_email: ixctl.TrafficAlertEmail,
+        auditctl_event: auditctl.Event,
+        aaactl_poc: aaactl.PointOfContact,
+        pdbctl_ix: pdbctl.InternetExchange,
+        ix: ixctl.InternetExchangeObject,
+    ):
+        super().__init__(
+            org=org,
+            ixctl_traffic_alert_email=ixctl_traffic_alert_email,
+            auditctl_event=auditctl_event,
+            aaactl_poc=aaactl_poc,
+            ix=ix,
+        )
+        self.pdbctl_ix = pdbctl_ix
+
+    @property
+    def alert_email_type(self) -> str:
+        return "traffic_alert_ix"
+
+    @property
+    def alert_service_type(self) -> str:
+        return "ixctl"
+
+    def get_pdb_email_notification_recepients(
+        self, virtual_port: models.VirtualPort
+    ) -> list[str] | None:
+        data = self.pdbctl_ix.object(id=self.ix.pdb_id)
+        if not data:
+            log.debug(f"No recepient found in pdb for IX {self.ix.id}.")
+            return
+        return [data.tech_email] if data.tech_email else None
+
+
+class MemberTrafficAlertNotification(TrafficAlertNotificationBase):
+    """
+    Sends Traffic Alert Notification for IX Members
+    """
+
+    def __init__(
+        self,
+        org,
+        ixctl_traffic_alert_email: ixctl.TrafficAlertEmail,
+        auditctl_event: auditctl.Event,
+        aaactl_poc: aaactl.PointOfContact,
+        ixctl_member: ixctl.InternetExchangeMember,
+        ix: ixctl.InternetExchangeObject,
+        pdbctl_network_contact: pdbctl.NetworkContact,
+    ):
+        super().__init__(
+            org=org,
+            ixctl_traffic_alert_email=ixctl_traffic_alert_email,
+            auditctl_event=auditctl_event,
+            aaactl_poc=aaactl_poc,
+            ix=ix,
+        )
+        self.ixctl_member = ixctl_member
+        self.pdbctl_network_contact = pdbctl_network_contact
+
+    @property
+    def alert_email_type(self) -> str:
+        return "traffic_alert_net"
+
+    @property
+    def alert_service_type(self) -> str:
+        return "peerctl"
+
+    def get_pdb_email_notification_recepients(
+        self, virtual_port: models.VirtualPort
+    ) -> list[str] | None:
+        recipients = None
+        try:
+            asn = list(self.ixctl_member.objects(ports=[virtual_port.id]))[0].asn
+            network_contacts = self.pdbctl_network_contact.objects(asn=asn)
+            for network_contact in network_contacts:
+                if network_contact.role == "Technical":
+                    return [network_contact.email]
+        except IndexError:
+            log.debug(f"No recepient found in pdb for IX {self.ix.id}.")
+        return recipients
+
+
+class TrafficThresholdAlerts:
+    """
+    Handles Traffic Threshold Alerts
+    `process_traffic_threshold_alerts` being the main function
+    """
+
+    def __init__(
+        self,
+        org,
+        metrics: Metrics,
+        ix: ixctl.InternetExchangeObject,
+        members: list[ixctl.InternetExchangeMemberObject],
+        traffic_alert_config: ixctl.TrafficAlertConfigObject,
+        member_traffic_alert_notification: MemberTrafficAlertNotification,
+        operator_traffic_alert_notification: OperatorTrafficAlertNotification,
+        peerctl_port_info: peerctl.PortInfo,
+    ):
+        self.org = org
+        self.metrics = metrics
+        self.member_traffic_alert_notification = member_traffic_alert_notification
+        self.operator_traffic_alert_notification = operator_traffic_alert_notification
+        self.ix = ix
+        self.peerctl_port_info = peerctl_port_info
+        self.members = members
+        self.traffic_alert_config = traffic_alert_config
+
+        self.port_bandwidth = sum([member.speed for member in self.members])
+
+    def process_traffic_threshold_alerts(
+        self, virtual_port: models.VirtualPort, traffic: int
+    ) -> None:
+        """
+        This is the main method that processes the traffic threshold alerts
+            - Gets traffic alert config and uses that to process the alert
+            - Calculates the threshold and determines whether to send a notification
+        """
+        threshold_bandwidth = (
+            self.traffic_alert_config.traffic_level / 100
+        ) * self.port_bandwidth
+        counter_threshold = self.traffic_alert_config.time_period / (
+            self.ix.traffic_poll_time // 60
+        )
+
+        if traffic > threshold_bandwidth:
+            virtual_port.capacity_alert += 1
+            virtual_port.save()
+            self.log_traffic_stats_to_time_series(
+                virtual_port=virtual_port, at_capacity=1
+            )
+
+        elif traffic < threshold_bandwidth and virtual_port.capacity_alert != 0:
+            virtual_port.capacity_alert = 0
+            virtual_port.save()
+            self.log_traffic_stats_to_time_series(
+                virtual_port=virtual_port, at_capacity=0
+            )
+
+        if virtual_port.capacity_alert >= counter_threshold:
+            virtual_port.at_capacity = datetime.now()
+            virtual_port.save()
+            self.send_traffic_alert_notification(virtual_port)
+
+    def send_traffic_alert_notification(self, virtual_port: models.VirtualPort) -> None:
+        """
+        Sends traffic alert notification
+        Checks for both operator and member notifications
+        """
+        if self.traffic_alert_config.operator_emails and self.can_send_ix_notification(
+            virtual_port=virtual_port
+        ):
+            for member in self.members:
+                self.operator_traffic_alert_notification.process_notification(
+                    virtual_port=virtual_port,
+                    member=member,
+                )
+            virtual_port.capacity_notified_ix = datetime.now()
+            virtual_port.save()
+
+        if (
+            self.traffic_alert_config.member_emails
+            and self.can_send_member_notification(virtual_port=virtual_port)
+        ):
+            for member in self.members:
+                if self.member_activated_threshold_alerts(member):
+                    self.member_traffic_alert_notification.process_notification(
+                        virtual_port=virtual_port,
+                        member=member,
+                    )
+            virtual_port.capacity_notified_net = datetime.now()
+            virtual_port.save()
+
+    def can_send_ix_notification(self, virtual_port: models.VirtualPort):
+        if not virtual_port.capacity_notified_ix:
+            return True
+
+        next_alert_time = virtual_port.capacity_notified_ix + timedelta(
+            days=self.traffic_alert_config.operator_emails_max_frequency
+        )
+        return datetime.now() >= next_alert_time
+
+    def can_send_member_notification(self, virtual_port: models.VirtualPort):
+        if not virtual_port.capacity_notified_net:
+            return True
+
+        next_alert_time = virtual_port.capacity_notified_net + timedelta(
+            days=self.traffic_alert_config.operator_emails_max_frequency
+        )
+        return datetime.now() >= next_alert_time
+
+    def member_activated_threshold_alerts(
+        self, member: ixctl.InternetExchangeMemberObject
+    ):
+        """
+        Checks that the member has activated a threshold notification alert
+        """
+        port_info_objects = list(
+            self.peerctl_port_info.objects(ref_id=f"ixctl:{member.id}")
+        )
+        if not port_info_objects:
+            return False
+        return port_info_objects[0].traffic_threshold_alert
+
+    def log_traffic_stats_to_time_series(
+        self, virtual_port: models.VirtualPort, at_capacity: int
+    ) -> None:
+        """
+        Logs the traffic stats to time series db
+        """
+        self.metrics.write(
+            measurement="traffic_stats",
+            tags={
+                "ctl_org_id": self.org.remote_id,
+                "ctl_org": self.org.slug,
+                "ctl_port_id": virtual_port.id,
+                "ctl_ix_id": self.ix.id,
+                "ctl_device_id": virtual_port.device.id,
+            },
+            fields={
+                "at_capacity": at_capacity,
+            },
+            timestamp=datetime.now(),
         )

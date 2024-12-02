@@ -6,10 +6,15 @@ from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
+from fullctl.django.inet.validators import validate_ip4_interface, validate_ip6_interface
 from rest_framework import serializers
 
 import django_devicectl.models.devicectl as models
 from django_devicectl.rest.serializers.devicectl import Metric
+import django_devicectl.models.port_automation_tasks as port_automation_tasks
+
+import structlog
+logger = structlog.getLogger(__name__)
 
 Serializers, register = serializer_registry()
 
@@ -162,6 +167,8 @@ class Port(ModelSerializer):
     )
     device = serializers.SerializerMethodField()
     physical_ports = serializers.SerializerMethodField()
+    capacity_alert = serializers.SerializerMethodField()
+    at_capacity = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Port
@@ -183,6 +190,8 @@ class Port(ModelSerializer):
             "virtual_port_description",
             "virtual_port_macaddr_set",
             "physical_ports",
+            "capacity_alert",
+            "at_capacity",
         ]
 
     def get_org_id(self, port):
@@ -219,6 +228,12 @@ class Port(ModelSerializer):
 
             return PhysicalPort(instance=physical_ports, many=True).data
         return None
+
+    def get_capacity_alert(self, port):
+        return port.virtual_port.capacity_alert
+
+    def get_at_capacity(self, port):
+        return port.virtual_port.at_capacity
 
     @property
     def devices(self):
@@ -331,6 +346,7 @@ class PhysicalPort(ModelSerializer):
             "device_id",
             "device_name",
             "metric",
+            "meta",
         ]
 
     @staticmethod
@@ -360,6 +376,156 @@ class PhysicalPort(ModelSerializer):
             return PhysicalPort._filter_dict_by_key_substring(metric, obj.name)
         except models.DeviceMetric.DoesNotExist:
             return {"Warning: ": "No metrics available for this interface."}
+
+
+@register
+class PhysicalPortAssignment(serializers.Serializer):
+    ref_tag = "physical_port_assignment"
+
+    physical_port = serializers.PrimaryKeyRelatedField(
+        queryset=models.PhysicalPort.objects.all()
+    )
+    port = serializers.PrimaryKeyRelatedField(
+        queryset=models.Port.objects.all()
+    )
+
+    class Meta:
+        fields = ["port"]
+
+    def validate(self, data):
+        physical_port = data["physical_port"]
+        port = data["port"]
+
+        if port.virtual_port.logical_port.instance_id != physical_port.logical_port.instance_id:
+            raise serializers.ValidationError(
+                "Port and Physical Port must belong to the same organization"
+            )
+
+        return data
+
+@register
+class PhysicalPortUnassignment(PhysicalPortAssignment):
+
+    ref_tag = "physical_port_unassignment"
+
+    def validate(self, data):
+        # when un assigning ensure that the physical port is actually
+        # assigned to the provided port
+
+        if not data["physical_port"].logical_port_id == data["port"].virtual_port.logical_port_id:
+            raise serializers.ValidationError(
+                "Physical port is not assigned to the provided port"
+            )
+
+        return data
+
+@register
+class CreateDevicePort(serializers.Serializer):
+    ref_tag = "create_device_port"
+
+    instance = serializers.IntegerField()
+    name = serializers.CharField()
+    ports = serializers.JSONField()
+
+    class Meta:
+        fields = ["instance", "name", "ports"]
+
+    @transaction.atomic
+    def create(self, validated_data):
+        logger.debug(f"CreateDevicePort::create() {validated_data=}")
+
+        created_ports = []
+
+        instance = models.Instance.objects.get(id=validated_data["instance"])
+        name = validated_data["name"]
+        ports = validated_data["ports"]
+
+        try:
+            # Create a logical port
+            # TODO <sergio>: name pattern
+            logical_port = models.LogicalPort.objects.create(
+                instance_id=instance.id,
+                name=f"lp:{name}"
+            )
+
+            assigned_ports = []
+            # Assign logical port to physical ports from request
+            for p in ports:
+                physical_port = models.PhysicalPort.objects.filter(
+                    id=p
+                ).first()
+                physical_port.logical_port_id = logical_port.id
+                physical_port.save()
+                assigned_ports.append(physical_port)
+
+            # Create a virtual port
+            # TODO <sergio>: name pattern
+            virtual_port = models.VirtualPort.objects.create(
+                name=f"vp:{name}",
+                logical_port=logical_port,
+                vlan_id=0,
+            )
+
+            # Create a port
+            # port is already auto created when virtual port is created,
+            # more info signals.py, so here we only have to set the name
+            # TODO <sergio>: name pattern
+            port, port_created = models.Port.objects.get_or_create(
+                virtual_port=virtual_port
+            )
+            if port_created or not port.name:
+                # TODO <sergio>: port id as autoincrement name
+                port.name = f"{name}{port.id}"
+                port.save()
+                created_ports.append(port)
+
+                # append the port id do the names of vp and lp
+                virtual_port.name = f"{name}{port.id}"
+                virtual_port.save()
+
+                logical_port.name = f"{name}{port.id}"
+                logical_port.save()
+
+            port_automation_tasks.AssignPort.create_task(
+                org=instance.org,
+                physical_ports=assigned_ports,
+                port=port,
+            )
+
+
+        except Exception:
+            logger.exception("Error creating device port")
+
+        return port
+
+@register
+class SetIpAddresses(serializers.Serializer):
+
+    ref_tag = "set_ip_addresses"
+
+    virtual_port = serializers.PrimaryKeyRelatedField(
+        queryset=models.VirtualPort.objects.all()
+    )
+    ipaddr4 = serializers.CharField(required=False, allow_null=True, validators=[lambda x: validate_ip4_interface(x) if x else x])
+    ipaddr6 = serializers.CharField(required=False, allow_null=True, validators=[lambda x: validate_ip6_interface(x) if x else x])
+
+    class Meta:
+        fields = ["virtual_port", "ipaddr4", "ipaddr6"]
+
+
+    def save(self):
+        virtual_port = self.validated_data["virtual_port"]
+        ipaddr4 = self.validated_data.get("ipaddr4")
+        ipaddr6 = self.validated_data.get("ipaddr6")
+
+        port_info = virtual_port.port.port_info
+
+        port_info.ip_address_4 = ipaddr4
+        port_info.ip_address_6 = ipaddr6
+
+        port_info.save()
+
+        return port_info
 
 
 @register
@@ -409,6 +575,8 @@ class RequestDummyPorts(serializers.Serializer):
                     logical_port=device.physical_ports.first().logical_port,
                     vlan_id=0,
                 )
+
+
 
                 port, port_created = models.Port.objects.get_or_create(
                     virtual_port=virtual_port

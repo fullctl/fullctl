@@ -31,6 +31,10 @@ $ctl.application.Devicectl = $tc.extend(
         return new $ctl.application.Devicectl.VirtualPorts();
       });
 
+      this.tool("unassigned_physical_ports", () => {
+        return new $ctl.application.Devicectl.PhysicalPorts();
+      });
+
       $(this.$c.toolbar.$e.button_create_facility).click(() => {
         fullctl.devicectl.page('facilities');
         fullctl.devicectl.$t.settings.create_facility();
@@ -82,6 +86,7 @@ $ctl.application.Devicectl = $tc.extend(
       $('#ports-tab').on('show.bs.tab', () => {
         $('[data-element=button_create_facility]').hide();
         $("#allports").append($('[data-component=virtual_ports]'));
+        $("#allports").append($('[data-component=physical_ports]'));
       });
 
       $('#tab-overview').on('show.bs.tab', () => {
@@ -174,6 +179,7 @@ $ctl.application.Devicectl.DeviceSelect = $tc.extend(
 
     sync : function() {
       $ctl.devicectl.$t.virtual_ports.sync();
+      $ctl.devicectl.$t.unassigned_physical_ports.sync();
       $ctl.devicectl.$t.device.show_device(this.element.val());
     },
 
@@ -1193,15 +1199,6 @@ $ctl.application.Devicectl.PhysicalPorts = $tc.extend(
       })
 
       this.$w.list.formatters.row = (row, data) => {
-        row.find('a[data-action="edit_physical_port"]').click(() => {
-          var physical_port = row.data("apiobject");
-          new $ctl.application.Devicectl.ModalPhysicalPort(physical_port);
-        }).each(function () {
-          if (!grainy.check(data.grainy + ".?", "u")) {
-            $(this).hide()
-          }
-        });
-
         var button_delete = new twentyc.rest.Button(
           row.find('a[data-element="delete_physical_port"]')
         );
@@ -1218,7 +1215,7 @@ $ctl.application.Devicectl.PhysicalPorts = $tc.extend(
       };
 
       this.$w.list.format_request_url = (url) => {
-        return url.replace("/0/", "/" + fullctl.devicectl.device_id() + "/");
+        return url.replace("/0/", "/" + fullctl.devicectl.device_id() + "/") + "?unassigned=true";
       };
 
       $(this.$w.list).on("api-delete:after", () => {
@@ -1230,11 +1227,7 @@ $ctl.application.Devicectl.PhysicalPorts = $tc.extend(
 
     menu: function () {
       var menu = this.Tool_menu();
-      menu.find('[data-element="button_add_physical_port"]').click(() => {
-        return new $ctl.application.Devicectl.ModalPhysicalPort();
-      });
-
-      $(this.delete_selected_button).insertBefore(menu.find('[data-element="button_add_physical_port"]'));
+      $(this.delete_selected_button).insertBefore(menu.find(".button-anchor"));
       $(this.delete_selected_button).click(() => {
         if (confirm("Remove selected Physical Ports?")) {
           this.$w.list.delete_selected_list();
@@ -1258,11 +1251,8 @@ $ctl.application.Devicectl.PhysicalPorts = $tc.extend(
 
         // v2 - set up view API button
         this.$e.bottom_menu.find('[data-element="button_api_view"]').attr(
-          "href", this.$w.list.base_url.replace('/0/', "/" + fullctl.devicectl.device_id() + "/") + "/" + this.$w.list.action + "?pretty"
+          "href", this.$w.list.base_url.replace('/0/', "/" + fullctl.devicectl.device_id() + "/") + "/" + this.$w.list.action + "?pretty&unassigned=true"
         )
-
-        this.$e.menu.find('[data-element="button_add_physical_port"]').grainy_toggle(namespace, "c")
-
       } else {
         this.hide();
       }
@@ -1320,6 +1310,8 @@ $ctl.application.Devicectl.ModalPhysicalPort = $tc.extend(
 
       $(this.form).on("api-write:success", (ev, e, payload, response) => {
         modal.hide();
+        // refresh the physical ports list
+        $ctl.devicectl.$t.unassigned_physical_ports.$w.list.load();
       });
 
       this.Modal("save_right", title, form.element);
@@ -1454,14 +1446,30 @@ $ctl.application.Devicectl.ModalPortDeletion = $tc.extend(
           physical: []
         }
 
-        if (this.selected_ports.virtual.includes(port.id) || this.initial_selection.virtual.includes(port.id)) {
+        // initial virtual port selection
+        if (
+          // if the port is selected in the selected_ports object, directly
+          this.selected_ports.virtual.includes(port.id) || 
+          this.initial_selection.virtual.includes(port.id)) 
+        {
           selected.virtual = true;
         } 
-        if (this.selected_ports.logical.includes(port.logical_port.id) || this.initial_selection.logical.includes(port.logical_port.id)) {
+
+        // initial logical port selection
+        if (
+          this.selected_ports.logical.includes(port.logical_port.id) || 
+          this.initial_selection.logical.includes(port.logical_port.id)
+        ) {
           selected.logical = true;
         }
+
+        // initial physical port selections
         for (let physical_port of port.physical_ports) {
-          if (this.selected_ports.physical.includes(physical_port.id) || this.initial_selection.physical.includes(physical_port.id)) {
+          if (
+            this.selected_ports.physical.includes(physical_port.id) || 
+            this.initial_selection.physical.includes(physical_port.id) ||
+            this.initial_selection.logical.includes(port.logical_port.id)
+          ) {
             selected.physical.push(physical_port.id);
           }
         }
@@ -1482,8 +1490,7 @@ $ctl.application.Devicectl.ModalPortDeletion = $tc.extend(
           prop("checked", this.selected_ports.logical.includes(port.logical_port.id));
         this.port_list_container.append(row);
 
-        // if a logical port is marked for deletion all virtual ports for that logical port
-        // must be marked for deletion as well
+        // if a logical port is marked for deletion all virtual and physical ports for that logical port must be marked for deletion as well
         checkbox.change(function() {
           let checked = $(this).prop("checked");
           if(checked) {
@@ -1491,9 +1498,15 @@ $ctl.application.Devicectl.ModalPortDeletion = $tc.extend(
               $(`[data-port-id="virtual-${virtual_port_id}"] input[type="checkbox"]`).prop("checked", true).trigger("change").prop("disabled", true);
               
             }
+            for(let physical_port_id of logphy_map[port.logical_port.id]) {
+              $(`[data-port-id="physical-${physical_port_id}"] input[type="checkbox"]`).prop("checked", true).prop("disabled", true);
+            }
           } else {
             for(let virtual_port_id of logvirt_map[port.logical_port.id]) {
-              $(`[data-port-id="virtual-${virtual_port_id}"] input[type="checkbox"]`).prop("disabled", false);
+              $(`[data-port-id="virtual-${virtual_port_id}"] input[type="checkbox"]`).prop("disabled", false)
+            }
+            for(let physical_port_id of logphy_map[port.logical_port.id]) {
+              $(`[data-port-id="physical-${physical_port_id}"] input[type="checkbox"]`).prop("disabled", false).prop("checked", false);
             }
           }
         });
@@ -1534,6 +1547,11 @@ $ctl.application.Devicectl.ModalPortDeletion = $tc.extend(
             }
           
           });
+
+          // if logical port referencing this physical port is checked, disable the checkbox
+          if(selected.logical) {
+            checkbox.prop("disabled", true).prop("checked", true);
+          }
 
           this.port_list_container.append(row);
         }
@@ -1601,11 +1619,12 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
               this.loaded_ports, 
               {
                 virtual: [data.id],
-                logical: [data.logical_port.id]
+                //logical: [data.logical_port.id]
               }
             )
             $(modal).on("port-deletion:success", () => {
               this.$w.list.load();
+              $ctl.devicectl.$t.unassigned_physical_ports.$w.list.load();
             });
           });
         }
@@ -1646,7 +1665,7 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
         selected_rows.each((index, row) => {
           let apiobject = $(row).data("apiobject");
           selected_ports.virtual.push(apiobject.id);
-          selected_ports.logical.push(apiobject.logical_port.id);
+          //selected_ports.logical.push(apiobject.logical_port.id);
         });
         
         // show port deletion modal
@@ -1656,7 +1675,8 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
         );
         $(modal).on("port-deletion:success", () => {
           this.$w.list.load();
-        });
+          $ctl.devicectl.$t.unassigned_physical_ports.$w.list.load();
+      });
       });
 
       menu.find('[data-element="button_add_physical_port"]').click(() => {
@@ -1665,6 +1685,13 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
 
       menu.find('[data-element="button_add_logical_port"]').click(() => {
         return new $ctl.application.Devicectl.ModalLogicalPort();
+      });
+
+      // wire button_refresh_ports
+      menu.find('[data-element="button_refresh_ports"]').click(() => {
+        this.$w.list.load();
+        // also refresh physical ports
+        $ctl.devicectl.$t.unassigned_physical_ports.$w.list.load();
       });
 
       return menu;
@@ -1705,6 +1732,8 @@ $ctl.application.Devicectl.PortsViewInformation = $tc.extend(
     PortsViewInformation: function (data) {
       var title = "Virtual Port - " + data.display_name;
       var element = $('<div>');
+
+      // omg why aren't these html templates
 
       var dataContent = `
         <div class="row mb-3">
@@ -1752,6 +1781,8 @@ $ctl.application.Devicectl.PortsViewInformation = $tc.extend(
         </div>
       `;
 
+      // omg why aren't these html templates
+
       data.physical_ports.forEach(function(physical_port, index){
         dataContent += `
         <div class="modal-header">
@@ -1776,6 +1807,11 @@ $ctl.application.Devicectl.PortsViewInformation = $tc.extend(
         <div class="row mb-3">
             <label class="form-label">Description</label>
             <input type="text" style="background-color: var(--bs-body-bg);" value="${physical_port.description}" readonly/>
+        </div>
+
+        <div class="row mb-3">
+            <label class="form-label">Size (in Gbit/s)</label>
+            <input type="text" style="background-color: var(--bs-body-bg);" value="${physical_port.size}" readonly/>
         </div>
         `;
       })
@@ -1853,12 +1889,14 @@ $ctl.application.Devicectl.ModalVirtualPort = $tc.extend(
 
         physical_ports = form.element.find('.physical-ports-container');
 
+        // omg why aren't these html templates
         virtual_port.physical_ports.forEach(function(port, index){
           var physicaldataContent = `
             <div class="row mb-3">
               <div class="col-12" data-api-submit="yes">
                 <label for="physical_port-name" class="form-label">Physical Port Name</label>
                 <input type="text" class="form-control" id="physical_port-name" name="physical_port_name_${index}" value="${port.display_name}"/>
+                <input type="hidden" name="physical_port_id_${index}" value="${port.id}" />
               </div>
             </div>
             <div class="row mb-3">
@@ -1883,6 +1921,12 @@ $ctl.application.Devicectl.ModalVirtualPort = $tc.extend(
                 <input type="text" class="form-control" id="physical_port-description" name="physical_port_description_${index}" value="${port.description}" />
               </div>
             </div>
+            <div class="row mb-3">
+              <div class="col-12" data-api-submit="yes">
+                <label for="physical_port-size" class="form-label">Size (in Gbit/s)</label>
+                <input type="text" class="form-control" id="physical_port-size" name="physical_port_size_${index}" value="${port.size}" />
+              </div>
+            </div>
             <hr style="border-color: #000; border-width: 2px;">
           `
           physical_ports.append(physicaldataContent)
@@ -1905,7 +1949,6 @@ $ctl.application.Devicectl.ModalVirtualPort = $tc.extend(
         });
 
         $(this.form).on("api-write:before", (ev, e, payload) => {
-          let nameToIdMap = {};
           if (payload.logical_port_name) {
             payload.logical_ports_data = {
               channel: payload.logical_port_channel,
@@ -1917,12 +1960,6 @@ $ctl.application.Devicectl.ModalVirtualPort = $tc.extend(
 
           payload["id"] = virtual_port.id;
           payload.logical_ports_data.id = payload.logical_port;
-
-          if (virtual_port.physical_ports) {
-            virtual_port.physical_ports.forEach(port => {
-              nameToIdMap[port.name] = port.id;
-            });
-          }
 
           delete payload.logical_port_channel;
           delete payload.logical_port_description;
@@ -1944,17 +1981,20 @@ $ctl.application.Devicectl.ModalVirtualPort = $tc.extend(
 
             for (var i = 0; i < iterate_times; i++) {
               payload.physical_ports_data.push({
-                id: nameToIdMap[payload[`physical_port_name_${i}`]],
+                id: payload[`physical_port_id_${i}`],
                 name: payload[`physical_port_name_${i}`],
                 device_name: payload[`physical_port_device_name_${i}`],
                 logical_port: payload[`physical_logical_port_${i}`],
                 description: payload[`physical_port_description_${i}`],
+                size: payload[`physical_port_size_${i}`]
               })
 
               delete payload[`physical_port_name_${i}`];
               delete payload[`physical_port_device_name_${i}`];
               delete payload[`physical_logical_port_${i}`];
               delete payload[`physical_port_description_${i}`];
+              delete payload[`physical_port_size_${i}`];
+              delete payload[`physical_port_id_${i}`];
             }
           } else {
               if (payload["physical_port_name"]) {
@@ -1963,12 +2003,14 @@ $ctl.application.Devicectl.ModalVirtualPort = $tc.extend(
                   device_name: payload["physical_port_device_name"],
                   logical_port: payload["physical_logical_port"],
                   description: payload["physical_port_description"],
+                  size: payload["physical_port_size"]
                 })
               }
               delete payload["physical_port_name"];
               delete payload["physical_port_device_name"];
               delete payload["physical_logical_port"];
               delete payload["physical_port_description"];
+              delete payload["physical_port_size"];
           }
 
         });
@@ -1976,6 +2018,7 @@ $ctl.application.Devicectl.ModalVirtualPort = $tc.extend(
 
       $(this.form).on("api-write:success", (ev, e, payload, response) => {
         $ctl.devicectl.$t.virtual_ports.$w.list.load();
+        $ctl.devicectl.$t.unassigned_physical_ports.$w.list.load();
         modal.hide();
       });
 
