@@ -64,6 +64,7 @@ class Device(DataViewSet):
         ("port", "physical_ports__logical_port__virtual_ports__port__in"),
         ("facility", "facility_id"),
         ("facility_slug", "facility__slug"),
+        ("facility_slugs", "facility__slug__in"),
         ("device", "physical_ports__device_id"),
     ]
     autocomplete = "name"
