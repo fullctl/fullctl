@@ -81,7 +81,18 @@ def get_dummy_peer_data(net):
                 "max_prefixes": 32,
                 "import_policy": "ImportPolicy",
                 "export_policy": "ExportPolicy",
-            }
+            },
+            {
+                "name": "FooBar Inc",
+                "peer_as": 1111,
+                "peer_type": "external",
+                "neighbor_address": "192.178.16.0",
+                "local_as": net.asn,
+                "auth_password": "",
+                "max_prefixes": 32,
+                "import_policy": "ImportPolicy",
+                "export_policy": "ExportPolicy",
+            },
         ]
     }
 
@@ -1584,7 +1595,7 @@ class Port(devicectl.Port):
         for ixi_port in ixi_ports:
             if not ixi_port.port_info_object.ref_id:
                 continue
-            
+
             if not ixi_port.port_info_object.ref_ix_id:
                 continue
 
