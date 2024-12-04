@@ -4,6 +4,7 @@ from datetime import datetime
 
 import fullctl.service_bridge.aaactl as aaactl
 import fullctl.service_bridge.auditctl as auditctl
+import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.pdbctl as pdbctl
 import structlog
 from django.conf import settings
@@ -199,6 +200,33 @@ class InternetExchange(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericView
             return BadRequest(serializer.errors)
 
         serializer.save()
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["GET"])
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @grainy_endpoint(namespace="ix.{request.org.permission_id}")
+    def devices(self, request, org, instance, ix, *args, **kwargs):
+        """
+        Retrieve all devices for the exchange based on the linked
+        facilities in ix.config["facilities] which is a comma separated list
+        of devicectl facility slugs.
+        """
+
+        if not ix.facilities:
+            return Response([])
+
+        devices = devicectl.Device().objects(
+            facility_slugs=ix.facilities, org_slug=org.slug
+        )
+
+        # sort by device name
+        devices = sorted(devices, key=lambda x: x.name)
+
+        serializer = Serializers.device(
+            instance=devices,
+            many=True,
+        )
+
         return Response(serializer.data)
 
 
