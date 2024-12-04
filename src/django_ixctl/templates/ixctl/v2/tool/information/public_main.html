@@ -17,9 +17,13 @@
 
             if (localStorage.getItem('theme') === 'light') {
                 document.body.classList.add('light-theme');
-                logo.src = logo.getAttribute('data-light');
+                if (logo.getAttribute('data-light')) {
+                    logo.src = logo.getAttribute('data-light');
+                }
             } else {
-                logo.src = logo.getAttribute('data-dark');
+                if (logo.getAttribute('data-dark')) {
+                    logo.src = logo.getAttribute('data-dark');
+                }
             }
 
             toggleButton.addEventListener('click', function() {
@@ -27,10 +31,14 @@
 
                 if (document.body.classList.contains('light-theme')) {
                     localStorage.setItem('theme', 'light');
-                    logo.src = logo.getAttribute('data-light');
+                    if (logo.getAttribute('data-light')) {
+                        logo.src = logo.getAttribute('data-light');
+                    }
                 } else {
                     localStorage.removeItem('theme');
-                    logo.src = logo.getAttribute('data-dark');
+                    if (logo.getAttribute('data-dark')) { 
+                        logo.src = logo.getAttribute('data-dark');
+                    }
                 }
             });
         });
