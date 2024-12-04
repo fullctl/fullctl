@@ -111,8 +111,6 @@ class InternetExchange(PdbRefModel):
 
     slug = models.SlugField(max_length=64, unique=False, blank=False, null=False)
 
-    facility = models.SlugField(max_length=64, unique=False, blank=True, null=True)
-
     instance = models.ForeignKey(
         Instance, related_name="ix_set", on_delete=models.CASCADE, null=True
     )
@@ -341,6 +339,15 @@ class InternetExchange(PdbRefModel):
             return settings.PORT_SIZES
 
         return self.config.get("port_sizes") or settings.PORT_SIZES
+
+    @property
+    def facilities(self) -> list[str]:
+        # check self.config["facilities"]
+        # if not set, return []
+        if not self.config:
+            return []
+
+        return self.config.get("facilities") or []
 
     def __str__(self):
         return f"{self.name} ({self.id})"

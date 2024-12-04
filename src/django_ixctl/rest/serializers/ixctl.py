@@ -159,7 +159,6 @@ class InternetExchange(ModelSerializer):
             "notes",
             "public_view",
             "graph_traffic_source",
-            "facility",
             "learned_mac_addresses",
             "limit_mac_addresses",
             "traffic_poll_time",
@@ -1250,3 +1249,13 @@ class TemplatePreview(serializers.Serializer):
                 "!!! ERROR !!!\nWhen trying to render the template "
                 f"we encountered the following issue:\n\n{exc}\n\nPlease fix and try again."
             )
+
+
+@register
+class Device(serializers.Serializer):
+    ref_tag = "device"
+    name = serializers.CharField()
+    id = serializers.IntegerField()
+
+    class Meta:
+        fields = ["name", "id"]

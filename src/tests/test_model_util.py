@@ -63,7 +63,7 @@ class TestSetPortFieldsFromSpeed:
         assert (
             member.port_size == 100
         ), "Should use largest available port size for very high speeds"
-        assert member.lag == True, "Should enable LAG when using multiple ports"
+        assert member.lag is True, "Should enable LAG when using multiple ports"
 
     @pytest.mark.parametrize(
         "speed,error_expected",

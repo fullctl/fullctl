@@ -250,7 +250,7 @@
             class="form-control"
             id="device"
             name="device"
-            data-api-base="{% url "proxies-api-devicectl-facility-devices" org_tag=request.org.slug fac_tag="__facility_tag__" %}"
+            data-api-base="{% url "ixctl_api:ix-devices" org_tag=request.org.slug ix_tag="__ix_tag__"  %}"
             >
           </select>
         </span>

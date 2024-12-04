@@ -292,7 +292,7 @@ $ctl.application.Ixctl.ModalCreateIX = $tc.extend(
 $ctl.application.Ixctl.ModalMember = $tc.extend(
   "ModalMember",
   {
-    ModalMember : function(ix_slug, ix_facility, member) {
+    ModalMember : function(ix_slug, member) {
       var modal = this;
       var title = "Add Member";
       var form = this.form = new twentyc.rest.Form(
@@ -300,7 +300,6 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       );
 
       this.member = member;
-      this.ix_facility = ix_facility;
       form.base_url = form.base_url.replace("/default", "/"+ix_slug);
 
       $(this.form).on("payload:after", (ev, payload) => {
@@ -530,14 +529,13 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
 
     init_device_port_select : function(member) {
       const form = this.form;
-      const ix_facility = this.ix_facility;
       const port = member && member.port ? member.port : null;
       const modal = this;
       this.device_select = new twentyc.rest.Select(
         form.element.find('#device')
       );
       this.device_select.format_request_url = (url) => {
-        return url.replace("__facility_tag__", ix_facility);
+        return url.replace("__ix_tag__", fullctl.ixctl.ix_slug());
       };
 
       const device_select = this.device_select;
@@ -1040,7 +1038,7 @@ $ctl.application.Ixctl.Members = $tc.extend(
 
         row.find('a[data-action="edit_member"]').click(() => {
           var member = row.data("apiobject");
-          new $ctl.application.Ixctl.ModalMember($ctl.ixctl.ix_slug(), $ctl.ixctl.ix_object().facility, member);
+          new $ctl.application.Ixctl.ModalMember($ctl.ixctl.ix_slug(), member);
         }).each(function() {
           if(!grainy.check(data.grainy+".?", "u")) {
             $(this).hide();
@@ -1221,7 +1219,7 @@ $ctl.application.Ixctl.Members = $tc.extend(
     menu : function() {
       const menu = this.Tool_menu();
       menu.find('[data-element="button_add_member"]').click(() => {
-        return new $ctl.application.Ixctl.ModalMember($ctl.ixctl.ix_slug(), $ctl.ixctl.ix_object().facility);
+        return new $ctl.application.Ixctl.ModalMember($ctl.ixctl.ix_slug());
       });
 
       // returns a function that will filter the list based on the search term.

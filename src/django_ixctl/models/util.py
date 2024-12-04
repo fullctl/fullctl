@@ -29,14 +29,16 @@ def set_port_fields_from_speed(member, speed: int):
         raise ValueError("Speed must be a positive integer")
 
     speed_in_gb = speed / 1000
-    
+
     # Start from smallest port size
     for size in reversed(port_sizes):  # [1, 10, 100]
         ports_needed = speed_in_gb / size
         # Use this size if:
         # 1. We need exactly 1 port OR
         # 2. We need more than 1 port but less than max_ports AND this is the largest possible size
-        if ports_needed <= 1 or (ports_needed <= max_port_quantity and size >= ports_needed):
+        if ports_needed <= 1 or (
+            ports_needed <= max_port_quantity and size >= ports_needed
+        ):
             member.port_size = size
             member.port_quantity = ceil(ports_needed)
             break

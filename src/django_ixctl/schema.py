@@ -15,6 +15,7 @@ class InternetExchangeMemberMetaData(pydantic.BaseModel):
 
 class InternetExchangeConfig(pydantic.BaseModel):
     port_sizes: list[int] = pydantic.Field(default_factory=list)
+    facilities: list[str] = pydantic.Field(default_factory=list)
 
 
 class IXLanConfig(pydantic.BaseModel):
