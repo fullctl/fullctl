@@ -13,7 +13,18 @@
         $.each(metric, (metric_index, value) => {
           if (metric_index.includes('optics')) {
             const segments = metric_index.split('.');
-            const port = segments[3];
+            const opticsIndex = segments.indexOf('optics');
+            let port = null;
+
+            // The index is added to the metrics if there are more than 1 metrics data
+            // If not it is not added
+            // e.g. ceos00.optics.0.Ethernet1.physical_channels.channel.0.index being index 0
+            // ceos00.optics.1.Ethernet1.physical_channels.channel.1.index being index 1
+            if (isNaN(parseInt(segments[opticsIndex + 1]))) {
+              port = segments[opticsIndex + 1];
+            } else {
+              port = segments[opticsIndex + 2];
+            }
             const metric_data = segments.slice(-2).join(".");
             if (!result[port]) {
               result[port] = {};
