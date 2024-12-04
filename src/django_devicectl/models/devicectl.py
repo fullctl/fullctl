@@ -311,18 +311,32 @@ class Device(ServiceBridgeReferenceModel):
         ip = ipaddress.ip_interface(ip)
 
         try:
+            # retrieve the ip object if it exists
             ip_obj = IPAddress.objects.get(address=ip, instance=self.instance)
-            if (
-                ip_obj.port_info.port.virtual_port.logical_port.physical_ports.first().device_id
-                == self.id
-            ):
+            
+            # if the ip is assigned to a port and that port is connected to this
+            # device already we can simply update the port info of the ip object to be
+            # the new management management port
+            try:
+                ip_already_on_device = (ip_obj.port_info.port.virtual_port.logical_port.physical_ports.first().device_id == self.id)
+            except AttributeError as exc:
+                ip_already_on_device = False
+                logger.error("Error while checking existing ip object (might be orphaned ip)", exc=exc, ip=ip, ip_obj=ip_obj.id, device=str(self))
+
+            if ip_already_on_device:
+                # first set all other port_infos to not be management
                 self.port_infos.update(is_management=False)
+
+                # set the ip's port_info to be the management port and save
                 ip_obj.port_info.is_management = True
                 ip_obj.port_info.save()
                 return
 
         except IPAddress.DoesNotExist:
             pass
+        except Exception as exc:
+            logger.exception("Error while updating existing ip port info", exc=exc, ip=ip, device=str(self))
+            return
 
         management_port = self.management_port
 
