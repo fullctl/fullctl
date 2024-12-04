@@ -54,7 +54,7 @@ def view_instance_load_ix(request, instance, ix_tag, **kwargs):
 
 
 @require_auth()
-@load_instance()
+@load_instance(public=True)
 def public_view_redirect(request, instance, ix_tag, **kwargs):
     try:
         ix = InternetExchange.objects.prefetch_related(
