@@ -388,9 +388,13 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
         else:
             data = sorted(data, key=lambda x: x["ix_name"])
 
-        ix_ids = list({port.get("ix") for port in data})
+        port_ix_map = {
+            port.get("id"): int(port.get("ref_ix_id").split(":")[-1])
+            for port in data
+            if port.get("ref_ix_id")
+        }
+        ix_ids = list(port_ix_map.values())
         port_bgp_stat_map = self.get_port_bgp_stat_data(ix_ids)
-        port_ix_map = {port.get("id"): port.get("ix") for port in data}
         port_traffic_alert_data_map = self.get_port_traffic_alert_data(
             ix_ids, instances, port_ix_map
         )
