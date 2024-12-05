@@ -58,7 +58,21 @@ def get_interface_from_resource(resource: str) -> str:
     split_resource = resource.split(".")
     if not len(split_resource) > 3:
         return resource
-    return split_resource[3]
+
+    # The index is added to the metrics if there are more than 1 metrics data
+    # If not it is not added
+    # e.g. ceos00.optics.0.Ethernet1.physical_channels.channel.0.index being index 0
+    # ceos00.optics.1.Ethernet1.physical_channels.channel.1.index being index 1
+    index = (
+        split_resource.index("optics")
+        if "optics" in resource
+        else split_resource.index("interfaces_counters")
+    )
+    if not split_resource[index + 1].isdigit():
+        port = split_resource[index + 1]
+    else:
+        port = split_resource[index + 2]
+    return port
 
 
 def extract_metric_data_from_ports(ports: dict):
