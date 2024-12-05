@@ -348,3 +348,7 @@ p[data-field="macaddr_set"] {
 .port_is_hot  {
   display: inline-block;
 }
+
+.list-header>.no-sort {
+  height: 32px
+}
