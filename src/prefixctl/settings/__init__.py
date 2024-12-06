@@ -93,7 +93,9 @@ REST_FRAMEWORK = {
 settings_manager.set_option("IRR_IMPORT_FREQUENCY", 3600 * 12)
 
 # PREFIXCTL DOCS
-settings_manager.set_option("PREFIXCTL_DOCS_URL", "https://docs.fullctl.com/prefixctl/PrefixCtl-Definitions/")
+settings_manager.set_option(
+    "PREFIXCTL_DOCS_URL", "https://docs.fullctl.com/prefixctl/PrefixCtl-Definitions/"
+)
 
 # OUTSIDE SERVICES
 
@@ -111,3 +113,24 @@ settings_manager.try_include(env_file)
 
 # TODO combine to log summarry to INFO
 settings.print_debug(f"loaded settings for version {PACKAGE_VERSION} (DEBUG: {DEBUG})")
+
+
+# Settings for prefix_meta app
+# Added here since app is moved into prefixctl
+
+# Maxmind account id
+settings_manager.set_option("MAXMIND_ACCOUNT_ID", "")
+
+# Maxmind API key
+settings_manager.set_option("MAXMIND_API_KEY", "")
+
+# Maxmind database url
+settings_manager.set_option(
+    "MAXMIND_DATABASE_URL", "https://download.maxmind.com/geoip/databases"
+)
+
+# Maxmind database folder name prefix
+settings_manager.set_option("MAXMIND_DATABASE_FOLDER_NAME_PREFIX", "GeoLite2")
+
+# The count per chunk the bulk update operation
+settings_manager.set_option("MAXMIND_BATCH_CHUNK_SIZE", 1000, envvar_type=int)

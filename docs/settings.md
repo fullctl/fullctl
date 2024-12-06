@@ -33,3 +33,14 @@ If `prefix-meta-ripestat` is installed:
 - `RIPESTAT_ROUTINGSTATUS_CACHE_EXPIRY` (default=43200) - RipeStat Routing Status cache in seconds
 - `RIPESTAT_RIRSTATSCOUNTRY_CACHE_EXPIRY` (default=86400) - RipeStat RIR Stats Country cache in seconds
 - `RIPESTAT_RIR_CACHE_EXPIRY` (default=86400) - RipeStat RIR cache in seconds
+
+### Maxmind
+
+Maxmind data is loaded by running a scheduler that runs the `MaxmindLoadDatabaseTask` task
+which pulls Maxmind database and updates the local database.
+
+- `MAXMIND_ACCOUNT_ID` - Maxmind account id
+- `MAXMIND_API_KEY` - Maxmind API key
+- `MAXMIND_DATABASE_URL` - Maxmind database URL
+- `MAXMIND_DATABASE_FOLDER_NAME_PREFIX` - Maxmind database folder name prefix
+- `MAXMIND_BATCH_CHUNK_SIZE` - The count per chunk the bulk update operation
