@@ -331,9 +331,25 @@ class InternetExchangeMember(DataViewSet):
             )
         except models.InternetExchangeMember.MultipleObjectsReturned as ex:
             raise NotFound({"non_field_errors": [str(ex)]})
-        routeserver = models.Routeserver.objects.get(
-            router_id=request.data.get("routeserver_router_id")
-        )
+
+        router_id = request.data.get("routeserver_router_id")
+        routeserver = None
+        org_slug = request.data.get("org_slug")
+
+        routeservers = models.Routeserver.objects.filter(router_id=router_id)
+        for rs in routeservers:
+            if rs.org.slug == org_slug:
+                routeserver = rs
+                break
+        if not routeserver:
+            raise NotFound(
+                {
+                    "non_field_errors": [
+                        f"Routeserver with router id {router_id} for org {org_slug} not found."
+                    ]
+                }
+            )
+
         routeserver_member, _ = models.RouteserverMember.objects.get_or_create(
             ix_member=member, routeserver=routeserver
         )
@@ -412,7 +428,23 @@ class RouteServer(DataViewSet):
     )
     @grainy_endpoint(namespace="service_bridge")
     def set_event_reference(self, request, router_id):
-        routeserver = models.Routeserver.objects.get(router_id=router_id)
+        routeserver = None
+        org_slug = request.data.get("org_slug")
+
+        routeservers = models.Routeserver.objects.filter(router_id=router_id)
+        for rs in routeservers:
+            if rs.org.slug == org_slug:
+                routeserver = rs
+                break
+        if not routeserver:
+            raise NotFound(
+                {
+                    "non_field_errors": [
+                        f"Routeserver with router id {router_id} for org {org_slug} not found."
+                    ]
+                }
+            )
+
         routeserver.event = UUID(request.data.get("event"))
         routeserver.save()
         serializer = self.serializer_class(instance=routeserver)
