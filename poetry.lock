@@ -772,7 +772,7 @@ typing = ["typing-extensions (>=4.12.2)"]
 
 [[package]]
 name = "fullctl"
-version = "1.15.0-rc.26"
+version = "1.15.0-rc.28"
 description = "Core classes and functions for service applications"
 optional = false
 python-versions = "^3.9"
@@ -810,7 +810,7 @@ whitenoise = ">=6"
 type = "git"
 url = "https://github.com/fullctl/fullctl.git"
 reference = "prep-release"
-resolved_reference = "78d82ba59cb2208fff629352044e214ff26797f5"
+resolved_reference = "15cf9191b69df640375fcc8f1bcb3522fc9f4b33"
 
 [[package]]
 name = "future"
