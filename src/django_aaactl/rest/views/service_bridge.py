@@ -279,8 +279,5 @@ class PointOfContact(AaactlDataViewSet):
     queryset = account_models.PointOfContact.objects.all().select_related("org")
     serializer_class = Serializers.poc
 
-    def _create(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
+    def prepare_write_data(self, request):
+        return request.data
