@@ -449,9 +449,11 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
         - key (`int`): port.id
         - value (`dict`): traffic_alert_data
         """
-        traffic_alert_configs = list(ixctl.TrafficAlertConfig().objects(ixs=ix_ids))
-        ixs = list(ixctl.InternetExchange().objects(ids=ix_ids))
-        if not traffic_alert_configs and not ixs:
+        traffic_alert_configs = (
+            list(ixctl.TrafficAlertConfig().objects(ixs=ix_ids)) if ix_ids else []
+        )
+        ixs = list(ixctl.InternetExchange().objects(ids=ix_ids)) if ix_ids else []
+        if not traffic_alert_configs or not ixs:
             return {}
 
         ix_traffic_alert_config_map = {
