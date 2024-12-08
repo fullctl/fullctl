@@ -318,6 +318,8 @@ class BGPSessionStateDataHandler(BaseHandler):
 
     def __call__(self):
         self.heartbeat()
+        id_parts = object_id_to_parts(self.event.object_id)
+        org_slug = id_parts.get("org_tag")
         components = self.event.data.get("components", [])
         member_bridge = ixctl.InternetExchangeMember()
         for component in components:
@@ -326,6 +328,7 @@ class BGPSessionStateDataHandler(BaseHandler):
                 address=component.get("address"),
                 routeserver_router_id=component.get("routeserver_router_id"),
                 event_reference=self.event.id,
+                org_slug=org_slug,
             )
 
 
@@ -340,11 +343,15 @@ class BGPSessionStateAggregateDataHandler(BaseHandler):
 
     def __call__(self):
         self.heartbeat()
+        id_parts = object_id_to_parts(self.event.object_id)
+        org_slug = id_parts.get("org_tag")
         components = self.event.data.get("components", [])
         routeserver = ixctl.Routeserver()
         component = components[0]
         routeserver.set_event_reference(
-            component.get("routeserver_router_id"), self.event.id
+            router_id=component.get("routeserver_router_id"),
+            event_reference=self.event.id,
+            org_slug=org_slug,
         )
 
 
