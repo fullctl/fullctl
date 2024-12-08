@@ -1,12 +1,9 @@
 import json
 
-import pytest
-from django.contrib.auth import authenticate
 from django.urls import reverse
 
 import account.models as models
 from account.models import Organization
-from tests.helpers import assert_expected, strip_api_fields
 from whitelabel_fullctl.models import OrganizationBranding
 
 
@@ -181,3 +178,29 @@ def test_api_update_poc(db, account_objects):
     assert response.status_code == 200
     data = response.json()
     assert data["data"][0]["config"] == config
+
+
+def test_api_create_poc(db, account_objects, settings):
+    api_url = reverse("service_bridge_api:service-bridge-data-poc-list")
+
+    config = {"services": ["ixctl"], "recipients": ["test@test.com", "email@email.com"]}
+    response = account_objects.api_client.post(
+        api_url,
+        data=json.dumps(
+            {
+                "org": account_objects.org.id,
+                "delivery_type": "email",
+                "service": "ixctl",
+                "status": "ok",
+                "config": config,
+                "type": "notifications",
+            }
+        ),
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["data"]) == 1
+    assert data["data"][0]["org"] == account_objects.org.id
+    assert data["data"][0]["config"] == config
+    assert data["data"][0]["status"] == "ok"
