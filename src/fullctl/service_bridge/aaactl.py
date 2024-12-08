@@ -248,7 +248,7 @@ class PointOfContact(Aaactl):
         Arguments:
             data (`dict`) -- The point of contact details
         """
-        return self.post("data/poc/", data=data)
+        return self.post("data/poc/", json=data)
 
     def update_poc(self, poc_id: int, data: dict):
         """
@@ -257,4 +257,4 @@ class PointOfContact(Aaactl):
         Arguments:
             data (`dict`) -- The point of contact details
         """
-        return self.put(f"data/poc/{poc_id}", data=data)
+        return self.put(f"data/poc/{poc_id}", json=data)
