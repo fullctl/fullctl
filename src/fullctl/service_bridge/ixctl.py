@@ -155,6 +155,7 @@ class InternetExchangeMember(Ixctl):
         address: str,
         routeserver_router_id: str,
         event_reference: Union[UUID, str],
+        org_slug: str,
     ):
         """
         Updates the ix members event reference
@@ -164,6 +165,7 @@ class InternetExchangeMember(Ixctl):
             address (`str`) -- the ip address of the ix member, can be either ipv4 or ipv6
             routeserver_router_id (`str`) -- router id of the routeserver i.e. 127.0.0.1
             event_reference (`str`) -- reference to the event id
+            org_slug (`str`) -- the org slug
         """
         return self.put(
             f"data/member/set-event-reference/{asn}/",
@@ -171,6 +173,7 @@ class InternetExchangeMember(Ixctl):
                 "event": str(event_reference),
                 "address": address,
                 "routeserver_router_id": routeserver_router_id,
+                "org_slug": org_slug,
             },
         )
 
@@ -197,17 +200,23 @@ class Routeserver(Ixctl):
         ref_tag = "routeserver"
         data_object_cls = RouteserverObject
 
-    def set_event_reference(self, router_id: str, event_reference: Union[UUID, str]):
+    def set_event_reference(
+        self, router_id: str, event_reference: Union[UUID, str], org_slug: str
+    ):
         """
         Updates the router server's event reference
 
         Arguments:
             router_id (`str`) -- router id i.e. 127.0.0.1
             event_reference (`str`) -- reference to the event id
+            org_slug (`str`) -- the org slug
         """
         return self.put(
             f"data/routeserver/set-event-reference/{router_id}/",
-            json={"event": str(event_reference)},
+            json={
+                "event": str(event_reference),
+                "org_slug": org_slug,
+            },
         )
 
 
