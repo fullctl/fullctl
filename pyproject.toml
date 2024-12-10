@@ -21,7 +21,6 @@ ixctl = "ixctl.cli:main"
 [tool.poetry.dependencies]
 python = "^3.9"
 fullctl = { git = "https://github.com/fullctl/fullctl.git", branch = "prep-release" }
-arouteserver = ">=1.17"
 pydantic = ">=1.10.2"
 markdown = ">=3.6"
 
@@ -57,7 +56,9 @@ tmpl = ">=1"
 
 [tool.poetry.group.tasks]
 optional = true
+
 [tool.poetry.group.tasks.dependencies]
+arouteserver = ">=1.17"
 
 [tool.poetry.plugins."markdown.extensions"]
 pymdgen = "pymdgen.md:Extension"

@@ -42,7 +42,7 @@ FROM $builder_repo:$builder_tag as builder
 COPY pyproject.toml poetry.lock ./
 
 # Need to upgrade pip and wheel within Poetry for all its installs
-RUN poetry install --no-root
+RUN poetry install --no-root --without tasks
 
 COPY Ctl/VERSION Ctl/
 
