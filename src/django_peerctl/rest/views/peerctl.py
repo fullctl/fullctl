@@ -341,35 +341,10 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
 
     @grainy_endpoint(namespace="verified.asn.{asn}.?")
     def list(self, request, asn, *args, **kwargs):
-        filter_device = request.GET.get("device")
         ixi = request.GET.get("ixi")
         load_md5 = request.GET.get("load_md5", False)
 
-        qset = models.PortInfo.objects.filter(
-            net__org=request.org, net__asn=asn, port__gt=0
-        )
-
-        if ixi:
-            # only grab IXI ports
-
-            qset = qset.filter(ref_id__gt=0)
-
-        qset = qset.select_related("net")
-
-        # collect port ids
-
-        port_infos = {int(port_info.port): port_info for port_info in qset}
-
-        port_ids = [int(obj.port) for obj in port_infos.values()]
-
-        instances = models.Port.preload(
-            request.org,
-            asn,
-            port_ids,
-            filter_device=filter_device,
-            load_policies=True,
-            port_infos=port_infos,
-        )
+        instances = self.get_port_instances(asn=asn, request=request)
 
         if ixi:
             models.Port.augment_ix(instances, asn)
@@ -388,25 +363,68 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
         else:
             data = sorted(data, key=lambda x: x["ix_name"])
 
+        return Response(data)
+
+    def get_port_instances(self, asn, request):
+        filter_device = request.GET.get("device")
+        ixi = request.GET.get("ixi")
+
+        qset = models.PortInfo.objects.filter(
+            net__org=request.org, net__asn=asn, port__gt=0
+        )
+
+        if ixi:
+            # only grab IXI ports
+            qset = qset.filter(ref_id__gt=0)
+
+        qset = qset.select_related("net")
+        port_infos = {int(port_info.port): port_info for port_info in qset}
+        port_ids = [int(obj.port) for obj in port_infos.values()]
+
+        return models.Port.preload(
+            request.org,
+            asn,
+            port_ids,
+            filter_device=filter_device,
+            load_policies=True,
+            port_infos=port_infos,
+        )
+
+    @action(detail=False, methods=["GET"])
+    @grainy_endpoint(namespace="verified.asn.{asn}.?")
+    def get_port_stats(self, request, asn, *args, **kwargs):
+        ports = self.get_port_instances(asn=asn, request=request)
         port_ix_map = {
-            port.get("id"): int(port.get("ref_ix_id").split(":")[-1])
-            for port in data
-            if port.get("ref_ix_id")
+            port.id: int(port.port_info_object.ref_ix_id.split(":")[-1])
+            for port in ports
+            if port.port_info_object and port.port_info_object.ref_ix_id
         }
         ix_ids = list(port_ix_map.values())
         port_bgp_stat_map = self.get_port_bgp_stat_data(ix_ids)
         port_traffic_alert_data_map = self.get_port_traffic_alert_data(
-            ix_ids, instances, port_ix_map
+            ix_ids, ports, port_ix_map
         )
 
-        for port in data:
-            key = (port.get("asn"), port.get("ip4"), port.get("ip6"))
-            port["bgp_stat"] = (
-                port_bgp_stat_map.get(key) if port.get("is_route_server_peer") else None
+        data = []
+        for port in ports:
+            key = (
+                port.port_info_object.net.asn if port.port_info_object else port.asn,
+                port.ip_address_4,
+                port.ip_address_6,
             )
-            port["traffic_alert_data"] = port_traffic_alert_data_map.get(port.get("id"))
-
-        return Response(data)
+            data.append(
+                {
+                    "port_id": port.id,
+                    "bgp_stat": (
+                        port_bgp_stat_map.get(key)
+                        if port.is_route_server_peer
+                        else None
+                    ),
+                    "traffic_alert_data": port_traffic_alert_data_map.get(port.id),
+                }
+            )
+        serializer = Serializers.port_stat(instance=data, many=True)
+        return Response(serializer.data)
 
     def get_port_bgp_stat_data(
         self, ix_ids: List[int]
