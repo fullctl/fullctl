@@ -18,7 +18,7 @@
         date_last_at_capacity.setDate(date_last_at_capacity.getDate() + DAYS_SPAN)
 
         // Check alert is triggered in the past {DAYS_SPAN} days
-        if (capacity_alert > 0 && current_date < date_last_at_capacity) {
+        if (capacity_alert > 0 && (!at_capacity || current_date < date_last_at_capacity)) {
             const downtime = Math.round(traffic_poll_time / 60) * capacity_alert;
             let tooltip_data = `Port over ${traffic_level}% utilization for ${downtime} minutes in the past ${DAYS_SPAN} days`;
             const port_is_hot_tooltip = $('<div>');
