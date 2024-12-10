@@ -1,3 +1,4 @@
+from django.core.management import call_command
 from fullctl.django.models import Task
 from fullctl.django.tasks import register
 
@@ -43,3 +44,29 @@ class RsConfGenerate(Task):
             id=routeserver_config_id
         )
         routeserver_config.generate()
+
+
+@register
+class DeleteRevisions(Task):
+
+    """
+    Delete Revisions Task
+    kwargs:
+        - model - The target model - defaults to django_ixctl.RouteserverConfig
+        - keep - The number of records to keep - default to 3
+    """
+
+    class Meta:
+        proxy = True
+
+    class HandleRef:
+        tag = "delete_revisions_task"
+
+    def run(self, *args, **kwargs):
+        """
+        Run deleterevisions command from django-revisions
+        """
+        model = kwargs.get("model", "django_ixctl.RouteserverConfig")
+        keep = kwargs.get("keep", 3)
+        call_command("deleterevisions", model, f"--keep={keep}")
+        return self.output
