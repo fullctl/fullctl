@@ -431,41 +431,49 @@ class Member(
         handlers={"*": {"key": lambda row, idx: row["asn"]}},
     )
     def list(self, request, org, instance, ix, *args, **kwargs):
-        ordering_filter = CaseInsensitiveOrderingFilter(
-            ["name", "asn", "ipaddr4", "ipaddr6", "speed"]
-        )
-
-        queryset = self.get_queryset().select_related("ix", "ix__instance")
-
-        queryset = ordering_filter.filter_queryset(request, queryset, self)
-
-        queryset = filters.InternetExchangeMemberFilter(
-            request.GET, queryset=queryset
-        ).qs
-
+        queryset = self.get_members_queryset(request)
         queryset = queryset.prefetch_related("mac_addresses")
 
         # preload_networks returns a generator, but we need to be able
         # to iterate over it multiple times, so we convert it to a list
         members = list(models.InternetExchangeMember.preload_networks(queryset))
-
         serializer = Serializers.member(
             instance=members, many=True, context={"instance": instance}
         )
+        return Response(serializer.data)
 
+    def get_members_queryset(self, request):
+        ordering_filter = CaseInsensitiveOrderingFilter(
+            ["name", "asn", "ipaddr4", "ipaddr6", "speed"]
+        )
+        queryset = self.get_queryset().select_related("ix", "ix__instance")
+        queryset = ordering_filter.filter_queryset(request, queryset, self)
+        return filters.InternetExchangeMemberFilter(request.GET, queryset=queryset).qs
+
+    @action(detail=False, methods=["GET"])
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @grainy_endpoint(
+        namespace="member.{request.org.permission_id}.{ix.pk}.?",
+        handlers={"*": {"key": lambda row, idx: row["asn"]}},
+    )
+    def get_member_stats(self, request, org, instance, ix, *args, **kwargs):
+        members = [member for member in self.get_members_queryset(request)]
         models.InternetExchangeMember.preload_ports(org, members)
 
         member_bgp_stat_map = self.get_member_bgp_stat_data(members=members)
         member_traffic_alert_data_map = self.get_members_traffic_alert_data(
             members=members
         )
-
-        for member in serializer.data:
-            member["bgp_stat"] = member_bgp_stat_map.get(member.get("id"))
-            member["traffic_alert_data"] = member_traffic_alert_data_map.get(
-                member.get("id")
+        data = []
+        for member in members:
+            data.append(
+                {
+                    "member_id": member.id,
+                    "bgp_stat": member_bgp_stat_map.get(member.id),
+                    "traffic_alert_data": member_traffic_alert_data_map.get(member.id),
+                }
             )
-
+        serializer = Serializers.member_stat(instance=data, many=True)
         return Response(serializer.data)
 
     def get_member_bgp_stat_data(self, members):
