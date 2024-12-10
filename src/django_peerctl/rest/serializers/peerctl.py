@@ -2252,3 +2252,15 @@ class DefaultNetwork(ModelSerializer):
         network = self.validated_data["network"]
 
         return models.Network.set_default_network_for_org(org, network)
+
+
+@register
+class PortStat(serializers.Serializer):
+    ref_tag = "port_stat"
+
+    port_id = serializers.IntegerField()
+    bgp_stat = serializers.DictField()
+    traffic_alert_data = serializers.DictField()
+
+    class Meta:
+        fields = "__all__"
