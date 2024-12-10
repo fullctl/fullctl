@@ -1259,3 +1259,15 @@ class Device(serializers.Serializer):
 
     class Meta:
         fields = ["name", "id"]
+
+
+@register
+class MemberStat(serializers.Serializer):
+    ref_tag = "member_stat"
+
+    member_id = serializers.IntegerField()
+    bgp_stat = serializers.DictField()
+    traffic_alert_data = serializers.DictField()
+
+    class Meta:
+        fields = "__all__"

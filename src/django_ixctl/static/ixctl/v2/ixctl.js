@@ -1024,6 +1024,7 @@ $ctl.application.Ixctl.Members = $tc.extend(
     },
 
     init : function() {
+
       this.widget("list", ($e) => {
         return new $ctl.application.Ixctl.MemberList(
           this.template("list", this.$e.body)
@@ -1053,64 +1054,6 @@ $ctl.application.Ixctl.Members = $tc.extend(
 
         if(!grainy.check(data.grainy, "d")) {
           row.find('a[data-api-method="DELETE"]').hide();
-        }
-
-        if (data.is_rs_peer && data.bgp_stat) {
-          const bgp_stats_v4 = row.find('[data-element="bgp_stat_v4"]');
-          const bgp_stats_v6 = row.find('[data-element="bgp_stat_v6"]');
-          Object.keys(data.bgp_stat).forEach((routeserver, routeserver_index) => {
-            data.bgp_stat[routeserver].forEach((stat, _) => {
-              const {
-                up = false,
-                last_change = "",
-                state = "",
-                routes_imported = 0,
-                routes_exported = 0,
-                address = "",
-                routeserver_hostname = ""
-              } = stat;
-
-              // Tooltip
-              let tooltip_data = `${routeserver_hostname}<br>`;
-              tooltip_data = `${tooltip_data}Session: ${state}<br>`;
-              tooltip_data = `${tooltip_data}Routes Received: ${routes_imported}<br>`;
-              tooltip_data = `${tooltip_data}Routes Advertised: ${routes_exported}<br>`;
-              tooltip_data = `${tooltip_data}${up ? "Up" : "Down"} Since: ${last_change}<br>`;
-              const bgp_stat = $('<div>');
-              bgp_stat.attr("data-bs-toggle", "tooltip")
-                .attr("data-bs-placement", "top")
-                .attr("data-bs-html", true)
-                .attr("title", tooltip_data);
-
-              // Tooltip Container
-              const node = $('<div class="d-flex align-items-center">');
-              node.append($('<span>').text(`RS${routeserver_index + 1}: `));
-              if (up) {
-                node.append($('<span class="icon icon-triangle-fill-up">'));
-                node.addClass("up");
-              } else {
-                node.append($('<span class="icon icon-triangle-fill-down">'));
-                node.addClass("down");
-              }
-              node.append(
-                $('<span class="dotted-underline">').text(
-                  `${routes_imported} / ${routes_exported}`
-                )
-              );
-              bgp_stat.html(node);
-              new bootstrap.Tooltip(bgp_stat);
-              if (address.includes(":")) {
-                 bgp_stats_v6.append(bgp_stat)
-              } else {
-                bgp_stats_v4.append(bgp_stat)
-              }
-            });
-          });
-        }
-
-        if (data.traffic_alert_data) {
-          const port_is_hot = row.find('[data-element="port_is_hot"]');
-          $.fn.show_traffic_alert(data, port_is_hot);
         }
 
         // Initialize port status
@@ -1211,6 +1154,7 @@ $ctl.application.Ixctl.Members = $tc.extend(
 
       $(this.$w.list).on("load:after", () => {
         this.update_counts();
+        this.load_member_stats();
       });
 
       this.initialize_sortable_headers();
@@ -1354,6 +1298,29 @@ $ctl.application.Ixctl.Members = $tc.extend(
         // no exchange exists - hide members tool
         this.hide();
       }
+    },
+
+    load_member_stats: function () {
+      let url = this.$w.list.element.data('api-member-stats');
+
+      $.ajax({
+        url: url.replace("default", $ctl.ixctl.ix_slug())
+      }).done(({data = []}) => {
+        $.each(data, (_, {member_id, bgp_stat, traffic_alert_data}) => {
+          const row = this.$w.list.find_row(member_id);
+          const row_data = row.data('apiobject');
+
+          if (traffic_alert_data) {
+            const port_is_hot = row.find('[data-element="port_is_hot"]');
+            $.fn.show_traffic_alert({traffic_alert_data}, port_is_hot);
+          }
+
+          if (row_data.is_rs_peer && bgp_stat) {
+            $.fn.show_bgp_stat(bgp_stat, row);
+          }
+
+        });
+      });
     }
 
   },
