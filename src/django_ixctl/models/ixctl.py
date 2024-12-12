@@ -1711,7 +1711,17 @@ class EmailTemplate(TemplateModel):
         data = super().get_data()
         capacity_alert = self.context.get("capacity_alert", 0)
         downtime = (self.ix.traffic_poll_time // 60) * capacity_alert
-        traffic_alert_config = TrafficAlertConfig.objects.get(ix=self.ix)
+        try:
+            traffic_alert_config = TrafficAlertConfig.objects.get(ix=self.ix)
+        except TrafficAlertConfig.DoesNotExist:
+            traffic_alert_config = TrafficAlertConfig(
+                ix=self.ix,
+                time_period=100,
+                operator_emails=True,
+                member_emails=True,
+                operator_emails_max_frequency=7,
+                member_emails_max_frequency=30,
+            )
         data.update(
             ix=self.ix,
             downtime=downtime,
