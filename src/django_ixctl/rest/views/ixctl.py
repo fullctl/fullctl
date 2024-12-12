@@ -450,30 +450,26 @@ class Member(
         queryset = ordering_filter.filter_queryset(request, queryset, self)
         return filters.InternetExchangeMemberFilter(request.GET, queryset=queryset).qs
 
-    @action(detail=False, methods=["GET"])
+    @action(detail=False, methods=["GET"], url_path="(?P<pk>[^/.]+)/get-stats")
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
     @grainy_endpoint(
         namespace="member.{request.org.permission_id}.{ix.pk}.?",
         handlers={"*": {"key": lambda row, idx: row["asn"]}},
     )
-    def get_member_stats(self, request, org, instance, ix, *args, **kwargs):
-        members = [member for member in self.get_members_queryset(request)]
-        models.InternetExchangeMember.preload_ports(org, members)
+    def get_member_stats(self, request, org, instance, ix, pk, *args, **kwargs):
+        member = models.InternetExchangeMember.objects.get(id=pk)
+        models.InternetExchangeMember.preload_ports(org, [member])
 
-        member_bgp_stat_map = self.get_member_bgp_stat_data(members=members)
+        member_bgp_stat_map = self.get_member_bgp_stat_data(members=[member])
         member_traffic_alert_data_map = self.get_members_traffic_alert_data(
-            members=members
+            members=[member]
         )
-        data = []
-        for member in members:
-            data.append(
-                {
-                    "member_id": member.id,
-                    "bgp_stat": member_bgp_stat_map.get(member.id),
-                    "traffic_alert_data": member_traffic_alert_data_map.get(member.id),
-                }
-            )
-        serializer = Serializers.member_stat(instance=data, many=True)
+        data = {
+            "member_id": member.id,
+            "bgp_stat": member_bgp_stat_map.get(member.id),
+            "traffic_alert_data": member_traffic_alert_data_map.get(member.id),
+        }
+        serializer = Serializers.member_stat(instance=data)
         return Response(serializer.data)
 
     def get_member_bgp_stat_data(self, members):
