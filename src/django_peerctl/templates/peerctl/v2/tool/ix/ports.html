@@ -3,7 +3,7 @@
     class="marg-top-lg"
     data-api-load="yes"
     data-api-base="{% url "peerctl_api:port-list" asn=selected_asn %}"
-    data-api-port-stats="{% url "peerctl_api:port-get-port-stats" asn=selected_asn %}"
+    data-api-port-stats="{% url "peerctl_api:port-get-port-stats" asn=selected_asn pk="0" %}"
     data-api-port-status="{% url "peerctl_api:port-set-status" asn=selected_asn port_pk="0" %}"
     data-api-metric-base="{% url "peerctl_api:port-ix-metric" asn=selected_asn pk=0 %}"
     data-template="ix_list"

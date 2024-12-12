@@ -390,40 +390,34 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
             port_infos=port_infos,
         )
 
-    @action(detail=False, methods=["GET"])
+    @action(detail=False, methods=["GET"], url_path="(?P<pk>[^/.]+)/get-stats")
     @grainy_endpoint(namespace="verified.asn.{asn}.?")
-    def get_port_stats(self, request, asn, *args, **kwargs):
-        ports = self.get_port_instances(asn=asn, request=request)
-        port_ix_map = {
-            port.id: int(port.port_info_object.ref_ix_id.split(":")[-1])
-            for port in ports
-            if port.port_info_object and port.port_info_object.ref_ix_id
-        }
-        ix_ids = list(port_ix_map.values())
-        port_bgp_stat_map = self.get_port_bgp_stat_data(ix_ids)
+    def get_port_stats(self, request, asn, pk, *args, **kwargs):
+        port = models.Port().object(pk)
+        if "ixctl" not in port.port_info_object.ref_ix_id:
+            return Response({})
+
+        ix_id = int(port.port_info_object.ref_ix_id.split(":")[-1])
+        port_bgp_stat_map = self.get_port_bgp_stat_data(ix_ids=[ix_id])
         port_traffic_alert_data_map = self.get_port_traffic_alert_data(
-            ix_ids, ports, port_ix_map
+            ix_ids=[ix_id],
+            ports=[port],
+            port_ix_map={port.id: ix_id},
         )
 
-        data = []
-        for port in ports:
-            key = (
-                port.port_info_object.net.asn if port.port_info_object else port.asn,
-                port.ip_address_4,
-                port.ip_address_6,
-            )
-            data.append(
-                {
-                    "port_id": port.id,
-                    "bgp_stat": (
-                        port_bgp_stat_map.get(key)
-                        if port.is_route_server_peer
-                        else None
-                    ),
-                    "traffic_alert_data": port_traffic_alert_data_map.get(port.id),
-                }
-            )
-        serializer = Serializers.port_stat(instance=data, many=True)
+        key = (
+            port.port_info_object.net.asn if port.port_info_object else port.asn,
+            port.ip_address_4,
+            port.ip_address_6,
+        )
+        data = {
+            "port_id": port.id,
+            "bgp_stat": (
+                port_bgp_stat_map.get(key) if port.is_route_server_peer else None
+            ),
+            "traffic_alert_data": port_traffic_alert_data_map.get(port.id),
+        }
+        serializer = Serializers.port_stat(instance=data)
         return Response(serializer.data)
 
     def get_port_bgp_stat_data(
