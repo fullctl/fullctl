@@ -460,7 +460,6 @@ class Port(serializers.Serializer):
         return instance.devices[0].__dict__
 
     def get_virtual_port(self, instance):
-        print(dir(instance))
         return getattr(instance, "virtual_port", None)
 
     def get_policy(self, instance, version):

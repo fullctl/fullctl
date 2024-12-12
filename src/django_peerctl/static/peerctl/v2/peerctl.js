@@ -597,6 +597,11 @@ $peerctl.Ix = $tc.extend(
         this.show_graphs();
         this.load_port_stats();
       })
+
+      this.port_ids = [];
+      $(this.$w.list).on("insert:after", (_, row_element, data) => {
+        this.port_ids.push(data.id);
+      });
     },
 
     /**
@@ -673,10 +678,11 @@ $peerctl.Ix = $tc.extend(
     load_port_stats: function () {
       let url = this.$w.list.element.data('api-port-stats');
 
-      $.ajax({
-        url
-      }).done(({data = []}) => {
-        $.each(data, (_, {port_id, bgp_stat, traffic_alert_data}) => {
+      $.each(this.port_ids, (_, port_id) => {
+        $.ajax({
+          url: url.replace("/0/", `/${port_id}/`)
+        }).done(({data = []}) => {
+          const {bgp_stat = null, traffic_alert_data = null} = data[0];
           const row = this.$w.list.find_row(port_id);
           const row_data = row.data('apiobject');
 
@@ -688,7 +694,6 @@ $peerctl.Ix = $tc.extend(
           if (row_data.is_route_server_peer && bgp_stat) {
             $.fn.show_bgp_stat(bgp_stat, row);
           }
-
         });
       });
     }
