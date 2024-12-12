@@ -1157,6 +1157,11 @@ $ctl.application.Ixctl.Members = $tc.extend(
         this.load_member_stats();
       });
 
+      this.member_ids = [];
+      $(this.$w.list).on("insert:after", (_, row_element, data) => {
+        this.member_ids.push(data.id);
+      });
+
       this.initialize_sortable_headers();
     },
 
@@ -1303,10 +1308,11 @@ $ctl.application.Ixctl.Members = $tc.extend(
     load_member_stats: function () {
       let url = this.$w.list.element.data('api-member-stats');
 
-      $.ajax({
-        url: url.replace("default", $ctl.ixctl.ix_slug())
-      }).done(({data = []}) => {
-        $.each(data, (_, {member_id, bgp_stat, traffic_alert_data}) => {
+      $.each(this.member_ids, (_, member_id) => {
+        $.ajax({
+          url: url.replace("default", $ctl.ixctl.ix_slug()).replace("/0/", `/${member_id}/`)
+        }).done(({data = []}) => {
+          const {bgp_stat = null, traffic_alert_data = null} = data[0];
           const row = this.$w.list.find_row(member_id);
           const row_data = row.data('apiobject');
 
@@ -1318,7 +1324,6 @@ $ctl.application.Ixctl.Members = $tc.extend(
           if (row_data.is_rs_peer && bgp_stat) {
             $.fn.show_bgp_stat(bgp_stat, row);
           }
-
         });
       });
     }

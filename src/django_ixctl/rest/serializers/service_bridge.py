@@ -122,8 +122,6 @@ class InternetExchangeMember(ModelSerializer):
                 mac.member.id, []
             ).append(str(mac.address))
 
-        print(self._macaddresses)
-
         return self._macaddresses
 
     def get_macaddr_warnings(self, obj):
