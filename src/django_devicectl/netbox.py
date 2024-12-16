@@ -1,4 +1,5 @@
 import fullctl.service_bridge.netbox as netbox
+from django.db import models as django_models
 from django.utils.translation import gettext_lazy as _
 from fullctl.django.models.concrete.service_bridge import service_bridge_action
 from fullctl.service_bridge.context import service_bridge_context
@@ -364,6 +365,8 @@ def pull(org, *args, **kwargs):
         if netbox_device.primary_ip6:
             device.set_management_ip_address(netbox_device.primary_ip6.address)
 
+        sync_vlan(instance=instance, netbox_device=netbox_device)
+
     # delete devices that no longer exist in netbox
 
     qset_remove = (
@@ -375,6 +378,20 @@ def pull(org, *args, **kwargs):
     qset_remove.delete()
 
     delete_interfaces(instance)
+
+
+def sync_vlan(
+    instance: models.Instance,
+    netbox_device: netbox.DeviceObject,
+    vlan_model: django_models.Model = models.Vlan,
+):
+    vlan, created = vlan_model.objects.get_or_create(
+        reference=str(netbox_device.id), instance=instance
+    )
+    changed = vlan.sync_from_reference(ref_obj=netbox_device)
+
+    if changed or created:
+        vlan.save()
 
 
 def push(org, *args, **kwargs):

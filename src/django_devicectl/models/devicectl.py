@@ -313,15 +313,24 @@ class Device(ServiceBridgeReferenceModel):
         try:
             # retrieve the ip object if it exists
             ip_obj = IPAddress.objects.get(address=ip, instance=self.instance)
-            
+
             # if the ip is assigned to a port and that port is connected to this
             # device already we can simply update the port info of the ip object to be
             # the new management management port
             try:
-                ip_already_on_device = (ip_obj.port_info.port.virtual_port.logical_port.physical_ports.first().device_id == self.id)
+                ip_already_on_device = (
+                    ip_obj.port_info.port.virtual_port.logical_port.physical_ports.first().device_id
+                    == self.id
+                )
             except AttributeError as exc:
                 ip_already_on_device = False
-                logger.error("Error while checking existing ip object (might be orphaned ip)", exc=exc, ip=ip, ip_obj=ip_obj.id, device=str(self))
+                logger.error(
+                    "Error while checking existing ip object (might be orphaned ip)",
+                    exc=exc,
+                    ip=ip,
+                    ip_obj=ip_obj.id,
+                    device=str(self),
+                )
 
             if ip_already_on_device:
                 # first set all other port_infos to not be management
@@ -335,7 +344,12 @@ class Device(ServiceBridgeReferenceModel):
         except IPAddress.DoesNotExist:
             pass
         except Exception as exc:
-            logger.exception("Error while updating existing ip port info", exc=exc, ip=ip, device=str(self))
+            logger.exception(
+                "Error while updating existing ip port info",
+                exc=exc,
+                ip=ip,
+                device=str(self),
+            )
             return
 
         management_port = self.management_port
@@ -1260,7 +1274,6 @@ class IPAddress(ServiceBridgeReferenceModel):
     namespace_instance="port_info.{instance.org.permission_id}.{instance.id}",
 )
 class MacAddress(HandleRefModel):
-
     """
     Describes a MAC address
     """
@@ -1484,3 +1497,69 @@ class DeviceMetric(MetricModel):
         'Metric(demo_device) 1.2 at YYYY-MM-DD'.
         """
         return f"Metric{self.device_name} {self.data} at {self.timestamp}"
+
+
+@reversion.register()
+@grainy_model(
+    namespace="vlan",
+    namespace_instance="vlan.{instance.org.permission_id}.{instance.id}",
+)
+class Vlan(ServiceBridgeReferenceModel):
+    instance = models.ForeignKey(
+        Instance,
+        related_name="vlans",
+        on_delete=models.CASCADE,
+        help_text=_("deviceCtl environment instance"),
+    )
+    facility = models.ForeignKey(
+        Facility,
+        related_name="vlans",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        help_text=_("Device is located in this facility"),
+    )
+    vlan = models.PositiveIntegerField(default=0)
+    name = models.CharField(max_length=255, blank=True, null=True)
+    slug = models.CharField(max_length=255, blank=True, null=True)
+    description = models.CharField(blank=True, null=True)
+    reference = ReferencedObjectCharField(
+        bridge_type="device",
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Remote reference id"),
+        services=[
+            "fullctl.service_bridge.netbox.Device",
+        ],
+    )
+
+    class HandleRef:
+        tag = "vlan"
+
+    class ServiceBridge:
+        map_netbox = {
+            "description": "description",
+            "name": "name",
+            "site.custom_fields.devicectl_id": "facility",
+            "id": "reference",
+        }
+
+    class Meta:
+        db_table = "devicectl_vlan"
+        verbose_name = _("Vlan")
+        verbose_name_plural = _("Vlans")
+        indexes = [
+            models.Index("reference", name="vlan_reference"),
+        ]
+
+    def __str__(self):
+        return f"Vlan({self.id}) {self.name}"
+
+    @property
+    def display_name(self):
+        return self.name
+
+    @property
+    def org(self):
+        return self.instance.org
