@@ -1472,7 +1472,6 @@ class Vlan(CachedObjectMixin, viewsets.GenericViewSet):
 
     @grainy_endpoint(namespace="vlan.{request.org.permission_id}.{vlan_id}")
     @load_object("vlan", models.Vlan, instance="instance", id="vlan_id")
-    @service_bridge_sync(pull="sot")
     def retrieve(self, request, org, instance, vlan, *args, **kwargs):
         serializer = Serializers.vlan(instance=vlan)
         return Response(serializer.data)
