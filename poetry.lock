@@ -76,13 +76,13 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "certifi"
-version = "2024.8.30"
+version = "2024.12.14"
 description = "Python package for providing Mozilla's CA Bundle."
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "certifi-2024.8.30-py3-none-any.whl", hash = "sha256:922820b53db7a7257ffbda3f597266d435245903d80737e34f8a45ff3e3230d8"},
-    {file = "certifi-2024.8.30.tar.gz", hash = "sha256:bec941d2aa8195e248a60b31ff9f0558284cf01a52591ceda73ea9afffd69fd9"},
+    {file = "certifi-2024.12.14-py3-none-any.whl", hash = "sha256:1275f7a45be9464efc1173084eaa30f866fe2e47d389406136d332ed4967ec56"},
+    {file = "certifi-2024.12.14.tar.gz", hash = "sha256:b650d30f370c2b724812bee08008be0c4163b163ddaec3f2546c1caf65f191db"},
 ]
 
 [[package]]
@@ -1848,13 +1848,13 @@ six = ">=1.5"
 
 [[package]]
 name = "python-gitlab"
-version = "5.1.0"
-description = "A python wrapper for the GitLab API"
+version = "5.2.0"
+description = "The python wrapper for the GitLab REST and GraphQL APIs."
 optional = false
 python-versions = ">=3.9.0"
 files = [
-    {file = "python_gitlab-5.1.0-py3-none-any.whl", hash = "sha256:c30cf547392ce66daaaf020839cfb6c15a91b26e2e7054d1b3f1b92e8dd65e7d"},
-    {file = "python_gitlab-5.1.0.tar.gz", hash = "sha256:d5a10dae8328f32fb9214bd3f9dc199b4930cd496f81c9be42a0f8ff338aeb35"},
+    {file = "python_gitlab-5.2.0-py3-none-any.whl", hash = "sha256:aa0136f3377210682970688789c1b510f948b68c4c14d1b873b590335501bd04"},
+    {file = "python_gitlab-5.2.0.tar.gz", hash = "sha256:1fb99d9de78aa93fdc97a106db44f0870cba225ea2064426302db02d14027967"},
 ]
 
 [package.dependencies]
@@ -1900,13 +1900,13 @@ postgresql = ["psycopg2"]
 
 [[package]]
 name = "pyupgrade"
-version = "3.19.0"
+version = "3.19.1"
 description = "A tool to automatically upgrade syntax for newer versions."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "pyupgrade-3.19.0-py2.py3-none-any.whl", hash = "sha256:1364fcae4436a6a236a85960587390ec8a939ad0f65f429346f70a5f201c1489"},
-    {file = "pyupgrade-3.19.0.tar.gz", hash = "sha256:7ed4b7d972ed2788c43994f4a24f949d5bf044342992f3b48e1bed0092ddaa01"},
+    {file = "pyupgrade-3.19.1-py2.py3-none-any.whl", hash = "sha256:8c5b0bfacae5ff30fa136a53eb7f22c34ba007450d4099e9da8089dabb9e67c9"},
+    {file = "pyupgrade-3.19.1.tar.gz", hash = "sha256:d10e8c5f54b8327211828769e98d95d95e4715de632a3414f1eef3f51357b9e2"},
 ]
 
 [package.dependencies]
