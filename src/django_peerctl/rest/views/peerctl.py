@@ -407,8 +407,8 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
 
         key = (
             port.port_info_object.net.asn if port.port_info_object else port.asn,
-            port.ip_address_4,
-            port.ip_address_6,
+            port.ip_address_4.split("/")[0],
+            port.ip_address_6.split("/")[0],
         )
         data = {
             "port_id": port.id,
