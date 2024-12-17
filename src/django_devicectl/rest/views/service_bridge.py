@@ -622,3 +622,19 @@ class PhysicalPort(DataViewSet):
         )
 
         return Response(serializer.data)
+
+
+@route
+class Vlan(DataViewSet):
+    path_prefix = "/data"
+    allowed_http_methods = ["GET"]
+    valid_filters = [
+        ("id", "id"),
+        ("ids", "id__in"),
+        ("org", "instance__org__remote_id"),
+        ("org_slug", "instance__org__slug"),
+    ]
+    allow_unfiltered = True
+
+    queryset = models.Vlan.objects.filter(status="ok")
+    serializer_class = Serializers.vlan

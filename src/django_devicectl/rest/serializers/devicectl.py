@@ -718,3 +718,21 @@ class Metric(ModelSerializer):
         #         for x, y in flat_data.items()
         #     ]
         #     return kv
+
+
+@register
+class Vlan(ModelSerializer):
+    ref_tag = "vlan"
+
+    facility_name = serializers.SerializerMethodField()
+    facility_slug = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Vlan
+        fields = "__all__"
+
+    def get_facility_name(self, obj):
+        return obj.facility.name if obj.facility else None
+
+    def get_facility_slug(self, obj):
+        return obj.facility.slug if obj.facility else None
