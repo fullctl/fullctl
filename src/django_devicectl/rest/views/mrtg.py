@@ -16,7 +16,6 @@ logger = structlog.get_logger("django_structlog")
 
 @route
 class MetricMrtg(CachedObjectMixin, viewsets.GenericViewSet):
-
     """
     Provides endpoints for querying mrtg data for total ix and port traffic
 
@@ -36,7 +35,6 @@ class MetricMrtg(CachedObjectMixin, viewsets.GenericViewSet):
     )
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def graph_ix_total(self, request, org, ix_id, *args, **kwargs):
-
         """
         Aggregate mrtg data to get total traffic for a specific IX
 
@@ -75,7 +73,6 @@ class MetricMrtg(CachedObjectMixin, viewsets.GenericViewSet):
     )
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def graph_port_total(self, request, org, port_id, *args, **kwargs):
-
         """
         Aggregate mrtg data to get total traffic for a specific port
 

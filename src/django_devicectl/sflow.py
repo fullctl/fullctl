@@ -33,9 +33,11 @@ LABEL_PREFIX = "ctl_"
 def metrics_client() -> Metrics:
     return Metrics(
         settings.TIMESERIES_DB_URL,
-        (settings.TIMESERIES_DB_USER, settings.TIMESERIES_DB_PASSWORD)
-        if settings.TIMESERIES_DB_USER
-        else None,
+        (
+            (settings.TIMESERIES_DB_USER, settings.TIMESERIES_DB_PASSWORD)
+            if settings.TIMESERIES_DB_USER
+            else None
+        ),
     )
 
 
@@ -44,7 +46,6 @@ def keys_to_tags(data: dict) -> dict:
 
 
 def save(data: list[dict]):
-
     """
     Save sflow data to timeseries database
 
@@ -83,7 +84,6 @@ def step_size_for_max(step: int) -> int:
 
 
 def validate_query_params(**kwargs):
-
     """
     Validate query parameters against tags
     """
@@ -184,7 +184,6 @@ def query_graph_port_total(
     collection_step: int = 300,
     **kwargs,
 ) -> QueryResult:
-
     """
     Queries bits per second for a specific port (in and out)
 
