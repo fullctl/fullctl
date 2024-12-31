@@ -28,9 +28,11 @@ class Command(CommandInterface):
     def run(self, *args, **kwargs):
         metrics = Metrics(
             settings.TIMESERIES_DB_URL,
-            (settings.TIMESERIES_DB_USER, settings.TIMESERIES_DB_PASSWORD)
-            if settings.TIMESERIES_DB_USER
-            else None,
+            (
+                (settings.TIMESERIES_DB_USER, settings.TIMESERIES_DB_PASSWORD)
+                if settings.TIMESERIES_DB_USER
+                else None
+            ),
         )
 
         force = kwargs.get("force", False)

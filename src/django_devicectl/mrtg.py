@@ -2,8 +2,6 @@ from django.conf import settings
 from fullctl.metrics import Metrics
 from fullctl.metrics.schema import QueryResult
 
-__all__ = ["save", "total_bytes", "total_packets", "query_graph_metrics"]
-
 METRIC_TAGS = [
     "org",
     "org_id",
@@ -47,9 +45,11 @@ max by (metric) (
 def metrics_client() -> Metrics:
     return Metrics(
         settings.TIMESERIES_DB_URL,
-        (settings.TIMESERIES_DB_USER, settings.TIMESERIES_DB_PASSWORD)
-        if settings.TIMESERIES_DB_USER
-        else None,
+        (
+            (settings.TIMESERIES_DB_USER, settings.TIMESERIES_DB_PASSWORD)
+            if settings.TIMESERIES_DB_USER
+            else None
+        ),
     )
 
 
@@ -92,7 +92,6 @@ def query_graph_ix_total(
 def query_graph_port_total(
     org_id: int, port_id: int, step: str, start: str, end: str, **kwargs
 ) -> QueryResult:
-
     """
     Queries bits per second for a specific port (in and out)
 

@@ -15,7 +15,7 @@ Serializers, register = serializer_registry()
 def validate_ip_address(value: str) -> str:
     try:
         ipaddress.ip_address(value)
-    except ValueError as e:
+    except ValueError:
         raise serializers.ValidationError(f"Invalid IP address: {value}")
     return value
 
@@ -34,7 +34,7 @@ def validate_line_protocol(value:str) -> str:
     # we don't actually connect to an InfluxDB instance here, we just use the client
     # to parse the line protocol string
     client: InfluxDBClient = InfluxDBClient()
-    
+
     try:
         point: Point = client.write_api().parse_line(value)
     except Exception as e:
@@ -42,7 +42,7 @@ def validate_line_protocol(value:str) -> str:
 
     # assert name is sflow
     if point.measurement != "sflow":
-        raise serializers.ValidationError(f"Invalid measurement: {point.measurement}") 
+        raise serializers.ValidationError(f"Invalid measurement: {point.measurement}")
 
     result = {**point.tags, **point.fields}
 
