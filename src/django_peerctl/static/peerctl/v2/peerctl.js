@@ -80,6 +80,10 @@ var $peerctl = $ctl.application.Peerctl = $tc.extend(
         window.location.href = "?asn=" + $(this).data("select-asn") + window.location.hash;
       });
 
+      $('.btn-network-settings[data-selected-asn]').click(function(){
+        window.location.href = "?asn=" + $(this).data("selected-asn") + "#page-network-settings";
+      });
+
       // init peering lists tool
       this.tool("peering_lists", () => {
         return new $peerctl.PeeringLists(this.$t.port_form);
