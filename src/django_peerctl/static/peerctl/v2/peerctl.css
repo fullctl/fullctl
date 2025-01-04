@@ -352,3 +352,7 @@ p[data-field="macaddr_set"] {
 .list-header>.no-sort {
   height: 32px
 }
+
+.btn-network-settings {
+  margin-right: 16px;
+}
