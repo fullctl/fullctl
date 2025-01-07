@@ -602,9 +602,9 @@ $peerctl.Ix = $tc.extend(
         this.load_port_stats();
       })
 
-      this.port_ids = [];
+      this.port_ids = new Set();
       $(this.$w.list).on("insert:after", (_, row_element, data) => {
-        this.port_ids.push(data.id);
+        this.port_ids.add(data.id);
       });
     },
 
@@ -682,7 +682,7 @@ $peerctl.Ix = $tc.extend(
     load_port_stats: function () {
       let url = this.$w.list.element.data('api-port-stats');
 
-      $.each(this.port_ids, (_, port_id) => {
+      this.port_ids.forEach(port_id => {
         $.ajax({
           url: url.replace("/0/", `/${port_id}/`)
         }).done(({data = []}) => {
