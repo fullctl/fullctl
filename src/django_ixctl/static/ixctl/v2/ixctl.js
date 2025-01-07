@@ -1157,9 +1157,9 @@ $ctl.application.Ixctl.Members = $tc.extend(
         this.load_member_stats();
       });
 
-      this.member_ids = [];
+      this.member_ids = new Set();
       $(this.$w.list).on("insert:after", (_, row_element, data) => {
-        this.member_ids.push(data.id);
+        this.member_ids.add(data.id);
       });
 
       this.initialize_sortable_headers();
@@ -1307,8 +1307,7 @@ $ctl.application.Ixctl.Members = $tc.extend(
 
     load_member_stats: function () {
       let url = this.$w.list.element.data('api-member-stats');
-
-      $.each(this.member_ids, (_, member_id) => {
+      this.member_ids.forEach(member_id => {
         $.ajax({
           url: url.replace("default", $ctl.ixctl.ix_slug()).replace("/0/", `/${member_id}/`)
         }).done(({data = []}) => {
