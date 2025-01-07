@@ -356,3 +356,7 @@ p[data-field="macaddr_set"] {
 .btn-network-settings {
   margin-right: 16px;
 }
+
+.peering_list_ix_name {
+  border: inherit;
+}
