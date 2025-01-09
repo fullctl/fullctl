@@ -19,6 +19,11 @@ class MaxmindLocationData(Data):
     )
     geoname_id = models.PositiveIntegerField()
 
+    class Meta:
+        indexes = [
+            models.Index("location_type", name="location_type_idx"),
+        ]
+
     class Config(Data.Config):
         source_name = "maxmind"
         type = "location"
@@ -45,3 +50,8 @@ class MaxmindLocationsReferenceData(models.Model):
 
     geoname_id = models.PositiveIntegerField()
     data = models.JSONField()
+
+    class Meta:
+        indexes = [
+            models.Index("geoname_id", name="geoname_id_idx"),
+        ]
