@@ -29,15 +29,16 @@ class MaxmindLocationData(Data):
         type = "location"
 
     @classmethod
-    def get_prefix_queryset(cls, prefix, location_type):
+    def get_prefix_queryset(cls, prefix: str, location_type: str):
         return (
-            super()
-            .get_prefix_queryset(prefix)
+            cls.objects.filter(prefix__net_contains_or_equals=prefix)
             .filter(
                 type=cls.config("type"),
                 source_name=cls.config("source_name"),
                 location_type=location_type,
             )
+            .order_by("-date", "prefix")
+            .distinct("date", "prefix")
         )
 
 
