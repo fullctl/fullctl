@@ -418,9 +418,18 @@
       </div>
 
 
-      <div class="row mt-4 hide-when-federated">
+      <div
+       {% if not show_template_dropdown %} 
+        class="row mt-4 hide-when-federated justify-content-end" 
+       {% else %}
+        class="row mt-4 hide-when-federated"
+       {% endif %}
+      >
 
-            <div class="toolbar-field col-auto py-0 me-auto">
+            <div
+             class="toolbar-field col-auto py-0 me-auto" 
+             {% if not show_template_dropdown %} hidden {% endif %}
+            >
                 <span class="me-2">
                   {% trans "Template" %}
                 </span>
