@@ -13,6 +13,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 import oauth2_provider.views as oauth2_views
 from django.conf import settings
 from django.conf.urls.static import static
@@ -21,6 +22,13 @@ from django.urls import include, path
 from django.views.generic import RedirectView
 from django_grainy.remote import ProvideGet, ProvideLoad
 
+from aaactl.error_handlers import (
+    handle_error_400,
+    handle_error_401,
+    handle_error_403,
+    handle_error_404,
+    handle_error_500,
+)
 from account.grainy_ext import APIKeyAuthenticator
 
 # OAuth2 provider endpoints
@@ -130,8 +138,8 @@ urlpatterns += [
     path("", include("fullctl.django.urls")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
-handler500 = "fullctl.django.views.handle_error_500"
-handler404 = "fullctl.django.views.handle_error_404"
-handler403 = "fullctl.django.views.handle_error_403"
-handler401 = "fullctl.django.views.handle_error_401"
-handler400 = "fullctl.django.views.handle_error_400"
+handler500 = handle_error_500
+handler404 = handle_error_404
+handler403 = handle_error_403
+handler401 = handle_error_401
+handler400 = handle_error_400
