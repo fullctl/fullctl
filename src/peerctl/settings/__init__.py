@@ -86,8 +86,8 @@ settings_manager.set_option("PDB_API_USERNAME", "")
 settings_manager.set_option("PDB_API_PASSWORD", "")
 settings_manager.set_option("PEERINGDB_URL", "https://www.peeringdb.com/")
 
-settings_manager.set_option("SHOW_SESSION_SUMMARY", True)
-settings_manager.set_option("SHOW_TEMPLATE_DROPDOWN", True)
+settings_manager.set_bool("SHOW_SESSION_SUMMARY", True)
+settings_manager.set_bool("SHOW_TEMPLATE_DROPDOWN", True)
 
 
 # add user defined iso code for Kosovo
