@@ -481,13 +481,12 @@ class Member(
         for member_id, routeserver_members in member_routeserver_member_map.items():
             data = None
             if routeserver_members:
+                data = {}
                 for routeserver_member in routeserver_members:
                     if hasattr(routeserver_member, "_event_object"):
-                        data = {
-                            str(
-                                routeserver_member.routeserver.router_id
-                            ): routeserver_member._event_object.data.components
-                        }
+                        data[
+                            str(routeserver_member.routeserver.router_id)
+                        ] = routeserver_member._event_object.data.components
             result[member_id] = data
         return result
 
