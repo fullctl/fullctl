@@ -198,6 +198,30 @@ class PointOfContact(Aaactl):
         ref_tag = "poc"
         data_object_cls = PointOfContactObject
 
+    @staticmethod
+    def merge_configs(configs: list[dict]):
+        """
+        Merge PointOfContact configs per service i.e.
+        configs = [
+            {"service": "peerctl", "recipients": ["third@email.com"]},
+            {"service": "peerctl", "recipients": ["first@email.com"]},
+        ]
+        would be merged to return 
+        [
+            {"service": "peerctl", "recipients": ["first@email.com", "third@email.com"]},
+        ]
+        """
+        merged_data = {}
+        for config in configs:
+            service = config["service"]
+            if service not in merged_data:
+                merged_data[service] = {"service": service, "recipients": []}
+            merged_data[service]["recipients"].extend(config["recipients"])
+        return [
+            {"service": service, "recipients": list(set(values["recipients"]))}
+            for service, values in merged_data.items()
+        ]
+
     def save_poc(
         self,
         org_id: int,
@@ -211,11 +235,7 @@ class PointOfContact(Aaactl):
         data = {
             "org": org_id,
             "delivery_type": delivery_type,
-            "config": {
-                "services": [service],
-                "delivery_type": delivery_type,
-                "recipients": recipients,
-            },
+            "config": [{"service": service, "recipients": recipients}],
             "type": poc_type,
             "status": status,
         }
@@ -233,13 +253,10 @@ class PointOfContact(Aaactl):
             return self.create_poc(data)
 
         poc = poc_objects[0]
-        data["config"]["services"] = poc.config.get("services") or [] + data.config.get(
-            "services"
+        data["config"] = self.merge_configs(
+            poc.get("config", []) + data.get("config", [])
         )
-        data["config"]["recipients"] = poc.config.get("recipients") + data.config.get(
-            "recipients"
-        )
-        return self.update_poc(poc.id, data)
+        return self.update_poc(poc.get("id"), data)
 
     def create_poc(self, data: dict):
         """
@@ -258,3 +275,24 @@ class PointOfContact(Aaactl):
             data (`dict`) -- The point of contact details
         """
         return self.put(f"data/poc/{poc_id}", json=data)
+
+    def get_email_alert_recipients(self, org, service: str) -> str | None:
+        """
+        Get the service email alert recipients for an org
+        """
+        poc_objects = self.get(
+            "data/poc/",
+            params={
+                "org": org.slug,
+                "delivery_type": "email",
+                "status": "ok",
+                "type": "notifications",
+            },
+        )
+        if not poc_objects:
+            return None
+
+        for config in poc_objects[0].get("config", []):
+            if config.get("service") == service:
+                return ", ".join(config.get("recipients", []))
+        return
