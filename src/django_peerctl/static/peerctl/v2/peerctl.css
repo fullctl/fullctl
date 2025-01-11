@@ -360,3 +360,7 @@ p[data-field="macaddr_set"] {
 .peering_list_ix_name {
   border: inherit;
 }
+
+.traffic_threshold_alert>label {
+  margin-left: 5px;
+}
