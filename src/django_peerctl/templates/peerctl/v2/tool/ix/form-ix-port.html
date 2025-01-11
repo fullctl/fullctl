@@ -61,8 +61,11 @@
 
     <div class="row mb-3">
       <div class="col-12" data-api-submit="yes">
-        <input type="checkbox" class="form-check-input" id="traffic_threshold_alert" name="traffic_threshold_alert" />
-        <label class="form-check-label" for="traffic_threshold_alert">{% trans "Enable Emailed Traffic Threshold Alerts" %}</label>
+        <div class="d-flex traffic_threshold_alert">
+          <input type="checkbox" class="form-check-input" id="traffic_threshold_alert" name="traffic_threshold_alert" />
+          <label class="form-check-label" for="traffic_threshold_alert">{% trans "Enable Emailed Traffic Threshold Alerts" %}</label>
+        </div>
+        <div>{% trans "Enter contact email where alerts will be sent on the bottom of the AS" %}{{selected_asn}}{% trans " page." %}</div>
       </div>
     </div>
 

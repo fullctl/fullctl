@@ -6,6 +6,8 @@ import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.sot as sot
 import structlog
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import validate_email
 from django.db.models import Count, Q
 from django.utils.translation import gettext_lazy as _
 from fullctl.django.inet.validators import validate_mac_address, validate_mac_addresses
@@ -45,6 +47,10 @@ class Network(ModelSerializer):
     prefix4_override = serializers.IntegerField(allow_null=True)
     prefix6_override = serializers.IntegerField(allow_null=True)
 
+    email_alert_recipients = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True, default=None
+    )
+
     class Meta:
         model = models.Network
         fields = [
@@ -74,8 +80,45 @@ class Network(ModelSerializer):
             "traffic_override",
             "unicast_override",
             "scope_override",
+            "email_alert_recipients",
         ]
         read_only_fields = ("asn",)
+
+    def validate(self, cleaned_data: dict) -> dict:
+        """
+        Extra validation is needed for the following fields
+        - email_alert_recipients: Checks that it contains valid emails
+        """
+        email_alert_recipients = cleaned_data.get("email_alert_recipients")
+        if not email_alert_recipients:
+            return cleaned_data
+
+        for recipient in email_alert_recipients.strip().split(","):
+            try:
+                validate_email(recipient.strip())
+            except DjangoValidationError:
+                raise ValidationError(
+                    {"email_alert_recipients": _("Please enter valid email addresses.")}
+                )
+        return cleaned_data
+
+    def save_email_alert_recipients(self, recipients: str):
+        recipients = [recipient.strip() for recipient in recipients.strip().split(",")]
+        org = self.context.get("org")
+        aaactl.PointOfContact().save_poc(
+            delivery_type="email",
+            recipients=recipients,
+            org_slug=org.slug,
+            org_id=org.id,
+            poc_type="notifications",
+            service="peerctl",
+        )
+
+    def save(self, **kwargs):
+        instance = super().save(**kwargs)
+        if email_alert_recipients := self.validated_data.get("email_alert_recipients"):
+            self.save_email_alert_recipients(recipients=email_alert_recipients)
+        return instance
 
     @models.ref_fallback(lambda s, o: f"AS{o.asn}")
     def get_name(self, instance):
@@ -83,6 +126,17 @@ class Network(ModelSerializer):
 
     def get_contacts(self, instance):
         return instance.contacts
+
+    def get_email_alert_recipients(self) -> str:
+        org = self.context.get("org")
+        return aaactl.PointOfContact().get_email_alert_recipients(
+            org=org, service="peerctl"
+        )
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["email_alert_recipients"] = self.get_email_alert_recipients()
+        return representation
 
 
 @register

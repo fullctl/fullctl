@@ -46,19 +46,29 @@ class Network(CachedObjectMixin, viewsets.ModelViewSet):
     # no need to grainy gate this as list filtering does
     # its own permission check
 
-    def list(self, request, *args, **kwargs):
+    @load_object("net", models.Network, asn="asn")
+    def list(self, request, asn, net, *args, **kwargs):
         perms = permissions(request.user)
         perms.load()
         instances = perms.instances(
             models.Network, "crud", explicit=False, ignore_grant_all=True
         )
-        serializer = self.serializer_class(instances, many=True)
+        serializer = self.serializer_class(
+            instances, many=True, context={"org": net.org}
+        )
+        return Response(serializer.data)
+
+    @load_object("net", models.Network, asn="asn")
+    def retrieve(self, request, asn, net, *args, **kwargs):
+        serializer = self.serializer_class(net, context={"org": net.org})
         return Response(serializer.data)
 
     @load_object("net", models.Network, asn="asn")
     @grainy_endpoint(namespace="verified.asn.{asn}.?")
     def update(self, request, asn, net, *args, **kwargs):
-        serializer = self.serializer_class(net, data=request.data)
+        serializer = self.serializer_class(
+            net, data=request.data, context={"org": net.org}
+        )
 
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
@@ -136,7 +146,7 @@ class DefaultNetwork(CachedObjectMixin, viewsets.GenericViewSet):
         org = request.org
         default_network = models.Network.get_default_network_for_org(org)
 
-        return Response(Serializers.net(default_network).data)
+        return Response(Serializers.net(default_network, context={"org": org}).data)
 
 
 @route
@@ -156,7 +166,7 @@ class Networks(CachedObjectMixin, viewsets.GenericViewSet):
         org = request.org
 
         instances = [net for net in verified_asns(request.perms, org=org)]
-        serializer = self.serializer_class(instances, many=True)
+        serializer = self.serializer_class(instances, many=True, context={"org": org})
 
         return Response(serializer.data)
 
