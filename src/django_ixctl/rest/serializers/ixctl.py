@@ -235,18 +235,9 @@ class InternetExchange(ModelSerializer):
 
     def get_email_alert_recipients(self) -> str:
         org = self.context.get("org")
-        poc_objects = list(
-            aaactl.PointOfContact().objects(
-                org=org.slug,
-                delivery_type="email",
-                status="ok",
-                service="ixctl",
-                type="notifications",
-            )
+        return aaactl.PointOfContact().get_email_alert_recipients(
+            org=org, service="ixctl"
         )
-        if not poc_objects:
-            return None
-        return ", ".join(poc_objects[0].config.get("recipients", []))
 
 
 @register
