@@ -141,7 +141,9 @@ class UpdateLAN(ModelSerializer):
 @register
 class InternetExchange(ModelSerializer):
     graph_traffic_source = serializers.CharField(read_only=True)
-    email_alert_recipients = serializers.CharField(required=False)
+    email_alert_recipients = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True, default=None
+    )
 
     class Meta:
         model = models.InternetExchange
