@@ -1,7 +1,6 @@
 import datetime
-import re
 import secrets
-from typing import List, Literal, Optional
+from typing import Literal
 
 import reversion
 from django.conf import settings
@@ -1012,7 +1011,7 @@ class ContactMessage(HandleRefModel):
 
 
 class PocConfigData(BaseModel):
-    services: Optional[List[Literal["ixctl", "peerctl"]]]
+    service: Literal["ixctl", "peerctl"]
     delivery_type: str
     recipients: list[str]
 
@@ -1042,7 +1041,7 @@ class PointOfContact(models.Model):
         choices=(("email", _("Email")),),
         help_text=_("The type of message delivery for the alert."),
     )
-    config = models.JSONField(help_text="Configurations for the alert.")
+    config = models.JSONField(help_text="Configurations for the alert.", default=list)
     type = models.CharField(
         default="notifications",
         choices=(
@@ -1059,29 +1058,29 @@ class PointOfContact(models.Model):
         ),
     )
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["delivery_type", "type"], name="unique_delivery_type_type_pair"
-            ),
-        ]
-
     class HandleRef:
         tag = "poc"
 
     def clean(self):
         super().clean()
+
+        if not isinstance(self.config, list):
+            raise ValidationError("Config must be a list.")
+
         try:
-            PocConfigData(**self.config, delivery_type=self.delivery_type)
+            for config in self.config:
+                PocConfigData(**config, delivery_type=self.delivery_type)
         except PydanticValidationError as ex:
             raise ValidationError(str(ex))
 
         if (
             PointOfContact.objects.exclude(pk=self.pk)
-            .filter(delivery_type=self.delivery_type, type=self.type)
+            .filter(org=self.org, delivery_type=self.delivery_type, type=self.type)
             .exists()
         ):
-            raise ValidationError("Delivery method for that contact type already exists.")
+            raise ValidationError(
+                "Delivery method for that contact type already exists."
+            )
 
     def save(self, *args, **kwargs):
         self.full_clean()

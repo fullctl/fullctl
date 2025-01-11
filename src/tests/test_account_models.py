@@ -117,9 +117,9 @@ def test_auto_user_to_org(db, account_objects, settings):
 
 
 def test_poc_config_is_valid(db, account_objects):
-    PocConfigData(services=None, delivery_type="email", recipients=["test@test.com"])
+    PocConfigData(service="ixctl", delivery_type="email", recipients=["test@test.com"])
     PocConfigData(
-        services=["ixctl", "peerctl"],
+        service="peerctl",
         delivery_type="email",
         recipients=["test@test.com"],
     )
@@ -127,17 +127,23 @@ def test_poc_config_is_valid(db, account_objects):
 
 def test_poc_config_is_invalid(db, account_objects):
     with pytest.raises(ValueError):
-        PocConfigData(serices=["ixctl"], delivery_type="email", recipients=[])
+        PocConfigData(service=None, delivery_type="email", recipients=[])
 
     with pytest.raises(ValueError):
         PocConfigData(
-            serices=["ixctl"], delivery_type="email", recipients=["invalid_email"]
+            service="ixctl", delivery_type="email", recipients=["invalid_email"]
         )
 
 
 def test_poc(db, account_objects):
     delivery_type = "email"
-    config = {"services": ["ixctl"], "recipients": ["test@test.com", "email@email.com"]}
+    config = [
+        {"service": "ixctl", "recipients": ["test@test.com", "email@email.com"]},
+        {
+            "service": "peerctl",
+            "recipients": ["different@test.com", "recipient@email.com"],
+        },
+    ]
     poc = PointOfContact(
         org=account_objects.org, delivery_type=delivery_type, config=config
     )
@@ -149,7 +155,7 @@ def test_poc(db, account_objects):
 
 def test_poc_invalid_config(db, account_objects):
     delivery_type = "email"
-    config = {"services": None, "recipients": []}
+    config = [{"service": None, "recipients": []}]
     with pytest.raises(ValidationError):
         poc = PointOfContact(
             org=account_objects.org, delivery_type=delivery_type, config=config

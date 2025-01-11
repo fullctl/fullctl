@@ -317,7 +317,7 @@ class OrganizationBrandingSerializer(ModelSerializer):
 
 
 @register
-class PointOfContactSerializer(ModelSerializer):
+class PointOfContactSerializer(serializers.ModelSerializer):
     ref_tag = "poc"
 
     class Meta:

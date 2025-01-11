@@ -97,7 +97,7 @@ def test_api_select_poc(db, account_objects, settings):
     delivery_type = "email"
     service = "ixctl"
     status = "ok"
-    config = {"services": [service], "recipients": ["test@test.com", "email@email.com"]}
+    config = [{"service": service, "recipients": ["test@test.com", "email@email.com"]}]
     _type = "notifications"
     poc = models.PointOfContact(
         org=account_objects.org, delivery_type=delivery_type, config=config
@@ -145,10 +145,9 @@ def test_api_select_poc(db, account_objects, settings):
 def test_api_update_poc(db, account_objects):
     poc = models.PointOfContact(
         org=account_objects.org,
-        config={
-            "services": ["ixctl", "peerctl"],
-            "recipients": ["test@test.com", "email@email.com"],
-        },
+        config=[
+            {"service": "ixctl", "recipients": ["test@test.com", "email@email.com"]}
+        ],
     )
     poc.save()
 
@@ -160,7 +159,7 @@ def test_api_update_poc(db, account_objects):
     poc_id = data["data"][0]["id"]
     org_id = data["data"][0]["org"]
 
-    config = {"services": None, "recipients": ["test@test.com"]}
+    config = [{"service": "peerctl", "recipients": ["test@test.com"]}]
     put_api_url = reverse(
         "service_bridge_api:service-bridge-data-poc-detail", args=(poc_id,)
     )
@@ -183,14 +182,16 @@ def test_api_update_poc(db, account_objects):
 def test_api_create_poc(db, account_objects, settings):
     api_url = reverse("service_bridge_api:service-bridge-data-poc-list")
 
-    config = {"services": ["ixctl"], "recipients": ["test@test.com", "email@email.com"]}
+    config = [
+        {"service": "ixctl", "recipients": ["test@test.com", "email@email.com"]},
+        {"service": "peerctl", "recipients": ["another@test.com", "email@email.com"]},
+    ]
     response = account_objects.api_client.post(
         api_url,
         data=json.dumps(
             {
                 "org": account_objects.org.id,
                 "delivery_type": "email",
-                "service": "ixctl",
                 "status": "ok",
                 "config": config,
                 "type": "notifications",
