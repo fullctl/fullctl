@@ -4,11 +4,14 @@ import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.sot as sot
+import structlog
 from django.db import IntegrityError
 from grainy.const import PERM_READ
 
 from django_peerctl.exceptions import ASNClaimed
 from django_peerctl.models import Network, PortInfo
+
+log = structlog.get_logger(__name__)
 
 
 def get_network(asn, org):
@@ -77,6 +80,33 @@ def pdb_set_prefixlen(ip4, ip6, pdb_ix_id):
             prefix = ipaddress.ip_network(ixpfx.prefix)
             if prefix.version == 6 and ip6.ip in prefix:
                 ip6 = ipaddress.ip_interface(f"{ip6.ip}/{prefix.prefixlen}")
+                break
+
+    return (ip4, ip6)
+
+
+def ixctl_set_prefixlen(ip4: str, ip6: str, ix_id: int) -> tuple:
+    """
+    Will set the prefix length of the ip4 and ip6 addresses
+    from ixctl internet exchange prefix configuration
+    """
+
+    prefixes = ixctl.InternetExchangePrefix().objects(ix=ix_id)
+
+    if ip4:
+        ip4 = ipaddress.ip_interface(ip4)
+        for prefix in prefixes:
+            ip_network = ipaddress.ip_network(prefix.prefix)
+            if ip_network.version == 4 and ip4.ip in ip_network:
+                ip4 = ipaddress.ip_interface(f"{ip4.ip}/{ip_network.prefixlen}")
+                break
+
+    if ip6:
+        ip6 = ipaddress.ip_interface(ip6)
+        for prefix in prefixes:
+            ip_network = ipaddress.ip_network(prefix.prefix)
+            if ip_network.version == 6 and ip6.ip in ip_network:
+                ip6 = ipaddress.ip_interface(f"{ip6.ip}/{ip_network.prefixlen}")
                 break
 
     return (ip4, ip6)
@@ -167,8 +197,37 @@ def port_components(member):
         ip4 = member.ipaddr4
         ip6 = member.ipaddr6
 
-        if member.ix.pdb_id:
-            ip4, ip6 = pdb_set_prefixlen(ip4, ip6, member.ix.pdb_id)
+        # first attempt to get prefix length from ixctl
+        ip4, ip6 = ixctl_set_prefixlen(ip4, ip6, ix_id)
+
+        # if masklen of the ip4 is /32 then no prefix length
+        # was set in ixctl, so we try to get it from peeringdb
+        ip4_pdb_fallback = ip4 and ip4.network.prefixlen == 32
+
+        # if masklen of the ip6 is /128 then no prefix length
+        # was set in ixctl, so we try to get it from peeringdb
+        ip6_pdb_fallback = ip6 and ip6.network.prefixlen == 128
+
+        if member.ix.pdb_id and (ip4_pdb_fallback or ip6_pdb_fallback):
+            log.debug(
+                "Unable to set prefix length from ixctl, falling back to peeringdb",
+                ix_id=ix_id,
+                ip4_pdb_fallback=ip4_pdb_fallback,
+                ip6_pdb_fallback=ip6_pdb_fallback,
+                ip4=ip4,
+                ip6=ip6,
+            )
+            ip4_pdb, ip6_pdb = pdb_set_prefixlen(ip4, ip6, member.ix.pdb_id)
+
+            if ip4_pdb_fallback:
+                ip4 = ip4_pdb
+
+            if ip6_pdb_fallback:
+                ip6 = ip6_pdb
+
+    log.debug(
+        "port_components", member=member, source=source, ip4=ip4, ip6=ip6, ix_id=ix_id
+    )
 
     return (source, ip4, ip6, ix_id)
 
