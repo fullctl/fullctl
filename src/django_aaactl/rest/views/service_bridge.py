@@ -272,7 +272,7 @@ class PointOfContact(AaactlDataViewSet):
         ("org", "org__slug"),
         ("delivery_type", "delivery_type"),
         ("status", "status"),
-        ("service", "config__services__contains"),
+        ("service", MethodFilter("service")),
         ("type", "type"),
     ]
     allow_unfiltered = True
@@ -281,3 +281,6 @@ class PointOfContact(AaactlDataViewSet):
 
     def prepare_write_data(self, request):
         return request.data
+
+    def filter_service(self, qset, value):
+        return qset.filter(config__contains=[{"service": value}])
