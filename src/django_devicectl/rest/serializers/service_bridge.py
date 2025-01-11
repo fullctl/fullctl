@@ -351,6 +351,7 @@ class PhysicalPort(ModelSerializer):
             "device_name",
             "metric",
             "meta",
+            "size",
         ]
 
     @staticmethod
