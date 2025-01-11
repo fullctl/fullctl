@@ -442,16 +442,17 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
             if routeserver_ids
             else []
         )
-        return {
-            (
+        result = defaultdict(dict)
+        for routeserver_member in routeserver_members:
+            key = (
                 routeserver_member.member.asn,
                 routeserver_member.member.ipaddr4,
                 routeserver_member.member.ipaddr6,
-            ): {
-                routeserver_member.rs.id: routeserver_member._event.data.components,
-            }
-            for routeserver_member in routeserver_members
-        }
+            )
+            result[key][
+                routeserver_member.rs.id
+            ] = routeserver_member._event.data.components
+        return dict(result)
 
     def get_port_traffic_alert_data(
         self, ix_ids, ports, port_ix_map
