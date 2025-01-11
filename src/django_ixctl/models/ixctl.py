@@ -573,7 +573,7 @@ class InternetExchangeMember(PdbRefModel):
                     org_slug=org.slug, join=["device", "physical_ports"]
                 )
             )
-        else:
+        elif len(members) == 1:
             # we got a single member, so we load only the port for that member
             member = members[0]
             if not member.port:
@@ -585,6 +585,8 @@ class InternetExchangeMember(PdbRefModel):
                     join=["device", "physical_ports"],
                 )
             )
+        else:
+            return
 
         if not ports:
             return
