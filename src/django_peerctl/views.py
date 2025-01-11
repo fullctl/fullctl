@@ -54,6 +54,7 @@ def view_instance(request, instance, **kwargs):
     env["asns_count"] = len(asns)
     env["default_asn"] = default_asn
     env["show_session_summary"] = getattr(settings, "SHOW_SESSION_SUMMARY")
+    env["show_template_dropdown"] = getattr(settings, "SHOW_TEMPLATE_DROPDOWN")
 
     return render(request, "theme-select.html", env)
 
