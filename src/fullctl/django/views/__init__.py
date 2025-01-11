@@ -13,6 +13,7 @@ from django.utils.http import http_date
 from django.utils.safestring import mark_safe
 
 import fullctl.django.health_check
+import fullctl.service_bridge.aaactl as aaactl
 from fullctl.django.decorators import require_auth
 from fullctl.django.models.concrete.file import OrganizationFile
 from fullctl.django.models.concrete.tasks import Task
@@ -89,8 +90,27 @@ def handle_error(request, exception, status):
             "ip_address": request.META.get("HTTP_X_FORWARDED_FOR"),
             "referer": request.META.get("HTTP_REFERER"),
             "timestamp": datetime.datetime.utcnow(),
-        }
+        },
+        "org_branding": {},
     }
+
+    branding_org = getattr(settings, "BRANDING_ORG", None)
+    if branding_org:
+        org_branding = aaactl.OrganizationBranding().first(org=branding_org)
+        if not org_branding:
+            if http_host := request.get_host():
+                org_branding = aaactl.OrganizationBranding().first(http_host=http_host)
+
+        if org_branding:
+            context["org_branding"] = {
+                "name": org_branding.org_name,
+                "html_footer": org_branding.html_footer,
+                "css": org_branding.css,
+                "dark_logo_url": org_branding.dark_logo_url,
+                "light_logo_url": org_branding.light_logo_url,
+                "favicon_url": org_branding.favicon_url,
+                "custom_org": True,
+            }
 
     response = render(request, f"common/errors/{status}.html", context)
     response.status_code = status
