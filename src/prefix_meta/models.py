@@ -4,7 +4,6 @@ import fullctl.django.models.abstract.meta as meta
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from netfields import CidrAddressField, NetManager
-from django.contrib.postgres.indexes import GistIndex
 
 
 class Data(meta.Data):
@@ -32,7 +31,9 @@ class Data(meta.Data):
                 name="prefix_compound_idx",
             ),
             models.Index(fields=["-date", "prefix"], name="prefix_meta_distinct_idx"),
-            GistIndex(fields=["prefix"], name="prefix_gist_idx"),
+            models.Index(
+                fields=["prefix"], name="prefix_gist_idx", opclasses=["inet_ops"]
+            ),
         ]
 
     class HandleRef:
