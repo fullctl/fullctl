@@ -1088,16 +1088,15 @@ class TrafficAlertNotificationBase:
                     type="notifications",
                     delivery_type="email",
                     status="ok",
+                    service=self.alert_service_type,
                 )
             )[0]
         except IndexError:
             return None
 
-        services = poc.config.get("services")
-        if isinstance(services, list) and self.alert_service_type in services:
-            return poc.config.get("recipients")
-        elif services is None:
-            return poc.config.get("recipients")
+        for config in poc.config:
+            if config.get("service") == self.alert_service_type:
+                return config.get("recipients")
         return
 
     def send_notification(

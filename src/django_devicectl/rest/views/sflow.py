@@ -20,7 +20,6 @@ logger = structlog.get_logger("django_structlog")
 
 @route
 class MetricSflow(CachedObjectMixin, viewsets.GenericViewSet):
-
     """
     Handles datapoint insert and query for sflow data
     for a specific device into the timeseries database
@@ -35,7 +34,6 @@ class MetricSflow(CachedObjectMixin, viewsets.GenericViewSet):
 
     @grainy_endpoint(namespace="sflow_create.{request.org.permission_id}")
     def create(self, request, org, instance, *args, **kwargs):
-
         """
         Insert sflow data for a specific device
 
@@ -62,7 +60,6 @@ class MetricSflow(CachedObjectMixin, viewsets.GenericViewSet):
     )
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def graph_ix_total(self, request, org, ix_id, *args, **kwargs):
-
         """
         Aggregate sflow data to get total traffic for a specific IX
 
@@ -101,7 +98,6 @@ class MetricSflow(CachedObjectMixin, viewsets.GenericViewSet):
     )
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def graph_port_total(self, request, org, port_id, *args, **kwargs):
-
         """
         Aggregate sflow data to get total traffic for a specific port
 
@@ -153,7 +149,6 @@ class MetricSflow(CachedObjectMixin, viewsets.GenericViewSet):
     )
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def graph_port_asn(self, request, org, port_id, asn, *args, **kwargs):
-
         """
         Aggregate sflow data to get traffic from the specified ASNs to all other ASNs
         at the specified port
@@ -196,7 +191,6 @@ class MetricSflow(CachedObjectMixin, viewsets.GenericViewSet):
     def graph_port_asn_pair(
         self, request, org, port_id, asn_src, asn_dst, *args, **kwargs
     ):
-
         """
         Aggregate sflow data to get traffic from the specified ASNs to the other specified ASNs
 
@@ -237,7 +231,6 @@ class MetricSflow(CachedObjectMixin, viewsets.GenericViewSet):
     )
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def asn_table(self, request, org, port_id, *args, **kwargs):
-
         """
         Aggregate sflow data to get traffic from the specified ASNs to all other ASNs
         at the specified port.

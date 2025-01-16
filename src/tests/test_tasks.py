@@ -24,22 +24,6 @@ class TrafficAlertNotificationBase:
 
         self.auditctl_event = MagicMock(create=Mock())
 
-        self.poc = MagicMock(
-            org=self.org.id,
-            delivery_type="email",
-            config={
-                "services": None,
-                "recipients": ["test@test.com", "example@example.com"],
-            },
-            type="notifications",
-            status="ok",
-        )
-
-        def aaactl_poc_mock():
-            yield from [self.poc]
-
-        self.aaactl_poc = MagicMock(objects=MagicMock(return_value=aaactl_poc_mock()))
-
         self.pdb_ix = MagicMock(
             tech_email="sample@test.com",
         )
@@ -60,6 +44,25 @@ class TestOperatorTrafficAlertNotification(TrafficAlertNotificationBase):
     def setup(self):
         super().setup()
         self.alert_email_type = "traffic_alert_ix"
+
+        self.poc = MagicMock(
+            org=self.org.id,
+            delivery_type="email",
+            config=[
+                {
+                    "service": "ixctl",
+                    "recipients": ["test@test.com", "example@example.com"],
+                }
+            ],
+            type="notifications",
+            status="ok",
+        )
+
+        def aaactl_poc_mock():
+            yield from [self.poc]
+
+        self.aaactl_poc = MagicMock(objects=MagicMock(return_value=aaactl_poc_mock()))
+
         self.pdbctl_ix = MagicMock(object=Mock(return_value=self.pdb_ix))
         self.operator_traffic_alert_notification = OperatorTrafficAlertNotification(
             org=self.org,
@@ -105,6 +108,24 @@ class TestMemberTrafficAlertNotification(TrafficAlertNotificationBase):
     def setup(self):
         super().setup()
         self.alert_email_type = "traffic_alert_net"
+
+        self.poc = MagicMock(
+            org=self.org.id,
+            delivery_type="email",
+            config=[
+                {
+                    "service": "peerctl",
+                    "recipients": ["test@test.com", "example@example.com"],
+                }
+            ],
+            type="notifications",
+            status="ok",
+        )
+
+        def aaactl_poc_mock():
+            yield from [self.poc]
+
+        self.aaactl_poc = MagicMock(objects=MagicMock(return_value=aaactl_poc_mock()))
 
         self.port_member = MagicMock(asn=30)
 
