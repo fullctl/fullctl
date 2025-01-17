@@ -1524,7 +1524,7 @@ class Vlan(ServiceBridgeReferenceModel):
     slug = models.CharField(max_length=255, blank=True, null=True)
     description = models.CharField(blank=True, null=True)
     reference = ReferencedObjectCharField(
-        bridge_type="device",
+        bridge_type="vlan",
         max_length=255,
         null=True,
         blank=True,
