@@ -42,7 +42,7 @@ def handle_error(request, exception, status):
 
         if org_branding:
             context["org_branding"] = {
-                "name": org_branding.org_name,
+                "name": org_branding.org.name,
                 "html_footer": org_branding.html_footer,
                 "css": org_branding.css,
                 "dark_logo_url": org_branding.dark_logo_url,
