@@ -1530,7 +1530,7 @@ class Vlan(ServiceBridgeReferenceModel):
         blank=True,
         help_text=_("Remote reference id"),
         services=[
-            "fullctl.service_bridge.netbox.Device",
+            "fullctl.service_bridge.netbox.Vlan",
         ],
     )
 
