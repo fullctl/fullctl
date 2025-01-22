@@ -139,7 +139,7 @@ class Monitor(viewsets.GenericViewSet):
     def get_serializer_dynamic(self, path, method, direction):
         if method == "DELETE":
             return Serializers.delete_monitor()
-        return self.get_serializer()
+        return Serializers.default_monitor()
 
     def get_queryset(self):
         try:
@@ -207,5 +207,5 @@ class Monitor(viewsets.GenericViewSet):
         """
         Remove a monitor for a given organization instance
         """
-        
+
         return remove_monitor(request, instance, request.data)
