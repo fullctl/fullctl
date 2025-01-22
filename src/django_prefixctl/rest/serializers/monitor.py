@@ -118,7 +118,9 @@ class MonitorCreationMixin:
     def grainy_namespace(self):
         monitor_serializer = get_monitor_class(self.validated_data["monitor_type"])
         org = self.context.get("instance").org
-        namespace = monitor_serializer.Meta.model.Grainy.namespace() + f".{org.permission_id}"
+        namespace = (
+            monitor_serializer.Meta.model.Grainy.namespace() + f".{org.permission_id}"
+        )
         return namespace
 
     def create(self, validated_data, **kwargs):
@@ -188,3 +190,9 @@ class DeleteMonitor(serializers.Serializer):
 
     class Meta:
         fields = ["id", "monitor_type"]
+
+
+@register
+class Monitor(serializers.Serializer):
+    monitor_type = serializers.CharField()
+    ref_tag = "default_monitor"

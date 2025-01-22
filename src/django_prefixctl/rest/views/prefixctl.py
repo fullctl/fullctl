@@ -17,7 +17,10 @@ from django_prefixctl.rest.api_schema import ASNSetSchema, PrefixSetSchema
 from django_prefixctl.rest.decorators import grainy_endpoint
 from django_prefixctl.rest.route.prefixctl import route
 from django_prefixctl.rest.serializers.monitor import Serializers as MonitorSerializers
-from django_prefixctl.rest.serializers.prefixctl import Serializers, DeletePrefixSetsSerializer
+from django_prefixctl.rest.serializers.prefixctl import (
+    Serializers,
+    DeletePrefixSetsSerializer,
+)
 from django_prefixctl.rest.views.monitor import (
     add_monitor,
     list_monitors,
@@ -51,10 +54,7 @@ class PrefixSet(CachedObjectMixin, SlugObjectMixin, viewsets.GenericViewSet):
         - direction: The direction of serialization (request/response).
         """
         if "delete_monitor" in path:
-            if direction == "response":
-                return MonitorSerializers.prefix_monitor()
-            else:
-                return Serializers.prefix_set_monitor_selector()
+            return Serializers.prefix_set_monitor_selector()
 
         if "delete_prefix" in path:
             if direction == "response":
@@ -119,7 +119,10 @@ class PrefixSet(CachedObjectMixin, SlugObjectMixin, viewsets.GenericViewSet):
         - kwargs: Additional keyword arguments.
         """
         serializer = Serializers.prefix_set(
-            instance.prefix_set_set.all().prefetch_related("prefix_set").order_by("-created"), many=True
+            instance.prefix_set_set.all()
+            .prefetch_related("prefix_set")
+            .order_by("-created"),
+            many=True,
         )
         return Response(serializer.data)
 
@@ -326,13 +329,19 @@ class PrefixSet(CachedObjectMixin, SlugObjectMixin, viewsets.GenericViewSet):
 
         return response
 
-    
     @action(
         detail=False,
         methods=["POST"],
     )
     @grainy_endpoint(namespace="prefix_set.{request.org.permission_id}")
-    def delete_prefixsets(self, request: HttpRequest, org: Organization, instance: Instance, *args: Tuple[Any, ...], **kwargs: Dict[str, Any]) -> Response:
+    def delete_prefixsets(
+        self,
+        request: HttpRequest,
+        org: Organization,
+        instance: Instance,
+        *args: Tuple[Any, ...],
+        **kwargs: Dict[str, Any],
+    ) -> Response:
         """
         Delete all prefixSets older than the given days.
 
@@ -345,7 +354,7 @@ class PrefixSet(CachedObjectMixin, SlugObjectMixin, viewsets.GenericViewSet):
         """
         serializer = DeletePrefixSetsSerializer(data=request.data)
         if serializer.is_valid():
-            days = serializer.validated_data['days']
+            days = serializer.validated_data["days"]
             cutoff_date = timezone.now() - timedelta(days=days)
             org_prefix_sets = instance.prefix_set_set.filter(created__lt=cutoff_date)
 
@@ -355,7 +364,6 @@ class PrefixSet(CachedObjectMixin, SlugObjectMixin, viewsets.GenericViewSet):
             return Response({"success": True})
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
     @action(
         detail=True, methods=["POST"], serializer_class=Serializers.bulk_create_prefixes
