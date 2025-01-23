@@ -10,7 +10,6 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("django_fullctl", "0035_alter_servicebridgeaction_function"),
         ("django_devicectl", "0050_merge_20241202_1717"),
     ]
 
