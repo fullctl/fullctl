@@ -23,6 +23,7 @@ from django_devicectl.models import (
     Vlan,
 )
 
+
 @admin.register(Facility)
 class FacilityAdmin(VersionAdmin):
     list_display = ("id", "org", "name", "slug", "created", "updated")
@@ -192,9 +193,21 @@ class PortInfoAdmin(VersionAdmin):
     search_fields = ("port__virtual_port__logical_port__physical_ports__device__name",)
     inlines = [IPAddressInline, MacAddressInline]
 
+
 @admin.register(Vlan)
 class VlanAdmin(VersionAdmin):
-    list_display = ("id", "org", "vlan", "name", "slug",)
-    search_fields = ("name", "slug", "instance__org__name", "instance__org__slug",)
+    list_display = (
+        "id",
+        "org",
+        "vlan",
+        "name",
+        "slug",
+    )
+    search_fields = (
+        "name",
+        "slug",
+        "instance__org__name",
+        "instance__org__slug",
+    )
 
     autocomplete_fields = ("facility",)
