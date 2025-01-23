@@ -187,6 +187,17 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         )
         return Response(serializer.data)
 
+    @action(detail=True, serializer_class=Serializers.vlan)
+    @grainy_endpoint(namespace="vlan.{request.org.permission_id}")
+    @load_object("facility", models.Facility, instance="instance", slug="facility_tag")
+    def vlans(self, request, org, instance, facility, *args, **kwargs):
+        queryset = facility.vlans.all()
+        serializer = Serializers.vlan(
+            queryset,
+            many=True,
+        )
+        return Response(serializer.data)
+
 
 @route
 class Device(CachedObjectMixin, viewsets.GenericViewSet):
@@ -1440,3 +1451,45 @@ class MetricDevice(viewsets.GenericViewSet):
             virtual_port.physical_ports.all(), many=True
         ).data
         return Response(extract_metric_data_from_ports(ports))
+
+
+@route
+class Vlan(CachedObjectMixin, viewsets.GenericViewSet):
+    serializer_class = Serializers.vlan
+    queryset = models.Vlan.objects.all()
+    lookup_url_kwarg = "vlan_id"
+    ref_tag = "vlan"
+    lookup_field = "id"
+
+    @grainy_endpoint(namespace="vlan.{request.org.permission_id}")
+    def list(self, request, org, instance, *args, **kwargs):
+        queryset = instance.vlans.all()
+        serializer = Serializers.vlan(
+            queryset,
+            many=True,
+        )
+        return Response(serializer.data)
+
+    @grainy_endpoint(namespace="vlan.{request.org.permission_id}.{vlan_id}")
+    @load_object("vlan", models.Vlan, instance="instance", id="vlan_id")
+    def retrieve(self, request, org, instance, vlan, *args, **kwargs):
+        serializer = Serializers.vlan(instance=vlan)
+        return Response(serializer.data)
+
+    @auditlog()
+    @grainy_endpoint(namespace="vlan.{request.org.permission_id}")
+    def create(self, request, org, instance, *args, **kwargs):
+        data = request.data
+        data["instance"] = instance.id
+        serializer = Serializers.vlan(data=data)
+        serializer.is_valid(raise_exception=True)
+        vlan = serializer.save()
+        return Response(Serializers.vlan(instance=vlan).data)
+
+    @auditlog()
+    @grainy_endpoint(namespace="vlan.{request.org.permission_id}.{vlan_id}")
+    @load_object("vlan", models.Vlan, instance="instance", id="vlan_id")
+    def destroy(self, request, org, instance, vlan, *args, **kwargs):
+        r = Response(Serializers.vlan(instance=vlan).data)
+        vlan.delete()
+        return r
