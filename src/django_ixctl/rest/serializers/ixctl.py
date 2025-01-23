@@ -223,8 +223,9 @@ class InternetExchange(ModelSerializer):
         )
 
     def save(self, **kwargs):
+        email_alert_recipients = self.validated_data.pop("email_alert_recipients")
         instance = super().save(**kwargs)
-        if email_alert_recipients := self.validated_data.get("email_alert_recipients"):
+        if email_alert_recipients:
             self.save_email_alert_recipients(recipients=email_alert_recipients)
         return instance
 
