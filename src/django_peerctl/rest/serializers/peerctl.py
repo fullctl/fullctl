@@ -102,8 +102,12 @@ class Network(ModelSerializer):
                 )
         return cleaned_data
 
-    def save_email_alert_recipients(self, recipients: str):
-        recipients = [recipient.strip() for recipient in recipients.strip().split(",")]
+    def save_email_alert_recipients(self, recipients: str, asn: int):
+        recipients = (
+            [recipient.strip() for recipient in recipients.strip().split(",")]
+            if recipients
+            else None
+        )
         org = self.context.get("org")
         aaactl.PointOfContact().save_poc(
             delivery_type="email",
@@ -112,13 +116,16 @@ class Network(ModelSerializer):
             org_id=org.id,
             poc_type="notifications",
             service="peerctl",
+            entity=asn,
         )
 
     def save(self, **kwargs):
         email_alert_recipients = self.validated_data.pop("email_alert_recipients")
         instance = super().save(**kwargs)
-        if email_alert_recipients:
-            self.save_email_alert_recipients(recipients=email_alert_recipients)
+        self.save_email_alert_recipients(
+            recipients=self.validated_data.get("email_alert_recipients"),
+            asn=instance.asn,
+        )
         return instance
 
     @models.ref_fallback(lambda s, o: f"AS{o.asn}")
@@ -128,15 +135,17 @@ class Network(ModelSerializer):
     def get_contacts(self, instance):
         return instance.contacts
 
-    def get_email_alert_recipients(self) -> str:
+    def get_email_alert_recipients(self, asn: int) -> str:
         org = self.context.get("org")
         return aaactl.PointOfContact().get_email_alert_recipients(
-            org=org, service="peerctl"
+            org=org, service="peerctl", entity=asn
         )
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation["email_alert_recipients"] = self.get_email_alert_recipients()
+        representation["email_alert_recipients"] = self.get_email_alert_recipients(
+            asn=instance.asn
+        )
         return representation
 
 
