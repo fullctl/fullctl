@@ -36,15 +36,15 @@ class TrafficAlertNotificationBase:
             get_traffic_alert_email=MagicMock(return_value=self.traffic_alert_email)
         )
 
-        self.member = MagicMock(id=43, ref_id="ixctl:43", traffic_threshold_alert=34)
+        self.member = MagicMock(
+            id=43, ref_id="ixctl:43", traffic_threshold_alert=34, asn=542
+        )
 
 
 class TestOperatorTrafficAlertNotification(TrafficAlertNotificationBase):
     @pytest.fixture(autouse=True)
     def setup(self):
         super().setup()
-        self.alert_email_type = "traffic_alert_ix"
-
         self.poc = MagicMock(
             org=self.org.id,
             delivery_type="email",
@@ -79,10 +79,18 @@ class TestOperatorTrafficAlertNotification(TrafficAlertNotificationBase):
             member=self.member,
         )
 
-        self.aaactl_poc.objects.assert_called_once()
+        self.aaactl_poc.objects.assert_called_once_with(
+            org=self.org.slug,
+            type="notifications",
+            delivery_type="email",
+            status="ok",
+            service=self.operator_traffic_alert_notification.alert_service_type,
+        )
         self.pdbctl_ix.object.call_count == 0
         self.ixctl_traffic_alert_email.get_traffic_alert_email.assert_called_once_with(
-            ix_id=self.ix.id, email_type=self.alert_email_type, member_id=self.member.id
+            ix_id=self.ix.id,
+            email_type=self.operator_traffic_alert_notification.alert_email_type,
+            member_id=self.member.id,
         )
         self.auditctl_event.create.assert_called_once()
 
@@ -97,7 +105,7 @@ class TestOperatorTrafficAlertNotification(TrafficAlertNotificationBase):
         self.pdbctl_ix.object.assert_called_once_with(id=self.ix.pdb_id)
         self.ixctl_traffic_alert_email.get_traffic_alert_email.assert_called_once_with(
             ix_id=self.ix.id,
-            email_type=self.alert_email_type,
+            email_type=self.operator_traffic_alert_notification.alert_email_type,
             member_id=self.member.id,
         )
         self.auditctl_event.create.assert_called_once()
@@ -107,14 +115,13 @@ class TestMemberTrafficAlertNotification(TrafficAlertNotificationBase):
     @pytest.fixture(autouse=True)
     def setup(self):
         super().setup()
-        self.alert_email_type = "traffic_alert_net"
-
         self.poc = MagicMock(
             org=self.org.id,
             delivery_type="email",
             config=[
                 {
                     "service": "peerctl",
+                    "entity": self.member.asn,
                     "recipients": ["test@test.com", "example@example.com"],
                 }
             ],
@@ -161,10 +168,19 @@ class TestMemberTrafficAlertNotification(TrafficAlertNotificationBase):
             member=self.member,
         )
 
-        self.aaactl_poc.objects.assert_called_once()
+        self.aaactl_poc.objects.assert_called_once_with(
+            org=self.org.slug,
+            type="notifications",
+            delivery_type="email",
+            status="ok",
+            service=self.member_traffic_alert_notification.alert_service_type,
+            entity=self.member.asn,
+        )
         self.pdbctl_network_contact.objects.call_count == 0
         self.ixctl_traffic_alert_email.get_traffic_alert_email.assert_called_once_with(
-            ix_id=self.ix.id, email_type=self.alert_email_type, member_id=self.member.id
+            ix_id=self.ix.id,
+            email_type=self.member_traffic_alert_notification.alert_email_type,
+            member_id=self.member.id,
         )
         self.auditctl_event.create.assert_called_once()
         assert self.ixctl_member.objects.call_count == 0
@@ -181,7 +197,9 @@ class TestMemberTrafficAlertNotification(TrafficAlertNotificationBase):
             asn=self.port_member.asn
         )
         self.ixctl_traffic_alert_email.get_traffic_alert_email.assert_called_once_with(
-            ix_id=self.ix.id, email_type=self.alert_email_type, member_id=self.member.id
+            ix_id=self.ix.id,
+            email_type=self.member_traffic_alert_notification.alert_email_type,
+            member_id=self.member.id,
         )
         self.auditctl_event.create.assert_called_once()
         self.ixctl_member.objects.assert_called_once_with(ports=[self.virtual_port.id])
