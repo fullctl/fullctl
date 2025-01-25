@@ -477,6 +477,69 @@ def test_create_routeserver(db, pdb_data, account_objects):
     assert ix.rs_set.count() == 2
 
 
+def test_create_routeserver_dupe_router_id_in_org(db, pdb_data, account_objects):
+    ix = account_objects.ix
+    client = account_objects.api_client
+    org = account_objects.org
+    assert account_objects.routeserver
+    payload = {
+        "asn": 63311,
+        "graceful_shutdown": False,
+        "ix": 1,
+        "max_as_path_length": 32,
+        "name": "New rs",
+        "no_export_action": "pass",
+        "router_id": "194.168.0.1",
+    }
+    response = client.post(
+        reverse("ixctl_api:routeserver-list", args=(org.slug, ix.slug)),
+        json.dumps(payload),
+        content_type="application/json",
+    )
+
+    # Response is correct
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert len(data) == 1
+    assert data[0]["name"] == "New rs"
+    assert data[0]["router_id"] == "194.168.0.1"
+
+    # Now create a new routeserver with the same router_id at
+    # a different ix (but same org)
+    #
+    # should result in a validation error
+
+    ix2 = models.InternetExchange.objects.create(
+        instance=ix.instance,
+        name="ix2",
+        pdb_id=2,
+        urlkey="ix2",
+        status="ok",
+        slug="ix2",
+    )
+
+    payload = {
+        "asn": 63311,
+        "graceful_shutdown": False,
+        "ix": ix2.id,
+        "max_as_path_length": 32,
+        "name": "New rs2",
+        "no_export_action": "pass",
+        "router_id": "194.168.0.1",
+    }
+
+    response = client.post(
+        reverse("ixctl_api:routeserver-list", args=(org.slug, ix2.slug)),
+        json.dumps(payload),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    assert response.json()["errors"]["router_id"] == [
+        "Router ID already exists for this organization"
+    ]
+
+
 def test_delete_routeserver(db, pdb_data, account_objects):
     ix = account_objects.ix
     rs = account_objects.routeserver
@@ -538,6 +601,68 @@ def test_update_routeserver(db, pdb_data, account_objects):
 
     # Unchanged fields remain unchanged
     assert data[0]["ars_type"] == routeserver.ars_type
+
+
+def test_update_routeserver_dupe_router_id_in_org(db, pdb_data, account_objects):
+    """
+    Test that updating a routeserver to have a router_id that already exists in the org
+    results in a validation error
+    """
+
+    ix = account_objects.ix
+    rs = account_objects.routeserver
+    client = account_objects.api_client
+    org = account_objects.org
+
+    # different ix
+    ix2 = models.InternetExchange.objects.create(
+        instance=ix.instance,
+        name="ix2",
+        pdb_id=2,
+        urlkey="ix2",
+        status="ok",
+        slug="ix2",
+    )
+
+    # Create a new routeserver with a different router_id
+    rs2 = models.Routeserver.objects.create(
+        ix=ix2,
+        name="rs2",
+        asn=63311,
+        router_id="193.168.0.2",
+        rpki_bgp_origin_validation=False,
+        ars_type="bird",
+        max_as_path_length=32,
+        operational_status="operational",
+    )
+
+    # Update the first routeserver to have the same router_id as the second
+
+    payload = {
+        "ars_type": "bird",
+        "asn": 63311,
+        "graceful_shutdown": False,
+        "id": rs.id,
+        "ix": ix.id,
+        "max_as_path_length": 32,
+        "name": "changed name",  # changed
+        "no_export_action": "pass",
+        "router_id": rs2.router_id,  # changed
+        "rpki_bgp_origin_validation": False,
+        "status": "ok",
+    }
+
+    response = client.put(
+        reverse("ixctl_api:routeserver-detail", args=(org.slug, ix.slug, rs.id)),
+        json.dumps(payload),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    print(response.json())
+    assert response.json()["errors"]["router_id"] == [
+        "Router ID already exists for this organization"
+    ]
 
 
 def test_retrieve_routeserverconfig(db, pdb_data, account_objects):

@@ -842,6 +842,12 @@ class Routeserver(HandleRefModel):
         related_name="rs_set",
     )
 
+    org = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="rs_set",
+    )
+
     # RS Config
 
     name = models.CharField(
@@ -906,6 +912,35 @@ class Routeserver(HandleRefModel):
 
     class HandleRef:
         tag = "routeserver"
+
+    @classmethod
+    def preload_events(cls, routeservers):
+        """
+        Preloads auditctl event information
+
+        Argument(s):
+        - routeservers (`list` of `RouteServer`): routeservers to load events for
+        """
+        event_ids = [
+            str(routeserver.event) for routeserver in routeservers if routeserver.event
+        ]
+        if not event_ids:
+            return
+
+        events = auditctl.Event().get_events_by_ids(event_ids=event_ids)
+        if not events:
+            return
+
+        events = {event.id: event for event in events}
+        for routeserver in routeservers:
+            if not routeserver.event:
+                continue
+
+            event = events.get(str(routeserver.event))
+            if not event:
+                continue
+
+            routeserver._event_object = event
 
     @property
     def org(self):
@@ -1144,34 +1179,21 @@ class Routeserver(HandleRefModel):
                     }
                 )
 
-    @classmethod
-    def preload_events(cls, routeservers):
+    def clean(self):
         """
-        Preloads auditctl event information
-
-        Argument(s):
-        - routeservers (`list` of `RouteServer`): routeservers to load events for
+        Router ID must be unique per organization
         """
-        event_ids = [
-            str(routeserver.event) for routeserver in routeservers if routeserver.event
-        ]
-        if not event_ids:
-            return
+        qset = Routeserver.objects.filter(
+            router_id=self.router_id, ix__instance__org=self.org
+        )
 
-        events = auditctl.Event().get_events_by_ids(event_ids=event_ids)
-        if not events:
-            return
+        if self.id:
+            qset = qset.exclude(id=self.id)
 
-        events = {event.id: event for event in events}
-        for routeserver in routeservers:
-            if not routeserver.event:
-                continue
-
-            event = events.get(str(routeserver.event))
-            if not event:
-                continue
-
-            routeserver._event_object = event
+        if qset.exists():
+            raise ValidationError(
+                {"router_id": _("Router ID must be unique per organization")}
+            )
 
 
 @reversion.register

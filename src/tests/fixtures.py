@@ -11,9 +11,11 @@ _ = lambda s: s  # noqa: E731
 def reset_auto_fields():
     from django.core.management.color import no_style
     from django.db import connection
-    from django_ixctl.models import Organization
+    from django_ixctl.models import InternetExchange, Organization
 
-    sequence_sql = connection.ops.sequence_reset_sql(no_style(), [Organization])
+    sequence_sql = connection.ops.sequence_reset_sql(
+        no_style(), [Organization, InternetExchange]
+    )
     with connection.cursor() as cursor:
         for sql in sequence_sql:
             cursor.execute(sql)
