@@ -25,6 +25,8 @@ import django_devicectl.sflow as sflow
 
 log = structlog.get_logger("django_structlog")
 
+TIMESERIES_AVAILABLE = settings.TIMESERIES_DB_URL is not None
+
 
 class OrgConcurrencyLimit(qualifiers.Base):
     """
@@ -245,6 +247,9 @@ class UpdateTrafficGraphs(Task):
 
     def update_victoriametrics(self, all_data: list[dict]):
 
+        if not TIMESERIES_AVAILABLE:
+            return
+
         if not all_data:
             return
 
@@ -328,7 +333,18 @@ class UpdateTrafficGraphs(Task):
         context_obj.meta["graph"] = graph_file
         context_obj.save()
 
-    def import_mrtg(self, data):
+    def import_mrtg(self, data: dict):
+        """
+        Will import MRTG log lines into RRD and VictoriaMetrics
+        """
+
+        # RRD
+        self.import_mrtg_rrd(data)
+
+        # VictoriaMetrics
+        self.import_mrtg_victoriametrics(data)
+
+    def import_mrtg_rrd(self, data):
         """
         Import MRTG log lines into RRD file for the given context object
         """
@@ -361,6 +377,73 @@ class UpdateTrafficGraphs(Task):
 
         context_obj.meta["graph"] = graph_file
         context_obj.save()
+
+    def import_mrtg_victoriametrics(self, data: dict):
+        """
+        Import MRTG log lines into VictoriaMetrics for the given context object
+
+        Context object will be a virtual port or physical port instance.
+
+        Data will be a dictionary with keys `id` and `log_lines`
+
+        Where id is the id of the context object and log_lines is a list of strings
+        as exported from MRTG.
+
+        Each log line should be in the format:
+
+        timestamp bps_in bps_out bps_in_max bps_out_max
+        """
+
+        if not TIMESERIES_AVAILABLE:
+            return
+
+        metrics = make_metrics()
+
+        context_obj = self.context_model.objects.get(id=data["id"])
+
+        tags_base = {
+            "ctl_org_id": self.org.remote_id,
+            "ctl_org": self.org.slug,
+            "ctl_port_id": data["id"],
+            "ctl_device_id": context_obj.device.id,
+        }
+
+        log_lines = data["log_lines"]
+        points = []
+        for log_line in log_lines:
+            parts = log_line.split(" ")
+
+            if len(parts) != 5:
+                log.error(f"Invalid log line: {log_line}")
+                continue
+
+            timestamp = int(parts[0])
+            bps_in = float(parts[1])
+            bps_out = float(parts[2])
+            bps_in_max = float(parts[3])
+            bps_out_max = float(parts[4])
+
+            tags = {
+                **tags_base,
+            }
+
+            point = Point(
+                measurement="mrtg",
+                tags=tags,
+                fields={
+                    "bps_in": bps_in * 8,
+                    "bps_out": bps_out * 8,
+                    "bps_in_max": bps_in_max * 8,
+                    "bps_out_max": bps_out_max * 8,
+                },
+                timestamp=timestamp,
+            )
+
+            points.append(point)
+
+        if points:
+            log.debug("Writing points to victoriametrics", points=points)
+            metrics.write_many(points)
 
 
 @register
