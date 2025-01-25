@@ -198,30 +198,6 @@ class PointOfContact(Aaactl):
         ref_tag = "poc"
         data_object_cls = PointOfContactObject
 
-    @staticmethod
-    def merge_configs(configs: list[dict]):
-        """
-        Merge PointOfContact configs per service i.e.
-        configs = [
-            {"service": "peerctl", "recipients": ["third@email.com"]},
-            {"service": "peerctl", "recipients": ["first@email.com"]},
-        ]
-        would be merged to return 
-        [
-            {"service": "peerctl", "recipients": ["first@email.com", "third@email.com"]},
-        ]
-        """
-        merged_data = {}
-        for config in configs:
-            service = config["service"]
-            if service not in merged_data:
-                merged_data[service] = {"service": service, "recipients": []}
-            merged_data[service]["recipients"].extend(config["recipients"])
-        return [
-            {"service": service, "recipients": list(set(values["recipients"]))}
-            for service, values in merged_data.items()
-        ]
-
     def save_poc(
         self,
         org_id: int,
@@ -229,17 +205,10 @@ class PointOfContact(Aaactl):
         delivery_type: str,
         service: str,
         poc_type: str,
-        recipients: list[str],
+        recipients: list[str] | None,
+        entity: int | None = None,
     ):
         status = "ok"
-        data = {
-            "org": org_id,
-            "delivery_type": delivery_type,
-            "config": [{"service": service, "recipients": recipients}],
-            "type": poc_type,
-            "status": status,
-        }
-
         poc_objects = self.get(
             "data/poc/",
             params={
@@ -250,13 +219,37 @@ class PointOfContact(Aaactl):
             },
         )
         if not poc_objects:
+            if not recipients:
+                return
+
+            data = {
+                "org": org_id,
+                "delivery_type": delivery_type,
+                "config": [
+                    {"service": service, "recipients": recipients, "entity": entity}
+                ],
+                "type": poc_type,
+                "status": status,
+            }
             return self.create_poc(data)
 
         poc = poc_objects[0]
-        data["config"] = self.merge_configs(
-            poc.get("config", []) + data.get("config", [])
-        )
-        return self.update_poc(poc.get("id"), data)
+        for index, config in enumerate(poc.get("config", [])):
+            if config.get("service") == service and config.get("entity") == entity:
+                if not recipients:
+                    del poc["config"][index]
+                    break
+                config["recipients"] = recipients
+                break
+        else:
+            if recipients:
+                poc["config"] = poc.get("config", []) + [
+                    {"service": service, "recipients": recipients, "entity": entity}
+                ]
+            else:
+                return
+
+        return self.update_poc(poc.get("id"), poc)
 
     def create_poc(self, data: dict):
         """
@@ -276,23 +269,30 @@ class PointOfContact(Aaactl):
         """
         return self.put(f"data/poc/{poc_id}", json=data)
 
-    def get_email_alert_recipients(self, org, service: str) -> str | None:
+    def get_email_alert_recipients(
+        self, org, service: str, entity: int | None = None
+    ) -> str | None:
         """
         Get the service email alert recipients for an org
         """
-        poc_objects = self.get(
-            "data/poc/",
-            params={
-                "org": org.slug,
-                "delivery_type": "email",
-                "status": "ok",
-                "type": "notifications",
-            },
-        )
+        params = {
+            "org": org.slug,
+            "delivery_type": "email",
+            "status": "ok",
+            "type": "notifications",
+        }
+        if entity:
+            params["entity"] = entity
+
+        poc_objects = self.get("data/poc/", params=params)
         if not poc_objects:
             return None
 
         for config in poc_objects[0].get("config", []):
-            if config.get("service") == service:
-                return ", ".join(config.get("recipients", []))
+            if entity:
+                if config.get("service") == service and config.get("entity") == entity:
+                    return ", ".join(config.get("recipients", []))
+            else:
+                if config.get("service") == service:
+                    return ", ".join(config.get("recipients", []))
         return
