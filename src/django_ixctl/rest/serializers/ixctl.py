@@ -211,7 +211,11 @@ class InternetExchange(ModelSerializer):
         return cleaned_data
 
     def save_email_alert_recipients(self, recipients: str):
-        recipients = [recipient.strip() for recipient in recipients.strip().split(",")]
+        recipients = (
+            [recipient.strip() for recipient in recipients.strip().split(",")]
+            if recipients
+            else None
+        )
         org = self.context.get("org")
         aaactl.PointOfContact().save_poc(
             delivery_type="email",
@@ -225,8 +229,9 @@ class InternetExchange(ModelSerializer):
     def save(self, **kwargs):
         email_alert_recipients = self.validated_data.pop("email_alert_recipients")
         instance = super().save(**kwargs)
-        if email_alert_recipients:
-            self.save_email_alert_recipients(recipients=email_alert_recipients)
+        self.save_email_alert_recipients(
+            recipients=self.validated_data.get("email_alert_recipients")
+        )
         return instance
 
     def to_representation(self, instance):
