@@ -322,6 +322,9 @@ class IPAddress(ModelSerializer):
 
 @register
 class VirtualPort(ModelSerializer):
+
+    vlan_id = serializers.IntegerField(source="normalized_vlan_id")
+
     class Meta:
         model = models.VirtualPort
         fields = [

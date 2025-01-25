@@ -932,7 +932,20 @@ class VirtualPort(ServiceBridgeReferenceModel):
         on_delete=models.CASCADE,
     )
 
+    # we have a legacy vlan id which holds the actual
+    # vlan value as the dcim knows it
+    #
+    # TODO: deprecate in favor of vlan_object
     vlan_id = models.IntegerField()
+
+    vlan_object = models.ForeignKey(
+        "Vlan",
+        help_text="vlan",
+        related_name="virtual_ports",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     reference = ReferencedObjectCharField(
         bridge_type="virtual_port",
@@ -1033,6 +1046,25 @@ class VirtualPort(ServiceBridgeReferenceModel):
             except AttributeError:
                 self._device = None
         return self._device
+
+    @property
+    def facility(self) -> Facility:
+        if not hasattr(self, "_facility"):
+            try:
+                self._facility = self.device.facility
+            except AttributeError:
+                self._facility = None
+        return self._facility
+
+    @property
+    def normalized_vlan_id(self) -> int | None:
+        """
+        Returns the the vlan id from the vlan object linked to
+        the virtual port if it exists, otherwise returns the vlan_id
+        """
+        if self.vlan_object:
+            return self.vlan_object.vlan
+        return self.vlan_id
 
     @property
     def physical_ports(self):

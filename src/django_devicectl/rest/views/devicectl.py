@@ -486,7 +486,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
     def virtual_ports(self, request, org, instance, device, *args, **kwargs):
         ordering_filter = CaseInsensitiveOrderingFilter(["name", "vlan_id"])
         queryset = device.virtual_ports.select_related(
-            "logical_port", "port", "port__port_info"
+            "logical_port", "port", "port__port_info", "vlan_object",
         ).prefetch_related("port__port_info__mac_addresses")
         queryset = ordering_filter.filter_queryset(request, queryset, self)
 
@@ -1021,7 +1021,7 @@ class VirtualPort(PortTrafficMixin, CachedObjectMixin, viewsets.GenericViewSet):
         )
         queryset = self.get_queryset().filter(logical_port__instance=instance)
         queryset = queryset.select_related(
-            "logical_port", "port", "port__port_info"
+            "logical_port", "port", "port__port_info", "vlan_object"
         ).prefetch_related("port__port_info__mac_addresses")
         queryset = ordering_filter.filter_queryset(request, queryset, self)
 

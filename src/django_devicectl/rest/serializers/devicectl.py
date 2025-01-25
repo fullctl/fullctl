@@ -346,6 +346,7 @@ class VirtualPort(TagMixin, ModelSerializer):
             "device",
             "device_name",
             "physical_ports",
+            "vlan_object",
             "vlan_id",
             "port",
             "tags",
@@ -465,6 +466,9 @@ class VirtualPort(TagMixin, ModelSerializer):
             id=representation["logical_port"]
         )
         representation["logical_port"] = LogicalPort(logical_port_instance).data
+
+        # normalize the vlan id
+        representation["vlan_id"] = instance.normalized_vlan_id
 
         return representation
 
