@@ -97,7 +97,15 @@ def test_api_select_poc(db, account_objects, settings):
     delivery_type = "email"
     service = "ixctl"
     status = "ok"
-    config = [{"service": service, "recipients": ["test@test.com", "email@email.com"]}]
+    entity = 743
+    config = [
+        {"service": service, "recipients": ["test@test.com", "email@email.com"]},
+        {
+            "service": "peerctl",
+            "entity": entity,
+            "recipients": ["another@test.com", "email@email.com"],
+        },
+    ]
     _type = "notifications"
     poc = models.PointOfContact(
         org=account_objects.org, delivery_type=delivery_type, config=config
@@ -107,6 +115,14 @@ def test_api_select_poc(db, account_objects, settings):
     api_url = reverse("service_bridge_api:service-bridge-data-poc-list")
 
     response = account_objects.api_client.get(f"{api_url}?service={service}")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["data"]) == 1
+    assert data["data"][0]["org"] == account_objects.org.id
+    assert data["data"][0]["config"] == config
+    assert data["data"][0]["status"] == "ok"
+
+    response = account_objects.api_client.get(f"{api_url}?service=peerctl")
     assert response.status_code == 200
     data = response.json()
     assert len(data["data"]) == 1
@@ -141,6 +157,11 @@ def test_api_select_poc(db, account_objects, settings):
     data = response.json()
     assert len(data["data"]) == 1
 
+    response = account_objects.api_client.get(f"{api_url}?entity={entity}")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["data"]) == 1
+
 
 def test_api_update_poc(db, account_objects):
     poc = models.PointOfContact(
@@ -159,7 +180,10 @@ def test_api_update_poc(db, account_objects):
     poc_id = data["data"][0]["id"]
     org_id = data["data"][0]["org"]
 
-    config = [{"service": "peerctl", "recipients": ["test@test.com"]}]
+    config = [
+        {"service": "ixctl", "recipients": ["test@test.com", "email@email.com"]},
+        {"service": "peerctl", "entity": 23, "recipients": ["test@test.com"]},
+    ]
     put_api_url = reverse(
         "service_bridge_api:service-bridge-data-poc-detail", args=(poc_id,)
     )
@@ -184,7 +208,11 @@ def test_api_create_poc(db, account_objects, settings):
 
     config = [
         {"service": "ixctl", "recipients": ["test@test.com", "email@email.com"]},
-        {"service": "peerctl", "recipients": ["another@test.com", "email@email.com"]},
+        {
+            "service": "peerctl",
+            "entity": 30,
+            "recipients": ["another@test.com", "email@email.com"],
+        },
     ]
     response = account_objects.api_client.post(
         api_url,

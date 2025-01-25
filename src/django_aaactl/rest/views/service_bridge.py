@@ -274,6 +274,7 @@ class PointOfContact(AaactlDataViewSet):
         ("status", "status"),
         ("service", MethodFilter("service")),
         ("type", "type"),
+        ("entity", MethodFilter("entity")),
     ]
     allow_unfiltered = True
     queryset = account_models.PointOfContact.objects.all().select_related("org")
@@ -284,3 +285,6 @@ class PointOfContact(AaactlDataViewSet):
 
     def filter_service(self, qset, value):
         return qset.filter(config__contains=[{"service": value}])
+
+    def filter_entity(self, qset, value):
+        return qset.filter(config__contains=[{"entity": int(value)}])

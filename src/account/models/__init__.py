@@ -1014,6 +1014,7 @@ class PocConfigData(BaseModel):
     service: Literal["ixctl", "peerctl"]
     delivery_type: str
     recipients: list[str]
+    entity: int | None = None
 
     @model_validator(mode="after")
     def validate_recipients(self):
@@ -1027,6 +1028,12 @@ class PocConfigData(BaseModel):
                 except ValidationError:
                     raise ValueError(_(f"'{recipient}' is not a valid email address."))
 
+        return self
+
+    @model_validator(mode="after")
+    def validate_entity(self):
+        if self.service == "peerctl" and not self.entity:
+            raise ValueError(_(f"Entity must be provided for {self.service} service."))
         return self
 
 
