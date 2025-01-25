@@ -58,3 +58,67 @@ options:
   --force-color         Force colorization of the command output.
   --skip-checks         Skip system checks.
   ```
+
+## ixctl_find_dupe_router_ids
+
+Will check for instances of route servers within the same organization that share the same router_id value.
+
+### Examples
+
+```shell
+# Check for duplicate router IDs across all organizations
+python manage.py ixctl_find_dupe_router_ids
+```
+
+### Expected output
+
+```shell
+Checking 12 route servers across 3 organizations
+Found duplicate router_ids within the same organization:
+
+Duplicate router_id: 192.0.2.1
+Affected records:
+- ID: 123, IX: chix, Org: Demo Org
+- ID: 456, IX: amsix, Org: Demo Org
+----------------------------------------
+
+Duplicate router_id: 192.0.2.2
+Affected records:
+- ID: 789, IX: linx, Org: Test Org
+- ID: 012, IX: decix, Org: Test Org
+----------------------------------------
+```
+
+### Usage
+
+```shell
+usage: manage.py ixctl_find_dupe_router_ids [-h] [--commit] [--queue]
+                                            [--timeout TIMEOUT] [--version]
+                                            [-v {0,1,2,3}] [--settings SETTINGS]
+                                            [--pythonpath PYTHONPATH] [--traceback]
+                                            [--no-color] [--force-color]
+                                            [--skip-checks]
+
+Finds instances of route servers within the same organization that share the same
+router_id value
+
+options:
+  -h, --help            show this help message and exit
+  --commit              Commit changes
+  --queue, -Q           Queue the execution of this command as a task
+  --timeout TIMEOUT     Max execution time in queue (seconds)
+  --version             Show program's version number and exit.
+  -v {0,1,2,3}, --verbosity {0,1,2,3}
+                        Verbosity level; 0=minimal output, 1=normal output, 2=verbose
+                        output, 3=very verbose output
+  --settings SETTINGS   The Python path to a settings module, e.g.
+                        "myproject.settings.main". If this isn't provided, the
+                        DJANGO_SETTINGS_MODULE environment variable will be used.
+  --pythonpath PYTHONPATH
+                        A directory to add to the Python path, e.g.
+                        "/home/djangoprojects/myproject".
+  --traceback           Raise on CommandError exceptions.
+  --no-color            Don't colorize the command output.
+  --force-color         Force colorization of the command output.
+  --skip-checks         Skip system checks.
+```

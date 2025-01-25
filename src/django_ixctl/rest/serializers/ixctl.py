@@ -1026,6 +1026,28 @@ class Routeserver(ModelSerializer):
             "routeserver_config_error",
         ]
 
+    def validate(self, validated_data: dict) -> dict:
+        """
+        Router ID must be unique per organization
+        """
+
+        ix = validated_data.get("ix")
+        router_id = validated_data.get("router_id")
+
+        qset = models.Routeserver.objects.filter(
+            ix__instance__org=ix.instance.org, router_id=router_id
+        )
+
+        if self.instance and self.instance.id:
+            qset = qset.exclude(id=self.instance.id)
+
+        if qset.exists():
+            raise ValidationError(
+                {"router_id": _("Router ID already exists for this organization")}
+            )
+
+        return validated_data
+
     def validate_extra_config(self, value):
         try:
             data = yaml.load(value, Loader=Loader)
