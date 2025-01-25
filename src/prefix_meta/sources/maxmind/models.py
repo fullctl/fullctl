@@ -22,6 +22,9 @@ class MaxmindLocationData(Data):
     class Meta:
         indexes = [
             models.Index("location_type", name="location_type_idx"),
+            models.Index(
+                fields=["location_type", "data_ptr"], name="location_compound_idx"
+            ),
         ]
 
     class Config(Data.Config):
