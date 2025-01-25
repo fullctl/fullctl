@@ -1143,14 +1143,14 @@ class TrafficAlertNotificationBase:
         The email type for the email notification i.e. 'traffic_alert_ix', 'traffic_alert_net'
         Used to get the email type
         """
-        raise NotImplementedError("You must set the alert email type.")
+        raise NotImplementedError("Subclasses must set the alert email type.")
 
     @property
     def alert_service_type(self) -> str:
         """
         The service type for the notification i.e. 'ixctl', 'peerctl'
         """
-        raise NotImplementedError("You must set the alert service type.")
+        raise NotImplementedError("Subclasses must set the alert service type.")
 
     def get_pdb_email_notification_recepients(
         self, virtual_port: models.VirtualPort
@@ -1158,29 +1158,19 @@ class TrafficAlertNotificationBase:
         """
         Gets the email recipients from pdb
         """
-        return
+        raise NotImplementedError(
+            "Subclasses must implement the 'get_pdb_email_notification_recepients' method."
+        )
 
-    def get_poc_email_notification_recepients(self) -> list[str] | None:
+    def get_poc_email_notification_recepients(
+        self, member: ixctl.InternetExchangeMemberObject
+    ) -> list[str] | None:
         """
         Gets the email recipients from aaactl point of contact
         """
-        try:
-            poc = list(
-                self.aaactl_poc.objects(
-                    org=self.org.slug,
-                    type="notifications",
-                    delivery_type="email",
-                    status="ok",
-                    service=self.alert_service_type,
-                )
-            )[0]
-        except IndexError:
-            return None
-
-        for config in poc.config:
-            if config.get("service") == self.alert_service_type:
-                return config.get("recipients")
-        return
+        raise NotImplementedError(
+            "Subclasses must implement the 'get_poc_email_notification_recepients' method."
+        )
 
     def send_notification(
         self,
@@ -1235,12 +1225,16 @@ class TrafficAlertNotificationBase:
             },
         )
 
-    def get_recipients(self, virtual_port: models.VirtualPort) -> list[str] | None:
+    def get_recipients(
+        self,
+        virtual_port: models.VirtualPort,
+        member: ixctl.InternetExchangeMemberObject,
+    ) -> list[str] | None:
         """
         Gets the nofication recipients first from the aaactl poc
         if not found then gets it from pdb
         """
-        recipients = self.get_poc_email_notification_recepients()
+        recipients = self.get_poc_email_notification_recepients(member)
         if not recipients:
             recipients = self.get_pdb_email_notification_recepients(virtual_port)
         return recipients
@@ -1257,7 +1251,7 @@ class TrafficAlertNotificationBase:
             - sending the notification
             - updating the notification fields of the virtual ports
         """
-        recipients = self.get_recipients(virtual_port)
+        recipients = self.get_recipients(virtual_port=virtual_port, member=member)
         if not recipients:
             log.exception(
                 f"No recipients in traffic alert contact point for IX. ({self.ix.name} #{self.ix.id})"
@@ -1308,6 +1302,27 @@ class OperatorTrafficAlertNotification(TrafficAlertNotificationBase):
             return
         return [data.tech_email] if data.tech_email else None
 
+    def get_poc_email_notification_recepients(
+        self, member: ixctl.InternetExchangeMemberObject
+    ) -> list[str] | None:
+        try:
+            poc = list(
+                self.aaactl_poc.objects(
+                    org=self.org.slug,
+                    type="notifications",
+                    delivery_type="email",
+                    status="ok",
+                    service=self.alert_service_type,
+                )
+            )[0]
+        except IndexError:
+            return
+
+        for config in poc.config:
+            if config.get("service") == self.alert_service_type:
+                return config.get("recipients")
+        return
+
 
 class MemberTrafficAlertNotification(TrafficAlertNotificationBase):
     """
@@ -1355,6 +1370,31 @@ class MemberTrafficAlertNotification(TrafficAlertNotificationBase):
         except IndexError:
             log.debug(f"No recepient found in pdb for IX {self.ix.id}.")
         return recipients
+
+    def get_poc_email_notification_recepients(
+        self, member: ixctl.InternetExchangeMemberObject
+    ) -> list[str] | None:
+        try:
+            poc = list(
+                self.aaactl_poc.objects(
+                    org=self.org.slug,
+                    type="notifications",
+                    delivery_type="email",
+                    status="ok",
+                    service=self.alert_service_type,
+                    entity=member.asn,
+                )
+            )[0]
+        except IndexError:
+            return
+
+        for config in poc.config:
+            if (
+                config.get("service") == self.alert_service_type
+                and config.get("entity") == member.asn
+            ):
+                return config.get("recipients")
+        return
 
 
 class TrafficThresholdAlerts:
