@@ -134,3 +134,6 @@ settings_manager.set_option("MAXMIND_DATABASE_FOLDER_NAME_PREFIX", "GeoLite2")
 
 # The count per chunk the bulk update operation
 settings_manager.set_option("MAXMIND_BATCH_CHUNK_SIZE", 1000, envvar_type=int)
+
+# Maxmind API URL
+settings_manager.set_option("MAXMIND_URL", "")

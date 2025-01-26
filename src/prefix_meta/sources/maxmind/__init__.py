@@ -1,2 +1,2 @@
-from .base import MaxmindLoadDatabaseTask  # noqa
-from .models import MaxmindLocationData, MaxmindLocationsReferenceData  # noqa
+from .base import MaxmindRequest  # noqa
+from .models import MaxmindData  # noqa
