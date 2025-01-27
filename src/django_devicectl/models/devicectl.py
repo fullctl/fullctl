@@ -1562,7 +1562,7 @@ class Vlan(ServiceBridgeReferenceModel):
         blank=True,
         help_text=_("Remote reference id"),
         services=[
-            "fullctl.service_bridge.netbox.Vlan",
+            "fullctl.service_bridge.netbox.VLAN",
         ],
     )
 
@@ -1573,7 +1573,6 @@ class Vlan(ServiceBridgeReferenceModel):
         map_netbox = {
             "description": "description",
             "name": "name",
-            "site.custom_fields.devicectl_id": "facility",
             "id": "reference",
         }
 
