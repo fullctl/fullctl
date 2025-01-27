@@ -932,7 +932,20 @@ class VirtualPort(ServiceBridgeReferenceModel):
         on_delete=models.CASCADE,
     )
 
+    # we have a legacy vlan id which holds the actual
+    # vlan value as the dcim knows it
+    #
+    # TODO: deprecate in favor of vlan_object
     vlan_id = models.IntegerField()
+
+    vlan_object = models.ForeignKey(
+        "Vlan",
+        help_text="vlan",
+        related_name="virtual_ports",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     reference = ReferencedObjectCharField(
         bridge_type="virtual_port",
@@ -1033,6 +1046,25 @@ class VirtualPort(ServiceBridgeReferenceModel):
             except AttributeError:
                 self._device = None
         return self._device
+
+    @property
+    def facility(self) -> Facility:
+        if not hasattr(self, "_facility"):
+            try:
+                self._facility = self.device.facility
+            except AttributeError:
+                self._facility = None
+        return self._facility
+
+    @property
+    def normalized_vlan_id(self) -> int | None:
+        """
+        Returns the the vlan id from the vlan object linked to
+        the virtual port if it exists, otherwise returns the vlan_id
+        """
+        if self.vlan_object:
+            return self.vlan_object.vlan
+        return self.vlan_id
 
     @property
     def physical_ports(self):
@@ -1497,3 +1529,68 @@ class DeviceMetric(MetricModel):
         'Metric(demo_device) 1.2 at YYYY-MM-DD'.
         """
         return f"Metric{self.device_name} {self.data} at {self.timestamp}"
+
+
+@reversion.register()
+@grainy_model(
+    namespace="vlan",
+    namespace_instance="vlan.{instance.org.permission_id}.{instance.id}",
+)
+class Vlan(ServiceBridgeReferenceModel):
+    instance = models.ForeignKey(
+        Instance,
+        related_name="vlans",
+        on_delete=models.CASCADE,
+        help_text=_("deviceCtl environment instance"),
+    )
+    facility = models.ForeignKey(
+        Facility,
+        related_name="vlans",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        help_text=_("Device is located in this facility"),
+    )
+    vlan = models.PositiveIntegerField(default=0)
+    name = models.CharField(max_length=255, blank=True, null=True)
+    slug = models.CharField(max_length=255, blank=True, null=True)
+    description = models.CharField(blank=True, null=True)
+    reference = ReferencedObjectCharField(
+        bridge_type="vlan",
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Remote reference id"),
+        services=[
+            "fullctl.service_bridge.netbox.VLAN",
+        ],
+    )
+
+    class HandleRef:
+        tag = "vlan"
+
+    class ServiceBridge:
+        map_netbox = {
+            "description": "description",
+            "name": "name",
+            "id": "reference",
+        }
+
+    class Meta:
+        db_table = "devicectl_vlan"
+        verbose_name = _("Vlan")
+        verbose_name_plural = _("Vlans")
+        indexes = [
+            models.Index("reference", name="vlan_reference"),
+        ]
+
+    def __str__(self):
+        return f"Vlan({self.id}) {self.name}"
+
+    @property
+    def display_name(self):
+        return self.name
+
+    @property
+    def org(self):
+        return self.instance.org

@@ -322,6 +322,9 @@ class IPAddress(ModelSerializer):
 
 @register
 class VirtualPort(ModelSerializer):
+
+    vlan_id = serializers.IntegerField(source="normalized_vlan_id")
+
     class Meta:
         model = models.VirtualPort
         fields = [
@@ -695,3 +698,21 @@ class PortStatus(serializers.Serializer):
         required=False,
         default="ok",
     )
+
+
+@register
+class Vlan(ModelSerializer):
+    ref_tag = "vlan"
+
+    facility_name = serializers.SerializerMethodField()
+    facility_slug = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Vlan
+        fields = "__all__"
+
+    def get_facility_name(self, obj):
+        return obj.facility.name if obj.facility else None
+
+    def get_facility_slug(self, obj):
+        return obj.facility.slug if obj.facility else None

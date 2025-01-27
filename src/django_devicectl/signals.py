@@ -10,6 +10,7 @@ from django_devicectl.models.devicectl import (
     Port,
     PortInfo,
     VirtualPort,
+    Vlan,
 )
 from django_devicectl.models.tasks import RequestPeerctlSync
 
@@ -54,6 +55,29 @@ def auto_create_port(sender, instance, created, **kwargs):
             port.port_info = port_info
             port.save()
 
+@receiver(pre_save, sender=VirtualPort)
+def auto_create_vlan(sender, instance, **kwargs):
+    """
+    When a new virtual port is saved and the vlan_id value mismatches
+    the vlan_object.vlan or vlan_object isn't set, set the vlan_object
+    """
+    if not instance.vlan_id:
+        return
+
+    vlan_object_exists = instance.vlan_object_id is not None
+    vlan_id_mismatch = (
+        instance.vlan_object.vlan != instance.vlan_id
+        if vlan_object_exists
+        else False
+    )
+
+    if not vlan_object_exists or vlan_id_mismatch:
+        vlan_object, _ = Vlan.objects.get_or_create(
+            instance=instance.device.instance,
+            vlan=instance.vlan_id,
+            facility=instance.facility,
+        )
+        instance.vlan_object = vlan_object
 
 @receiver(pre_save, sender=DeviceRefereeReport)
 def set_report_kind(sender, instance, **kwargs):

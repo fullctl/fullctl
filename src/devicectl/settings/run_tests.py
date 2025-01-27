@@ -1,9 +1,11 @@
 SERVER_EMAIL = "test@localhost"
 STATIC_URL = "/s/test"
 PACKAGE_VERSION = "test"
+USE_LOCAL_PERMISSIONS = True
 DEBUG = True
 SERVICE_KEY = "dead:beef"
 SECURE_SSL_REDIRECT = False
+AAACTL_URL = "test://aaactl"
 
 LOGGING = {
     "version": 1,

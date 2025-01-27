@@ -3,12 +3,16 @@ from django.utils.translation import gettext_lazy as _
 from fullctl.django.models.concrete.service_bridge import service_bridge_action
 from fullctl.service_bridge.context import service_bridge_context
 
+import structlog
+
 import django_devicectl.models.devicectl as models
 
 # TODO: work around to deal with pagination for now
 # Needs to be fixed in fullctl service bridge client to naturally
 # support pagination arguments
 NETBOX_PAGE_LIMIT = 999999
+
+log = structlog.get_logger(__name__)
 
 
 @service_bridge_action("netbox_push_device_loc", _("Netbox: update device location"))
@@ -199,6 +203,14 @@ def pull_interface(netbox_if, device):
     Called automatically by `pull_interfaces`
     """
 
+    log.info("[PULL] Netbox interface", name=netbox_if.display, id=netbox_if.id)
+
+    # vlan set
+    if netbox_if.untagged_vlan:
+        vlan_id = netbox_if.untagged_vlan.vid
+    else:
+        vlan_id = 0
+
     try:
         virtual_port = models.VirtualPort.objects.get(
             reference=str(netbox_if.id), logical_port__physical_ports__device=device
@@ -226,9 +238,13 @@ def pull_interface(netbox_if, device):
                 device=device, logical_port=logical_port, name=netbox_if.display
             )
 
+        # TODO: what to do for tagged vlans, there could be multiple
+
         virtual_port = models.VirtualPort.objects.create(
             reference=str(netbox_if.id),
-            vlan_id=0,
+            # setting the vlan id here will automatically create / reference
+            # the vlan object via the signal handler
+            vlan_id=vlan_id,
             logical_port=logical_port,
             name=netbox_if.display,
         )
@@ -236,6 +252,10 @@ def pull_interface(netbox_if, device):
     changed = virtual_port.sync_from_reference(ref_obj=netbox_if) or sync_tags(
         netbox_if, virtual_port
     )
+
+    if vlan_id != virtual_port.vlan_id:
+        virtual_port.vlan_id = vlan_id
+        changed = True
 
     if changed:
         virtual_port.save()
@@ -301,6 +321,10 @@ def pull(org, *args, **kwargs):
 
     roles = [r.lower() for r in DEVICE_ROLE]
 
+    # sync vlans
+
+    sync_vlans(instance)
+
     # create / update devices from netbox data
 
     for netbox_device in netbox.Device().objects(limit=NETBOX_PAGE_LIMIT):
@@ -323,7 +347,7 @@ def pull(org, *args, **kwargs):
         device, created = models.Device.objects.get_or_create(
             reference=str(netbox_device.id), instance=instance
         )
-        print(
+        log.info(
             f"[PULL] Netbox device {netbox_device.name} {device.reference} ROLE {role} ..."
         )
         references.append(device.reference)
@@ -375,6 +399,52 @@ def pull(org, *args, **kwargs):
     qset_remove.delete()
 
     delete_interfaces(instance)
+
+
+def sync_vlans(
+    instance: models.Instance,
+):
+    """
+    Pulls all vlans from netbox
+    """
+
+    log.info("[PULL] Syncing vlans ...")
+    for netbox_vlan in netbox.VLAN().objects(limit=NETBOX_PAGE_LIMIT):
+
+        log.info(
+            "[PULL] Netbox vlan",
+            name=netbox_vlan.name,
+            id=netbox_vlan.id,
+            vid=netbox_vlan.vid,
+        )
+
+        if netbox_vlan.site:
+
+            site = netbox.Site().first(id=netbox_vlan.site.id)
+            facility = None
+
+            try:
+                facility = models.Facility.objects.get(
+                    instance=instance, reference=str(site.custom_fields.devicectl_id)
+                )
+            except models.Facility.DoesNotExist:
+                log.info(
+                    f"[PULL] Netbox vlan {netbox_vlan.name} {netbox_vlan.id} no facility found, creating without facility ..."
+                )
+
+        vlan, created = models.Vlan.objects.get_or_create(
+            reference=str(netbox_vlan.id),
+            instance=instance,
+            defaults={
+                "facility": facility,
+            },
+        )
+
+        changed = vlan.sync_from_reference(ref_obj=netbox_vlan)
+
+        if changed or created:
+            log.info(f"[PULL] Netbox vlan {netbox_vlan.name} {vlan.reference} ...")
+            vlan.save()
 
 
 def push(org, *args, **kwargs):
