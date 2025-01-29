@@ -102,9 +102,7 @@ class ServiceBridgeAction(HandleRefModel):
     action = models.CharField(
         max_length=8, choices=(("pull", _("Pull")), ("push", _("Push"))), default="pull"
     )
-    function = models.CharField(
-        max_length=255, choices=lazy(handler_choices, list)(), null=True, blank=True
-    )
+    function = models.CharField(max_length=255, null=True, blank=True)
     data_map = models.JSONField(
         null=True,
         blank=True,
@@ -121,6 +119,10 @@ class ServiceBridgeAction(HandleRefModel):
         db_table = "fullctl_service_bridge_action"
         verbose_name = _("Service Bridge Action")
         verbose_name_plural = _("Service Bridge Actions")
+
+    @property
+    def function_choices(self):
+        return handler_choices()
 
     @property
     def target_model(self):
@@ -274,3 +276,11 @@ class ServiceBridgeAction(HandleRefModel):
                 )
                 return
             fn("pull", obj)
+
+    def clean(self):
+
+        # validate function choice
+
+        if self.function:
+            if self.function not in handlers:
+                raise models.ValidationError({"function": _("Unknown function choice")})
