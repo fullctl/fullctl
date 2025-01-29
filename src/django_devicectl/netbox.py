@@ -1,9 +1,8 @@
 import fullctl.service_bridge.netbox as netbox
+import structlog
 from django.utils.translation import gettext_lazy as _
 from fullctl.django.models.concrete.service_bridge import service_bridge_action
 from fullctl.service_bridge.context import service_bridge_context
-
-import structlog
 
 import django_devicectl.models.devicectl as models
 

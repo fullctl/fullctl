@@ -55,6 +55,7 @@ def auto_create_port(sender, instance, created, **kwargs):
             port.port_info = port_info
             port.save()
 
+
 @receiver(pre_save, sender=VirtualPort)
 def auto_create_vlan(sender, instance, **kwargs):
     """
@@ -66,9 +67,7 @@ def auto_create_vlan(sender, instance, **kwargs):
 
     vlan_object_exists = instance.vlan_object_id is not None
     vlan_id_mismatch = (
-        instance.vlan_object.vlan != instance.vlan_id
-        if vlan_object_exists
-        else False
+        instance.vlan_object.vlan != instance.vlan_id if vlan_object_exists else False
     )
 
     if not vlan_object_exists or vlan_id_mismatch:
@@ -78,6 +77,7 @@ def auto_create_vlan(sender, instance, **kwargs):
             facility=instance.facility,
         )
         instance.vlan_object = vlan_object
+
 
 @receiver(pre_save, sender=DeviceRefereeReport)
 def set_report_kind(sender, instance, **kwargs):
