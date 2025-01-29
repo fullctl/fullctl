@@ -1,4 +1,5 @@
 import reversion
+from django import forms
 from django.contrib import admin, messages
 from django.http import FileResponse, HttpResponseForbidden
 from django.shortcuts import redirect
@@ -21,7 +22,10 @@ from fullctl.django.models.concrete import (
     TaskSchedule,
     UserSettings,
 )
-from fullctl.django.models.concrete.service_bridge import ServiceBridgeAction
+from fullctl.django.models.concrete.service_bridge import (
+    ServiceBridgeAction,
+    handler_choices,
+)
 from fullctl.django.tasks import requeue as requeue_task
 
 
@@ -266,6 +270,14 @@ class UrlActionMixin:
         return urls
 
 
+class ServiceBridgeActionForm(forms.ModelForm):
+    function = forms.ChoiceField(required=False, widget=forms.Select())
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["function"].choices = self.instance.function_choices
+
+
 @admin.register(ServiceBridgeAction)
 class ServiceBridgeAction(admin.ModelAdmin):
     list_display = (
@@ -278,6 +290,14 @@ class ServiceBridgeAction(admin.ModelAdmin):
         "created",
         "updated",
     )
+
+    form = ServiceBridgeActionForm
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        field = super().formfield_for_dbfield(db_field, **kwargs)
+        if db_field.name == "function":
+            field.choices = handler_choices()
+        return field
 
 
 @admin.register(UserSettings)
