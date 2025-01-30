@@ -18,7 +18,7 @@ class PrefixmetadRequest(Request):
 
     class Config(Request.Config):
         source_name = "prefixmetad"
-        api_url = f"{settings.PREFIXMETAD_URL}/check/prefixmetad"
+        api_url = f"{settings.PREFIXMETAD_URL}/check"
         meta_data_cls = PrefixmetadData
 
     class HandleRef:
@@ -26,7 +26,7 @@ class PrefixmetadRequest(Request):
 
     @classmethod
     def target_to_url(cls, target):
-        return f"{cls.config('api_url')}/check/{target}"
+        return f"{cls.config('api_url')}/{target}"
 
     @classmethod
     def send(cls, target):
