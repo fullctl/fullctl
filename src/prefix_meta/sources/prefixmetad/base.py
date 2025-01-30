@@ -33,6 +33,6 @@ class PrefixmetadRequest(Request):
         url = cls.target_to_url(target)
 
         log.debug("prefixmetad", requesting=url, target=target)
-        _resp = cls.send_request(target)
+        _resp = cls.send_request(url)
 
         return cls.process(target, url, 200, lambda: _resp.json())
