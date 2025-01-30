@@ -1,38 +1,38 @@
 import structlog
 from django.conf import settings
-from .models import MaxmindData
+from .models import PrefixmetadData
 from prefix_meta.models import Request
 
 log = structlog.get_logger("django")
 
 
-class MaxmindRequest(Request):
+class PrefixmetadRequest(Request):
     """
     Handles requests and request caching to the API
 
-    Needs `MAXMIND_URL` specified in settings
+    Needs `PREFIXMETAD_URL` specified in settings
     """
 
     class Meta:
         proxy = True
 
     class Config(Request.Config):
-        source_name = "maxmind"
-        api_url = f"{settings.MAXMIND_URL}/check/maxmind"
-        meta_data_cls = MaxmindData
+        source_name = "prefixmetad"
+        api_url = f"{settings.PREFIXMETAD_URL}/check/prefixmetad"
+        meta_data_cls = PrefixmetadData
 
     class HandleRef:
-        tag = "maxmind_request"
+        tag = "prefixmetad_request"
 
     @classmethod
     def target_to_url(cls, target):
-        return f"{cls.config('api_url')}/check/maxmind/{target}"
+        return f"{cls.config('api_url')}/check/{target}"
 
     @classmethod
     def send(cls, target):
         url = cls.target_to_url(target)
 
-        log.debug("maxmind", requesting=url, target=target)
+        log.debug("prefixmetad", requesting=url, target=target)
         _resp = cls.send_request(target)
 
         return cls.process(target, url, 200, lambda: _resp.json())
