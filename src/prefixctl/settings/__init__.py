@@ -119,4 +119,4 @@ settings.print_debug(f"loaded settings for version {PACKAGE_VERSION} (DEBUG: {DE
 # Added here since app is moved into prefixctl
 
 # Prefixmetad API URL
-settings_manager.set_option("PREFIXMETAD_URL", "")
+settings_manager.set_option("PREFIXMETAD_URLS", "")

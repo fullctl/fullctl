@@ -1,5 +1,4 @@
 import structlog
-from django.conf import settings
 from .models import PrefixmetadData
 from prefix_meta.models import Request
 
@@ -18,7 +17,7 @@ class PrefixmetadRequest(Request):
 
     class Config(Request.Config):
         source_name = "prefixmetad"
-        api_url = f"{settings.PREFIXMETAD_URL}/check"
+        api_url = ""
         meta_data_cls = PrefixmetadData
 
     class HandleRef:
@@ -26,7 +25,7 @@ class PrefixmetadRequest(Request):
 
     @classmethod
     def target_to_url(cls, target):
-        return f"{cls.config('api_url')}/{target}"
+        return f"{cls.config('api_url')}/check/{target}"
 
     @classmethod
     def send(cls, target):
