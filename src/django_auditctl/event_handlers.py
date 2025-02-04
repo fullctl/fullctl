@@ -454,15 +454,15 @@ class InsertMetrics(BaseHandler):
         )
 
 
-@register_handler(r"^v0.1\/[^\/]+\/notification\/+\/traffic_alert\/$")
-class TrafficAlertNotification(BaseHandler):
+@register_handler(r"^v0.1\/[^\/]+\/notification\/.+$")
+class EmailNotification(BaseHandler):
     """
     A class that inherits from the BaseHandler class and sends
-    traffic alert notification for events.
+    notification for events.
     """
 
     class HandleRef:
-        tag = "traffic_alert_notification"
+        tag = "email_notification"
 
     def __call__(self):
         """
@@ -471,6 +471,8 @@ class TrafficAlertNotification(BaseHandler):
         components = self.event.data.get("components", [])
 
         for component in components:
+
+            # delivery type email
             if component.get("kind") == "email":
                 send_plain(
                     subject=component.get("subject"),
