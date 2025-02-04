@@ -38,10 +38,10 @@ class PrefixmetadData(Data):
         for location in locations:
             location_data = location.get("data", {})
             location_source_name = location.get("source_name")
-            data[f"{location_source_name}_city_name"] = location_data.get(
-                "city", {}
-            ).get("name", None)
-            data[f"{location_source_name}_country_iso_code"] = location_data.get(
+            data[f"{location_source_name}_city"] = location_data.get("city", {}).get(
+                "name", None
+            )
+            data[f"{location_source_name}_country"] = location_data.get(
                 "country", {}
             ).get("country_iso_code", None)
 
