@@ -269,18 +269,31 @@ class PointOfContact(Aaactl):
         """
         return self.put(f"data/poc/{poc_id}", json=data)
 
-    def get_email_alert_recipients(
-        self, org, service: str, entity: int | None = None
-    ) -> str | None:
+    def get_recipients(
+        self,
+        org,
+        service: str,
+        entity: int | None = None,
+        delivery_type: str = "email",
+        poc_type: str = "notifications",
+        return_as_string: bool = False,
+    ) -> list[str] | str:
         """
-        Get the service email alert recipients for an org
+        Get the service alert recipients for an org regardless
+        of the delivery type
         """
+
         params = {
             "org": org.slug,
-            "delivery_type": "email",
             "status": "ok",
-            "type": "notifications",
         }
+
+        if poc_type:
+            params["type"] = poc_type
+
+        if delivery_type:
+            params["delivery_type"] = delivery_type
+
         if entity:
             params["entity"] = entity
 
@@ -289,10 +302,34 @@ class PointOfContact(Aaactl):
             return None
 
         for config in poc_objects[0].get("config", []):
-            if entity:
-                if config.get("service") == service and config.get("entity") == entity:
-                    return ", ".join(config.get("recipients", []))
-            else:
-                if config.get("service") == service:
-                    return ", ".join(config.get("recipients", []))
-        return
+            if config.get("service") != service:
+                continue
+
+            if entity and config.get("entity") != entity:
+                continue
+
+            recipients = config.get("recipients", [])
+
+            # Why do we need this here?
+            if return_as_string:
+                return ", ".join(recipients)
+
+            return recipients
+
+        return "" if return_as_string else []
+
+    def get_email_alert_recipients(
+        self, org, service: str, entity: int | None = None
+    ) -> str | None:
+        """
+        Get the service email alert recipients for an org
+        """
+        return self.get_recipients(
+            org,
+            service,
+            entity=entity,
+            delivery_type="email",
+            poc_type="notifications",
+            # why?
+            return_as_string=True,
+        )

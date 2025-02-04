@@ -6,6 +6,8 @@ import time
 import traceback
 from io import StringIO
 
+import pydantic
+import structlog
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -17,6 +19,8 @@ from django.utils.translation import gettext_lazy as _
 
 import fullctl.django.tasks
 import fullctl.django.tasks.extensions as extensions
+import fullctl.service_bridge.aaactl as aaactl
+import fullctl.service_bridge.auditctl as auditctl
 from fullctl.django.models.abstract.base import HandleRefModel
 from fullctl.django.tasks.qualifiers import Dynamic
 from fullctl.django.tasks.util import worker_id
@@ -33,6 +37,8 @@ __all__ = [
     "TaskSchedule",
     "CallCommand",
 ]
+
+log = structlog.get_logger(__name__)
 
 
 class LimitAction:
@@ -95,6 +101,12 @@ class ParentTaskNotFinished(IOError):
     """
 
     pass
+
+
+class ErrorNotificationConfig(pydantic.BaseModel):
+    subject: str
+    message: str
+    category: str
 
 
 class Task(HandleRefModel):
@@ -503,10 +515,63 @@ class Task(HandleRefModel):
         self.status = "completed"
         self.save()
 
-    def _fail(self, error):
-        self.error = error
+    def _fail(self, error_traceback: str, exc: Exception):
+        self.error = error_traceback
         self.status = "failed"
         self.save()
+        try:
+            self.handle_error_notification(exc)
+        except Exception as exc:
+            log.exception("Failed to send task error notification", exc=exc)
+
+    def handle_error_notification(self, exc: Exception):
+        """
+        First checks if the task has an error_notification
+        configured through the TaskMeta class, if so it
+        will send an email to the recipients specified
+        in aaactl.PointOfContact
+        """
+
+        error_notification_config: dict | ErrorNotificationConfig | None = (
+            self.task_meta_property("error_notification", None)
+        )
+
+        if not error_notification_config:
+            return
+
+        if isinstance(error_notification_config, dict):
+            error_notification_config = ErrorNotificationConfig(
+                **error_notification_config
+            )
+
+        recipients = aaactl.PointOfContact().get_recipients(
+            self.org,
+            settings.SERVICE_TAG,
+            delivery_type="email",
+            poc_type="error_notifications",
+        )
+
+        if not recipients:
+            log.debug(
+                "Task failed, error notification configured, but no recipients found.",
+                org=self.org.slug,
+                delivery_type="email",
+                poc_type="error_notifications",
+            )
+            return
+
+        compiled_message = "\n\n".join(
+            [error_notification_config.message, str(exc), f"Task ID: {self.id}"]
+        )
+
+        auditctl.Event().send_error_email(
+            self.org.slug,
+            settings.SERVICE_TAG,
+            category=error_notification_config.category,
+            subject=error_notification_config.subject,
+            message=compiled_message,
+            recipients=recipients,
+        )
 
     def _run(self):
         if self.status != "pending":
@@ -526,8 +591,8 @@ class Task(HandleRefModel):
             t_end = time.time()
             self.time = t_end - t_start
             self._complete(output)
-        except Exception:
-            self._fail(traceback.format_exc())
+        except Exception as exc:
+            self._fail(traceback.format_exc(), exc)
 
     def run(self, *args, **kwargs):
         """extend in proxy model"""
