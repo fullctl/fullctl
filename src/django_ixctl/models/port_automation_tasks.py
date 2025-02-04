@@ -116,6 +116,12 @@ class MemberPortUpdate(PortAutomationBase, Task):
     class TaskMeta(MemberValidationMixin.TaskMeta):
         result_type = dict
 
+        error_notification = {
+            "category": "member_port_update",
+            "subject": "Member Port Update Failed",
+            "message": "Ixctl failed to complete a member port update task, please see error details below for more information.",
+        }
+
     class HandleRef:
         tag = "task_member_port_update"
 
