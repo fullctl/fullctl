@@ -22,7 +22,7 @@ class TrafficAlertNotificationBase:
             at_capacity=None,
         )
 
-        self.auditctl_event = MagicMock(create=Mock())
+        self.auditctl_event = MagicMock(send_email=Mock())
 
         self.pdb_ix = MagicMock(
             tech_email="sample@test.com",
@@ -92,7 +92,7 @@ class TestOperatorTrafficAlertNotification(TrafficAlertNotificationBase):
             email_type=self.operator_traffic_alert_notification.alert_email_type,
             member_id=self.member.id,
         )
-        self.auditctl_event.create.assert_called_once()
+        self.auditctl_event.send_email.assert_called_once()
 
     def test_uses_pdb_recipients_if_no_poc(self):
         self.aaactl_poc.objects.return_value = []
@@ -108,7 +108,7 @@ class TestOperatorTrafficAlertNotification(TrafficAlertNotificationBase):
             email_type=self.operator_traffic_alert_notification.alert_email_type,
             member_id=self.member.id,
         )
-        self.auditctl_event.create.assert_called_once()
+        self.auditctl_event.send_email.assert_called_once()
 
 
 class TestMemberTrafficAlertNotification(TrafficAlertNotificationBase):
@@ -182,7 +182,7 @@ class TestMemberTrafficAlertNotification(TrafficAlertNotificationBase):
             email_type=self.member_traffic_alert_notification.alert_email_type,
             member_id=self.member.id,
         )
-        self.auditctl_event.create.assert_called_once()
+        self.auditctl_event.send_email.assert_called_once()
         assert self.ixctl_member.objects.call_count == 0
 
     def test_uses_pdb_recipients_if_no_poc(self):
@@ -201,7 +201,7 @@ class TestMemberTrafficAlertNotification(TrafficAlertNotificationBase):
             email_type=self.member_traffic_alert_notification.alert_email_type,
             member_id=self.member.id,
         )
-        self.auditctl_event.create.assert_called_once()
+        self.auditctl_event.send_email.assert_called_once()
         self.ixctl_member.objects.assert_called_once_with(ports=[self.virtual_port.id])
 
 

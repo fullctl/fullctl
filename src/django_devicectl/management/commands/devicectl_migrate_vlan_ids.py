@@ -1,4 +1,3 @@
-from django.conf import settings
 from fullctl.django.management.commands.base import CommandInterface
 
 from django_devicectl.models.devicectl import VirtualPort, Vlan

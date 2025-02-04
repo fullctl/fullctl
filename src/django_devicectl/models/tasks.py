@@ -1204,25 +1204,13 @@ class TrafficAlertNotificationBase:
         """
         Sends an email via auditctl
         """
-        event_id = f"v0.1/{self.org.slug}/notification/traffic_alert"
-        self.auditctl_event.create(
-            {
-                "org": self.org.slug,
-                "object_id": event_id,
-                "status": "ok",
-                "source": "devicectl",
-                "data": {
-                    "components": [
-                        {
-                            "id": "",
-                            "kind": "email",
-                            "subject": traffic_alert_email.subject,
-                            "message": traffic_alert_email.message,
-                            "recipients": recipients,
-                        }
-                    ]
-                },
-            },
+        self.auditctl_event.send_email(
+            org_slug=self.org.slug,
+            source_service_tag="devicectl",
+            category="traffic_alert",
+            subject=traffic_alert_email.subject,
+            message=traffic_alert_email.message,
+            recipients=recipients,
         )
 
     def get_recipients(
