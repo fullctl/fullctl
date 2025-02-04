@@ -39,6 +39,7 @@ from account.models import (
     OrganizationRole,
     OrganizationUser,
     PasswordReset,
+    PointOfContact,
     Role,
     UserPermissionOverride,
     UserSettings,
@@ -436,3 +437,11 @@ class FederatedServiceURLAdmin(admin.ModelAdmin):
 
     def org(self, obj):
         return obj.auth.org
+
+
+@admin.register(PointOfContact)
+class PointOfContactAdmin(admin.ModelAdmin):
+    list_display = ("org", "delivery_type", "type", "status", "created", "updated")
+    search_fields = ("org__name", "org__slug", "type", "delivery_type")
+    list_filter = ("delivery_type", "type", "status")
+    autocomplete_fields = ("org",)

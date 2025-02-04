@@ -21,7 +21,6 @@ from applications.models import Service
 from common.util import format_logo_url
 from whitelabel_fullctl.models import OrganizationBranding
 
-
 log = logging.getLogger(__name__)
 
 # Create your views here.
@@ -44,11 +43,11 @@ def valid_redirect(path, fallback):
 def get_fallback_url(user):
     default = reverse("account:controlpanel")
     org = Organization.default_org(user)
-    
+
     redirect_to_service = getattr(settings, "REDIRECT_TO_SERVICE")
     if not redirect_to_service:
         return default
-    
+
     try:
         service = Service.objects.get(name=redirect_to_service)
         return service.service_url.replace("{org.slug}", org.slug)

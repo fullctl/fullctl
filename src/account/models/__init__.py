@@ -1037,7 +1037,7 @@ class PocConfigData(BaseModel):
         return self
 
 
-class PointOfContact(models.Model):
+class PointOfContact(HandleRefModel):
     org = models.ForeignKey(
         Organization,
         on_delete=models.CASCADE,
@@ -1054,6 +1054,7 @@ class PointOfContact(models.Model):
         choices=(
             ("general", _("General")),
             ("notifications", _("Notifications")),
+            ("error_notifications", _("Error Notifications")),
         ),
         help_text=_("Point of contact type."),
     )
@@ -1082,7 +1083,9 @@ class PointOfContact(models.Model):
 
         if (
             PointOfContact.objects.exclude(pk=self.pk)
-            .filter(org=self.org, delivery_type=self.delivery_type, type=self.type)
+            .filter(
+                org_id=self.org_id, delivery_type=self.delivery_type, type=self.type
+            )
             .exists()
         ):
             raise ValidationError(
