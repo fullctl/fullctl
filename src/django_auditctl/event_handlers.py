@@ -437,6 +437,9 @@ class InsertMetrics(BaseHandler):
         if "ctl_object_id" not in metric_data.tags:
             metric_data.tags["ctl_object_id"] = self.event.object_id
 
+        if not metric_data.tags.get("ctl_router_id", None):
+            metric_data.tags.pop("ctl_router_id")
+
         log.info(
             f"Inserting metrics for {self.event.object_id}", metric_data=metric_data
         )
