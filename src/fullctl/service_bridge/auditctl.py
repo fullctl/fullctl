@@ -136,6 +136,61 @@ class Event(Auditctl):
                 }
             )
 
+    def send_email(
+        self,
+        org_slug: str,
+        source_service_tag: str,
+        category: str,
+        subject: str,
+        message: str,
+        recipients: list[str],
+    ) -> None:
+        """
+        Sends an email via auditctl
+        """
+        event_id = f"v0.1/{org_slug}/notification/{category}"
+        self.create(
+            {
+                "org": org_slug,
+                "object_id": event_id,
+                "status": "ok",
+                "source": source_service_tag,
+                "data": {
+                    "components": [
+                        {
+                            "id": "",
+                            "kind": "email",
+                            "subject": subject,
+                            "message": message,
+                            "recipients": recipients,
+                        }
+                    ]
+                },
+            },
+        )
+
+    def send_error_email(
+        self,
+        org_slug: str,
+        source_service_tag: str,
+        category: str,
+        subject: str,
+        message: str,
+        recipients: list[str],
+    ) -> None:
+        """
+        Wrapper for send_email that sends an email with a category of 'error'
+        """
+
+        self.send_email(
+            source_service_tag=source_service_tag,
+            org_slug=org_slug,
+            category=f"error/{source_service_tag}/{category}",
+            subject=subject,
+            message=message,
+            recipients=recipients,
+        )
+
     def get_last_updated_config_liveness_event(self, org_slug: str):
         """
         Get the config liveness event for an org
