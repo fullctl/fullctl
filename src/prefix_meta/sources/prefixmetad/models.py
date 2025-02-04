@@ -30,6 +30,9 @@ class PrefixmetadData(Data):
 
     @property
     def dynamic_data(self) -> dict:
+        if getattr(self, "_dynamic_data", None):
+            return self._dynamic_data
+
         data = {}
         locations = self.data.get("locations", [])
         for location in locations:
@@ -41,4 +44,15 @@ class PrefixmetadData(Data):
             data[f"{location_source_name}_country_iso_code"] = location_data.get(
                 "country", {}
             ).get("country_iso_code", None)
-        return data
+
+        self._dynamic_data = data
+        return self._dynamic_data
+
+    @property
+    def dynamic_data_columns(self):
+        if getattr(self, "_dynamic_data_columns", None):
+            return self._dynamic_data_columns
+        self._dynamic_data_columns = [
+            column_name for column_name in self.dynamic_data.keys()
+        ]
+        return self._dynamic_data_columns
