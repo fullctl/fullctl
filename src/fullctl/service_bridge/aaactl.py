@@ -312,7 +312,7 @@ class PointOfContact(Aaactl):
 
     def get_email_alert_recipients(
         self, org, service: str, entity: int | None = None
-    ) -> str | None:
+    ) -> list[str]:
         """
         Get the service email alert recipients for an org
         """
