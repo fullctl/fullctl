@@ -271,6 +271,12 @@ $peerctl.NetworkSettings = $tc.extend(
 
       this.$w.form.wire_submit(this.$w.form.element.find('[data-element=save_network]'));
 
+      $(this.$w.form).on("api-write:before", (ev, e, data)=> {
+        if(data.email_alert_recipients) {
+          data.email_alert_recipients = data.email_alert_recipients.split(",");
+        }
+      });
+
       this.button_update_peeringdb = this.$w.form.element.find('[data-element=export_network]');
       this.button_update_peeringdb.on("click", () => {
         var data = this.$w.form.payload();

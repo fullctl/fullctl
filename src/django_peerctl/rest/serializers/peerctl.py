@@ -47,8 +47,11 @@ class Network(ModelSerializer):
     prefix4_override = serializers.IntegerField(allow_null=True)
     prefix6_override = serializers.IntegerField(allow_null=True)
 
-    email_alert_recipients = serializers.CharField(
-        required=False, allow_blank=True, allow_null=True, default=None
+    email_alert_recipients = serializers.ListField(
+        child=serializers.EmailField(),
+        required=False,
+        allow_null=True,
+        default=None,
     )
 
     class Meta:
@@ -84,33 +87,7 @@ class Network(ModelSerializer):
         ]
         read_only_fields = ("asn",)
 
-    def split_recipients(self, recipients: str) -> list[str]:
-        return [
-            recipient.strip()
-            for recipient in recipients.strip().replace(",", " ").split(" ")
-            if recipient
-        ]
-
-    def validate(self, cleaned_data: dict) -> dict:
-        """
-        Extra validation is needed for the following fields
-        - email_alert_recipients: Checks that it contains valid emails
-        """
-        email_alert_recipients = cleaned_data.get("email_alert_recipients")
-        if not email_alert_recipients:
-            return cleaned_data
-
-        for recipient in self.split_recipients(email_alert_recipients):
-            try:
-                validate_email(recipient.strip())
-            except DjangoValidationError:
-                raise ValidationError(
-                    {"email_alert_recipients": _("Please enter valid email addresses.")}
-                )
-        return cleaned_data
-
-    def save_email_alert_recipients(self, recipients: str, asn: int):
-        recipients = self.split_recipients(recipients) if recipients else None
+    def save_email_alert_recipients(self, recipients: list[str] | None, asn: int):
         org = self.context.get("org")
         aaactl.PointOfContact().save_poc(
             delivery_type="email",
@@ -137,12 +114,11 @@ class Network(ModelSerializer):
     def get_contacts(self, instance):
         return instance.contacts
 
-    def get_email_alert_recipients(self, asn: int) -> str:
+    def get_email_alert_recipients(self, asn: int) -> list[str] | None:
         org = self.context.get("org")
-        recipients = aaactl.PointOfContact().get_email_alert_recipients(
+        return aaactl.PointOfContact().get_email_alert_recipients(
             org=org, service="peerctl", entity=asn
         )
-        return ", ".join(recipients)
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
