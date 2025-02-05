@@ -6,8 +6,6 @@ import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.sot as sot
 import structlog
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.validators import validate_email
 from django.db.models import Count, Q
 from django.utils.translation import gettext_lazy as _
 from fullctl.django.inet.validators import validate_mac_address, validate_mac_addresses
@@ -87,7 +85,7 @@ class Network(ModelSerializer):
         ]
         read_only_fields = ("asn",)
 
-    def save_email_alert_recipients(self, recipients: list[str] | None, asn: int):
+    def save_email_alert_recipients(self, recipients: list[str], asn: int):
         org = self.context.get("org")
         aaactl.PointOfContact().save_poc(
             delivery_type="email",
