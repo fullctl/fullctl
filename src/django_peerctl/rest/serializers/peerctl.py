@@ -114,7 +114,7 @@ class Network(ModelSerializer):
     def get_contacts(self, instance):
         return instance.contacts
 
-    def get_email_alert_recipients(self, asn: int) -> list[str] | None:
+    def get_email_alert_recipients(self, asn: int) -> list[str]:
         org = self.context.get("org")
         return aaactl.PointOfContact().get_email_alert_recipients(
             org=org, service="peerctl", entity=asn
