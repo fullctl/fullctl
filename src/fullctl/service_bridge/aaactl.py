@@ -276,7 +276,7 @@ class PointOfContact(Aaactl):
         entity: int | None = None,
         delivery_type: str = "email",
         poc_type: str = "notifications",
-    ) -> list[str] | str:
+    ) -> list[str]:
         """
         Get the service alert recipients for an org regardless
         of the delivery type
