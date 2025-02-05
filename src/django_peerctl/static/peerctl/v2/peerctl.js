@@ -274,6 +274,8 @@ $peerctl.NetworkSettings = $tc.extend(
       $(this.$w.form).on("api-write:before", (ev, e, data)=> {
         if(data.email_alert_recipients) {
           data.email_alert_recipients = data.email_alert_recipients.split(",");
+        } else {
+          data.email_alert_recipients = [];
         }
       });
 
