@@ -10,8 +10,6 @@ import fullctl.service_bridge.prefixctl as prefixctl
 import structlog
 import yaml
 from django.conf import settings
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.validators import validate_email
 from django.utils.translation import gettext_lazy as _
 from django_inet.rest import IPAddressField
 from fullctl.django.inet.validators import validate_mac_address, validate_mac_addresses
@@ -141,8 +139,11 @@ class UpdateLAN(ModelSerializer):
 @register
 class InternetExchange(ModelSerializer):
     graph_traffic_source = serializers.CharField(read_only=True)
-    email_alert_recipients = serializers.CharField(
-        required=False, allow_blank=True, allow_null=True, default=None
+    email_alert_recipients = serializers.ListField(
+        child=serializers.EmailField(),
+        required=False,
+        allow_null=True,
+        default=None,
     )
 
     class Meta:
@@ -180,13 +181,6 @@ class InternetExchange(ModelSerializer):
             "source_of_truth",
         ]
 
-    def split_recipients(self, recipients: str) -> list[str]:
-        return [
-            recipient.strip()
-            for recipient in recipients.strip().replace(",", " ").split(" ")
-            if recipient
-        ]
-
     def validate(self, cleaned_data):
         instance = cleaned_data.get("instance")
         slug = cleaned_data.get("slug")
@@ -202,23 +196,9 @@ class InternetExchange(ModelSerializer):
                 _("You already have an exchange with the identifier `{}`").format(slug)
             )
         cleaned_data["slug"] = slug
-
-        email_alert_recipients = cleaned_data.get("email_alert_recipients")
-
-        if not email_alert_recipients:
-            return cleaned_data
-
-        for recipient in self.split_recipients(email_alert_recipients):
-            try:
-                validate_email(recipient.strip())
-            except DjangoValidationError:
-                raise ValidationError(
-                    {"email_alert_recipients": _("Please enter valid email addresses.")}
-                )
         return cleaned_data
 
-    def save_email_alert_recipients(self, recipients: str):
-        recipients = self.split_recipients(recipients) if recipients else None
+    def save_email_alert_recipients(self, recipients: list[str]):
         org = self.context.get("org")
         aaactl.PointOfContact().save_poc(
             delivery_type="email",
@@ -240,12 +220,11 @@ class InternetExchange(ModelSerializer):
         representation["email_alert_recipients"] = self.get_email_alert_recipients()
         return representation
 
-    def get_email_alert_recipients(self) -> str:
+    def get_email_alert_recipients(self) -> list[str]:
         org = self.context.get("org")
-        recipients = aaactl.PointOfContact().get_email_alert_recipients(
+        return aaactl.PointOfContact().get_email_alert_recipients(
             org=org, service="ixctl"
         )
-        return ", ".join(recipients)
 
 
 @register
