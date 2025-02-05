@@ -180,6 +180,13 @@ class InternetExchange(ModelSerializer):
             "source_of_truth",
         ]
 
+    def split_recipients(self, recipients: str) -> list[str]:
+        return [
+            recipient.strip()
+            for recipient in recipients.strip().replace(",", " ").split(" ")
+            if recipient
+        ]
+
     def validate(self, cleaned_data):
         instance = cleaned_data.get("instance")
         slug = cleaned_data.get("slug")
@@ -201,7 +208,7 @@ class InternetExchange(ModelSerializer):
         if not email_alert_recipients:
             return cleaned_data
 
-        for recipient in email_alert_recipients.strip().split(","):
+        for recipient in self.split_recipients(email_alert_recipients):
             try:
                 validate_email(recipient.strip())
             except DjangoValidationError:
@@ -211,11 +218,7 @@ class InternetExchange(ModelSerializer):
         return cleaned_data
 
     def save_email_alert_recipients(self, recipients: str):
-        recipients = (
-            [recipient.strip() for recipient in recipients.strip().split(",")]
-            if recipients
-            else None
-        )
+        recipients = self.split_recipients(recipients) if recipients else None
         org = self.context.get("org")
         aaactl.PointOfContact().save_poc(
             delivery_type="email",
@@ -229,9 +232,7 @@ class InternetExchange(ModelSerializer):
     def save(self, **kwargs):
         email_alert_recipients = self.validated_data.pop("email_alert_recipients")
         instance = super().save(**kwargs)
-        self.save_email_alert_recipients(
-            recipients=self.validated_data.get("email_alert_recipients")
-        )
+        self.save_email_alert_recipients(recipients=email_alert_recipients)
         return instance
 
     def to_representation(self, instance):
@@ -241,9 +242,10 @@ class InternetExchange(ModelSerializer):
 
     def get_email_alert_recipients(self) -> str:
         org = self.context.get("org")
-        return aaactl.PointOfContact().get_email_alert_recipients(
+        recipients = aaactl.PointOfContact().get_email_alert_recipients(
             org=org, service="ixctl"
         )
+        return ", ".join(recipients)
 
 
 @register
