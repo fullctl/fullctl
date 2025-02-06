@@ -21,11 +21,30 @@ from fullctl.metrics import Metrics, make_metrics
 from fullctl.metrics.schema import Point
 
 import django_devicectl.models.devicectl as models
+import django_devicectl.mrtg as mrtg
 import django_devicectl.sflow as sflow
 
 log = structlog.get_logger("django_structlog")
 
 TIMESERIES_AVAILABLE = settings.TIMESERIES_DB_URL is not None
+
+
+def default_graph_renderer() -> str | None:
+    """
+    Will determine which (RRD or Timeseries) is responsible
+    for rendering the default PNGs.
+    """
+
+    # Legacy RRD graphs are still in use, thus for backwards
+    # compatibility pngs rendered from RRD will be used
+    if settings.GRAPHS_RRD_ENABLED:
+        return "rrd"
+
+    # If timeseries is available, use it
+    if settings.TIMESERIES_DB_URL is not None:
+        return "victoriametrics"
+
+    return None
 
 
 class OrgConcurrencyLimit(qualifiers.Base):
@@ -170,10 +189,18 @@ class UpdateTrafficGraphs(Task):
             return self._members
 
         port_ids = []
-        all_data = self.param["kwargs"].get("update", [])
+        all_data = self.param["kwargs"].get("update", []) + self.param["kwargs"].get(
+            "import_mrtg", []
+        )
         for data in all_data:
             virtual_port = self.context_model.objects.get(id=data["id"])
             port_ids.append(virtual_port.port.id)
+
+        if not port_ids:
+            self._members = {}
+            return self._members
+
+        port_ids = list(set(port_ids))
 
         self._members = {
             m.port: m
@@ -651,29 +678,18 @@ class RenderTrafficGraphs(Task):
             start_time = end_time - duration
 
             # Query VictoriaMetrics
-            query = metrics.build_query_string(
-                aggregator=None,
-                metrics=[
-                    "mrtg_bps_in",
-                    "mrtg_bps_out",
-                    "mrtg_bps_in_max",
-                    "mrtg_bps_out_max",
-                ],
-                tags={
-                    f"ctl_{object_label}_id": obj_id,
-                    "ctl_org": self.org.slug,
-                },
-                time_range=resolution,
-            )
-
-            query = f"sum by (__name__) ({query})"
-
-            result = metrics.query_range(
-                query,
-                start=str(start_time),
-                end=str(end_time),
-                step=str(resolution) + "s",
-            )
+            if obj_type == "ix":
+                result = mrtg.query_graph_ix_total(
+                    org_id=self.org.remote_id,
+                    ix_id=obj_id,
+                    step=f"{resolution}s",
+                    start=start_time,
+                    end=end_time,
+                )
+            else:
+                # TO BE IMPLEMENTED, we're currently only
+                # rendering ix totals to pngs.
+                continue
 
             # Process the data
             data = []
@@ -684,7 +700,7 @@ class RenderTrafficGraphs(Task):
             data_by_timestamp = {}
 
             for metric in result.data.result:
-                metric_name = metric.metric["__name__"]
+                metric_name = metric.metric["metric"]
 
                 # strip mrtg_ prefix
                 metric_name = metric_name.replace("mrtg_", "")
@@ -711,7 +727,14 @@ class RenderTrafficGraphs(Task):
             )
 
             # Save the graph
-            image_file_name = f"{file_prefix}{obj_type}-{obj_id}-{suffix}-victoria.png"
+            if default_graph_renderer() == "victoriametrics":
+                image_file_name = f"{file_prefix}{obj_type}-{obj_id}-{suffix}.png"
+            else:
+                image_file_name = (
+                    f"{file_prefix}{obj_type}-{obj_id}-{suffix}-victoria.png"
+                )
+
+            log.debug(f"VICTORIAMETRICS: {obj_type}-{obj_id} -> {image_file_name}")
 
             try:
                 f = OrganizationFile.objects.get(org=self.org, name=image_file_name)
@@ -782,7 +805,12 @@ class RenderTrafficGraphs(Task):
             service=service,
         )
 
-        image_file_name = f"{filename}-{suffix}.png"
+        if default_graph_renderer() == "rrd":
+            image_file_name = f"{filename}-{suffix}.png"
+        else:
+            image_file_name = f"{filename}-{suffix}-rrd.png"
+
+        log.debug(f"RRD: {filepath} -> {image_file_name}")
 
         try:
             f = OrganizationFile.objects.get(org=self.org, name=image_file_name)
