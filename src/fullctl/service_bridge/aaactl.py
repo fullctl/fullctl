@@ -276,8 +276,7 @@ class PointOfContact(Aaactl):
         entity: int | None = None,
         delivery_type: str = "email",
         poc_type: str = "notifications",
-        return_as_string: bool = False,
-    ) -> list[str] | str:
+    ) -> list[str]:
         """
         Get the service alert recipients for an org regardless
         of the delivery type
@@ -308,19 +307,12 @@ class PointOfContact(Aaactl):
             if entity and config.get("entity") != entity:
                 continue
 
-            recipients = config.get("recipients", [])
-
-            # Why do we need this here?
-            if return_as_string:
-                return ", ".join(recipients)
-
-            return recipients
-
-        return "" if return_as_string else []
+            return config.get("recipients", [])
+        return []
 
     def get_email_alert_recipients(
         self, org, service: str, entity: int | None = None
-    ) -> str | None:
+    ) -> list[str]:
         """
         Get the service email alert recipients for an org
         """
@@ -330,6 +322,4 @@ class PointOfContact(Aaactl):
             entity=entity,
             delivery_type="email",
             poc_type="notifications",
-            # why?
-            return_as_string=True,
         )
