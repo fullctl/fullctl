@@ -48,6 +48,9 @@ class Command(CommandInterface):
                 "migrate": True,
                 "database": settings.DATABASES["default"],
             },
+            "log": {
+                "allow_other_loggers": True,
+            }
         }
 
         if self.api_key:
