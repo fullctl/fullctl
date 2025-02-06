@@ -7,6 +7,7 @@ from django_devicectl.models.tasks import (
     MemberTrafficAlertNotification,
     OperatorTrafficAlertNotification,
     TrafficThresholdAlerts,
+    default_graph_renderer,
 )
 
 
@@ -357,3 +358,21 @@ class TestTrafficThresholdAlert:
         assert self.virtual_port.capacity_notified_ix > last_8_days
         assert self.virtual_port.at_capacity > last_8_days
         assert self.peerctl_port_info.objects.call_count == 2
+
+
+@pytest.mark.parametrize(
+    "rrd_enabled, ts_db_url, expected",
+    [
+        (True, None, "rrd"),
+        (False, None, None),
+        (False, "https://example.com", "victoriametrics"),
+        (True, "https://example.com", "rrd"),
+    ],
+)
+def test_default_graph_renderer(
+    settings, rrd_enabled: bool, ts_db_url: str | None, expected: str
+):
+    settings.GRAPHS_RRD_ENABLED = rrd_enabled
+    settings.TIMESERIES_DB_URL = ts_db_url
+
+    assert default_graph_renderer() == expected
