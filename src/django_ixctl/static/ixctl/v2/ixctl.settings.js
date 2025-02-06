@@ -81,6 +81,14 @@ $ctl.application.Ixctl.Settings = $tc.extend(
           $ctl.ixctl.select_ix(ix.id);
         });
       });
+
+      $(form).on("api-write:before", (ev, e, data)=> {
+        if(data.email_alert_recipients) {
+          data.email_alert_recipients = data.email_alert_recipients.split(",");
+        } else {
+          data.email_alert_recipients = [];
+        }
+      });
     },
 
     lan_settings : function() {

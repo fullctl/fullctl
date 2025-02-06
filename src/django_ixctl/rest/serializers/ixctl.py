@@ -10,8 +10,6 @@ import fullctl.service_bridge.prefixctl as prefixctl
 import structlog
 import yaml
 from django.conf import settings
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.validators import validate_email
 from django.utils.translation import gettext_lazy as _
 from django_inet.rest import IPAddressField
 from fullctl.django.inet.validators import validate_mac_address, validate_mac_addresses
@@ -141,8 +139,11 @@ class UpdateLAN(ModelSerializer):
 @register
 class InternetExchange(ModelSerializer):
     graph_traffic_source = serializers.CharField(read_only=True)
-    email_alert_recipients = serializers.CharField(
-        required=False, allow_blank=True, allow_null=True, default=None
+    email_alert_recipients = serializers.ListField(
+        child=serializers.EmailField(),
+        required=False,
+        allow_null=True,
+        default=None,
     )
 
     class Meta:
@@ -195,27 +196,9 @@ class InternetExchange(ModelSerializer):
                 _("You already have an exchange with the identifier `{}`").format(slug)
             )
         cleaned_data["slug"] = slug
-
-        email_alert_recipients = cleaned_data.get("email_alert_recipients")
-
-        if not email_alert_recipients:
-            return cleaned_data
-
-        for recipient in email_alert_recipients.strip().split(","):
-            try:
-                validate_email(recipient.strip())
-            except DjangoValidationError:
-                raise ValidationError(
-                    {"email_alert_recipients": _("Please enter valid email addresses.")}
-                )
         return cleaned_data
 
-    def save_email_alert_recipients(self, recipients: str):
-        recipients = (
-            [recipient.strip() for recipient in recipients.strip().split(",")]
-            if recipients
-            else None
-        )
+    def save_email_alert_recipients(self, recipients: list[str]):
         org = self.context.get("org")
         aaactl.PointOfContact().save_poc(
             delivery_type="email",
@@ -229,9 +212,7 @@ class InternetExchange(ModelSerializer):
     def save(self, **kwargs):
         email_alert_recipients = self.validated_data.pop("email_alert_recipients")
         instance = super().save(**kwargs)
-        self.save_email_alert_recipients(
-            recipients=self.validated_data.get("email_alert_recipients")
-        )
+        self.save_email_alert_recipients(recipients=email_alert_recipients)
         return instance
 
     def to_representation(self, instance):
@@ -239,7 +220,7 @@ class InternetExchange(ModelSerializer):
         representation["email_alert_recipients"] = self.get_email_alert_recipients()
         return representation
 
-    def get_email_alert_recipients(self) -> str:
+    def get_email_alert_recipients(self) -> list[str]:
         org = self.context.get("org")
         return aaactl.PointOfContact().get_email_alert_recipients(
             org=org, service="ixctl"
