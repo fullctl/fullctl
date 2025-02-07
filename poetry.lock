@@ -702,17 +702,21 @@ name = "django-peeringdb"
 version = "3.4.0"
 description = "PeeringDB Django models"
 optional = false
-python-versions = "<4.0,>=3.8"
-files = [
-    {file = "django_peeringdb-3.4.0-py3-none-any.whl", hash = "sha256:5b08810a2674ce7f13882ec1f89e060a84d8a6e96f541237f867f2d994fc5310"},
-    {file = "django_peeringdb-3.4.0.tar.gz", hash = "sha256:7cc060ade1cb55b85b0b4ea19afb910ad0a9511f0c495517be8dec9e0cb6ae84"},
-]
+python-versions = "^3.8"
+files = []
+develop = false
 
 [package.dependencies]
 asgiref = ">=3"
 django_countries = ">1"
 django_handleref = ">=2"
 django_inet = ">=1"
+
+[package.source]
+type = "git"
+url = "https://github.com/peeringdb/django-peeringdb.git"
+reference = "main"
+resolved_reference = "dc89d8034f14ee9b4ee8ee463aa67fe3b93b8000"
 
 [[package]]
 name = "django-recaptcha"
@@ -2654,4 +2658,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "7b6695b20cedafc7900573a4719822cc4632aa8dade0175b46748fb0f5592fab"
+content-hash = "6c2fc69d88ff00d40f49e749bb3e6f94e9591f31d7313d637ddc351ccc5be2b0"
