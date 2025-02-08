@@ -570,7 +570,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       });
 
       form.element.find('#port_set').change(function() {
-        const quanity = form.element.find('#member-port-quantity').val();
+        const quantity = form.element.find('#member-port-quantity').val();
         var selection_limit = quantity;
         var selected_options = $(this).find('option:selected');
 
@@ -589,19 +589,23 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
 
       function load_device_ports(selectedValue) {
         // Set the selected option's text into the text field
-        var port_select = new twentyc.rest.Select(
+        var port_select = this.port_select = new twentyc.rest.Select(
           form.element.find('#port_set').empty()
         );
         port_select.format_request_url = (url) => {
-          member_port_size = form.element.find('#member-port-size').val();
-          url = url + '?size=' + member_port_size;
-          url = url + '&unassigned=true';
+          if (selectedValue) {
+            url = url.replace("/0/", `/${selectedValue}/`);
+            member_port_size = form.element.find('#member-port-size').val();
+            url = url + '?size=' + member_port_size;
+            url = url + '&unassigned=true';
 
-          if(modal.port_config_intent() == "lag-decrease") {
-            url = url + `&virtual_port=${port.virtual_port}`;
+            if(modal.port_config_intent() == "lag-decrease") {
+              url = url + `&virtual_port=${port.virtual_port}`;
+            }
+            return url;
           }
 
-          url = url.replace("/0/", `/${selectedValue}/`);
+          url = this.port_select.element.data("api-physical-port-list");
           return url;
         };
         port_select.load().then(() => {

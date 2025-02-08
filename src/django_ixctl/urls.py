@@ -74,6 +74,11 @@ proxy.setup(
                 "virtual_port/<str:org_tag>/<int:pk>/metric/",
                 "virtual-port-metric",
             ),
+            (
+                "physical_port/{org_tag}",
+                "physical_port/<str:org_tag>/",
+                "physical-port-list",
+            ),
         ],
     ),
 )
