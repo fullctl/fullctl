@@ -269,6 +269,8 @@ def register(request):
                 if show_captcha:
                     del form.cleaned_data["captcha"]
                 user = get_user_model().objects.create_user(**form.cleaned_data)
+                user.application_instance = ""
+                user.save()
                 fn_login(request, user, backend="django_grainy.backends.GrainyBackend")
                 redirect_next = valid_redirect(
                     request.POST.get("next"), reverse("account:controlpanel")
