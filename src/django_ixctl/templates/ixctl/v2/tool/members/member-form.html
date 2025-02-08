@@ -273,6 +273,7 @@
               id="port_set"
               name="port_set"
               data-api-base="{% url "proxies-api-devicectl-device-physical-ports" org_tag=request.org.slug pk="0" %}"
+              data-api-physical-port-list="{% url "proxies-api-devicectl-physical-port-list" org_tag=request.org.slug %}"
               multiple
               >
             </select>
