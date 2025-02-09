@@ -120,3 +120,6 @@ settings.print_debug(f"loaded settings for version {PACKAGE_VERSION} (DEBUG: {DE
 
 # Prefixmetad API URL
 settings_manager.set_option("PREFIXMETAD_URLS", "")
+
+# Prefixmetad enabled
+settings_manager.set_bool("PREFIXMETAD_ENABLED", False)
