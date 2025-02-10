@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.signals import user_logged_out
 from django.db.models.signals import post_delete, post_save, pre_delete
-from django.dispatch import Signal, receiver
+from django.dispatch import receiver
 from django.shortcuts import render
 from django.utils.translation import gettext as _
 from oauth2_provider.models import AccessToken
@@ -50,10 +50,7 @@ def sync_org_user_delete(sender, **kwargs):
     )
 
 
-create_user_config_signal = Signal()
-
-
-@receiver(create_user_config_signal)
+@receiver(post_save, sender=get_user_model())
 def create_user_config(sender, **kwargs):
     if kwargs.get("created"):
         user = kwargs.get("instance")
@@ -62,7 +59,7 @@ def create_user_config(sender, **kwargs):
             EmailConfirmation.start(user)
         else:
             UserSettings.objects.get_or_create(user=user, email_confirmed=True)
-        send_signup_notification(user, kwargs.get("application_instance"))
+        send_signup_notification(user=user, application_instance=settings.AAACTL_URL)
 
 
 def send_signup_notification(user, application_instance):

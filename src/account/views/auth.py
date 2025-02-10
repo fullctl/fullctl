@@ -17,7 +17,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 import account.forms
 from account.models import EmailConfirmation, Invitation, Organization, PasswordReset
 from account.session import set_selected_org
-from account.signals import create_user_config_signal
 from applications.models import Service
 from common.util import format_logo_url
 from whitelabel_fullctl.models import OrganizationBranding
@@ -270,12 +269,6 @@ def register(request):
                 if show_captcha:
                     del form.cleaned_data["captcha"]
                 user = get_user_model().objects.create_user(**form.cleaned_data)
-                create_user_config_signal.send(
-                    sender=get_user_model(),
-                    created=True,
-                    instance=user,
-                    application_instance=http_host,
-                )
                 fn_login(request, user, backend="django_grainy.backends.GrainyBackend")
                 redirect_next = valid_redirect(
                     request.POST.get("next"), reverse("account:controlpanel")
