@@ -570,7 +570,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       });
 
       form.element.find('#port_set').change(function() {
-        const quanity = form.element.find('#member-port-quantity').val();
+        const quantity = form.element.find('#member-port-quantity').val();
         var selection_limit = quantity;
         var selected_options = $(this).find('option:selected');
 
