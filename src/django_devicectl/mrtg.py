@@ -41,7 +41,6 @@ max by (metric) (
 )
 """
 
-
 def metrics_client() -> Metrics:
     return Metrics(
         settings.TIMESERIES_DB_URL,
