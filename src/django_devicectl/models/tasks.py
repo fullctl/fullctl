@@ -397,9 +397,6 @@ class UpdateTrafficGraphs(Task):
 
         log_lines.reverse()
 
-        for log_line in log_lines:
-            print(log_line)
-
         mrtg_rrd.stream_log_lines_to_rrd(graph_path, log_lines)
 
         context_obj.meta["graph"] = graph_file
@@ -427,9 +424,11 @@ class UpdateTrafficGraphs(Task):
         metrics = make_metrics()
 
         context_obj = self.context_model.objects.get(id=data["id"])
+        members = self.members
 
         tags_base = {
             "ctl_org_id": self.org.remote_id,
+            "ctl_ix_id": members[context_obj.port.id].ix_id,
             "ctl_org": self.org.slug,
             "ctl_port_id": data["id"],
             "ctl_device_id": context_obj.device.id,
@@ -469,7 +468,7 @@ class UpdateTrafficGraphs(Task):
             points.append(point)
 
         if points:
-            log.debug("Writing points to victoriametrics", points=points)
+            #log.debug("Writing points to victoriametrics", points=points)
             metrics.write_many(points)
 
 
