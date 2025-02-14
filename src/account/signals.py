@@ -59,10 +59,10 @@ def create_user_config(sender, **kwargs):
             EmailConfirmation.start(user)
         else:
             UserSettings.objects.get_or_create(user=user, email_confirmed=True)
-        send_signup_notification(user)
+        send_signup_notification(user=user, application_instance=settings.AAACTL_URL)
 
 
-def send_signup_notification(user):
+def send_signup_notification(user, application_instance):
     if not settings.SIGNUP_NOTIFICATION_EMAIL:
         return
 
@@ -72,7 +72,7 @@ def send_signup_notification(user):
         render(
             None,
             "account/email/signup-notification.txt",
-            {"user": user},
+            {"user": user, "application_instance": application_instance},
         ).content.decode("utf-8"),
     )
 
