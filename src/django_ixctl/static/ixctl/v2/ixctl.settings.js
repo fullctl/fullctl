@@ -83,6 +83,11 @@ $ctl.application.Ixctl.Settings = $tc.extend(
       });
 
       $(form).on("api-write:before", (ev, e, data)=> {
+
+        if(isNaN(data.ixf_id) || data.ixf_id === "") {
+          delete data.ixf_id;
+        }
+
         if(data.email_alert_recipients) {
           data.email_alert_recipients = data.email_alert_recipients.split(",");
         } else {

@@ -349,6 +349,27 @@ class InternetExchange(PdbRefModel):
 
         return self.config.get("facilities") or []
 
+    @property
+    def ixf_id(self) -> int | None:
+        """
+        check self.config["ixf_id"]
+        """
+
+        if not self.config:
+            return None
+
+        return self.config.get("ixf_id", None)
+
+    @ixf_id.setter
+    def ixf_id(self, value: int | None):
+        if not self.config:
+            self.config = {}
+
+        if value is None:
+            self.config.pop("ixf_id", None)
+        else:
+            self.config["ixf_id"] = value
+
     def __str__(self):
         return f"{self.name} ({self.id})"
 

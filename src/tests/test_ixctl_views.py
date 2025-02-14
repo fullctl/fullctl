@@ -1,4 +1,5 @@
 import json
+import os
 
 from django.urls import reverse
 
@@ -22,6 +23,31 @@ def test_view_instance_other(db, pdb_data, account_objects):
     )
 
     assert response.status_code == 404
+
+def test_view_ixf_export_data(db, pdb_data, account_objects):
+    ix = account_objects.ix
+    response = account_objects.client.get(
+        reverse(
+            "ixf export",
+            args=(
+                account_objects.org.slug,
+                ix.slug,
+            ),
+        )
+        + "?pretty"
+    )
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/json"
+    incoming = json.loads(response.content)
+
+    with open(os.path.join(os.path.dirname(__file__), "data", "ixf", "test.json")) as f:
+        expected = json.load(f)
+
+    # drop timestamp
+    incoming.pop("timestamp")
+    expected.pop("timestamp")
+
+    assert incoming == expected
 
 
 def test_view_ixf_export_public(db, pdb_data, account_objects):

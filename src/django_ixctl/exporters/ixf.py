@@ -2,14 +2,25 @@ import datetime
 import json
 
 
+def normalize_member_type_v1(member_type: str) -> str:
+    """
+    IX-F schema v1.0 only supports peering, ixp and other
+
+    Any invalid type should be changed to "other"
+    """
+    if member_type in ["peering", "ixp"]:
+        return member_type
+    return "other"
+
+
 def export(ix, pretty=False):
     member_list = []
 
     rv = {
-        "version": "0.6",
+        "version": "1.0",
         "timestamp": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
         "member_list": member_list,
-        "ixp_list": [{"ixp_id": ix.id, "shortname": ix.name}],
+        "ixp_list": [{"ixp_id": ix.id, "shortname": ix.name, "ixf_id": ix.ixf_id or 0}],
     }
 
     for ix in [ix]:
@@ -20,7 +31,7 @@ def export(ix, pretty=False):
             connection_list = []
             member_dict = {
                 "asnum": member.asn,
-                "member_type": member.ixf_member_type,
+                "member_type": normalize_member_type_v1(member.ixf_member_type),
                 "connection_list": connection_list,
             }
             member_list.append(member_dict)
