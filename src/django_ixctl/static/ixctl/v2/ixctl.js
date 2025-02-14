@@ -570,7 +570,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       });
 
       form.element.find('#port_set').change(function() {
-        const quanity = form.element.find('#member-port-quantity').val();
+        const quantity = form.element.find('#member-port-quantity').val();
         var selection_limit = quantity;
         var selected_options = $(this).find('option:selected');
 
@@ -601,7 +601,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
             url = url + `&virtual_port=${port.virtual_port}`;
           }
 
-          url = url.replace("0", selectedValue);
+          url = url.replace("/0/", `/${selectedValue}/`);
           return url;
         };
         port_select.load().then(() => {
