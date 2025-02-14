@@ -66,6 +66,12 @@ class Netbox(Bridge):
     def ux_url(self, id):
         return f"{self.host}/{self.ref_tag}/{id}/?tab=main"
 
+    def _data(self, response):
+        status = response.status_code
+        # created
+        if status == 201:
+            return response.json()
+        return super()._data(response)
 
 class DeviceTypeObject(NetboxObject):
     description = "Netbox Device Type"
@@ -76,6 +82,22 @@ class DeviceType(Netbox):
         ref_tag = "dcim/device-types"
         data_object_cls = DeviceTypeObject
 
+class DeviceRoleObject(NetboxObject):
+    description = "Netbox Device Role"
+
+
+class DeviceRole(Netbox):
+    class Meta(Netbox.Meta):
+        ref_tag = "dcim/device-roles"
+        data_object_cls = DeviceRoleObject
+
+class ManufacturerObject(NetboxObject):
+    description = "Netbox Manufacturer"
+
+class Manufacturer(Netbox):
+    class Meta(Netbox.Meta):
+        ref_tag = "dcim/manufacturers"
+        data_object_cls = ManufacturerObject
 
 class DeviceObject(NetboxObject):
     description = "Netbox Device"
