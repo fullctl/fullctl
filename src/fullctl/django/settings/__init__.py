@@ -253,6 +253,8 @@ class SettingsManager(confu.util.SettingsManager):
         filename = os.path.join(os.path.dirname(__file__), "default.py")
         self.try_include(filename)
 
+        self.set_option("BRANDING_ORG", None, envvar_type=str)
+
     def set_default_append(self):
         DEBUG = self.get("DEBUG")
         self.set_option("DEBUG_EMAIL", DEBUG)
