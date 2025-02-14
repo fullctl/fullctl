@@ -689,6 +689,18 @@ class PhysicalPort(HandleRefModel):
         default=dict,
     )
 
+    reference = ReferencedObjectCharField(
+        bridge_type="physical_port",
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Remote reference id"),
+        services=[
+            "fullctl.service_bridge.nautobot.Interface",
+            "fullctl.service_bridge.netbox.Interface",
+        ],
+    )
+
     class HandleRef:
         tag = "physical_port"
 
