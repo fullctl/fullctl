@@ -7,6 +7,20 @@ from django.utils.translation import gettext as _
 from account.models import Organization
 from common.models import HandleRefModel
 
+import pydantic
+
+class OrganizationBrandingDataObject(pydantic.BaseModel):
+    name: str
+    html_footer: str
+    css: dict
+    dark_logo_url: str
+    light_logo_url: str
+    favicon_url: str
+    show_logo: bool
+
+    @property
+    def org_name(self) -> str:
+        return self.name
 
 def validate_logo_url_formatting(value):
     if value:
@@ -21,6 +35,15 @@ def validate_logo_url_formatting(value):
                 f"Unknown variable: {e}. Allowed variables are `version` and `static_path`"
             )
 
+def format_branding_url(url:str) -> str:
+    if url:
+        urlvars = {
+            "version": settings.PACKAGE_VERSION,
+            "static_path": settings.STATIC_URL,
+        }
+        return url.format(**urlvars)
+
+    return url
 
 @reversion.register
 class OrganizationBranding(HandleRefModel):
@@ -67,3 +90,14 @@ class OrganizationBranding(HandleRefModel):
 
     def __str__(self):
         return f"{self.org.name}'s Branding"
+
+    def serialize(self) -> OrganizationBrandingDataObject:
+        return OrganizationBrandingDataObject(**{
+            "name": self.org.name,
+            "html_footer": self.html_footer,
+            "css": self.css,
+            "dark_logo_url": format_branding_url(self.dark_logo_url),
+            "light_logo_url": format_branding_url(self.light_logo_url),
+            "favicon_url": format_branding_url(self.favicon_url),
+            "show_logo": self.show_logo,
+        })

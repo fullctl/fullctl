@@ -3,53 +3,35 @@ import sys
 
 from django.conf import settings
 from django.shortcuts import render
+from fullctl.django.util import error_context, load_branding_info
 
 import whitelabel_fullctl.models as branding_models
 
 
+def fetch_branding(branding_org:str, request) -> branding_models.OrganizationBranding:
+    org_branding = branding_models.OrganizationBranding.objects.filter(
+        org__slug=branding_org
+    ).first()
+    if not org_branding:
+        if http_host := request.get_host():
+            org_branding = branding_models.OrganizationBranding.objects.filter(
+                http_host=http_host
+            ).first()
+
+    return org_branding.serialize()
+
+
 def handle_error(request, exception, status):
-    if exception:
-        request.error_response = exception
-        exc_type = exception.__class__
-    else:
-        exc_type, exception, tb = sys.exc_info()
-
-    request.error_response = exception
-
     context = {
-        "error": {
-            "status": status,
-            "type_description": f"{exc_type}",
-            "description": f"{exception}",
-            "path": request.path,
-            "ip_address": request.META.get("HTTP_X_FORWARDED_FOR"),
-            "referer": request.META.get("HTTP_REFERER"),
-            "timestamp": datetime.datetime.utcnow(),
-        },
+        "error": error_context(status, exception, request),
         "org_branding": {},
+        "is_error_page": True,
     }
 
-    branding_org = getattr(settings, "BRANDING_ORG", None)
-    if branding_org:
-        org_branding = branding_models.OrganizationBranding.objects.filter(
-            org__slug=branding_org
-        ).first()
-        if not org_branding:
-            if http_host := request.get_host():
-                org_branding = branding_models.OrganizationBranding.objects.filter(
-                    http_host=http_host
-                ).first()
+    branding = load_branding_info(request, settings.BRANDING_ORG, fetch_branding)
 
-        if org_branding:
-            context["org_branding"] = {
-                "name": org_branding.org.name,
-                "html_footer": org_branding.html_footer,
-                "css": org_branding.css,
-                "dark_logo_url": org_branding.dark_logo_url,
-                "light_logo_url": org_branding.light_logo_url,
-                "favicon_url": org_branding.favicon_url,
-                "custom_org": True,
-            }
+    if branding:
+        context["org_branding"] = branding
 
     response = render(request, f"common/errors/{status}.html", context)
     response.status_code = status
