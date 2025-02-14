@@ -91,7 +91,7 @@ class Network(ModelSerializer):
             delivery_type="email",
             recipients=recipients,
             org_slug=org.slug,
-            org_id=org.id,
+            org_id=org.remote_id,
             poc_type="notifications",
             service="peerctl",
             entity=asn,
