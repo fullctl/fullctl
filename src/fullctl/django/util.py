@@ -1,6 +1,10 @@
+import sys
+from typing import Callable
 from datetime import datetime
+import structlog
 
 from django.conf import settings
+from django.utils import timezone
 
 from fullctl.django.context import current_request
 
@@ -9,6 +13,15 @@ if "django_peeringdb" in settings.INSTALLED_APPS:
 else:
     pdb_models = None
 
+__all__ = [
+    "error_context",
+    "host_url",
+    "load_branding_info",
+    "verified_asns",
+    "DEFAULT_FULLCTL_BRANDING",
+]
+
+log = structlog.get_logger(__name__)
 
 DEFAULT_FULLCTL_BRANDING = {
     "name": "FullCtl",
@@ -20,6 +33,47 @@ DEFAULT_FULLCTL_BRANDING = {
     "show_logo": True,
 }
 
+def error_context(status:int, exception:Exception, request) -> dict:
+    if exception:
+        exc_type = exception.__class__
+    else:
+        exc_type, exception, _ = sys.exc_info()
+    request.error_response = exception
+
+    return {
+        "status": status,
+        "type_description": f"{exc_type}",
+        "description": f"{exception}",
+        "path": request.path,
+        "ip_address": request.META.get("HTTP_X_FORWARDED_FOR"),
+        "referer": request.META.get("HTTP_REFERER"),
+        "timestamp": timezone.now(),
+    }
+
+def load_branding_info(request, branding_org:str, fn_fetch:Callable, raise_errors:bool=False) -> dict | None:
+
+    if not branding_org:
+        return None
+
+    try:
+        org_branding = fn_fetch(branding_org, request)
+
+        if org_branding:
+            return {
+                "name": org_branding.org_name,
+                "html_footer": org_branding.html_footer,
+                "css": org_branding.css,
+                "dark_logo_url": org_branding.dark_logo_url,
+                "light_logo_url": org_branding.light_logo_url,
+                "favicon_url": org_branding.favicon_url,
+                "custom_org": True,
+            }
+    except Exception as e:
+        # any exception here should be log, but not cause a 
+        # cascading error
+        log.exception("Error getting branding", e=e)
+        if raise_errors:
+            raise e
 
 def host_url():
     """

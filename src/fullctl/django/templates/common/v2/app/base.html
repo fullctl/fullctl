@@ -25,17 +25,22 @@
 {% block "content" %}
 
 <script>
+
+{% if request.user and request.user.id %}
 fullctl.user = {
   id : {{ request.user.id }},
   email : "{{ request.user.email }}",
   username : "{{ request.user.username }}"
 }
+{% endif %}
 
+{% if request.org %}
 fullctl.org = {
   id : {{ request.org.permission_id }},
   slug : "{{ request.org.slug }}",
   name : "{{ request.org.name }}"
 }
+{% endif %}
 
 {% if trial_object and trial_available %}
 fullctl.trial_object = {{ trial_object.id }}
@@ -118,11 +123,14 @@ fullctl.brand = {
       {% block "header_left" %}
       <div class="app-switcher" data-element="app_switcher">
         <div class="selected {{ request.app_id }} d-flex align-items-center">
+          {% if is_error_page %}<a href="/">{% endif %}
           {% if org_branding.dark_logo_url %}
           <img class="app-logo" src="{{ service_logo_dark }}" alt="{{ logo_alt_text }}">
           {% else %}
           <img class="app-logo" src="{% static service_logo_dark %}" alt="{{ logo_alt_text }}">
           {% endif %}
+          {% if is_error_page %}</a>{% endif %}
+        {% if not is_error_page %}
         <span class="icon {{ request.app_id }} icon-caret-y ms-4"></span>
         <div class="others" style="display:none">
           {% for service_app in service_applications %}
@@ -145,6 +153,7 @@ fullctl.brand = {
           {% endfor %}
 
         </div>
+        {% endif %}
         </div>
       </div>
       {% endblock "header_left" %}
@@ -172,6 +181,7 @@ fullctl.brand = {
       {% endif %}
 
       <!-- org switcher -->
+      {% if not is_error_page %}
       <div class="header-control d-flex align-items-center h-100">
         <div
           class="d-flex align-items-center px-3 ms-2 h-100"
@@ -237,8 +247,10 @@ fullctl.brand = {
           {% endif %}
         </div>
       </div>
+      {% endif %}
 
       <!-- user menu -->
+      {% if request.user and request.user.id %}
       <div class="header-control d-flex align-items-center h-100">
         <div
           class="d-flex align-items-center px-3 ms-2 h-100"
@@ -279,6 +291,8 @@ fullctl.brand = {
           </a>
         </div>
       </div>
+      {% endif %}
+
       {% endblock %}
     {% endblock %}
     </div>
