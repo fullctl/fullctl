@@ -811,9 +811,9 @@ class InternetExchangeMember(ModelSerializer):
         data = super().to_representation(instance)
         if not settings.MEMBER_CASE_NUMBERS_ENABLED:
             if data.get("meta") and "case_number" in data.get("meta"):
-                del data.meta["case_number"]
+                del data["meta"]["case_number"]
             if data.get("meta") and "work_order" in data.get("meta"):
-                del data.meta["work_order"]
+                del data["meta"]["work_order"]
 
         # if the parent ix has learned mac addresses enabled
         # we want to substitute the macaddr_set with the mac addresses
