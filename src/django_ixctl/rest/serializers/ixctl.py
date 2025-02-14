@@ -146,6 +146,8 @@ class InternetExchange(ModelSerializer):
         default=None,
     )
 
+    ixf_id = serializers.IntegerField(required=False)
+
     class Meta:
         model = models.InternetExchange
         fields = [
@@ -166,6 +168,7 @@ class InternetExchange(ModelSerializer):
             "limit_mac_addresses",
             "traffic_poll_time",
             "email_alert_recipients",
+            "ixf_id",
         ]
         extra_kwargs = {
             "slug": {
@@ -196,6 +199,7 @@ class InternetExchange(ModelSerializer):
                 _("You already have an exchange with the identifier `{}`").format(slug)
             )
         cleaned_data["slug"] = slug
+
         return cleaned_data
 
     def save_email_alert_recipients(self, recipients: list[str]):
@@ -211,8 +215,14 @@ class InternetExchange(ModelSerializer):
 
     def save(self, **kwargs):
         email_alert_recipients = self.validated_data.pop("email_alert_recipients")
+        ixf_id = self.validated_data.pop("ixf_id", None)
+
         instance = super().save(**kwargs)
         self.save_email_alert_recipients(recipients=email_alert_recipients)
+
+        instance.ixf_id = ixf_id
+        instance.save()
+
         return instance
 
     def to_representation(self, instance):
