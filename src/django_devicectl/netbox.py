@@ -253,6 +253,22 @@ def pull_interface(netbox_if, device):
             logical_port=logical_port,
             name=netbox_if.display,
         )
+    except models.VirtualPort.MultipleObjectsReturned:
+        log.error(
+            "[PULL] Multiple virtual ports found for netbox interface",
+            name=netbox_if.display,
+            id=netbox_if.id,
+        )
+        return
+    except Exception as exc:
+        log.error(
+            "[PULL] Error creating virtual port",
+            name=netbox_if.display,
+            id=netbox_if.id,
+            traceback=traceback.format_exc(),
+            exc=exc,
+        )
+        return
 
     changed = virtual_port.sync_from_reference(ref_obj=netbox_if) or sync_tags(
         netbox_if, virtual_port
@@ -424,11 +440,12 @@ def sync_vlans(
             id=netbox_vlan.id,
             vid=netbox_vlan.vid,
         )
+        
+        facility = None
 
         if netbox_vlan.site:
 
             site = netbox.Site().first(id=netbox_vlan.site.id)
-            facility = None
 
             try:
                 facility = models.Facility.objects.get(
@@ -677,7 +694,7 @@ def push_device(device):
 
     if not netbox_device:
         # look by site id and device name
-        netbox_device = netbox.Device().first(site__id=site.id, name=device.name)
+        netbox_device = netbox.Device().first(site=site.name, name=device.name)
 
     data = {
         "name": device.name,
@@ -734,7 +751,7 @@ def push_physical_interface(physical_port, netbox_device):
     # if no match, try by name
     if not netbox_interface:
         netbox_interface = netbox.Interface().first(
-            device__id=netbox_device.id, name=physical_port.name
+            device=netbox_device.name, name=physical_port.name
         )
 
     ctx = service_bridge_context.get()
@@ -804,7 +821,7 @@ def push_virtual_interface(virtual_port, netbox_device):
     # if no match, try by name
     if not netbox_interface:
         netbox_interface = netbox.Interface().first(
-            device__id=netbox_device.id, name=virtual_port.name
+            device=netbox_device.name, name=virtual_port.name
         )
 
     # determine interface type based on port
