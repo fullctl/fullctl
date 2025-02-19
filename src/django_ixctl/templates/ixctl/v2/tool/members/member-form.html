@@ -189,124 +189,133 @@
     - port quantity (drop down from PORT_QUANTITIES)
     -->
 
-    <div class="row mb-3">
+    <div class="row" data-element="port_config_load_error" style="display:none">
       <div class="col-12">
-        <h6>{% trans "Port Configuration" %}</h6>
-      </div>
-    </div>
-
-    <div class="row mb-3">
-      <div class="col-4" data-api-submit="yes">
-        <label class="form-label" for="member-port-size">{% trans "Size" %}</label>
-        <span class="modal-control">
-          <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
-          <select id="member-port-size" name="port_size" class="form-control">
-            {% for size in select_ix.port_sizes %}
-            <option value="{{ size }}">{{ size }}G</option>
-            {% endfor %}
-          </select>
-        </span>
-      </div>
-      <div class="col-4" data-api-submit="yes">
-        <input type="checkbox" class="form-check-input" id="member-lag" name="lag" />
-        <label for="member-lag" class="form-check-label">{% trans "LAG" %}</label>
-      </div>
-      <div class="col-4" data-api-submit="yes">
-        <label class="form-label" for="member-port-quantity">{% trans "Quantity" %}</label>
-        <span class="modal-control">
-          <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
-          <select disabled id="member-port-quantity" name="port_quantity" class="form-control">
-            {% for num in PORT_QUANTITIES %}
-            <option value="{{ num }}">{{ num }}</option>
-            {% endfor %}
-          </select>
-        </span>
-      </div>
-    </div>
-
-
-    <!-- speed -->
-
-    <div class="row mb-3">
-      <div class="col-12">
-        <span data-api-field="speed"></span>
-      </div>
-    </div>
-
-    <!-- DEVICECTL REF -->
-
-    <!-- devicectl logo -->
-    <!-- <img src="{% static "common/logos/devicectl-dark.svg" %}"> -->
-
-
-
-
-    <div class="row mb-3">
-      <div class="col-12" data-api-submit="yes">
-        <label class="form-label" for="device">{% trans "Device" %}</label>
-        <span class="modal-control">
-          <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
-          <select
-            class="form-control"
-            id="device"
-            name="device"
-            data-api-base="{% url "ixctl_api:ix-devices" org_tag=request.org.slug ix_tag="__ix_tag__"  %}"
-            >
-          </select>
-        </span>
-      </div>
-    </div>
-
-    <div class="row mb-3">
-      <div class="col-12" data-api-submit="yes">
-        <div data-element="current_ports" style="display:none">
-          <label class="form-label" for="port_set">{% trans "Assigned Port(s)" %}</label>
-          <ul class="port-list">
-          </li>
+        <div class="alert alert-info">
+          IX not linked to a devicectl facility.
         </div>
+      </div>
+    </div>
 
-        <div data-element="port_set_container" style="display:none">
-          <label class="form-label" for="port_set">{% trans "Add Port(s)" %}</label>
+    <div data-element="port_config_fields" style="display:none">
+
+      <div class="row mb-3">
+        <div class="col-12">
+          <h6>{% trans "Port Configuration" %}</h6>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-4" data-api-submit="yes">
+          <label class="form-label" for="member-port-size">{% trans "Size" %}</label>
           <span class="modal-control">
+            <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+            <select id="member-port-size" name="port_size" class="form-control">
+              {% for size in select_ix.port_sizes %}
+              <option value="{{ size }}">{{ size }}G</option>
+              {% endfor %}
+            </select>
+          </span>
+        </div>
+        <div class="col-4" data-api-submit="yes">
+          <input type="checkbox" class="form-check-input" id="member-lag" name="lag" />
+          <label for="member-lag" class="form-check-label">{% trans "LAG" %}</label>
+        </div>
+        <div class="col-4" data-api-submit="yes">
+          <label class="form-label" for="member-port-quantity">{% trans "Quantity" %}</label>
+          <span class="modal-control">
+            <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+            <select disabled id="member-port-quantity" name="port_quantity" class="form-control">
+              {% for num in PORT_QUANTITIES %}
+              <option value="{{ num }}">{{ num }}</option>
+              {% endfor %}
+            </select>
+          </span>
+        </div>
+      </div>
+
+
+      <!-- speed -->
+
+      <div class="row mb-3">
+        <div class="col-12">
+          <span data-api-field="speed"></span>
+        </div>
+      </div>
+
+      <!-- DEVICECTL REF -->
+
+      <!-- devicectl logo -->
+      <!-- <img src="{% static "common/logos/devicectl-dark.svg" %}"> -->
+
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes">
+          <label class="form-label" for="device">{% trans "Device" %}</label>
+          <span class="modal-control">
+            <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
             <select
               class="form-control"
-              id="port_set"
-              name="port_set"
-              data-api-base="{% url "proxies-api-devicectl-device-physical-ports" org_tag=request.org.slug pk="0" %}"
-              multiple
+              id="device"
+              name="device"
+              data-api-base="{% url "ixctl_api:ix-devices" org_tag=request.org.slug ix_tag="__ix_tag__"  %}"
               >
             </select>
           </span>
         </div>
       </div>
-    </div>
 
-    <!-- read only virtual port -->
-    <div class="row mb-3 virtual-port-display" data-element="virtual_port_display" style="display:none">
-      <div class="col-12">
-        <label class="form-label" for="virtual_port">{% trans "Virtual Port" %}</label>
-        <input type="text" class="form-control" id="virtual_port_name" name="virtual_port_name" readonly />
-      </div>
-    </div>
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes">
+          <div data-element="current_ports" style="display:none">
+            <label class="form-label" for="port_set">{% trans "Assigned Port(s)" %}</label>
+            <ul class="port-list">
+            </li>
+          </div>
 
-    <div class="row mb-3 port-config-intent intent-resize" style="display:none">
-      <div class="col-12">
-        <div class="alert alert-info">
-          {% blocktrans %}
-          You are resizing the port configuration. A new virtual port will be created. The old port will remain functional until the member has moved, after which it can be deleted in deviceCtl.
-          {% endblocktrans %}
+          <div data-element="port_set_container" style="display:none">
+            <label class="form-label" for="port_set">{% trans "Add Port(s)" %}</label>
+            <span class="modal-control">
+              <select
+                class="form-control"
+                id="port_set"
+                name="port_set"
+                data-api-base="{% url "proxies-api-devicectl-device-physical-ports" org_tag=request.org.slug pk="0" %}"
+                multiple
+                >
+              </select>
+            </span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="row mb-3 port-config-intent intent-augment" style="display:none">
-      <div class="col-12">
-        <div class="alert alert-info">
-          {% blocktrans %}
-          You are changing the number of physical ports assigned to the LAG.
-          {% endblocktrans %}
+      <!-- read only virtual port -->
+      <div class="row mb-3 virtual-port-display" data-element="virtual_port_display" style="display:none">
+        <div class="col-12">
+          <label class="form-label" for="virtual_port">{% trans "Virtual Port" %}</label>
+          <input type="text" class="form-control" id="virtual_port_name" name="virtual_port_name" readonly />
         </div>
       </div>
+
+      <div class="row mb-3 port-config-intent intent-resize" style="display:none">
+        <div class="col-12">
+          <div class="alert alert-info">
+            {% blocktrans %}
+            You are resizing the port configuration. A new virtual port will be created. The old port will remain functional until the member has moved, after which it can be deleted in deviceCtl.
+            {% endblocktrans %}
+          </div>
+        </div>
+      </div>
+
+      <div class="row mb-3 port-config-intent intent-augment" style="display:none">
+        <div class="col-12">
+          <div class="alert alert-info">
+            {% blocktrans %}
+            You are changing the number of physical ports assigned to the LAG.
+            {% endblocktrans %}
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <div class="row mb-3">

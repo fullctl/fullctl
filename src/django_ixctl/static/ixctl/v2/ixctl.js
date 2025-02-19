@@ -434,6 +434,15 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
         console.log("clearing validation checks");
         this.clear_validation_checks();
       });
+
+      const ix = $ctl.ixctl.ix_object();
+      if (!ix.facilities || !ix.facilities.length) {
+        form.element.find('[data-element="port_config_load_error"]').show();
+        form.element.find('[data-element="port_config_fields"]').hide();
+      } else {
+        form.element.find('[data-element="port_config_load_error"]').hide();
+        form.element.find('[data-element="port_config_fields"]').show();
+      }
     },
 
     /**
@@ -543,6 +552,9 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       device_select.load(port ? port.device_id : null).then(() => {
         // Initial load with the first option selected
         const initial_device_selection = form.element.find('#device').val();
+        if (!initial_device_selection) {
+          return;
+        }
         load_device_ports(initial_device_selection);
       }).catch((error) => {
         console.error('Error during load devices:', error);
