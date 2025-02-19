@@ -145,6 +145,7 @@ class InternetExchange(ModelSerializer):
         allow_null=True,
         default=None,
     )
+    facilities = serializers.SerializerMethodField()
 
     ixf_id = serializers.IntegerField(required=False)
 
@@ -168,6 +169,7 @@ class InternetExchange(ModelSerializer):
             "limit_mac_addresses",
             "traffic_poll_time",
             "email_alert_recipients",
+            "facilities",
             "ixf_id",
         ]
         extra_kwargs = {
@@ -235,6 +237,9 @@ class InternetExchange(ModelSerializer):
         return aaactl.PointOfContact().get_email_alert_recipients(
             org=org, service="ixctl"
         )
+
+    def get_facilities(self, instance):
+        return instance.config.get("facilities", [])
 
 
 @register
