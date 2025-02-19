@@ -2,6 +2,7 @@ from django_grainy.util import Permissions
 from fullctl.django.rest.authentication import key_from_request
 from rest_framework import authentication, exceptions
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.exceptions import InvalidToken as JWTInvalidToken
 
 from account.models import APIKey, InternalAPIKey, OrganizationAPIKey
 
@@ -17,6 +18,8 @@ class TokenAuthentication(authentication.BaseAuthentication):
             auth = self.authenticate_api_keys(request)
         except exceptions.AuthenticationFailed:
             auth = self.authenticate_jwt(request)
+        except JWTInvalidToken:
+            auth = None
 
         if auth:
             return (auth[0], None)
