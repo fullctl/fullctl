@@ -429,7 +429,8 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
                 continue
             json_dict = physical_port_stat_map.get(physical_port).json_dict
             data = json_dict.get("bgp_stats")
-            bgp_stats[data[0].get("routeserver_router_id")] = data
+            if data:
+                bgp_stats[data[0].get("routeserver_router_id")] = data
             device_metrics = json_dict.get("device_metrics")
 
         data = {
