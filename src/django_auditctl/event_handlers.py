@@ -1,3 +1,4 @@
+import ipaddress
 import json
 import re
 from datetime import timedelta
@@ -320,16 +321,34 @@ class BGPSessionStateDataHandler(BaseHandler):
         self.heartbeat()
         id_parts = object_id_to_parts(self.event.object_id)
         org_slug = id_parts.get("org_tag")
-        components = self.event.data.get("components", [])
+
         member_bridge = ixctl.InternetExchangeMember()
+        physical_port_stats_bridge = devicectl.PhysicalPortStats()
+
+        members = set()
+        components = self.event.data.get("components", [])
         for component in components:
-            member_bridge.set_event_reference(
-                asn=component.get("asn"),
-                address=component.get("address"),
-                routeserver_router_id=component.get("routeserver_router_id"),
-                event_reference=self.event.id,
-                org_slug=org_slug,
-            )
+            filters = {
+                "asn": int(component.get("asn")),
+                "is_rs_peer": True,
+                "ix_verified": True,
+            }
+            address = component.get("address")
+            if ipaddress.ip_address(address).version == 4:
+                filters["ipaddr4"] = address
+            else:
+                filters["ipaddr6"] = address
+
+            members.update(list(member_bridge.objects(**filters)))
+
+        for member in members:
+            for physical_port in member.physical_ports:
+                physical_port_stats_bridge.save_physical_port_stats(
+                    data=components,
+                    org_slug=org_slug,
+                    physical_port=physical_port,
+                    stat_type="bgp_stats",
+                )
 
 
 @register_handler(r"^v0.1\/[^\/]+\/bgp\/stat\/aggregate\/[0-9\.]+$")
