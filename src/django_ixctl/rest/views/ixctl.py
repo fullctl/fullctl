@@ -489,7 +489,8 @@ class Member(
                 continue
             json_dict = physical_port_stats.get(physical_port).json_dict
             data = json_dict.get("bgp_stats")
-            bgp_stats[data[0].get("routeserver_router_id")] = data
+            if data:
+                bgp_stats[data[0].get("routeserver_router_id")] = data
             device_metrics = json_dict.get("device_metrics")
 
         return bgp_stats, device_metrics
@@ -631,7 +632,7 @@ class Member(
 
         models.InternetExchangeMember.preload_ports(org, [member])
         member_data = serializer.data
-        member_data["bgp_stat"] = self.get_bgp_stat_data(members=[member])
+        member_data["bgp_stat"], _ = self.get_stats_data(members=[member])
         return Response(member_data)
 
     @action(
