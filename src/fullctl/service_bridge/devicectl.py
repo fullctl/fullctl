@@ -1,3 +1,5 @@
+from typing import Literal
+
 try:
     from django.conf import settings
 
@@ -16,7 +18,6 @@ class DeviceCtlEntity(DataObject):
 
 
 class Devicectl(Bridge):
-
     """
     Service bridge to devicectl for data
     retrieval
@@ -262,3 +263,49 @@ class VirtualPort(Devicectl):
 class IPAddress(Devicectl):
     class Meta(Devicectl.Meta):
         ref_tag = "ip"
+
+
+class PhysicalPortStats(Devicectl):
+    class Meta(Devicectl.Meta):
+        ref_tag = "physical_port_stats"
+
+    def get_physical_port_stats(self, physical_ports: list[int]) -> dict[int, dict]:
+        physical_port_stats = (
+            list(self.objects(physical_ports=physical_ports)) if physical_ports else []
+        )
+        return {
+            physical_port_stats.physical_port: physical_port_stats.data
+            for physical_port_stats in physical_port_stats
+        }
+
+    def save_physical_port_stats(
+        self,
+        data: dict | list[dict],
+        org_slug: str,
+        physical_port: int,
+        stat_type: Literal["bgp_stats", "device_metrics"],
+    ):
+        """
+        Saves physical port stats to the database
+        """
+        physical_port_stats = list(self.objects(physical_port=physical_port))
+        if physical_port_stats:
+            initial_data = physical_port_stats[0].data.json_dict.copy()
+            initial_data[stat_type] = data
+            return self.put(
+                f"data/physical_port_stats/{physical_port_stats[0].id}",
+                json={
+                    "org": org_slug,
+                    "physical_port": physical_port,
+                    "data": initial_data,
+                },
+            )
+        return self.create(
+            data={
+                "org": org_slug,
+                "physical_port": physical_port,
+                "data": {
+                    stat_type: data,
+                },
+            }
+        )

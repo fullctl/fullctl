@@ -220,21 +220,6 @@ class Routeserver(Ixctl):
         )
 
 
-class RouteserverMemberObject(IxctlEntity):
-    description = "Ixctl Route Server Member"
-    relationships = {
-        "rs": {"bridge": Routeserver, "filter": ("id", "routeserver")},
-        "member": {"bridge": InternetExchangeMember, "filter": ("id", "ix_member")},
-        "_event": {"bridge": auditctl.Event, "filter": ("id", "event")},
-    }
-
-
-class RouteserverMember(Ixctl):
-    class Meta(Ixctl.Meta):
-        ref_tag = "routeserver_member"
-        data_object_cls = RouteserverMemberObject
-
-
 class TrafficAlertConfigObject(IxctlEntity):
     description = "Ixctl Traffic Alert Config"
 

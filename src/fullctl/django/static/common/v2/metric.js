@@ -1,74 +1,65 @@
 (function($) {
-  $.fn.show_metric_list = function(metrics_url, row, member) {
-    if (!member.port && !member.port_id && !member.virtual_port) return;
-    const port_id = member.port ?? member.port_id ?? member.virtual_port;
+  $.fn.show_metric_list = function(row, metrics_data) {
+    const light_level_stat = row.find('[data-element="light_level_stat"]');
+    const {status, device_name, metric = {}} = metrics_data;
+    const result = {};
+    $.each(metric, (metric_index, value) => {
+      if (metric_index.includes('optics')) {
+        const segments = metric_index.split('.');
+        const opticsIndex = segments.indexOf('optics');
+        let port = null;
 
-    $.ajax({
-      url: metrics_url.replace("/0/", `/${port_id}/`)
-    }).done(({data = []}) => {
-      const light_level_stat = row.find('[data-element="light_level_stat"]');
+        // The index is added to the metrics if there are more than 1 metrics data
+        // If not it is not added
+        // e.g. ceos00.optics.0.Ethernet1.physical_channels.channel.0.index being index 0
+        // ceos00.optics.1.Ethernet1.physical_channels.channel.1.index being index 1
+        if (isNaN(parseInt(segments[opticsIndex + 1]))) {
+          port = segments[opticsIndex + 1];
+        } else {
+          port = segments[opticsIndex + 2];
+        }
+        const metric_data = segments.slice(-2).join(".");
+        if (!result[port]) {
+          result[port] = {};
+        }
+        result[port][metric_data] = value;
+      }
+    });
 
-      $.each(data, (_, {status, device_name, metric = {}}) => {
-        const result = {};
-        $.each(metric, (metric_index, value) => {
-          if (metric_index.includes('optics')) {
-            const segments = metric_index.split('.');
-            const opticsIndex = segments.indexOf('optics');
-            let port = null;
+    $.each(result, (port, metric) => {
+      // Tooltip
+      const tootlip_div = $('<div>')
+      .attr("data-bs-toggle", "tooltip")
+      .attr("data-bs-placement", "top")
+      .attr("data-bs-html", true);
 
-            // The index is added to the metrics if there are more than 1 metrics data
-            // If not it is not added
-            // e.g. ceos00.optics.0.Ethernet1.physical_channels.channel.0.index being index 0
-            // ceos00.optics.1.Ethernet1.physical_channels.channel.1.index being index 1
-            if (isNaN(parseInt(segments[opticsIndex + 1]))) {
-              port = segments[opticsIndex + 1];
-            } else {
-              port = segments[opticsIndex + 2];
-            }
-            const metric_data = segments.slice(-2).join(".");
-            if (!result[port]) {
-              result[port] = {};
-            }
-            result[port][metric_data] = value;
-          }
-        });
-
-        $.each(result, (port, metric) => {
-          // Tooltip
-          const tootlip_div = $('<div>')
-          .attr("data-bs-toggle", "tooltip")
-          .attr("data-bs-placement", "top")
-          .attr("data-bs-html", true);
-
-          let tooltip_data = `${device_name} ${port}<br>`;
-          const allowed_metrics = {
-            "input_power.instant": "TX Power",
-            "output_power.instant": "RX Power",
-            "laser_bias_current.instant": "Bias Current",
-          };
-          const allowed_metrics_keys = Object.keys(allowed_metrics);
-          $.each(metric, (key, data) => {
-            if (allowed_metrics_keys.indexOf(key) !== -1) {
-              tooltip_data = `${tooltip_data}${allowed_metrics[key]}: ${data}<br>`;
-            }
-          });
-          tootlip_div.attr("title", tooltip_data);
-
-          // Tooltip Container
-          const node = $('<div class="d-flex align-items-center">');
-          node.append($('<span class="dotted-underline">').text(`${device_name} ${port}`));
-          if (status == "ok") {
-            node.append($('<span class="icon icon-triangle-fill-up">'));
-            node.addClass("up");
-          } else {
-            node.append($('<span class="icon icon-triangle-fill-down">'));
-            node.addClass("down");
-          }
-          tootlip_div.html(node);
-          new bootstrap.Tooltip(tootlip_div);
-          light_level_stat.append(tootlip_div);
-        });
+      let tooltip_data = `${device_name} ${port}<br>`;
+      const allowed_metrics = {
+        "input_power.instant": "TX Power",
+        "output_power.instant": "RX Power",
+        "laser_bias_current.instant": "Bias Current",
+      };
+      const allowed_metrics_keys = Object.keys(allowed_metrics);
+      $.each(metric, (key, data) => {
+        if (allowed_metrics_keys.indexOf(key) !== -1) {
+          tooltip_data = `${tooltip_data}${allowed_metrics[key]}: ${data}<br>`;
+        }
       });
+      tootlip_div.attr("title", tooltip_data);
+
+      // Tooltip Container
+      const node = $('<div class="d-flex align-items-center">');
+      node.append($('<span class="dotted-underline">').text(`${device_name} ${port}`));
+      if (status == "ok") {
+        node.append($('<span class="icon icon-triangle-fill-up">'));
+        node.addClass("up");
+      } else {
+        node.append($('<span class="icon icon-triangle-fill-down">'));
+        node.addClass("down");
+      }
+      tootlip_div.html(node);
+      new bootstrap.Tooltip(tootlip_div);
+      light_level_stat.append(tootlip_div);
     });
   };
 
