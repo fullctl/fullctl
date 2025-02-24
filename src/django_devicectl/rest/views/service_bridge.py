@@ -638,3 +638,16 @@ class Vlan(DataViewSet):
 
     queryset = models.Vlan.objects.filter(status="ok")
     serializer_class = Serializers.vlan
+
+
+@route
+class PhysicalPortStats(DataViewSet):
+    path_prefix = "/data"
+    allowed_http_methods = ["GET", "POST", "PUT", "DELETE"]
+    valid_filters = [
+        ("physical_port", "physical_port__id"),
+        ("physical_ports", "physical_port__id__in"),
+    ]
+
+    queryset = models.PhysicalPortStats.objects.filter(status="ok")
+    serializer_class = Serializers.physical_port_stats

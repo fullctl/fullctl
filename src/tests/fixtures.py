@@ -90,6 +90,48 @@ class AccountObjects:
             )
         return self._vlan
 
+    @property
+    def device(self):
+        from django_devicectl.models import Device
+
+        if not hasattr(self, "_device"):
+            self._device = Device.objects.create(
+                instance=self.devicectl_instance,
+                name="Test Device",
+                description="Sample device test",
+                type="ceos",
+            )
+        return self._device
+
+    @property
+    def logical_port(self):
+        from django_devicectl.models import LogicalPort
+
+        if not hasattr(self, "_logical_port"):
+            self._logical_port = LogicalPort.objects.create(
+                instance=self.devicectl_instance,
+                name="Test Logical Port",
+                description="Sample logical port test",
+            )
+        return self._logical_port
+
+    @property
+    def physical_port(self):
+        from django_devicectl.models import PhysicalPort
+
+        if not hasattr(self, "_physical_port"):
+            self._physical_port = PhysicalPort.objects.create(
+                device=self.device,
+                name="Ethernet1",
+                description="Sample physical port test",
+                logical_port=self.logical_port,
+            )
+        return self._physical_port
+
+    @property
+    def physical_ports(self):
+        return [self.physical_port]
+
 
 def make_account_objects(handle="test"):
     return AccountObjects(handle)

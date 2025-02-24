@@ -17,6 +17,7 @@ from django_devicectl.models import (
     LogicalPort,
     MacAddress,
     PhysicalPort,
+    PhysicalPortStats,
     Port,
     PortInfo,
     VirtualPort,
@@ -211,3 +212,9 @@ class VlanAdmin(VersionAdmin):
     )
 
     autocomplete_fields = ("facility",)
+
+
+@admin.register(PhysicalPortStats)
+class PhysicalPortStatsAdmin(VersionAdmin):
+    list_display = ("id", "physical_port", "data", "created", "updated")
+    readonly_fields = ("physical_port",)
