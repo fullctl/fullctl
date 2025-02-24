@@ -222,6 +222,25 @@ class InternetExchangeMember(DataViewSet):
             member.macaddr_set = macaddr_set
         return Response(Serializers.member(instance=members, many=True).data)
 
+
+    @action(
+        detail=True,
+        methods=["PUT"],
+        serializer_class=Serializers.member_assign_port,
+        url_path="assign-port"
+    )
+    @grainy_endpoint(namespace="service_bridge")
+    def assign_port(self, request, pk=None, *args, **kwargs):
+        member = self.get_object()
+        serializer = self.serializer_class(data=request.data, instance=member)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(Serializers.member(instance=member).data)
+
+        logger.debug(f"{serializer.errors=}")
+        return Response(serializer.errors)
+
+
     @action(detail=False, methods=["PUT"], url_path="sync/as-macro")
     @grainy_endpoint(namespace="service_bridge")
     def as_macro(self, request, *args, **kwargs):
@@ -349,6 +368,7 @@ class InternetExchangeMember(DataViewSet):
                 virtual_port_id,
             )
         )
+
 
 
 @route

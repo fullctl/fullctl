@@ -165,6 +165,31 @@ class InternetExchangeMember(ModelSerializer):
     def get_org_id(self, member):
         return member.ix.instance.org.permission_id
 
+@register
+class InternetExchangeMemberAssignPort(ModelSerializer):
+
+    """
+    Assigns a devicectl Port to a member and allows updating
+    of port configuration of the member at the same time.
+    """
+
+    port = serializers.IntegerField()
+    port_size = serializers.IntegerField()
+    port_quantity = serializers.IntegerField()
+    ref_tag = "member_assign_port"
+
+    class Meta:
+        model = models.InternetExchangeMember
+        fields = ["id", "port", "port_size", "port_quantity"]
+
+    def save(self):
+        member = self.instance
+        member.port = self.validated_data["port"]
+        member.port_size = self.validated_data["port_size"]
+        member.port_quantity = self.validated_data["port_quantity"]
+        member.lag = member.port_quantity > 1
+        member.save()
+        return member
 
 @register
 class Routeserver(ModelSerializer):
