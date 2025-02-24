@@ -1,6 +1,4 @@
 import ipaddress
-from collections import defaultdict
-from typing import List
 
 import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.ixctl as ixctl
@@ -403,66 +401,45 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
     @action(detail=False, methods=["GET"], url_path="(?P<pk>[^/.]+)/get-stats")
     @grainy_endpoint(namespace="verified.asn.{asn}.?")
     def get_port_stats(self, request, asn, pk, *args, **kwargs):
-        port = models.Port().object(pk)
+        port = models.Port().object(id=pk)
         if "ixctl" not in port.port_info_object.ref_ix_id:
             return Response({})
 
         ix_id = int(port.port_info_object.ref_ix_id.split(":")[-1])
-        port_bgp_stat_map = self.get_port_bgp_stat_data(ix_ids=[ix_id])
         port_traffic_alert_data_map = self.get_port_traffic_alert_data(
             ix_ids=[ix_id],
             ports=[port],
             port_ix_map={port.id: ix_id},
         )
 
-        key = (
-            port.port_info_object.net.asn if port.port_info_object else port.asn,
-            port.ip_address_4.split("/")[0],
-            port.ip_address_6.split("/")[0],
+        member_id = int(port.port_info_object.ref_id.split(":")[-1])
+        member = ixctl.InternetExchangeMember().object(id=member_id)
+        member_port = models.Port().object(id=member.port, join="physical_ports")
+        physical_ports = [
+            physical_port.get("id") for physical_port in member_port.physical_ports
+        ]
+        physical_port_stat_map = devicectl.PhysicalPortStats().get_physical_port_stats(
+            list(physical_ports)
         )
+
+        bgp_stats = {}
+        device_metrics = None
+        for physical_port in physical_ports:
+            if physical_port not in physical_port_stat_map:
+                continue
+            json_dict = physical_port_stat_map.get(physical_port).json_dict
+            data = json_dict.get("bgp_stats")
+            bgp_stats[data[0].get("routeserver_router_id")] = data
+            device_metrics = json_dict.get("device_metrics")
+
         data = {
             "port_id": port.id,
-            "bgp_stat": (
-                port_bgp_stat_map.get(key) if port.is_route_server_peer else None
-            ),
+            "bgp_stat": bgp_stats,
+            "device_metrics": device_metrics,
             "traffic_alert_data": port_traffic_alert_data_map.get(port.id),
         }
         serializer = Serializers.port_stat(instance=data)
         return Response(serializer.data)
-
-    def get_port_bgp_stat_data(
-        self, ix_ids: List[int]
-    ) -> dict[tuple[str, str, str], dict]:
-        """
-        Returns a dictionary with the key being a tuple and value of dictionary
-        - key (`tuple`): (member.asn, member.ipaddr4, member.ipaddr6)
-        - value (`dict`):
-            - key (`int`): routeserver id
-            - value (`list`): [event components]
-        e.g. {
-            (asn, ipaddr4, ipaddr6): {
-                rs.id: [event components]
-            }
-        }
-        """
-        routeservers = ixctl.Routeserver().objects(ixs=ix_ids) if ix_ids else []
-        routeserver_ids = list({routeserver.id for routeserver in routeservers})
-        routeserver_members = (
-            list(ixctl.RouteserverMember().objects(rss=routeserver_ids))
-            if routeserver_ids
-            else []
-        )
-        result = defaultdict(dict)
-        for routeserver_member in routeserver_members:
-            key = (
-                routeserver_member.member.asn,
-                routeserver_member.member.ipaddr4,
-                routeserver_member.member.ipaddr6,
-            )
-            result[key][
-                routeserver_member.rs.id
-            ] = routeserver_member._event.data.components
-        return dict(result)
 
     def get_port_traffic_alert_data(
         self, ix_ids, ports, port_ix_map
@@ -827,11 +804,12 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
         if int(port_info.ref.asn) != int(asn):
             return Response({}, status=403)
 
-        return Response(
-            ixctl.InternetExchangeMember().metric(
-                port_info.ref_id.split(":")[1],
-            )
+        metric_data = ixctl.InternetExchangeMember().metric(
+            port_info.ref_id.split(":")[1]
         )
+        serilizer = Serializers.ix_metric(data=metric_data, many=True)
+        serilizer.is_valid(raise_exception=True)
+        return Response(serilizer.validated_data)
 
     @action(detail=True, methods=["get"], url_path="metric_table/ix")
     @grainy_endpoint(namespace="verified.asn.{asn}.?")
