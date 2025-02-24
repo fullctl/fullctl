@@ -3,6 +3,7 @@ import ipaddress
 
 import reversion
 import structlog
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
@@ -18,6 +19,9 @@ from fullctl.django.models.abstract import (
 from fullctl.django.models.concrete import Instance
 from fullctl.service_bridge import nautobot, netbox
 from netfields.fields import InetAddressField, MACAddressField
+from pydantic import BaseModel
+from pydantic import Field as PydanticField
+from pydantic import ValidationError as PydanticValidationError
 
 import django_devicectl.referee as referee_util
 
@@ -1606,3 +1610,38 @@ class Vlan(ServiceBridgeReferenceModel):
     @property
     def org(self):
         return self.instance.org
+
+
+class PhysicalPortStatsData(BaseModel):
+    device_metrics: dict = PydanticField(default=dict)
+    bgp_stats: list[dict] = PydanticField(default=list)
+
+
+class PhysicalPortStats(HandleRefModel):
+    physical_port = models.OneToOneField(
+        PhysicalPort,
+        related_name="stats",
+        on_delete=models.CASCADE,
+    )
+    data = models.JSONField(default=dict, help_text=_("Stats data"))
+
+    class HandleRef:
+        tag = "physical_port_stats"
+
+    class Meta:
+        db_table = "devicectl_physical_port_stats"
+        verbose_name = _("Physical Port Stats")
+        verbose_name_plural = _("Physical Port Stats")
+
+    def clean(self):
+        super().clean()
+
+        if self.data:
+            try:
+                PhysicalPortStatsData(**self.data)
+            except PydanticValidationError as ex:
+                raise ValidationError(str(ex))
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

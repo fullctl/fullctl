@@ -380,8 +380,8 @@ class PhysicalPort(ModelSerializer):
                 ),
                 context={"detailed": True},
             ).data
-            # Return only keys with same port name
-            return PhysicalPort._filter_dict_by_key_substring(metric, obj.name)
+            # Return only keys with same port name and a dot to match the substring exactly
+            return PhysicalPort._filter_dict_by_key_substring(metric, f"{obj.name}.")
         except models.DeviceMetric.DoesNotExist:
             return {"Warning: ": "No metrics available for this interface."}
 
@@ -716,3 +716,12 @@ class Vlan(ModelSerializer):
 
     def get_facility_slug(self, obj):
         return obj.facility.slug if obj.facility else None
+
+
+@register
+class PhysicalPortStats(ModelSerializer):
+    ref_tag = "physical_port_stats"
+
+    class Meta:
+        model = models.PhysicalPortStats
+        fields = "__all__"

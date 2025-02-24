@@ -225,8 +225,8 @@ class PhysicalPort(ModelSerializer):
                 ),
                 context={"detailed": True},
             ).data
-            # Return only keys with same port name
-            return PhysicalPort._filter_dict_by_key_substring(metric, obj.name)
+            # Return only keys with same port name and a dot to match the substring exactly
+            return PhysicalPort._filter_dict_by_key_substring(metric, f"{obj.name}.")
         except models.DeviceMetric.DoesNotExist:
             return {"Warning: ": "No metrics available for this interface."}
 
@@ -722,6 +722,27 @@ class Metric(ModelSerializer):
         #         for x, y in flat_data.items()
         #     ]
         #     return kv
+
+    def save(self):
+        instance = super().save()
+        self.save_physical_port_stats(instance)
+        return instance
+
+    def save_physical_port_stats(self, instance):
+        for physical_port in instance.device.physical_ports.all():
+            try:
+                physical_port_stats = models.PhysicalPortStats.objects.get(
+                    physical_port=physical_port
+                )
+            except models.PhysicalPortStats.DoesNotExist:
+                physical_port_stats = models.PhysicalPortStats(
+                    physical_port=physical_port
+                )
+
+            data = physical_port_stats.data
+            data["device_metrics"] = PhysicalPort(physical_port).data
+            physical_port_stats.data = data
+            physical_port_stats.save()
 
 
 @register
