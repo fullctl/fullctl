@@ -1045,10 +1045,6 @@ $ctl.application.Ixctl.Members = $tc.extend(
 
       this.$w.list.formatters.row = (row, data) => {
 
-        // common/v2/metric.js
-        let url = this.$w.list.element.data('api-metric-base');
-        $.fn.show_metric_list(url, row, data);
-
         row.find('a[data-action="edit_member"]').click(() => {
           var member = row.data("apiobject");
           new $ctl.application.Ixctl.ModalMember($ctl.ixctl.ix_slug(), member);
@@ -1323,7 +1319,7 @@ $ctl.application.Ixctl.Members = $tc.extend(
         $.ajax({
           url: url.replace("default", $ctl.ixctl.ix_slug()).replace("/0/", `/${member_id}/`)
         }).done(({data = []}) => {
-          const {bgp_stat = null, traffic_alert_data = null} = data[0];
+          const {bgp_stat = null, traffic_alert_data = null, device_metrics = null} = data[0];
           const row = this.$w.list.find_row(member_id);
           const row_data = row.data('apiobject');
 
@@ -1334,6 +1330,10 @@ $ctl.application.Ixctl.Members = $tc.extend(
 
           if (row_data.is_rs_peer && bgp_stat) {
             $.fn.show_bgp_stat(bgp_stat, row);
+          }
+
+          if (device_metrics) {
+            $.fn.show_metric_list(row, device_metrics);
           }
         });
       });

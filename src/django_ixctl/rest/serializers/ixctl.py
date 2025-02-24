@@ -1285,6 +1285,19 @@ class MemberStat(serializers.Serializer):
     member_id = serializers.IntegerField()
     bgp_stat = serializers.DictField()
     traffic_alert_data = serializers.DictField()
+    device_metrics = serializers.DictField()
 
     class Meta:
         fields = "__all__"
+
+
+@register
+class IxMetric(serializers.Serializer):
+    ref_tag = "ix_metric"
+
+    name = serializers.CharField()
+    device_id = serializers.IntegerField()
+    device_name = serializers.CharField()
+    metric = serializers.DictField()
+    meta = serializers.DictField()
+    status = serializers.CharField()

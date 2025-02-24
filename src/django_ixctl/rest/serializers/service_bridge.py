@@ -194,15 +194,6 @@ class Routeserver(ModelSerializer):
 
 
 @register
-class RouteserverMember(ModelSerializer):
-    ref_tag = "routeserver_member"
-
-    class Meta:
-        model = models.RouteserverMember
-        fields = "__all__"
-
-
-@register
 class TrafficAlertConfig(ModelSerializer):
     ref_tag = "traffic_alert_config"
 

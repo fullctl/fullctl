@@ -1,5 +1,5 @@
+import ipaddress
 import os
-from collections import defaultdict
 from datetime import datetime
 
 import fullctl.service_bridge.aaactl as aaactl
@@ -8,7 +8,6 @@ import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.pdbctl as pdbctl
 import structlog
 from django.conf import settings
-from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from fullctl.django.auditlog import auditlog
 from fullctl.django.models.concrete.tasks import Task
@@ -460,49 +459,40 @@ class Member(
         member = models.InternetExchangeMember.objects.get(id=pk)
         models.InternetExchangeMember.preload_ports(org, [member])
 
-        member_bgp_stat_map = self.get_member_bgp_stat_data(members=[member])
+        bgp_stats, device_metrics = self.get_stats_data(members=[member])
         member_traffic_alert_data_map = self.get_members_traffic_alert_data(
             members=[member]
         )
+
         data = {
             "member_id": member.id,
-            "bgp_stat": member_bgp_stat_map.get(member.id),
+            "bgp_stat": bgp_stats,
+            "device_metrics": device_metrics,
             "traffic_alert_data": member_traffic_alert_data_map.get(member.id),
         }
         serializer = Serializers.member_stat(instance=data)
         return Response(serializer.data)
 
-    def get_member_bgp_stat_data(self, members):
-        member_routeserver_member_map = self.get_members_routeserver_member_data(
-            members=members
+    def get_stats_data(self, members):
+        physical_ports = set()
+        for member in members:
+            physical_ports.update(member.physical_ports)
+
+        physical_port_stats = devicectl.PhysicalPortStats().get_physical_port_stats(
+            list(physical_ports)
         )
-        result = {}
 
-        for member_id, routeserver_members in member_routeserver_member_map.items():
-            data = None
-            if routeserver_members:
-                data = {}
-                for routeserver_member in routeserver_members:
-                    if hasattr(routeserver_member, "_event_object"):
-                        data[
-                            str(routeserver_member.routeserver.router_id)
-                        ] = routeserver_member._event_object.data.components
-            result[member_id] = data
-        return result
+        bgp_stats = {}
+        device_metrics = None
+        for physical_port in physical_ports:
+            if physical_port not in physical_port_stats:
+                continue
+            json_dict = physical_port_stats.get(physical_port).json_dict
+            data = json_dict.get("bgp_stats")
+            bgp_stats[data[0].get("routeserver_router_id")] = data
+            device_metrics = json_dict.get("device_metrics")
 
-    def get_members_routeserver_member_data(self, members):
-        member_ids = [member.id for member in members]
-        routeserver_members = models.RouteserverMember.objects.filter(
-            ix_member__in=member_ids
-        )
-        models.RouteserverMember.preload_events(routeserver_members)
-
-        member_routeserver_member_map = defaultdict(list)
-        for routeserver_member in routeserver_members:
-            member_routeserver_member_map[routeserver_member.ix_member.id].append(
-                routeserver_member
-            )
-        return member_routeserver_member_map
+        return bgp_stats, device_metrics
 
     def get_members_traffic_alert_data(self, members):
         try:
@@ -641,20 +631,7 @@ class Member(
 
         models.InternetExchangeMember.preload_ports(org, [member])
         member_data = serializer.data
-        member_data["bgp_stat"] = None
-
-        routeserver_members = models.RouteserverMember.objects.filter(
-            ix_member__in=[member.id]
-        )
-        if routeserver_members:
-            models.RouteserverMember.preload_events(routeserver_members)
-            member_data["bgp_stat"] = {}
-            for routeserver_member in routeserver_members:
-                if hasattr(routeserver_member, "_event_object"):
-                    components = routeserver_member._event_object.data.components
-                    member_data["bgp_stat"][
-                        components[0].get("routeserver_hostname")
-                    ] = components
+        member_data["bgp_stat"] = self.get_bgp_stat_data(members=[member])
         return Response(member_data)
 
     @action(
@@ -718,6 +695,17 @@ class Member(
 
         logger.debug(f"{serializer.errors=}")
         return Response(serializer.errors)
+
+    @action(detail=False, methods=["GET"], url_path=r"port/(?P<port_id>\d+)/metric")
+    @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
+    @grainy_endpoint(
+        namespace="member.{request.org.permission_id}.{ix.pk}",
+    )
+    def ix_metric(self, request, org, instance, ix, port_id, *args, **kwargs):
+        metric_data = devicectl.VirtualPort().metric(port_id)
+        serilizer = Serializers.ix_metric(data=metric_data, many=True)
+        serilizer.is_valid(raise_exception=True)
+        return Response(serilizer.validated_data)
 
 
 @route
@@ -840,7 +828,7 @@ class Routeserver(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet
 
 
 @route
-class BGPSessionState(viewsets.GenericViewSet):
+class BGPSessionState(OrgQuerysetMixin, viewsets.GenericViewSet):
     """
     Endpoint for updating and deleting bgp session state
     based on peer asn, and peer ip
@@ -848,14 +836,15 @@ class BGPSessionState(viewsets.GenericViewSet):
 
     serializer_class = Serializers.bgp_state
     ref_tag = "bgp_state"
-    ix_tag_needed = False
 
     @action(
         detail=False,
         methods=["put"],
         url_path="(?P<routeserver_router_id>[^/]+)/(?P<asn>[^/]+)/update",
     )
-    def update_bgp_state(self, request, routeserver_router_id, asn, *args, **kwargs):
+    def update_bgp_state(
+        self, request, org, routeserver_router_id, asn, *args, **kwargs
+    ):
         """
         Handles saving of bgp state data
         Unique sessions are identified by peer asn + peer ip
@@ -863,45 +852,57 @@ class BGPSessionState(viewsets.GenericViewSet):
         serializer = self.serializer_class(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
 
-        address = serializer.validated_data.get("address")
-        member = models.InternetExchangeMember.objects.get(
-            Q(ipaddr4=address) | Q(ipaddr6=address),
-            asn=int(asn),
-            is_rs_peer=True,
-        )
-        routeserver = models.Routeserver.objects.get(router_id=routeserver_router_id)
-        routeserver_member, _ = models.RouteserverMember.objects.get(
-            ix_member=member, routeserver=routeserver
-        )
-        models.RouteserverMember.preload_events([routeserver_member])
-        auditctl.Event().partial_update(
-            routeserver_member._event_object,
-            {"data": {"message": "ok", "components": serializer.validated_data}},
-        )
+        members = set()
+        for component in serializer.validated_data:
+            filters = {
+                "asn": int(asn),
+                "is_rs_peer": True,
+                "ix__verified": True,
+            }
+            if ipaddress.ip_address(component.get("address")).version == 4:
+                filters["ipaddr4"] = component.get("address")
+            else:
+                filters["ipaddr6"] = component.get("address")
+
+            members.add(models.InternetExchangeMember.objects.get(**filters))
+
+        physical_port_stats_bridge = devicectl.PhysicalPortStats()
+
+        for member in members:
+            for physical_port in member.physical_ports:
+                physical_port_stats_bridge.save_physical_port_stats(
+                    data=serializer.validated_data,
+                    org_slug=org.slug,
+                    physical_port=physical_port,
+                    stat_type="bgp_stats",
+                )
         return Response(serializer.data)
 
     @action(
         detail=False,
         methods=["delete"],
-        url_path="(?P<routeserver_router_id>[^/]+)/(?P<asn>[^/]+)/delete",
+        url_path="(?P<member_id>[^/]+)/delete",
     )
     @grainy_endpoint(namespace="verified.asn.{asn}.?")
-    def delete_bgp_state(self, request, routeserver_router_id, asn, *args, **kwargs):
+    def delete_bgp_state(self, request, org, member_id, *args, **kwargs):
         """
         Handles deletion of bgp state data
         Unique sessions are identified by peer asn + peer ip
         """
-        member = models.InternetExchangeMember.objects.get(
-            asn=int(asn),
-            is_rs_peer=True,
-        )
-        routeserver = models.Routeserver.objects.get(router_id=routeserver_router_id)
-        routeserver_member, _ = models.RouteserverMember.objects.get(
-            ix_member=member, routeserver=routeserver
-        )
-        models.RouteserverMember.preload_events([routeserver_member])
-        auditctl.Event().destroy(routeserver_member._event_object)
-        routeserver_member.delete()
+        try:
+            member = models.InternetExchangeMember.objects.get(id=member_id)
+        except models.InternetExchangeMember.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        physical_port_stats_bridge = devicectl.PhysicalPortStats()
+
+        for physical_port in member.physical_ports:
+            physical_port_stats = list(
+                physical_port_stats_bridge.objects(physical_port=physical_port)
+            )
+            if physical_port_stats:
+                physical_port_stats_bridge.delete(obj=physical_port_stats[0])
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
