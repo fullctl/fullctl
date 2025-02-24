@@ -107,6 +107,25 @@ class InternetExchangeMember(Ixctl):
             data={"status": str(status)},
         )
 
+    def assign_port(self, member_id:int, port_id:int, size:int, quantity:int):
+        """
+        Assigns a devicectl physical port to an ixctl member
+
+        Arguments:
+        - member_id (`int`) -- the id of the member (as ixctl knows it)
+        - port_id (`int`) -- the id of the Port (as devicectl knows it) 
+            !!! this is NOT the VirtualPort, but Port.
+        - size (`int`) -- the size of the individual physical port
+            it is assumed that all physical ports are the same size
+        - quantity (`int`) -- number of physical ports (LAG)
+        """
+
+        return self.put(f"data/member/{member_id}/assign-port", data={
+            "port": port_id,
+            "port_size": size,
+            "port_quantity": quantity
+        })
+
     def traffic(
         self,
         pk: int,
