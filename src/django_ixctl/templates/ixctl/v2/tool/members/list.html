@@ -2,7 +2,6 @@
 <table
   class="table table-borderless list-table"
   data-api-base="{% url "ixctl_api:member-list" org_tag=request.org.slug ix_tag="default" %}"
-  data-api-metric-base="{% url "proxies-api-devicectl-virtual-port-metric" org_tag=request.org.slug pk="0" %}"
   data-api-port-status="{% url "ixctl_api:member-status" org_tag=request.org.slug ix_tag="default" member_id="0" %}"
   data-api-member-stats="{% url "ixctl_api:member-get-member-stats" org_tag=request.org.slug ix_tag="default" pk="0" %}"
   data-api-action=""

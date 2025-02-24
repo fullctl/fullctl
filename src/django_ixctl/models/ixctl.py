@@ -1564,62 +1564,6 @@ class Network(PdbRefModel):
         return f"{self.name} (AS{self.asn})"
 
 
-class RouteserverMember(models.Model):
-    routeserver = models.ForeignKey(
-        Routeserver,
-        on_delete=models.CASCADE,
-        related_name="ix_members",
-    )
-    ix_member = models.ForeignKey(
-        InternetExchangeMember,
-        on_delete=models.CASCADE,
-        related_name="routeservers",
-    )
-    event = ReferencedObjectUUIDField(
-        bridge=auditctl.Event,
-        null=True,
-        blank=False,
-        help_text=_("auditCtl event reference"),
-    )
-
-    class Meta:
-        db_table = "ixctl_rs_members"
-        verbose_name = _("Members to Routeservers Relationship")
-        verbose_name_plural = _("Members to Routeservers Relationship")
-        unique_together = ("ix_member", "routeserver")
-
-    @classmethod
-    def preload_events(cls, routeserver_members):
-        """
-        Preloads auditctl event information
-
-        Argument(s):
-        - routeserver_members (`list` of `RouteServerMembers`): routeserver_members to load events for
-        """
-        event_ids = [
-            str(routeserver_member.event)
-            for routeserver_member in routeserver_members
-            if routeserver_member.event
-        ]
-        if not event_ids:
-            return
-
-        events = auditctl.Event().get_events_by_ids(event_ids=event_ids)
-        if not events:
-            return
-
-        events = {event.id: event for event in events}
-        for routeserver_member in routeserver_members:
-            if not routeserver_member.event:
-                continue
-
-            event = events.get(str(routeserver_member.event))
-            if not event:
-                continue
-
-            routeserver_member._event_object = event
-
-
 @reversion.register
 class TrafficAlertConfig(models.Model):
     ix = models.OneToOneField(

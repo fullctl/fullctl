@@ -89,6 +89,10 @@ class InternetExchangeMember(DataViewSet):
         ("mutual", MethodFilter("mutual")),
         ("q", MethodFilter("search")),
         ("distinct", MethodFilter("distinct")),
+        ("ipaddr4", "ipaddr4"),
+        ("ipaddr6", "ipaddr6"),
+        ("is_rs_peer", "is_rs_peer"),
+        ("ixs", "ix_id__in"),
     ]
 
     join_xl = {"ix": ("ix",), "ix_name": ("ix",)}
@@ -314,50 +318,6 @@ class InternetExchangeMember(DataViewSet):
             )
         )
 
-    @action(
-        detail=False,
-        methods=["PUT"],
-        url_path="set-event-reference/(?P<asn>[^/]+)",
-    )
-    @grainy_endpoint(namespace="service_bridge")
-    def set_event_reference(self, request, asn):
-        address = request.data.get("address")
-        try:
-            member = models.InternetExchangeMember.objects.get(
-                Q(ipaddr4=address) | Q(ipaddr6=address),
-                asn=int(asn),
-                is_rs_peer=True,
-                ix__verified=True,
-            )
-        except models.InternetExchangeMember.MultipleObjectsReturned as ex:
-            raise NotFound({"non_field_errors": [str(ex)]})
-
-        router_id = request.data.get("routeserver_router_id")
-        routeserver = None
-        org_slug = request.data.get("org_slug")
-
-        routeservers = models.Routeserver.objects.filter(router_id=router_id)
-        for rs in routeservers:
-            if rs.org.slug == org_slug:
-                routeserver = rs
-                break
-        if not routeserver:
-            raise NotFound(
-                {
-                    "non_field_errors": [
-                        f"Routeserver with router id {router_id} for org {org_slug} not found."
-                    ]
-                }
-            )
-
-        routeserver_member, _ = models.RouteserverMember.objects.get_or_create(
-            ix_member=member, routeserver=routeserver
-        )
-        routeserver_member.event = UUID(request.data.get("event"))
-        routeserver_member.save()
-        serializer = self.serializer_class(instance=member)
-        return Response(serializer.data)
-
     @action(detail=True, methods=["GET"])
     @grainy_endpoint(namespace="service_bridge")
     def metric(self, request, pk=None, *args, **kwargs):
@@ -449,17 +409,6 @@ class RouteServer(DataViewSet):
         routeserver.save()
         serializer = self.serializer_class(instance=routeserver)
         return Response(serializer.data)
-
-
-@route
-class RouteserverMember(DataViewSet):
-    path_prefix = "/data"
-    allowed_http_methods = ["GET"]
-    queryset = models.RouteserverMember.objects.all()
-    serializer_class = Serializers.routeserver_member
-    valid_filters = [
-        ("rss", "routeserver__in"),
-    ]
 
 
 @route
