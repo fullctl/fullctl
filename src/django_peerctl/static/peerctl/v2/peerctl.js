@@ -500,9 +500,6 @@ $peerctl.Ix = $tc.extend(
           row.find('.port-display').show();
         }
 
-        let url = this.templates.ix_list.data('api-metric-base');
-        $.fn.show_metric_list(url, row, data);
-
         // Initialize port status
         var statusSpan = row.find('span[data-field="status"]');
         if(data.status=="ok") {
@@ -694,7 +691,7 @@ $peerctl.Ix = $tc.extend(
         $.ajax({
           url: url.replace("/0/", `/${port_id}/`)
         }).done(({data = []}) => {
-          const {bgp_stat = null, traffic_alert_data = null} = data[0];
+          const {bgp_stat = null, traffic_alert_data = null, device_metrics = null} = data[0];
           const row = this.$w.list.find_row(port_id);
           const row_data = row.data('apiobject');
 
@@ -705,6 +702,10 @@ $peerctl.Ix = $tc.extend(
 
           if (row_data.is_route_server_peer && bgp_stat) {
             $.fn.show_bgp_stat(bgp_stat, row);
+          }
+
+          if (device_metrics) {
+            $.fn.show_metric_list(row, device_metrics);
           }
         });
       });
