@@ -18,18 +18,15 @@ class TokenAuthentication(authentication.BaseAuthentication):
             auth = self.authenticate_api_keys(request)
         except exceptions.AuthenticationFailed:
             auth = self.authenticate_jwt(request)
+        except JWTInvalidToken:
+            auth = None
 
         if auth:
             return (auth[0], None)
-        return (None, None)
 
     def authenticate_jwt(self, request):
         JWT_authenticator = JWTAuthentication()
-        try:
-            auth = JWT_authenticator.authenticate(request)
-        except JWTInvalidToken:
-            return
-
+        auth = JWT_authenticator.authenticate(request)
         if auth:
             request.perms = Permissions(auth[0])
             return auth
