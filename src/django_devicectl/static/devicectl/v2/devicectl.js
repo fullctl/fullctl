@@ -1840,7 +1840,8 @@ $ctl.application.Devicectl.ModalVirtualPort = $tc.extend(
       logicalPortsSelect.format_request_url = (url) => {
         return url.replace("/0/", "/" + fullctl.devicectl.device_id() + "/");
       };
-      logicalPortsSelect.load();
+
+      logicalPortsSelect.load(virtual_port.logical_port.id);
 
 
       if (!virtual_port) {
