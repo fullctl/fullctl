@@ -174,9 +174,9 @@ def interface_is_physical(typ):
     """
 
     ctx = service_bridge_context.get()
-    INTERFACE_PHSYICAL = ctx.get_service_config("netbox", "INTERFACE_PHSYICAL") or []
+    INTERFACE_PHYSICAL = ctx.get_service_config("netbox", "INTERFACE_PHYSICAL") or []
 
-    for phy_if_name in INTERFACE_PHSYICAL:
+    for phy_if_name in INTERFACE_PHYSICAL:
         if phy_if_name.lower() in typ.lower():
             return True
     return False
