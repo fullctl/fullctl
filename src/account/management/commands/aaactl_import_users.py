@@ -56,7 +56,7 @@ class Command(CommandInterface):
         with open(csv_file) as file:
             reader = csv.DictReader(file)
             # Check if all expected fields are in the CSV file
-            expected_fields = ["username", "email", "name", "asn", "org_name"]
+            expected_fields = ["username", "email", "name", "asn"]
             if not all(field in reader.fieldnames for field in expected_fields):
                 raise ValueError(
                     f"CSV file does not contain all the expected fields. {expected_fields}"
@@ -68,13 +68,15 @@ class Command(CommandInterface):
                 self.process_row(row, role)
 
     def process_row(self, row, role):
-        username, email, name, asn, org_name = (
+        username, email, name, asn = (
             row["username"],
             row["email"],
             row["name"],
             row["asn"],
-            row["org_name"],
         )
+
+        org_name = row.get("org_name", f"AS{asn}")
+
         # Split name into first and last name
         first_name, last_name = self.split_name(name)
         # Check if user already exists
