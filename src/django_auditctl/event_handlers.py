@@ -341,14 +341,31 @@ class BGPSessionStateDataHandler(BaseHandler):
 
             members.update(list(member_bridge.objects(**filters)))
 
+        physical_ports = []
+        port_ids = []
+
+        # collect port references from members
         for member in members:
-            for physical_port in member.physical_ports:
-                physical_port_stats_bridge.save_physical_port_stats(
-                    data=components,
-                    org_slug=org_slug,
-                    physical_port=physical_port,
-                    stat_type="bgp_stats",
-                )
+            # skip members that dont have a devicectl port assigned
+            if not member.port:
+                continue
+
+            port_ids.append(member.port)
+
+        # collect physical ports from port references
+        for port in devicectl.Port().objects(ids=port_ids, join=["physical_ports"]):
+            physical_ports.extend([p["id"] for p in port.physical_ports])
+
+
+        # send bgp stats to each physical port
+        for physical_port in physical_ports:
+
+            physical_port_stats_bridge.save_physical_port_stats(
+                data=components,
+                org_slug=org_slug,
+                physical_port=physical_port,
+                stat_type="bgp_stats",
+            )
 
 
 @register_handler(r"^v0.1\/[^\/]+\/bgp\/stat\/aggregate\/[0-9\.]+$")
@@ -456,8 +473,8 @@ class InsertMetrics(BaseHandler):
         if "ctl_object_id" not in metric_data.tags:
             metric_data.tags["ctl_object_id"] = self.event.object_id
 
-        if not metric_data.tags.get("ctl_router_id", None):
-            metric_data.tags.pop("ctl_router_id")
+        if not metric_data.tags.get("ctl_router_id"):
+            metric_data.tags.pop("ctl_router_id", None)
 
         log.info(
             f"Inserting metrics for {self.event.object_id}", metric_data=metric_data
