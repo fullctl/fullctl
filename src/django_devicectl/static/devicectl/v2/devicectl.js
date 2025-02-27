@@ -1841,7 +1841,7 @@ $ctl.application.Devicectl.ModalVirtualPort = $tc.extend(
         return url.replace("/0/", "/" + fullctl.devicectl.device_id() + "/");
       };
 
-      logicalPortsSelect.load(virtual_port.logical_port.id);
+      logicalPortsSelect.load(virtual_port ? virtual_port.logical_port.id : null);
 
 
       if (!virtual_port) {
