@@ -49,8 +49,10 @@ social-auth-app-django = ">=5.2"
 
 setuptools = "*"
 
-# only needed for ixctl now, compare vs django-inet?
 django-netfields = "<2"
+# netaddr: django-netfields already installs this, but we are now
+# also using it directly to validate mac addresses
+netaddr = ">=1.2.1"
 
 # prod serving
 whitenoise = ">=6"

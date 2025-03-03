@@ -1,4 +1,5 @@
 import ipaddress
+import netaddr
 import re
 
 from django.core.exceptions import ValidationError
@@ -81,8 +82,10 @@ def validate_masklength_range(value):
 
 
 def validate_mac_address(value: str):
-    if not re.match(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", value):
-        raise ValidationError("Invalid MAC address")
+    try:
+        netaddr.EUI(value)
+    except netaddr.AddrFormatError as e:
+        raise ValidationError(f"Invalid MAC address: {e}")
 
 
 def validate_mac_addresses(value: list[str]):
