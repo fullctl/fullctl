@@ -1276,7 +1276,7 @@ class PortObject(devicectl.DeviceCtlEntity, PolicyHolderMixin):
         self.port_info_object.save()
 
         if self.asn:
-            SyncStatus.create_task(self.asn, self.port_info_object.ipaddr4, status)
+            SyncStatus.create_task(self.asn, self.port_info_object.ref_id, status)
 
     def get_peer_session(self, member):
         """

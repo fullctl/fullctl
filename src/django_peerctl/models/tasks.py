@@ -108,15 +108,19 @@ class SyncStatus(Task):
     class HandleRef:
         tag = "task_sync_status"
 
-    def run(self, asn, ip4, status, *args, **kwargs):
-        member = ixctl.InternetExchangeMember().first(ip=ip4,
-                                                      asn=asn,
-                                                      ix_verified=True)
+    def run(self, asn, ref_id, status, *args, **kwargs):
+
+        ref_source, ref_object_id = ref_id.split(":")
+
+        if ref_source != "ixctl":
+            raise Exception("Only ixctl sourced ports can be updated")
+
+        member = ixctl.InternetExchangeMember().first(id=ref_object_id)
 
         if not member:
-            return f"no member found for {asn} {ip4} at any verified ix"
+            return f"no member found for for ref_id {ref_id}"
 
-        response = ixctl.InternetExchangeMember().set_ports_status(
+        ixctl.InternetExchangeMember().set_ports_status(
             member_id=member.id,
             member_port=member.port,
             status=status,
