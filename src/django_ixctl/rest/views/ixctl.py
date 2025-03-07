@@ -22,6 +22,7 @@ from fullctl.django.rest.mixins import (
 )
 from fullctl.django.rest.renderers import PlainTextRenderer
 from fullctl.django.tasks import specify_task
+from fullctl.service_bridge.client import ServiceBridgeError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -732,9 +733,18 @@ class Routeserver(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet
             many=True,
         )
         models.Routeserver.preload_events(queryset)
-        liveness_event = auditctl.Event().get_last_updated_config_liveness_event(
-            org.slug
-        )
+
+        try:
+            liveness_event = auditctl.Event().get_last_updated_config_liveness_event(
+                org.slug
+            )
+        except ServiceBridgeError as e:
+            if e.status != 404:
+                logger.error(
+                    "Failed to get liveness event",
+                    error=str(e),
+                )
+            liveness_event = None
 
         routeserver_event_map = {}
         for routeserver in queryset:
