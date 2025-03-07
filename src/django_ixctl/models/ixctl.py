@@ -494,9 +494,6 @@ class InternetExchangeMember(PdbRefModel):
         help_text=_("URI for accessing a prefixlist, currently prefixctl::$slug"),
     )
 
-    ixf_state = models.CharField(
-        max_length=255, default="active", choices=django_ixctl.enum.MEMBER_STATE
-    )
     ixf_member_type = models.CharField(
         max_length=255, choices=django_ixctl.enum.IXF_MEMBER_TYPE, default="peering"
     )
@@ -509,11 +506,15 @@ class InternetExchangeMember(PdbRefModel):
     )
 
     status = models.CharField(
-        max_length=12, default="ok", choices=django_ixctl.enum.PORT_STATE
+        max_length=64, default="ok", choices=django_ixctl.enum.PORT_STATE
     )
 
     meta = models.JSONField(
         null=True, blank=True, help_text=_("Meta data"), default=dict
+    )
+
+    billable = models.BooleanField(
+        default=False, help_text=_("Is this member billable?")
     )
 
     class PdbRef(PdbRefModel.PdbRef):
@@ -644,8 +645,16 @@ class InternetExchangeMember(PdbRefModel):
 
         member.status = status
         member.save()
-
+        
+        print(f"Setting status of port {member.port.id} to {status}")
         devicectl.Port().set_ports_status(status=status, pk=member.port.id)
+
+    @property
+    def ixf_state(self) -> str:
+        status = self.status
+        if status == "ok":
+            return "active"
+        return status
 
     @property
     def display_name(self):
@@ -801,8 +810,8 @@ class InternetExchangeMember(PdbRefModel):
         If port is set, return a list of physical port ids through
         port.physical_ports
         """
-
-        if not self.port or not self.port.object.physical_ports:
+        
+        if not self.port or not self.port.object or not self.port.object.physical_ports:
             return []
 
         return [port["id"] for port in self.port.object.physical_ports]

@@ -325,10 +325,10 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
 
       // load select options
 
-      var state_select = new twentyc.rest.Select(
-        form.element.find('#member-state')
+      var status_select = new twentyc.rest.Select(
+        form.element.find('#member-status')
       );
-      state_select.load((member?member.ixf_state:null));
+      status_select.load((member?member.status:null));
 
       var type_select = new twentyc.rest.Select(
         form.element.find('#member-type')
@@ -1032,16 +1032,30 @@ $ctl.application.Ixctl.Members = $tc.extend(
   "Members",
   {
     Members : function() {
+      this.STATUS_LABELS = {
+        "ok": "Active",
+        "admin_down": "Admin Down",
+        "down": "Down",
+        "awaiting_cross_connect": "Awaiting Cross Connect",
+        "provisioning": "Provisioning",
+        "suspended": "Suspended",
+        "pending_deletion": "Pending Deletion"
+      }
       this.Tool("members");
     },
 
     init : function() {
+      const statusTypes = Object.keys(this.STATUS_LABELS);
 
       this.widget("list", ($e) => {
         return new $ctl.application.Ixctl.MemberList(
           this.template("list", this.$e.body)
         );
       });
+
+      this.$w.list.formatters.status = (status) => {
+        return this.STATUS_LABELS[status] || status;
+      };
 
       this.$w.list.formatters.row = (row, data) => {
 
@@ -1065,15 +1079,20 @@ $ctl.application.Ixctl.Members = $tc.extend(
         }
 
         // Initialize port status
-        var statusSpan = row.find('span[data-field="status"]');
+        var statusSpan = row.find('span.port-status-toggle');
         if(data.status=="ok") {
           statusSpan.attr('data-toggle', 'checked');
           statusSpan.addClass('checked');
 
-        } else if(data.status=="admin_down") {
+        } else {
           statusSpan.attr('data-toggle', 'unchecked');
           statusSpan.removeClass('checked');
         }
+
+        row.find(".port-status-indicator").addClass(data.status);
+
+        if(!data.billable)
+          row.find(".billable").hide();
 
         // Change port status event
         row.find('a[data-action="toggle_status"]')
@@ -1086,41 +1105,42 @@ $ctl.application.Ixctl.Members = $tc.extend(
             return;
           }
 
-          var statusSpan = row.find('span[data-field="status"]');
+          var statusSpan = row.find('span.port-status-toggle');
           var currentToggle = statusSpan.attr('data-toggle');
 
-          var nextStatus = "ok";
-          statusSpan.attr('data-toggle', 'checked');
-          statusSpan.addClass('checked');
-          if(currentToggle === 'checked') {
-            nextStatus = "admin_down";
-            statusSpan.attr('data-toggle', 'unchecked');
-            statusSpan.removeClass('checked');
-          }
+          var nextStatus = (currentToggle === 'checked') ? "admin_down" : "ok";
           let member = row.data("apiobject");
 
 
           let url = this.$w.list.element.data('api-port-status');
-          url = url.replace("default", $ctl.ixctl.ix_slug());
-          url = url.replace(/0/g, member.id);
+          url = url.replace(/\/default\//g, `/${$ctl.ixctl.ix_slug()}/`);
+          url = url.replace(/\/0\//g, `/${member.id}/`);
 
           $.ajax({
             url: url,
-            method: 'PATCH',
+            method: 'POST',
             headers : {
               "Content-Type" : "application/json",
               "X-CSRFToken" : twentyc.rest.config.csrf
             },
             data: JSON.stringify({
               status: nextStatus,
-              ipaddr4: member.ipaddr4,  // mandatory field
-              ipaddr6: member.ipaddr6,  // mandatory field
             }),
             success: function(response) {
               // console.log('Success:', response);
               row.find('a[data-action="toggle_status"]')
               .attr("title", response.data[0].status == "ok" ? "Disable Port" : "Enable Port");
-            },
+
+              if(response.data[0].status  === 'admin_down') {
+                statusSpan.attr('data-toggle', 'unchecked');
+                statusSpan.removeClass('checked');
+              } else {
+                statusSpan.attr('data-toggle', 'checked');
+                statusSpan.addClass('checked');
+              }
+              row.find('span[data-field="status"]').text(this.STATUS_LABELS[response.data[0].status]);
+              row.find(".port-status-indicator").removeClass(statusTypes.join(" ")).addClass(response.data[0].status);
+            }.bind(this),
             error: function(xhr, status, error) {
               // console.log('Error:', status, error);
             },
@@ -1397,7 +1417,7 @@ $ctl.application.Ixctl.MemberList = $tc.extend(
      * @param {Object} apiobj
      */
     is_member_active : function(apiobj) {
-      return apiobj.ixf_state == "active" || apiobj.port != null;
+      return apiobj.status == "ok" || apiobj.port != null;
     },
 
     /**

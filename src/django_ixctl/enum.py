@@ -7,21 +7,14 @@ IXF_MEMBER_TYPE = (
     ("probono", _("probono")),
 )
 
-MEMBER_STATE = (
-    ("active", _("Active")),
-    ("awaiting-cross-connect", _("Awaiting cross connect")),
+PORT_STATE = (
+    ("ok", _("Active")),
+    ("awaiting_cross_connect", _("Awaiting cross connect")),
     ("provisioning", _("Provisioning")),
     ("suspended", _("Suspended")),
-    ("pending-deletion", _("Pending deletion")),
-)
-
-PORT_STATE = (
-    ("ok", _("Ok")),
-    ("pending", _("Pending")),
-    ("deactivated", _("Deactivated")),
-    ("failed", _("Failed")),
-    ("expired", _("Expired")),
-    ("admin_down", _("Admin Down")),
+    ("pending_deletion", _("Pending deletion")),
+    ("admin_down", _("Admin down")),
+    ("down", _("Down")),
 )
 
 ARS_TYPES = (

@@ -2,7 +2,7 @@
 <table
   class="table table-borderless list-table"
   data-api-base="{% url "ixctl_api:member-list" org_tag=request.org.slug ix_tag="default" %}"
-  data-api-port-status="{% url "ixctl_api:member-status" org_tag=request.org.slug ix_tag="default" member_id="0" %}"
+  data-api-port-status="{% url "ixctl_api:member-set-port-status" org_tag=request.org.slug ix_tag="default" member_id="0" %}"
   data-api-member-stats="{% url "ixctl_api:member-get-member-stats" org_tag=request.org.slug ix_tag="default" pk="0" %}"
   data-api-action=""
   data-template="list">
@@ -48,7 +48,7 @@
           data-hover="show"
           data-action="toggle_status"
         >
-          <span data-field="status" data-toggle="checked">
+          <span class="port-status-toggle" data-toggle="checked">
             <img data-false src="{% static "common/icons/Indicator/X-Ind/X.svg" %}" class="icon filled" />
             <img data-true src="{% static "common/icons/Indicator/Check-Ind/Check.svg" %}" class="icon filled" />
           </span>
@@ -63,6 +63,7 @@
         >
           <span class="icon ixctl icon-delete"></span>
         </a>
+        <span class="badge status-badge ok billable">billable</span>
         <a class="button btn" title="View Member Details" data-action="view_member_details">
           <span class="icon ixctl icon-view"></span>
         </a>
@@ -75,8 +76,9 @@
       <td class="property" colspan="7">
         <div class="row">
           <div class="col-12 col-sm-4 col-lg-3 col-xl-2 field">
-            {% trans "State" %}:
-            <span class="highlight" data-field="ixf_state"></span>
+            <div class="port-status-indicator">
+              <span data-field="status"></span>
+            </div>
           </div>
           <div class="col-12 col-sm-4 col-lg-3 col-xl-2 field">
             {% trans "Type" %}:

@@ -77,3 +77,32 @@ textarea.form-control.learned-mac-addresses {
 .port-speed {
   text-align: center;
 }
+
+.port-status-indicator {
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.port-status-indicator.ok {
+  background-color: var(--clr-accent-400);
+}
+
+.port-status-indicator.awaiting_cross_connect,
+.port-status-indicator.provisioning,
+.port-status-indicator.suspended,
+.port-status-indicator.pending_deletion,
+.port-status-indicator.down,
+.port-status-indicator.admin_down {
+  background-color: var(--clr-accent-500);
+  color: var(--clr-primary-100);
+}
+
+.port-status-indicator.ok span,
+.port-status-indicator.awaiting_cross_connect span,
+.port-status-indicator.provisioning span,
+.port-status-indicator.suspended span,
+.port-status-indicator.down span,
+.port-status-indicator.pending_deletion span,
+.port-status-indicator.admin_down span {
+  color: var(--primary-btn-clr) !important;
+}
