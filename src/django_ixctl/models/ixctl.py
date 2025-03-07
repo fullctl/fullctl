@@ -801,8 +801,8 @@ class InternetExchangeMember(PdbRefModel):
         If port is set, return a list of physical port ids through
         port.physical_ports
         """
-
-        if not self.port or not self.port.object.physical_ports:
+        
+        if not self.port or not self.port.object or not self.port.object.physical_ports:
             return []
 
         return [port["id"] for port in self.port.object.physical_ports]
