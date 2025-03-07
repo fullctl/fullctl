@@ -11,6 +11,8 @@ from fullctl.django.rest.views.service_bridge import (
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from django.utils import timezone
+
 import django_devicectl.models.devicectl as models
 import django_devicectl.models.port_automation_tasks as port_automation_tasks
 import django_devicectl.mrtg as mrtg
@@ -258,18 +260,19 @@ class Port(DataViewSet):
         Returns:
           Response: A JSON response containing the updated status of the physical ports.
         """
-        port_status_seriailizer = Serializers.port_status(data=request.data)
-        if port_status_seriailizer.is_valid():
+
+        serializer = Serializers.port_status(data=request.data)
+        if serializer.is_valid():
             port = self.get_object()
             physical_ports = port.virtual_port.physical_ports
             physical_ports.update(
-                status=port_status_seriailizer.validated_data.get("status")
+                status=serializer.validated_data.get("status"), updated=timezone.now()
             )
 
             return Response(Serializers.physical_port(physical_ports, many=True).data)
 
-        logger.debug(f"{port_status_seriailizer.errors=}")
-        return Response(port_status_seriailizer.errors)
+        logger.debug(f"{serializer.errors=}")
+        return Response(serializer.errors)
 
     @action(detail=True, methods=["POST"])
     def unassign(self, request, pk, *args, **kwargs):
