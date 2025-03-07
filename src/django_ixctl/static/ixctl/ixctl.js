@@ -311,11 +311,6 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       this.member = member;
       form.base_url = form.base_url.replace("/default", "/"+ix_slug);
 
-      var state_select = new twentyc.rest.Select(
-        form.element.find('#member-state')
-      )
-      state_select.load((member?member.ixf_state:null));
-
       var type_select = new twentyc.rest.Select(
         form.element.find('#member-type')
       )

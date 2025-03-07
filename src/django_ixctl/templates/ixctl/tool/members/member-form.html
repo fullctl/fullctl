@@ -18,13 +18,13 @@
   </div>
   <div class="row mb-3">
     <div class="col-12" data-api-submit="yes">
-      <label class="form-label" for="member-state">{% trans "State" %}</label>
+      <label class="form-label" for="member-state">{% trans "Status" %}</label>
       <span class="modal-control">
       <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
       <select
         class="form-control"
         id="member-state"
-        name="ixf_state"
+        name="status"
         data-api-base="{% url "ixctl_api:member-list" org_tag=request.org.slug ix_tag="default" %}"
         data-api-action=""
         data-load-type="drf-choices"

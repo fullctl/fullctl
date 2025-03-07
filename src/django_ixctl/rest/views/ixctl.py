@@ -553,6 +553,9 @@ class Member(
             return BadRequest(serializer.errors)
 
         member = serializer.save()
+        # set port status
+        if member.port:
+            models.InternetExchangeMember.set_ports_status(member, member.status)
 
         return Response(Serializers.member(instance=member).data)
 
@@ -577,6 +580,10 @@ class Member(
 
         serializer.instance = member
         response = Response(serializer.data)
+
+        # set port status
+        if member.port:
+            models.InternetExchangeMember.set_ports_status(member, member.status)
 
         return response
 
@@ -637,66 +644,38 @@ class Member(
         return Response(member_data)
 
     @action(
-        detail=False,
-        methods=["PATCH"],
-        url_path=r"(?P<member_id>[\d]+)/status",  # noqa: W605
+        detail=True,
+        methods=["POST"],
+        serializer_class=Serializers.member_set_port_status,
+        url_path="status",
     )
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
     @load_object("member", models.InternetExchangeMember, ix="ix", id="member_id")
     @grainy_endpoint(
         namespace="member.{request.org.permission_id}.{ix.pk}",
     )
-    def status(self, request, org, instance, ix, member_id, member, *args, **kwargs):
+    def set_port_status(self, request, org, instance, ix, member_id, member, *args, **kwargs):
         """
-        Update the status of a specified Internet Exchange Member.
-
-        This method handles PATCH requests to update the status of an Internet Exchange
-        member. It performs the following tasks:
-          1. Retrieves and deserializes the supplied request data.
-          2. Validates the deserialized data.
-          3. Updates the member's status if the data is valid.
-          4. Returns a serialized representation of the updated member.
-
-        Note:
-          This method is decorated with several decorators:
-          - `@action`: Configures this method as a custom endpoint for PATCH requests.
-          - `@load_object`: Retrieves the InternetExchange and InternetExchangeMember instances.
-          - `@grainy_endpoint`: Applies granular permission control.
-
-        Args:
-          request (Request): The request object containing the data to update.
-          org (Organization): The organization associated with the request.
-          instance (InternetExchange): The InternetExchange instance.
-          ix (InternetExchange): The loaded InternetExchange object.
-          member_id (int): The ID of the InternetExchangeMember to update.
-          member (InternetExchangeMember): The InternetExchangeMember instance to update.
-          *args: Variable length argument list.
-          **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-          Response: A Response object containing the serialized data of the updated member
-          if the serializer is valid. Otherwise, returns the serializer errors.
         """
-        serializer = self.serializer_class(
+        serializer = Serializers.member_set_port_status(
             member,
             data=request.data,
-            partial=True,
             context={"instance": instance},
         )
-        if serializer.is_valid():
-            # Update the member status
-            updated_instance = serializer.save()
-            updated_serializer = self.serializer_class(updated_instance)
+        if not serializer.is_valid():
+            return Response(serializer.errors)
 
-            # Update the physical ports status in deviceCtl
-            models.InternetExchangeMember.set_ports_status(
-                member=member,
-                status=serializer.validated_data.get("status"),
-            )
-            return Response(updated_serializer.data)
+        # Update the member status
+        updated_instance = serializer.save()
+        updated_serializer = Serializers.member_set_port_status(updated_instance)
 
-        logger.debug(f"{serializer.errors=}")
-        return Response(serializer.errors)
+        # Update the physical ports status in deviceCtl
+        models.InternetExchangeMember.set_ports_status(
+            member=member,
+            status=updated_instance.status,
+        )
+        return Response(updated_serializer.data)
+
 
     @action(detail=False, methods=["GET"], url_path=r"port/(?P<port_id>\d+)/metric")
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
