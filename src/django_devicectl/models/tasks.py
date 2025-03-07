@@ -1038,7 +1038,7 @@ class AuditCtlIXTrafficReceived(Task):
         pdbctl_ix = pdbctl.InternetExchange()
         pdbctl_network_contact = pdbctl.NetworkContact()
         peerctl_port_info = peerctl.PortInfo()
-        members = list(self.ixctl_member.objects(ix=ix.id))
+        members = list(ixctl_member.objects(ix=ix.id))
 
         traffic_threshold_alerts = TrafficThresholdAlerts(
             org=self.org,
