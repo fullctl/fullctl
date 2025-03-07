@@ -24,6 +24,7 @@ from pydantic import Field as PydanticField
 from pydantic import ValidationError as PydanticValidationError
 
 import django_devicectl.referee as referee_util
+from django_devicectl.enum import PORT_STATE
 
 logger = structlog.getLogger("django_structlog")
 
@@ -703,6 +704,10 @@ class PhysicalPort(HandleRefModel):
             "fullctl.service_bridge.nautobot.Interface",
             "fullctl.service_bridge.netbox.Interface",
         ],
+    )
+
+    status = models.CharField(
+        max_length=64, default="ok", choices=PORT_STATE
     )
 
     class HandleRef:

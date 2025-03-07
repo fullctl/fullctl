@@ -16,6 +16,7 @@ from rest_framework import serializers
 import django_devicectl.models.devicectl as models
 import django_devicectl.models.port_automation_tasks as port_automation_tasks
 from django_devicectl.rest.serializers.devicectl import Metric
+from django_devicectl.enum import PORT_STATE
 
 logger = structlog.getLogger(__name__)
 
@@ -678,13 +679,6 @@ class PortTraffic(serializers.ListSerializer):
     child = Traffic()
 
     ref_tag = "port_traffic"
-
-
-PORT_STATE = (
-    ("ok", _("Ok")),
-    ("down", _("Down")),
-    ("admin_down", _("Admin Down")),
-)
 
 
 @register

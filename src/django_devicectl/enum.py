@@ -19,3 +19,13 @@ ARS_NO_EXPORT_ACTIONS = (
 )
 
 PERMISSION_REQUEST_TYPES = (("net_ix", _("Manage network at exchange")),)
+
+PORT_STATE = (
+    ("ok", _("Active")),
+    ("awaiting_cross_connect", _("Awaiting cross connect")),
+    ("provisioning", _("Provisioning")),
+    ("suspended", _("Suspended")),
+    ("pending_deletion", _("Pending deletion")),
+    ("admin_down", _("Admin down")),
+    ("down", _("Down")),
+)
