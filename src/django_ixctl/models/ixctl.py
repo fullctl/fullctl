@@ -646,7 +646,6 @@ class InternetExchangeMember(PdbRefModel):
         member.status = status
         member.save()
         
-        print(f"Setting status of port {member.port.id} to {status}")
         devicectl.Port().set_ports_status(status=status, pk=member.port.id)
 
     @property
