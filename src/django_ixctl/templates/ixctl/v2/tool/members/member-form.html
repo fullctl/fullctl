@@ -284,6 +284,9 @@
                 >
               </select>
             </span>
+            <div class="right">
+              <a data-element="btn_clear_port_selection" class="action">Clear selection</a>
+            </div>
           </div>
         </div>
       </div>
@@ -293,7 +296,11 @@
         <div class="col-12">
           <label class="form-label" for="virtual_port">{% trans "Virtual Port" %}</label>
           <input type="text" class="form-control" id="virtual_port_name" name="virtual_port_name" readonly />
+          <button type="button" data-element="btn_clear_port_assignment" class="btn-danger col btn form-control">
+            {% trans "Clear port assignment" %}
+          </button>
         </div>
+
       </div>
 
       <div class="row mb-3 port-config-intent intent-resize" style="display:none">
@@ -316,6 +323,24 @@
         </div>
       </div>
 
+    </div>
+
+    <div data-element="unassign_port" style="display:none">
+      <div class="row mb-3">
+        <div class="col-12">
+          <div class="alert alert-info">
+            {% blocktrans %}
+            You are unassigning the currently assigned port(s) from the member. This will free
+            up the physical ports in devicectl and retire the virtual port. A new virtual port will be created if the member is assigned a port in the future.
+            {% endblocktrans %}
+            <ul class="port-list mt-3">
+            </ul>
+            <div class="right">
+              <a data-element="btn_cancel_unassign_port" class="action">Cancel</a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="row mb-3">

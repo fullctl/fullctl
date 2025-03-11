@@ -650,6 +650,17 @@ class InternetExchangeMember(ModelSerializer):
             intent = validated_data["port_config_intent"] = None
             return validated_data
 
+        if intent == "unassign":
+            if not member.port:
+                raise ValidationError(
+                    {
+                        "port_config_intent": _(
+                            "Cannot unassign a port from a member that has no port"
+                        )
+                    }
+                )
+            return validated_data
+
         if intent is None:
             # if port config intent is noop and changes are made to the port
             # raise a validation error

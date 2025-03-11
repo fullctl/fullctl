@@ -47,4 +47,5 @@ PORT_CONFIG_INTENT = (
     ("resize", _("Resize")),
     ("lag-increase", _("Increase LAG quantity")),
     ("lag-decrease", _("Decrease LAG quantity")),
+    ("unassign", _("Unassign")),
 )

@@ -443,6 +443,41 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
         form.element.find('[data-element="port_config_load_error"]').hide();
         form.element.find('[data-element="port_config_fields"]').show();
       }
+
+      const btn_clear_port_assignment = form.element.find('[data-element="btn_clear_port_assignment"]');
+      btn_clear_port_assignment.click(() => {
+        this.clear_port_assignment();
+      });
+
+      const btn_cancel_unassign_port = form.element.find('[data-element="btn_cancel_unassign_port"]');
+      btn_cancel_unassign_port.click(() => {
+        this.cancel_clear_port_assignment();
+      });
+
+    },
+
+    /**
+     * Indicate that saving the member will unassign the port
+     */
+
+    clear_port_assignment : function() {
+      if(!this.member) {
+        return;
+      }
+
+      this.unassign_port = true;
+
+      // hide port_config_fields
+      this.form.element.find('[data-element="port_config_fields"]').hide();
+      
+      // show unassign_port
+      this.form.element.find('[data-element="unassign_port"]').show();
+    },
+
+    cancel_clear_port_assignment : function() {
+      this.unassign_port = false;
+      this.form.element.find('[data-element="port_config_fields"]').show();
+      this.form.element.find('[data-element="unassign_port"]').hide();
     },
 
     /**
@@ -472,6 +507,10 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
         return "create";
       }
 
+      if(this.unassign_port) {
+        return "unassign";
+      }
+
       const member = this.member;
       const port = member.port;
 
@@ -482,6 +521,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       const current_ports_container = this.form.element.find('[data-element="current_ports"]');
       const virtual_port_display = this.form.element.find('[data-element="virtual_port_display"]');
       current_ports_container.show();
+      this.form.element.find('#device').attr("disabled", false);
 
       if(
         port &&
@@ -520,9 +560,10 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       port_set_container.hide();
       $(".port-config-intent").hide();
 
-      if(port)
+      if(port) {
         virtual_port_display.show();
-      else {
+        this.form.element.find('#device').attr("disabled", true);
+      } else {
         port_set_container.show();
       }
 
@@ -548,6 +589,12 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       };
 
       const device_select = this.device_select;
+      const btn_clear_port_selection = form.element.find('[data-element="btn_clear_port_selection"]');
+
+      btn_clear_port_selection.click(() => {
+        form.element.find('#port_set').val(null).trigger('change');
+        modal.port_config_intent();
+      });
 
       device_select.load(port ? port.device_id : null).then(() => {
         // Initial load with the first option selected
@@ -640,7 +687,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       // is a list of physical ports with name fields
       if(port && port.physical_ports) {
         const current_ports_container = form.element.find('[data-element="current_ports"]');
-        const current_ports_list = current_ports_container.find('.port-list');
+        const current_ports_list = form.element.find('.port-list');
         current_ports_list.empty();
         port.physical_ports.forEach((port) => {
           current_ports_list.append(
