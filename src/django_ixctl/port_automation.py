@@ -15,6 +15,13 @@ logger = structlog.get_logger(__name__)
 
 __all__ = [
     "get_ix_lan_config",
+    "handle_port_assignment",
+    "create_device_port",
+    "resize_member_port",
+    "lag_increase_ports",
+    "lag_decrease_ports",
+    "unassign_port",
+    "sync_ip_addresses",
 ]
 
 
@@ -45,6 +52,9 @@ def handle_port_assignment(
 
     if intent == "lag-decrease":
         return lag_decrease_ports(member, port_set, meta=meta)
+    
+    if intent == "unassign":
+        return unassign_port(member, meta=meta)
 
     raise ValueError(f"Invalid port configuration intent: {intent}")
 
@@ -179,6 +189,30 @@ def lag_decrease_ports(
         devicectl.PhysicalPort().unassign(_id, int(member.port))
 
 
+def unassign_port(
+    member: int | InternetExchangeMember,
+    meta: dict | None = None,
+    save: bool = True,
+) -> None:
+    """
+    Will unassign the port from the member.
+    """
+
+    for _id in member.physical_ports:
+        devicectl.PhysicalPort().unassign(_id, int(member.port))
+
+    member.port = None
+
+    if save:
+        member.save()
+
+    port_automation_tasks.MemberPortUpdate.create_task(
+        member.org,
+        member.id,
+        meta=meta,
+        port=None,
+    )
+
 def sync_ip_addresses(member: int | InternetExchangeMember):
     """
     Will call devicectl.VirtualPort().set_ip_addresses() with the
@@ -274,3 +308,4 @@ def get_ix_lan_config(ix: int | InternetExchange) -> IXLanConfig:
                 config.prefixes.append(prefix.prefix)
 
     return config
+
