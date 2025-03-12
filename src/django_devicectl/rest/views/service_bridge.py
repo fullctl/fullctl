@@ -558,6 +558,7 @@ class PhysicalPort(DataViewSet):
     valid_filters = [
         ("ids", "id__in"),
         ("ref", "reference"),
+        ("refs", "reference__in"),
         ("org", "device__instance__org__remote_id"),
         ("org_slug", "device__instance__org__slug"),
     ]
