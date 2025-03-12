@@ -393,3 +393,113 @@ def test_create_device_metric(db, account_objects):
             "ceos00.optics.0.Ethernet1.physical_channels.channel.0.state.laser_bias_current.min": 9.6,
             "ceos00.optics.0.Ethernet1.physical_channels.channel.0.state.laser_bias_current.instant": 9.8,
         }
+
+
+def test_virtport_set_macaddr_set(db, account_objects):
+    client = account_objects.api_client
+    org = account_objects.org
+    virtual_port = account_objects.virtual_port
+
+    response = client.post(
+        reverse(
+            "devicectl_api:virtual_port-batch-set-macaddr",
+            args=(org.slug,),
+        ),
+        json.dumps(
+           {
+               "data": [
+                    {
+                        "virtual_port": virtual_port.id,
+                        "macaddr_set": ["00:00:00:00:00:01", "00:00:00:00:00:02"],
+                    }
+               ]
+           }
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert len(data) == 1
+    print(data)
+    assert data[0]["virtual_port"] == virtual_port.id
+    assert "00:00:00:00:00:01" in data[0]["macaddr_set"]
+    assert "00:00:00:00:00:02" in data[0]["macaddr_set"]
+    assert len(data[0]["macaddr_set"]) == 2
+
+    virtual_port.port.port_info.refresh_from_db()
+    assert "00:00:00:00:00:01" in virtual_port.port.port_info.macaddr_set
+    assert "00:00:00:00:00:02" in virtual_port.port.port_info.macaddr_set
+    assert len(virtual_port.port.port_info.macaddr_set) == 2
+
+def test_virtport_set_macaddr_empty_and_dupes(db, account_objects):
+    """
+    Tests that pushing None or empty entries to the macaddr_set
+    will get pruned. Also tests that duplicates are removed.
+    """
+
+    client = account_objects.api_client
+    org = account_objects.org
+    virtual_port = account_objects.virtual_port
+
+    response = client.post(
+        reverse(
+            "devicectl_api:virtual_port-batch-set-macaddr",
+            args=(org.slug,),
+        ),
+        json.dumps(
+           {
+               "data": [
+                    {
+                        "virtual_port": virtual_port.id,
+                        "macaddr_set": ["00:00:00:00:00:01", "00:00:00:00:00:02", None, "", "00:00:00:00:00:01"],
+                    }
+               ]
+           }
+        ),
+        content_type="application/json",
+    )
+
+    print(response.json())
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert len(data) == 1
+    assert data[0]["virtual_port"] == virtual_port.id
+    assert "00:00:00:00:00:01" in data[0]["macaddr_set"]
+    assert "00:00:00:00:00:02" in data[0]["macaddr_set"]
+    assert len(data[0]["macaddr_set"]) == 2
+
+    virtual_port.port.port_info.refresh_from_db()
+    assert "00:00:00:00:00:01" in virtual_port.port.port_info.macaddr_set
+    assert "00:00:00:00:00:02" in virtual_port.port.port_info.macaddr_set
+    assert len(virtual_port.port.port_info.macaddr_set) == 2
+
+def test_virtport_set_macaddr_invalid_value_errors(db, account_objects):
+    """
+    Tests that pushing invalid MAC addresses will result in an error.
+    """
+
+    client = account_objects.api_client
+    org = account_objects.org
+    virtual_port = account_objects.virtual_port
+
+    response = client.post(
+        reverse(
+            "devicectl_api:virtual_port-batch-set-macaddr",
+            args=(org.slug,),
+        ),
+        json.dumps(
+           {
+               "data": [
+                    {
+                        "virtual_port": virtual_port.id,
+                        "macaddr_set": ["00:00:00:00:00:01", "00:00:00:00:00:02", "00:00:00:00:00:0", "00:00:00:00:00:0Z"],
+                    }
+               ]
+           }
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400

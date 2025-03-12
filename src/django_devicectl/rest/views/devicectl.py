@@ -1139,7 +1139,7 @@ class VirtualPort(PortTrafficMixin, CachedObjectMixin, viewsets.GenericViewSet):
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         serializer.save()
-        return Response(serializer.data)
+        return Response(serializer.data["data"])
 
     @action(detail=True, methods=["get"])
     @grainy_endpoint(

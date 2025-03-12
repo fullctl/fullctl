@@ -475,7 +475,7 @@ class VirtualPort(TagMixin, ModelSerializer):
 
 class VirtualPortMacAddresses(serializers.Serializer):
     macaddr_set = serializers.ListField(
-        child=serializers.CharField(),
+        child=serializers.CharField(allow_null=True, allow_blank=True),
         required=True,
     )
     virtual_port = serializers.PrimaryKeyRelatedField(
@@ -489,10 +489,11 @@ class VirtualPortMacAddresses(serializers.Serializer):
         if not macaddr_set:
             return []
 
-        # check for duplicates within the passed list
-        if len(macaddr_set) != len(set(macaddr_set)):
-            raise ValidationError("Duplicate mac addresses found")
+        # remove none / empty mac addresses
+        macaddr_set = [macaddr for macaddr in macaddr_set if macaddr]
 
+        # remove dupes
+        macaddr_set = list(set(macaddr_set))
         validate_mac_addresses(macaddr_set)
 
         return macaddr_set
