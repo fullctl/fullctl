@@ -113,6 +113,7 @@ class AccountObjects:
                 name="Test Logical Port",
                 description="Sample logical port test",
             )
+            self._logical_port.setup(self.devicectl_instance)
         return self._logical_port
 
     @property
@@ -126,12 +127,16 @@ class AccountObjects:
                 description="Sample physical port test",
                 logical_port=self.logical_port,
             )
+            self._physical_port.setup()
         return self._physical_port
 
     @property
     def physical_ports(self):
         return [self.physical_port]
 
+    @property
+    def virtual_port(self):
+        return self.logical_port.virtual_ports.first()
 
 def make_account_objects(handle="test"):
     return AccountObjects(handle)
