@@ -112,21 +112,40 @@
       let selected_value = container.find('#date_range_select').val();
 
       if (selected_value === 'custom') {
-        let start_date = new Date(container.find(`#${dp_id_prefix}start_date`).val()).getTime() / 1000;
-        end_date = new Date(container.find(`#${dp_id_prefix}end_date`).val()).getTime() / 1000;
-        duration = end_date - start_date;
+        let start_date_str = container.find(`#${dp_id_prefix}start_date`).val();
+        let end_date_str = container.find(`#${dp_id_prefix}end_date`).val();
+
+        let start_date = new Date(start_date_str);
+        start_date.setHours(0, 0, 0, 0);
+
+        let end_date_obj = new Date(end_date_str);
+        end_date_obj.setHours(23, 59, 59, 999);
+
+        let start_timestamp = Math.floor(start_date.getTime() / 1000);
+        end_date = Math.floor(end_date_obj.getTime() / 1000);
+
+        duration = end_date - start_timestamp;
+
       } else if (selected_value === 'current_month') {
         let now = new Date();
         let start_of_month = new Date(now.getFullYear(), now.getMonth(), 1);
-        duration = end_date - start_of_month.getTime() / 1000;
+        start_of_month.setHours(0, 0, 0, 0);
+
+        duration = end_date - Math.floor(start_of_month.getTime() / 1000);
+
       } else if (selected_value === 'last_month') {
         let now = new Date();
         let start_of_last_month = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        start_of_last_month.setHours(0, 0, 0, 0);
+
         let end_of_last_month = new Date(now.getFullYear(), now.getMonth(), 0);
-        duration = end_of_last_month.getTime() / 1000 - start_of_last_month.getTime() / 1000;
-        end_date = end_of_last_month.getTime() / 1000;
+        end_of_last_month.setHours(23, 59, 59, 999);
+
+        duration = Math.floor(end_of_last_month.getTime() / 1000) - Math.floor(start_of_last_month.getTime() / 1000);
+        end_date = Math.floor(end_of_last_month.getTime() / 1000);
+
       } else {
-        duration = selected_value * 60 * 60;
+        duration = parseInt(selected_value) * 60 * 60;
       }
 
       return { end_date, duration };
@@ -577,7 +596,8 @@
                 } else {
                     params.push('step=86400');
                 }
-                params.push('start=-'+duration+'s');
+                params.push('start='+(end_date-duration));
+                params.push('end='+end_date);
 
             } else {
                 params.push('step=300');
