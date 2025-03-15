@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "regctl"
-version = "0.2.0-rc.21"
+version = "0.2.0-rc.22"
 description = "Regctl"
 authors = ["20C <code@20c.com>"]
 readme = "README.md"
