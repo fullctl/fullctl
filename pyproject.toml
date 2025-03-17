@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "auditctl"
 repository = "https://github.com/fullctl/auditctl"
-version = "0.6.0-rc.31"
+version = "0.6.0-rc.32"
 description = "audit control"
 authors = ["20C <code@20c.com>"]
 license = "Apache-2.0"
