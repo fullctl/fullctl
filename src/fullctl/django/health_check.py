@@ -1,6 +1,7 @@
 """
 Defines an extendible healthcheck process for FullCtl services.
 """
+
 from django.conf import settings
 from django.db import connection
 from django.utils import timezone
@@ -34,13 +35,20 @@ class register:
         return func
 
 
-def check_all() -> dict:
+def check_all(exclude: list[str] = None) -> dict:
     """
     Run all registered health checks.
     """
     results = {}
     for name, func in HEALTH_CHECKS.items():
-        results[name] = func()
+        if exclude and name in exclude:
+            results[name] = {"excluded": True, "ok": True}
+            continue
+        try:
+            func()
+            results[name] = {"ok": True}
+        except Exception as exc:
+            results[name] = {"ok": False, "error": str(exc)}
 
     return results
 
