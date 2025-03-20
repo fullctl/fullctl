@@ -103,3 +103,36 @@ class MetricMrtg(CachedObjectMixin, viewsets.GenericViewSet):
             end=end,
         )
         return Response(data.model_dump())
+
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="write/switch_to_switch",
+        serializer_class=Serializers.mrtg_switch_to_switch,
+    )
+    @grainy_endpoint(namespace="device.{request.org.permission_id}")
+    def write_switch_to_switch(self, request, org, *args, **kwargs):
+        """
+        Write switch to switch data points to the metrics database
+
+        Data points should be in the following format:
+
+        {
+            "data": [
+                {
+                    "side_a_name": "device_name",
+                    "side_b_name": "device_name",
+                    "bps_out": 1234,
+                    "timestamp": 1234567890
+                }
+            ]
+        }
+        """
+        serializer = Serializers.mrtg_switch_to_switch(data=request.data, context={"org":org}, many=True)
+        serializer.is_valid(raise_exception=True)
+
+        # write data to metrics database
+        mrtg.write_switch_to_switch(org.id, org.slug, serializer.validated_data)
+
+        return Response(serializer.data, status=201)

@@ -1,6 +1,13 @@
 from django.conf import settings
-from fullctl.metrics import Metrics
+from fullctl.metrics import Metrics, make_metrics, Point
 from fullctl.metrics.schema import QueryResult
+import pydantic
+
+class MRTGSwitchToSwitchData(pydantic.BaseModel):
+    side_a_name: str
+    side_b_name: str
+    bps_out: float
+    timestamp: int
 
 METRIC_TAGS = [
     "org",
@@ -115,3 +122,44 @@ def query_graph_port_total(
         tags_in=tags_in, tags_out=tags_out, step=step
     )
     return metrics.query_range(query, start=start, end=end, step=step)
+
+
+def write_switch_to_switch(
+    org_id: int,
+    org_slug: str,
+    data: list[MRTGSwitchToSwitchData | dict]
+) -> None:
+    """
+    Writes a switch to switch traffic metric"
+    """
+
+    metrics = metrics_client()
+
+    points = []
+
+    for item in data:
+
+        if not isinstance(item, MRTGSwitchToSwitchData):
+            item = MRTGSwitchToSwitchData(**item)
+
+        #tags = f'ctl_org_id="{org_id}", ctl_org_slug="{org_slug}", ctl_side_a_name="{item.side_a_name}", ctl_side_b_name="{item.side_b_name}"'
+
+        tags = {
+            "ctl_org_id": org_id,
+            "ctl_org_slug": org_slug,
+            "ctl_side_a_name": item.side_a_name,
+            "ctl_side_b_name": item.side_b_name,
+        }
+
+        points = [
+            Point(
+                measurement="mrtg",
+                tags=tags,
+                fields={"bps_out": item.bps_out},
+                timestamp=item.timestamp,
+            )
+        ]
+
+    if points:
+        print(points)
+        metrics.write_many(points)
