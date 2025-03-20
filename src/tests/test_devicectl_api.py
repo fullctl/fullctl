@@ -406,14 +406,14 @@ def test_virtport_set_macaddr_set(db, account_objects):
             args=(org.slug,),
         ),
         json.dumps(
-           {
-               "data": [
+            {
+                "data": [
                     {
                         "virtual_port": virtual_port.id,
                         "macaddr_set": ["00:00:00:00:00:01", "00:00:00:00:00:02"],
                     }
-               ]
-           }
+                ]
+            }
         ),
         content_type="application/json",
     )
@@ -432,6 +432,7 @@ def test_virtport_set_macaddr_set(db, account_objects):
     assert "00:00:00:00:00:02" in virtual_port.port.port_info.macaddr_set
     assert len(virtual_port.port.port_info.macaddr_set) == 2
 
+
 def test_virtport_set_macaddr_empty_and_dupes(db, account_objects):
     """
     Tests that pushing None or empty entries to the macaddr_set
@@ -448,14 +449,20 @@ def test_virtport_set_macaddr_empty_and_dupes(db, account_objects):
             args=(org.slug,),
         ),
         json.dumps(
-           {
-               "data": [
+            {
+                "data": [
                     {
                         "virtual_port": virtual_port.id,
-                        "macaddr_set": ["00:00:00:00:00:01", "00:00:00:00:00:02", None, "", "00:00:00:00:00:01"],
+                        "macaddr_set": [
+                            "00:00:00:00:00:01",
+                            "00:00:00:00:00:02",
+                            None,
+                            "",
+                            "00:00:00:00:00:01",
+                        ],
                     }
-               ]
-           }
+                ]
+            }
         ),
         content_type="application/json",
     )
@@ -475,6 +482,7 @@ def test_virtport_set_macaddr_empty_and_dupes(db, account_objects):
     assert "00:00:00:00:00:02" in virtual_port.port.port_info.macaddr_set
     assert len(virtual_port.port.port_info.macaddr_set) == 2
 
+
 def test_virtport_set_macaddr_invalid_value_errors(db, account_objects):
     """
     Tests that pushing invalid MAC addresses will result in an error.
@@ -490,14 +498,19 @@ def test_virtport_set_macaddr_invalid_value_errors(db, account_objects):
             args=(org.slug,),
         ),
         json.dumps(
-           {
-               "data": [
+            {
+                "data": [
                     {
                         "virtual_port": virtual_port.id,
-                        "macaddr_set": ["00:00:00:00:00:01", "00:00:00:00:00:02", "00:00:00:00:00:0", "00:00:00:00:00:0Z"],
+                        "macaddr_set": [
+                            "00:00:00:00:00:01",
+                            "00:00:00:00:00:02",
+                            "00:00:00:00:00:0",
+                            "00:00:00:00:00:0Z",
+                        ],
                     }
-               ]
-           }
+                ]
+            }
         ),
         content_type="application/json",
     )

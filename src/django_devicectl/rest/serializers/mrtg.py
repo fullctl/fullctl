@@ -1,9 +1,10 @@
 import structlog
 from django.utils.translation import gettext_lazy as _
+from fullctl.django.models import Organization
 from fullctl.django.rest.decorators import serializer_registry
 from rest_framework import serializers
+
 from django_devicectl.models import Device
-from fullctl.django.models import Organization
 
 logger = structlog.getLogger("django_structlog")
 
@@ -14,6 +15,7 @@ def validate_positive_integer(value) -> int:
     if value < 0:
         raise serializers.ValidationError(_("This field must be a positive integer."))
     return value
+
 
 @register
 class MRTGData(serializers.Serializer):
@@ -46,28 +48,36 @@ class MRTGSwitchToSwitch(serializers.Serializer):
     timestamp = serializers.IntegerField(validators=[validate_positive_integer])
 
     class Meta:
-        fields = [
-            "side_a_name", 
-            "side_b_name", 
-            "bps_out", 
-            "timestamp"
-        ]
+        fields = ["side_a_name", "side_b_name", "bps_out", "timestamp"]
 
-    def validate(self, validated_data:dict) -> dict:
+    def validate(self, validated_data: dict) -> dict:
         org = self.context["org"]
 
         # assert that both devices exist
-        side_a_exists = Device.objects.filter(name=validated_data["side_a_name"], instance__org_id=org.id).exists()
+        side_a_exists = Device.objects.filter(
+            name=validated_data["side_a_name"], instance__org_id=org.id
+        ).exists()
 
-        side_b_exists = Device.objects.filter(name=validated_data["side_b_name"], instance__org_id=org.id).exists()
+        side_b_exists = Device.objects.filter(
+            name=validated_data["side_b_name"], instance__org_id=org.id
+        ).exists()
 
         if not side_a_exists:
-            raise serializers.ValidationError(_("Device with name {side_a_name} does not exist").format(**validated_data))
+            raise serializers.ValidationError(
+                _("Device with name {side_a_name} does not exist").format(
+                    **validated_data
+                )
+            )
 
         if not side_b_exists:
-            raise serializers.ValidationError(_("Device with name {side_b_name} does not exist").format(**validated_data))
+            raise serializers.ValidationError(
+                _("Device with name {side_b_name} does not exist").format(
+                    **validated_data
+                )
+            )
 
         return validated_data
+
 
 class MRTGSwitchToSwitchMany(serializers.Serializer):
     """

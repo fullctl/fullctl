@@ -15,8 +15,8 @@ from rest_framework import serializers
 
 import django_devicectl.models.devicectl as models
 import django_devicectl.models.port_automation_tasks as port_automation_tasks
-from django_devicectl.rest.serializers.devicectl import Metric
 from django_devicectl.enum import PORT_STATE
+from django_devicectl.rest.serializers.devicectl import Metric
 
 logger = structlog.getLogger(__name__)
 

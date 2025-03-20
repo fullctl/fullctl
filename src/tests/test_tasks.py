@@ -1,9 +1,8 @@
 from datetime import timedelta
 from unittest.mock import MagicMock, Mock, patch
 
-from django.utils import timezone
-
 import pytest
+from django.utils import timezone
 
 from django_devicectl.models.tasks import (
     MemberTrafficAlertNotification,
@@ -17,7 +16,7 @@ class TrafficAlertNotificationBase:
     def setup(self):
         self.org = MagicMock(id=56, remote_id="remote-id", slug="test-slug")
         self.ix = MagicMock(id=21, traffic_poll_time=300, pdb_id=1)
-        
+
         # Create a port for the virtual_port
         self.port = MagicMock(id=123)
         self.virtual_port = MagicMock(
@@ -26,7 +25,7 @@ class TrafficAlertNotificationBase:
             capacity_notified_net=None,
             capacity_notified_ix=None,
             at_capacity=None,
-            port=self.port
+            port=self.port,
         )
 
         self.auditctl_event = MagicMock(send_email=Mock())
@@ -47,7 +46,11 @@ class TrafficAlertNotificationBase:
         )
 
         self.member = MagicMock(
-            id=43, ref_id="ixctl:43", traffic_threshold_alert=34, asn=542, port=self.port.id
+            id=43,
+            ref_id="ixctl:43",
+            traffic_threshold_alert=34,
+            asn=542,
+            port=self.port.id,
         )
 
 
@@ -217,7 +220,7 @@ class TestTrafficThresholdAlert:
     def setup(self):
         self.org = MagicMock(id=56, remote_id="remote-id", slug="test-slug")
         self.ix = MagicMock(id=21, traffic_poll_time=300, pdb_id=1)
-        
+
         # Create a port for the virtual_port
         self.port = MagicMock(id=123)
         self.virtual_port = MagicMock(
@@ -226,7 +229,7 @@ class TestTrafficThresholdAlert:
             capacity_notified_net=None,
             capacity_notified_ix=None,
             at_capacity=None,
-            port=self.port
+            port=self.port,
         )
 
         # Create member with port ID that matches the virtual_port
@@ -261,13 +264,13 @@ class TestTrafficThresholdAlert:
             process_notification=Mock(),
             get_recipients=Mock(return_value=["test@example.com"]),
             get_traffic_alert_email=Mock(return_value=True),
-            send_notification=Mock()
+            send_notification=Mock(),
         )
         self.operator_notification = MagicMock(
             process_notification=Mock(),
             get_recipients=Mock(return_value=["test@example.com"]),
             get_traffic_alert_email=Mock(return_value=True),
-            send_notification=Mock()
+            send_notification=Mock(),
         )
 
         self.traffic_threshold_alerts = TrafficThresholdAlerts(
@@ -295,12 +298,12 @@ class TestTrafficThresholdAlert:
             capacity_notified_net=None,
             capacity_notified_ix=None,
             at_capacity=None,
-            save=Mock()
+            save=Mock(),
         )
-        
+
         # Update members_by_port with new virtual_port's port
         self.traffic_threshold_alerts.members_by_port = {self.port.id: self.member}
-        
+
         # Traffic threshold = speed * 1_000_000 * traffic_level / 100
         # For 30Mbps port with 90% threshold = 27,000,000 bps
         # Use traffic value above threshold
@@ -325,11 +328,11 @@ class TestTrafficThresholdAlert:
             capacity_notified_net=None,
             capacity_notified_ix=None,
             at_capacity=None,
-            save=Mock()
+            save=Mock(),
         )
-        
+
         self.traffic_threshold_alerts.members_by_port = {self.port.id: self.member}
-        
+
         # Use traffic value above threshold
         self.traffic_threshold_alerts.process_traffic_threshold_alerts(
             virtual_port=self.virtual_port, traffic=28_000_000
@@ -339,7 +342,7 @@ class TestTrafficThresholdAlert:
         assert self.virtual_port.capacity_alert == 1
         assert self.virtual_port.at_capacity is None
         assert self.virtual_port.save.call_count >= 1
-        
+
         # No notifications should be sent
         self.operator_notification.process_notification.assert_not_called()
         self.member_notification.process_notification.assert_not_called()
@@ -352,11 +355,11 @@ class TestTrafficThresholdAlert:
             capacity_notified_net=None,
             capacity_notified_ix=None,
             at_capacity=None,
-            save=Mock()
+            save=Mock(),
         )
-        
+
         self.traffic_threshold_alerts.members_by_port = {self.port.id: self.member}
-        
+
         # Use traffic value below threshold
         self.traffic_threshold_alerts.process_traffic_threshold_alerts(
             virtual_port=self.virtual_port, traffic=20_000_000
@@ -366,7 +369,7 @@ class TestTrafficThresholdAlert:
         assert self.virtual_port.capacity_alert == 0  # Reset to zero
         assert self.virtual_port.at_capacity is None
         assert self.virtual_port.save.call_count >= 1
-        
+
         # No notifications should be sent
         self.operator_notification.process_notification.assert_not_called()
         self.member_notification.process_notification.assert_not_called()
@@ -379,11 +382,11 @@ class TestTrafficThresholdAlert:
             capacity_notified_net=None,
             capacity_notified_ix=None,
             at_capacity=None,
-            save=Mock()
+            save=Mock(),
         )
-        
+
         self.traffic_threshold_alerts.members_by_port = {self.port.id: self.member}
-        
+
         # Use traffic value below threshold
         self.traffic_threshold_alerts.process_traffic_threshold_alerts(
             virtual_port=self.virtual_port, traffic=20_000_000
@@ -393,7 +396,7 @@ class TestTrafficThresholdAlert:
         assert self.virtual_port.capacity_alert == 0  # Reset to zero
         assert self.virtual_port.at_capacity is None
         assert self.virtual_port.save.call_count >= 1
-        
+
         # No notifications should be sent
         self.operator_notification.process_notification.assert_not_called()
         self.member_notification.process_notification.assert_not_called()
@@ -408,11 +411,11 @@ class TestTrafficThresholdAlert:
             capacity_notified_net=last_2_days,
             capacity_notified_ix=last_2_days,
             at_capacity=last_2_days,
-            save=Mock()
+            save=Mock(),
         )
-        
+
         self.traffic_threshold_alerts.members_by_port = {self.port.id: self.member}
-        
+
         # Use traffic value above threshold
         self.traffic_threshold_alerts.process_traffic_threshold_alerts(
             virtual_port=self.virtual_port, traffic=28_000_000
@@ -423,7 +426,7 @@ class TestTrafficThresholdAlert:
         assert self.virtual_port.at_capacity is not None
         assert self.virtual_port.at_capacity > last_2_days
         assert self.virtual_port.save.call_count >= 1
-        
+
         # No notifications should be sent because last notification was too recent
         self.operator_notification.process_notification.assert_not_called()
         self.member_notification.process_notification.assert_not_called()
@@ -438,11 +441,11 @@ class TestTrafficThresholdAlert:
             capacity_notified_net=last_8_days,
             capacity_notified_ix=last_8_days,
             at_capacity=last_8_days,
-            save=Mock()
+            save=Mock(),
         )
-        
+
         self.traffic_threshold_alerts.members_by_port = {self.port.id: self.member}
-        
+
         # Use traffic value above threshold
         self.traffic_threshold_alerts.process_traffic_threshold_alerts(
             virtual_port=self.virtual_port, traffic=28_000_000
@@ -453,7 +456,7 @@ class TestTrafficThresholdAlert:
         assert self.virtual_port.at_capacity is not None
         assert self.virtual_port.at_capacity > last_8_days
         assert self.virtual_port.save.call_count >= 1
-        
+
         # Notifications should be sent because enough time has passed
         self.operator_notification.process_notification.assert_called_once()
         self.member_notification.process_notification.assert_called_once()
@@ -462,11 +465,13 @@ class TestTrafficThresholdAlert:
         # Create a custom port_info mock that returns traffic_threshold_alert=False
         def peerctl_port_info_mock_disabled():
             yield from [
-                MagicMock(ref_id=f"ixctl:{self.member.id}", traffic_threshold_alert=False)
+                MagicMock(
+                    ref_id=f"ixctl:{self.member.id}", traffic_threshold_alert=False
+                )
             ]
-            
+
         self.peerctl_port_info.objects.return_value = peerctl_port_info_mock_disabled()
-        
+
         self.virtual_port = MagicMock(
             id=1,
             port=self.port,
@@ -474,11 +479,11 @@ class TestTrafficThresholdAlert:
             capacity_notified_net=None,
             capacity_notified_ix=None,
             at_capacity=None,
-            save=Mock()
+            save=Mock(),
         )
-        
+
         self.traffic_threshold_alerts.members_by_port = {self.port.id: self.member}
-        
+
         # Use traffic value above threshold
         self.traffic_threshold_alerts.process_traffic_threshold_alerts(
             virtual_port=self.virtual_port, traffic=28_000_000
