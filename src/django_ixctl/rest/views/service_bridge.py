@@ -222,12 +222,11 @@ class InternetExchangeMember(DataViewSet):
             member.macaddr_set = macaddr_set
         return Response(Serializers.member(instance=members, many=True).data)
 
-
     @action(
         detail=True,
         methods=["PUT"],
         serializer_class=Serializers.member_assign_port,
-        url_path="assign-port"
+        url_path="assign-port",
     )
     @grainy_endpoint(namespace="service_bridge")
     def assign_port(self, request, pk=None, *args, **kwargs):
@@ -239,7 +238,6 @@ class InternetExchangeMember(DataViewSet):
 
         logger.debug(f"{serializer.errors=}")
         return Response(serializer.errors)
-
 
     @action(detail=False, methods=["PUT"], url_path="sync/as-macro")
     @grainy_endpoint(namespace="service_bridge")
@@ -370,7 +368,6 @@ class InternetExchangeMember(DataViewSet):
         )
 
 
-
 @route
 class RouteServer(DataViewSet):
     path_prefix = "/data"
@@ -456,9 +453,15 @@ class TrafficAlertEmail(DataViewSet):
     @grainy_endpoint(namespace="service_bridge")
     def get_traffic_alert_email(self, request, ix_id, email_type, member_id):
         ix = models.InternetExchange.objects.get(id=ix_id)
-        traffic_alert_email_template = models.EmailTemplate.objects.get(
-            ix=ix, type=email_type
-        )
+        try:
+            traffic_alert_email_template = models.EmailTemplate.objects.get(
+                ix=ix, type=email_type
+            )
+        except models.EmailTemplate.DoesNotExist:
+            traffic_alert_email_template = models.EmailTemplate(
+                ix=ix, type=email_type, body=""
+            )
+
         member = models.InternetExchangeMember.objects.get(id=member_id)
 
         if email_type == "traffic_alert_ix":
@@ -471,9 +474,12 @@ class TrafficAlertEmail(DataViewSet):
             org=ix.instance.org, members=[member]
         )
         if member.port and member.port._object:
-            traffic_alert_email_template.context[
-                "capacity_alert"
-            ] = member.port._object.capacity_alert
+            traffic_alert_email_template.context.update(
+                {
+                    "capacity_alert": member.port._object.capacity_alert,
+                    "member": member,
+                }
+            )
 
         return Response(
             {

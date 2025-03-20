@@ -1,21 +1,21 @@
-{ 
+{
   "version": "1.0",
   "timestamp": "2025-02-13T18:34:24Z",
   "member_list": [
-    { 
+    {
       "asnum": 63311,
       "member_type": "peering",
       "connection_list": [
-        { 
+        {
           "ixp_id": 1,
           "state": "active",
           "if_list": [
-            { 
+            {
               "if_speed": 10000
             }
           ],
           "vlan_list": [
-            { 
+            {
               "ipv4": {
                 "address": "206.41.110.20",
                 "routeserver": true
@@ -27,16 +27,16 @@
             }
           ]
         },
-        { 
+        {
           "ixp_id": 1,
           "state": "active",
           "if_list": [
-            { 
+            {
               "if_speed": 10000
             }
           ],
           "vlan_list": [
-            { 
+            {
               "ipv4": {
                 "address": "206.41.110.220",
                 "routeserver": true
@@ -52,7 +52,7 @@
     }
   ],
   "ixp_list": [
-    { 
+    {
       "ixp_id": 1,
       "shortname": "ChIX",
       "ixf_id": 0

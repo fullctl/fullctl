@@ -645,7 +645,7 @@ class InternetExchangeMember(PdbRefModel):
 
         member.status = status
         member.save()
-        
+
         devicectl.Port().set_ports_status(status=status, pk=member.port.id)
 
     @property
@@ -809,7 +809,7 @@ class InternetExchangeMember(PdbRefModel):
         If port is set, return a list of physical port ids through
         port.physical_ports
         """
-        
+
         if not self.port or not self.port.object or not self.port.object.physical_ports:
             return []
 
@@ -1722,6 +1722,7 @@ class EmailTemplate(TemplateModel):
         data.update(
             ix=self.ix,
             downtime=downtime,
+            member=self.context.get("member"),
             traffic_alert_config=traffic_alert_config,
         )
         return data

@@ -654,9 +654,10 @@ class Member(
     @grainy_endpoint(
         namespace="member.{request.org.permission_id}.{ix.pk}",
     )
-    def set_port_status(self, request, org, instance, ix, member_id, member, *args, **kwargs):
-        """
-        """
+    def set_port_status(
+        self, request, org, instance, ix, member_id, member, *args, **kwargs
+    ):
+        """ """
         serializer = Serializers.member_set_port_status(
             member,
             data=request.data,
@@ -675,7 +676,6 @@ class Member(
             status=updated_instance.status,
         )
         return Response(updated_serializer.data)
-
 
     @action(detail=False, methods=["GET"], url_path=r"port/(?P<port_id>\d+)/metric")
     @load_object("ix", models.InternetExchange, instance="instance", slug="ix_tag")
@@ -1221,6 +1221,17 @@ class EmailTemplate(IxOrgQuerysetMixin, viewsets.GenericViewSet):
         else:
             email_template = models.EmailTemplate.objects.get(id=template_id)
             email_template.body = request.data.get("body")
+
+        email_template.context.update(
+            {
+                "member": models.InternetExchangeMember(
+                    name="Test",
+                    asn=64500,
+                    ipaddr4="10.10.10.10/24",
+                )
+            }
+        )
+
         serializer = Serializers.template_preview(instance=email_template)
         return Response(serializer.data)
 

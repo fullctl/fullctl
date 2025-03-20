@@ -469,7 +469,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
 
       // hide port_config_fields
       this.form.element.find('[data-element="port_config_fields"]').hide();
-      
+
       // show unassign_port
       this.form.element.find('[data-element="unassign_port"]').show();
     },

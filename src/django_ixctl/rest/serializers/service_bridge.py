@@ -165,6 +165,7 @@ class InternetExchangeMember(ModelSerializer):
     def get_org_id(self, member):
         return member.ix.instance.org.permission_id
 
+
 @register
 class InternetExchangeMemberAssignPort(ModelSerializer):
 
@@ -190,6 +191,7 @@ class InternetExchangeMemberAssignPort(ModelSerializer):
         member.lag = member.port_quantity > 1
         member.save()
         return member
+
 
 @register
 class Routeserver(ModelSerializer):

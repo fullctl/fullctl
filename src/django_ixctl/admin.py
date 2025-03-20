@@ -3,6 +3,7 @@ from django.forms import ModelForm
 from fullctl.django.admin import BaseAdmin, BaseTabularAdmin
 
 from django_ixctl.models import (
+    EmailTemplate,
     InternetExchange,
     InternetExchangeMember,
     InternetExchangePrefix,
@@ -11,6 +12,7 @@ from django_ixctl.models import (
     PermissionRequest,
     Routeserver,
     RouteserverConfig,
+    TrafficAlertConfig,
 )
 
 # from fullctl.django.models.concrete import OrganizationUser
@@ -72,7 +74,16 @@ class InternetInternetExchangeAdmin(BaseAdmin):
 
 @admin.register(InternetExchangeMember)
 class MemberAdmin(BaseAdmin):
-    list_display = ("ix", "org", "asn", "ipaddr4", "ipaddr6", "port", "prefix_set", "billable")
+    list_display = (
+        "ix",
+        "org",
+        "asn",
+        "ipaddr4",
+        "ipaddr6",
+        "port",
+        "prefix_set",
+        "billable",
+    )
     readonly_fields = ("org",)
     search_fields = (
         "ix__name",
@@ -127,3 +138,31 @@ class NetworkAdmin(BaseAdmin):
 @admin.register(PermissionRequest)
 class PermissionRequestAdmin(BaseAdmin):
     list_display = ("org", "user", "created", "type")
+
+
+@admin.register(EmailTemplate)
+class EmailTemplateAdmin(BaseAdmin):
+    list_display = ("org", "ix", "type", "created", "updated")
+    readonly_fields = ("org",)
+    search_fields = (
+        "ix__name",
+        "ix__slug" "ix__instance__org__slug",
+        "ix__instance__org__name",
+    )
+
+    def org(self, obj):
+        return obj.ix.instance.org
+
+
+@admin.register(TrafficAlertConfig)
+class TrafficAlertConfigAdmin(BaseAdmin):
+    list_display = ("org", "ix")
+    readonly_fields = ("org",)
+    search_fields = (
+        "ix__name",
+        "ix__slug" "ix__instance__org__slug",
+        "ix__instance__org__name",
+    )
+
+    def org(self, obj):
+        return obj.ix.instance.org
