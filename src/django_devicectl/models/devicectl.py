@@ -1009,18 +1009,21 @@ class VirtualPort(ServiceBridgeReferenceModel):
     capacity_notified_net = models.DateTimeField(
         default=None,
         null=True,
+        blank=True,
         help_text=_("The last time a notification was sent for the IX member."),
     )
 
     capacity_notified_ix = models.DateTimeField(
         default=None,
         null=True,
+        blank=True,
         help_text=_("The last time a notification was sent for the IX operator."),
     )
 
     at_capacity = models.DateTimeField(
         default=None,
         null=True,
+        blank=True,
         help_text=_("The last time the device was at capacity above the threshold."),
     )
 

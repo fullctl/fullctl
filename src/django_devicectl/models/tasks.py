@@ -13,6 +13,7 @@ import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.peerctl as peerctl
 import structlog
 from django.conf import settings
+from django.utils import timezone
 from fullctl.django.models import Task
 from fullctl.django.models.concrete import OrganizationFile
 from fullctl.django.tasks import register
@@ -1066,18 +1067,51 @@ class AuditCtlIXTrafficReceived(Task):
             peerctl_port_info=peerctl_port_info,
         )
 
-        for virtual_port in virtual_ports:
-            for traffic_data in ix_traffic_data:
-                if traffic_data.get("id") == virtual_port.id:
-                    traffic_threshold_alerts.process_traffic_threshold_alerts(
-                        virtual_port=virtual_port,
-                        traffic=traffic_data.get("bps_in"),
-                    )
-                    traffic_threshold_alerts.process_traffic_threshold_alerts(
-                        virtual_port=virtual_port,
-                        traffic=traffic_data.get("bps_out"),
-                    )
+        # ix traffic may contain more than one data point for the same virtual port
+        # map virtual port id to most recent entry in ix_traffic_data for that
+        # id
 
+        recent_traffic_by_virtual_port = {}
+
+        for traffic_data in ix_traffic_data:
+            if not traffic_data.get("id"):
+                continue
+
+            virtual_port_id = traffic_data["id"]
+            if virtual_port_id in recent_traffic_by_virtual_port:
+                existing = recent_traffic_by_virtual_port[virtual_port_id]
+                if existing["timestamp"] < traffic_data["timestamp"]:
+                    recent_traffic_by_virtual_port[virtual_port_id] = traffic_data
+            else:
+                recent_traffic_by_virtual_port[traffic_data["id"]] = traffic_data
+
+        for virtual_port in virtual_ports:
+            traffic_data = recent_traffic_by_virtual_port.get(virtual_port.id)
+            if not traffic_data:
+                # no traffic data for this port
+                continue
+
+            if virtual_port.at_capacity and virtual_port.at_capacity.timestamp() > traffic_data["timestamp"]:
+                # port was marked at capacity at a timestamp that is more recent then
+                # the one we re processing
+                continue
+
+            if abs(traffic_data["timestamp"] - timezone.now().timestamp()) >= ix.traffic_poll_time:
+                # we only want to process the timestamp that matches the current
+                # time with a window defined by the traffic poll time (so for example now +- 5 minutes)
+                continue
+
+            log.debug(f"Processing traffic threshold alerts for {virtual_port.id}: {traffic_data}")
+
+            traffic_threshold_alerts.process_traffic_threshold_alerts(
+                virtual_port=virtual_port,
+                traffic=traffic_data.get("bps_in") * 8,
+            )
+
+            traffic_threshold_alerts.process_traffic_threshold_alerts(
+                virtual_port=virtual_port,
+                traffic=traffic_data.get("bps_out") * 8,
+            )
 
 @register
 class AuditCtlIXTrafficProcessed(Task):
@@ -1211,7 +1245,7 @@ class TrafficAlertNotificationBase:
         if notification_type == "email":
             traffic_alert_email = self.get_traffic_alert_email(member)
             if not traffic_alert_email:
-                log.exception(
+                log.warning(
                     f"Unable to obtain suitable contact point for IX operator traffic alerts. ({self.ix.name} #{self.ix.id})"
                 )
                 return
@@ -1226,19 +1260,21 @@ class TrafficAlertNotificationBase:
         )
 
     def send_email(
-        self, recipients: list[str], traffic_alert_email: ixctl.TrafficAlertEmailObject
+        self, recipients: list[str], traffic_alert_emails: ixctl.TrafficAlertEmailObject
     ) -> None:
         """
         Sends an email via auditctl
         """
-        self.auditctl_event.send_email(
-            org_slug=self.org.slug,
-            source_service_tag="devicectl",
-            category="traffic_alert",
-            subject=traffic_alert_email.subject,
-            message=traffic_alert_email.message,
-            recipients=recipients,
-        )
+
+        for traffic_alert_email in traffic_alert_emails:
+            self.auditctl_event.send_email(
+                org_slug=self.org.slug,
+                source_service_tag="devicectl",
+                category="traffic_alert",
+                subject=traffic_alert_email["subject"],
+                message=traffic_alert_email["message"],
+                recipients=recipients,
+            )
 
     def get_recipients(
         self,
@@ -1249,9 +1285,9 @@ class TrafficAlertNotificationBase:
         Gets the nofication recipients first from the aaactl poc
         if not found then gets it from pdb
         """
-        recipients = self.get_poc_email_notification_recepients(member)
+        recipients = self.get_poc_email_notification_recepients(member, virtual_port)
         if not recipients:
-            recipients = self.get_pdb_email_notification_recepients(virtual_port)
+            recipients = self.get_pdb_email_notification_recepients(member, virtual_port)
         return recipients
 
     def process_notification(
@@ -1268,7 +1304,7 @@ class TrafficAlertNotificationBase:
         """
         recipients = self.get_recipients(virtual_port=virtual_port, member=member)
         if not recipients:
-            log.exception(
+            log.warning(
                 f"No recipients in traffic alert contact point for IX. ({self.ix.name} #{self.ix.id})"
             )
             return
@@ -1309,7 +1345,9 @@ class OperatorTrafficAlertNotification(TrafficAlertNotificationBase):
         return "ixctl"
 
     def get_pdb_email_notification_recepients(
-        self, virtual_port: models.VirtualPort
+        self, 
+        member: ixctl.InternetExchangeMemberObject,
+        virtual_port: models.VirtualPort
     ) -> list[str] | None:
         data = self.pdbctl_ix.object(id=self.ix.pdb_id)
         if not data:
@@ -1318,7 +1356,9 @@ class OperatorTrafficAlertNotification(TrafficAlertNotificationBase):
         return [data.tech_email] if data.tech_email else None
 
     def get_poc_email_notification_recepients(
-        self, member: ixctl.InternetExchangeMemberObject
+        self, 
+        member: ixctl.InternetExchangeMemberObject,
+        virtual_port: models.VirtualPort,
     ) -> list[str] | None:
         try:
             poc = list(
@@ -1373,26 +1413,28 @@ class MemberTrafficAlertNotification(TrafficAlertNotificationBase):
         return "peerctl"
 
     def get_pdb_email_notification_recepients(
-        self, virtual_port: models.VirtualPort
+        self, 
+        member: ixctl.InternetExchangeMemberObject,
+        virtual_port: models.VirtualPort,
     ) -> list[str] | None:
         recipients = None
         try:
-            asn = list(self.ixctl_member.objects(ports=[virtual_port.id]))[0].asn
-            network_contacts = self.pdbctl_network_contact.objects(asn=asn)
+            network_contacts = self.pdbctl_network_contact.objects(asn=member.asn)
             for network_contact in network_contacts:
                 if network_contact.role == "Technical":
                     return [network_contact.email]
         except IndexError:
-            log.debug(f"No recepient found in pdb for IX {self.ix.id}.")
+            log.debug(f"No recepient found in pdb for member: {member.id}.")
         return recipients
 
     def get_poc_email_notification_recepients(
-        self, member: ixctl.InternetExchangeMemberObject
+        self, 
+        member: ixctl.InternetExchangeMemberObject,
+        virtual_port: models.VirtualPort,
     ) -> list[str] | None:
         try:
             poc = list(
                 self.aaactl_poc.objects(
-                    org=self.org.slug,
                     type="notifications",
                     delivery_type="email",
                     status="ok",
@@ -1437,8 +1479,10 @@ class TrafficThresholdAlerts:
         self.peerctl_port_info = peerctl_port_info
         self.members = members
         self.traffic_alert_config = traffic_alert_config
+        self.members_by_port = {
+            member.port: member for member in self.members if member.port
+        }
 
-        self.port_bandwidth = sum([member.speed for member in self.members])
 
     def process_traffic_threshold_alerts(
         self, virtual_port: models.VirtualPort, traffic: int
@@ -1447,13 +1491,21 @@ class TrafficThresholdAlerts:
         This is the main method that processes the traffic threshold alerts
             - Gets traffic alert config and uses that to process the alert
             - Calculates the threshold and determines whether to send a notification
+
+        Traffic is exepcted to be in bits per second
         """
+
+        member = self.members_by_port.get(virtual_port.port.id)
+        port_bandwidth = member.speed  * 1_000_000
+
         threshold_bandwidth = (
             self.traffic_alert_config.traffic_level / 100
-        ) * self.port_bandwidth
+        ) * port_bandwidth
         counter_threshold = self.traffic_alert_config.time_period / (
             self.ix.traffic_poll_time // 60
         )
+
+        log.debug("Processing traffic threshold alerts", virtual_port=virtual_port, port_bandwidth=port_bandwidth, threshold_bandwidth=threshold_bandwidth, counter_threshold=counter_threshold, traffic=traffic)
 
         if traffic > threshold_bandwidth:
             virtual_port.capacity_alert += 1
@@ -1470,7 +1522,7 @@ class TrafficThresholdAlerts:
             )
 
         if virtual_port.capacity_alert >= counter_threshold:
-            virtual_port.at_capacity = datetime.now()
+            virtual_port.at_capacity = timezone.now()
             virtual_port.save()
             self.send_traffic_alert_notification(virtual_port)
 
@@ -1479,28 +1531,36 @@ class TrafficThresholdAlerts:
         Sends traffic alert notification
         Checks for both operator and member notifications
         """
+        member = self.members_by_port.get(virtual_port.port.id)
+
+        if not member:
+            log.warning(f"No member found for virtual port {virtual_port.id}")
+            return
+
         if self.traffic_alert_config.operator_emails and self.can_send_ix_notification(
             virtual_port=virtual_port
         ):
-            for member in self.members:
-                self.operator_traffic_alert_notification.process_notification(
-                    virtual_port=virtual_port,
-                    member=member,
-                )
-            virtual_port.capacity_notified_ix = datetime.now()
+            self.operator_traffic_alert_notification.process_notification(
+                virtual_port=virtual_port,
+                member=member,
+            )
+            virtual_port.capacity_notified_ix = timezone.now()
             virtual_port.save()
 
         if (
             self.traffic_alert_config.member_emails
             and self.can_send_member_notification(virtual_port=virtual_port)
         ):
-            for member in self.members:
-                if self.member_activated_threshold_alerts(member):
-                    self.member_traffic_alert_notification.process_notification(
-                        virtual_port=virtual_port,
-                        member=member,
-                    )
-            virtual_port.capacity_notified_net = datetime.now()
+                
+            if not self.member_activated_threshold_alerts(member):
+                log.info(f"Member {member.id} has not activated threshold alerts - skipping")
+                return
+
+            self.member_traffic_alert_notification.process_notification(
+                virtual_port=virtual_port,
+                member=member,
+            )
+            virtual_port.capacity_notified_net = timezone.now()
             virtual_port.save()
 
     def can_send_ix_notification(self, virtual_port: models.VirtualPort):
@@ -1510,7 +1570,7 @@ class TrafficThresholdAlerts:
         next_alert_time = virtual_port.capacity_notified_ix + timedelta(
             days=self.traffic_alert_config.operator_emails_max_frequency
         )
-        return datetime.now() >= next_alert_time
+        return timezone.now() >= next_alert_time
 
     def can_send_member_notification(self, virtual_port: models.VirtualPort):
         if not virtual_port.capacity_notified_net:
@@ -1519,7 +1579,7 @@ class TrafficThresholdAlerts:
         next_alert_time = virtual_port.capacity_notified_net + timedelta(
             days=self.traffic_alert_config.operator_emails_max_frequency
         )
-        return datetime.now() >= next_alert_time
+        return timezone.now() >= next_alert_time
 
     def member_activated_threshold_alerts(
         self, member: ixctl.InternetExchangeMemberObject
@@ -1552,5 +1612,5 @@ class TrafficThresholdAlerts:
             fields={
                 "at_capacity": at_capacity,
             },
-            timestamp=datetime.now(),
+            timestamp=timezone.now().timestamp(),
         )
