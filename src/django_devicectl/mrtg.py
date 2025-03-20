@@ -143,8 +143,6 @@ def write_switch_to_switch(
         if not isinstance(item, MRTGSwitchToSwitchData):
             item = MRTGSwitchToSwitchData(**item)
 
-        # tags = f'ctl_org_id="{org_id}", ctl_org_slug="{org_slug}", ctl_side_a_name="{item.side_a_name}", ctl_side_b_name="{item.side_b_name}"'
-
         tags = {
             "ctl_org_id": org_id,
             "ctl_org_slug": org_slug,
@@ -156,7 +154,7 @@ def write_switch_to_switch(
             Point(
                 measurement="mrtg",
                 tags=tags,
-                fields={"bps_out": item.bps_out},
+                fields={"bps_out": item.bps_out * 8},
                 timestamp=item.timestamp,
             )
         ]

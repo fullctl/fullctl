@@ -52,6 +52,12 @@ class MRTGSwitchToSwitch(serializers.Serializer):
 
     def validate(self, validated_data: dict) -> dict:
         org = self.context["org"]
+        
+        # assert that side-a != side-b
+        if validated_data["side_a_name"] == validated_data["side_b_name"]:
+            raise serializers.ValidationError(
+                _("side_a_name and side_b_name must be different")
+            )
 
         # assert that both devices exist
         side_a_exists = Device.objects.filter(

@@ -10,6 +10,8 @@ import django_devicectl.mrtg as mrtg
 from django_devicectl.rest.decorators import grainy_endpoint
 from django_devicectl.rest.route.devicectl import route
 from django_devicectl.rest.serializers.mrtg import Serializers
+import django_devicectl.models.metric_tasks as metric_tasks
+from fullctl.django.models.concrete.tasks import TaskLimitError
 
 logger = structlog.get_logger("django_structlog")
 
@@ -117,16 +119,14 @@ class MetricMrtg(CachedObjectMixin, viewsets.GenericViewSet):
 
         Data points should be in the following format:
 
-        {
-            "data": [
-                {
-                    "side_a_name": "device_name",
-                    "side_b_name": "device_name",
-                    "bps_out": 1234,
-                    "timestamp": 1234567890
-                }
-            ]
-        }
+        [
+            {
+                "side_a_name": "device_name",
+                "side_b_name": "device_name",
+                "bps_out": 1234,
+                "timestamp": 1234567890
+            }
+        ]
         """
         serializer = Serializers.mrtg_switch_to_switch(
             data=request.data, context={"org": org}, many=True
@@ -134,6 +134,13 @@ class MetricMrtg(CachedObjectMixin, viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
 
         # write data to metrics database
-        mrtg.write_switch_to_switch(org.id, org.slug, serializer.validated_data)
+        try:
+            metric_tasks.InsertMetric.create_task(
+                org=org,
+                data=serializer.validated_data
+            )
+        except TaskLimitError as e:
+            logger.error("Task limit error", error=e)
+            return Response({"error": "Too many insert metric tasks, please wait for some to finish before adding more."}, status=429)
 
         return Response(serializer.data, status=201)
