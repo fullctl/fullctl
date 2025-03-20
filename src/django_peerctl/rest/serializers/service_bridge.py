@@ -27,6 +27,21 @@ class RequestDevicectlSync(serializers.Serializer):
 class PortInfo(serializers.ModelSerializer):
     ref_tag = "port_info"
 
+    # we cannot pass ref_id as ref_id because ref_id
+    # is a core property of the service bridge client data object
+    # instead alias it to source_ref_id
+    source_ref_id = serializers.CharField(source="ref_id")
+
     class Meta:
         model = models.PortInfo
-        fields = "__all__"
+        fields = [
+            "id",
+            "net",
+            "port",
+            "source_ref_id",
+            "status",
+            "is_route_server_peer",
+            "ip_address_4",
+            "ip_address_6",
+            "traffic_threshold_alert",
+        ]
