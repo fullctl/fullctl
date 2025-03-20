@@ -127,7 +127,7 @@ class AccountObjects:
                 description="Sample physical port test",
                 logical_port=self.logical_port,
             )
-            self._physical_port.setup()
+            self._physical_port.setup(self.devicectl_instance)
         return self._physical_port
 
     @property
