@@ -24,6 +24,7 @@ def test_view_instance_other(db, pdb_data, account_objects):
 
     assert response.status_code == 404
 
+
 def test_view_ixf_export_data(db, pdb_data, account_objects):
     ix = account_objects.ix
     response = account_objects.client.get(

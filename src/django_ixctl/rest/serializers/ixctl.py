@@ -317,9 +317,7 @@ class InternetExchangeMember(ModelSerializer):
     # currently only superusers can change this field
     # through django-admin, we still want to indicate the billable
     # status in the rest api though
-    billable = serializers.BooleanField(
-        read_only=True
-    )
+    billable = serializers.BooleanField(read_only=True)
 
     # conditional field#
     if settings.MEMBER_CASE_NUMBERS_ENABLED:
@@ -947,9 +945,9 @@ class InternetExchangeMember(ModelSerializer):
 
         return warnings
 
+
 @register
 class InternetExchangeMemberSetPortStatus(ModelSerializer):
-
     ref_tag = "member_set_port_status"
 
     status = serializers.ChoiceField(
@@ -963,6 +961,7 @@ class InternetExchangeMemberSetPortStatus(ModelSerializer):
     class Meta:
         model = models.InternetExchangeMember
         fields = ["id", "status"]
+
 
 @register
 class InternetExchangeMemberValidationRequest(serializers.Serializer):

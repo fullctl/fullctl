@@ -52,7 +52,7 @@ def handle_port_assignment(
 
     if intent == "lag-decrease":
         return lag_decrease_ports(member, port_set, meta=meta)
-    
+
     if intent == "unassign":
         return unassign_port(member, meta=meta)
 
@@ -213,6 +213,7 @@ def unassign_port(
         port=None,
     )
 
+
 def sync_ip_addresses(member: int | InternetExchangeMember):
     """
     Will call devicectl.VirtualPort().set_ip_addresses() with the
@@ -308,4 +309,3 @@ def get_ix_lan_config(ix: int | InternetExchange) -> IXLanConfig:
                 config.prefixes.append(prefix.prefix)
 
     return config
-
