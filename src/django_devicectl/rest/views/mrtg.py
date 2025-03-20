@@ -104,7 +104,6 @@ class MetricMrtg(CachedObjectMixin, viewsets.GenericViewSet):
         )
         return Response(data.model_dump())
 
-
     @action(
         detail=False,
         methods=["post"],
@@ -129,7 +128,9 @@ class MetricMrtg(CachedObjectMixin, viewsets.GenericViewSet):
             ]
         }
         """
-        serializer = Serializers.mrtg_switch_to_switch(data=request.data, context={"org":org}, many=True)
+        serializer = Serializers.mrtg_switch_to_switch(
+            data=request.data, context={"org": org}, many=True
+        )
         serializer.is_valid(raise_exception=True)
 
         # write data to metrics database

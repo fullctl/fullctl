@@ -1,5 +1,6 @@
 import fullctl.service_bridge.ixctl as ixctl
 import structlog
+from django.utils import timezone
 from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.route.service_bridge import route
 from fullctl.django.rest.views.service_bridge import (
@@ -10,8 +11,6 @@ from fullctl.django.rest.views.service_bridge import (
 )
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
-from django.utils import timezone
 
 import django_devicectl.models.devicectl as models
 import django_devicectl.models.port_automation_tasks as port_automation_tasks

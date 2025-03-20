@@ -440,7 +440,7 @@ def sync_vlans(
             id=netbox_vlan.id,
             vid=netbox_vlan.vid,
         )
-        
+
         facility = None
 
         if netbox_vlan.site:

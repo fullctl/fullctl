@@ -706,9 +706,7 @@ class PhysicalPort(HandleRefModel):
         ],
     )
 
-    status = models.CharField(
-        max_length=64, default="ok", choices=PORT_STATE
-    )
+    status = models.CharField(max_length=64, default="ok", choices=PORT_STATE)
 
     class HandleRef:
         tag = "physical_port"

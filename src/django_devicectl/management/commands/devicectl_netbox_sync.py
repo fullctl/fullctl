@@ -1,8 +1,7 @@
+from django.core.management.base import CommandError
 from fullctl.django.management.commands.base import CommandInterface
 from fullctl.django.models.concrete import Organization
 from fullctl.service_bridge.context import ServiceBridgeContext
-
-from django.core.management.base import CommandError
 
 import django_devicectl.netbox as netbox
 
@@ -15,9 +14,15 @@ class Command(CommandInterface):
 
         parser.add_argument("org_slug", nargs="?")
 
-        parser.add_argument("--push", action="store_true", help="Push updates to netbox")
+        parser.add_argument(
+            "--push", action="store_true", help="Push updates to netbox"
+        )
 
-        parser.add_argument("--purge", action="store_true", help="Purge devicectl data. This will deleted devices and ports that have references to netbox that no longer exist.")
+        parser.add_argument(
+            "--purge",
+            action="store_true",
+            help="Purge devicectl data. This will deleted devices and ports that have references to netbox that no longer exist.",
+        )
 
     def run(self, *args, **kwargs):
         org_slug = kwargs.get("org_slug")
