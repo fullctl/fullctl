@@ -151,14 +151,14 @@ def write_switch_to_switch(
             "ctl_side_b_name": item.side_b_name,
         }
 
-        points = [
+        points.append(
             Point(
                 measurement="mrtg",
                 tags=tags,
                 fields={"bps_out": item.bps_out},
                 timestamp=item.timestamp,
             )
-        ]
+        )
 
     if points:
         print(points)
