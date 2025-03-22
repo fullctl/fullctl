@@ -60,6 +60,29 @@ def get_as_set(as_set_string):
     return [as_set.strip() for as_set in re.split(r"[, ]+", as_set_string)]
 
 
+def init_arouteserver():
+    """
+    Initialize the ARouteserver configuration directory and run the setup command.
+    """
+    ars_cache_dir = os.path.join(os.path.expanduser("~"), "arouteserver", "cache")
+
+    # check for cache dir
+    if os.path.isdir(ars_cache_dir):
+        return
+
+    result = subprocess.run(
+        ["arouteserver", "setup"],
+        input="\n\n",
+        # ensures input is treated as a string, not bytes
+        text=True,
+        capture_output=True,
+    )
+
+    if result.returncode != 0:
+        # soft fail so this doesn't make config gen not work
+        logger.error("Failed to run arouteserver setup", stderr=result.stderr)
+
+
 @reversion.register
 @grainy_model(namespace="org")
 class PermissionRequest(HandleRefModel):
@@ -1419,6 +1442,9 @@ class RouteserverConfig(HandleRefModel):
         elif ars_type == "bird2":
             ars_type = "bird"
             extra_params += ["--target-version", "2.0.10"]
+
+        # init arouteserver config
+        init_arouteserver()
 
         # no reasonable way found to call an arouteserver
         # python api - so lets just run the command
