@@ -6,9 +6,6 @@ import django_devicectl.mrtg as mrtg
 @register
 class InsertMetric(Task):
 
-    class TaskMeta:
-        limit = 10
-    
     class Meta:
         proxy = True
 
