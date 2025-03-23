@@ -213,6 +213,11 @@ class Task(HandleRefModel):
         indexes = [
             models.Index(fields=["status"]),
             models.Index(fields=["op"]),
+            models.Index(fields=["created"]),
+            models.Index(fields=["queue_id"]),
+            models.Index(fields=["status", "-requeued", "created"], 
+                        condition=models.Q(queue_id__isnull=True), 
+                        name="idx_poll_next_tasks")
         ]
 
     class HandleRef:
