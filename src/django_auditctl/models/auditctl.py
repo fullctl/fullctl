@@ -62,7 +62,12 @@ class Event(HandleRefModel):
         db_table = "auditctl_entry"
 
         # index object id
-        indexes = [models.Index(fields=["object_id"])]
+        indexes = [
+            models.Index(fields=["object_id"]),
+            models.Index(fields=["created"]),
+            models.Index(fields=["updated"]),
+            models.Index(fields=["status"]),
+        ]
 
     class HandleRef:
         tag = "event"

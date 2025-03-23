@@ -352,6 +352,9 @@ class BGPSessionStateDataHandler(BaseHandler):
 
             port_ids.append(member.port)
 
+        if not port_ids:
+            return
+
         # collect physical ports from port references
         for port in devicectl.Port().objects(ids=port_ids, join=["physical_ports"]):
             physical_ports.extend([p["id"] for p in port.physical_ports])
