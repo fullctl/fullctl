@@ -43,8 +43,12 @@ def register_handler(pattern):
     compiled_pattern = re.compile(pattern)
 
     def decorator(cls):
-        # Add the compiled pattern and the model class to the registry
-        HANDLER_REGISTRY[compiled_pattern] = cls
+        # Initialize a list for this pattern if it doesn't exist yet
+        if compiled_pattern not in HANDLER_REGISTRY:
+            HANDLER_REGISTRY[compiled_pattern] = []
+            
+        # Add the handler class to the list for this pattern
+        HANDLER_REGISTRY[compiled_pattern].append(cls)
 
         @wraps(cls)
         def wrapped(*args, **kwargs):
@@ -65,9 +69,10 @@ def get_handlers(event):
     Yields:
     - handler_cls(event) (object): An instance of the matching event handler class.
     """
-    for pattern, handler_cls in HANDLER_REGISTRY.items():
+    for pattern, handler_classes in HANDLER_REGISTRY.items():
         if pattern.match(event.object_id):
-            yield handler_cls(event)
+            for handler_cls in handler_classes:
+                yield handler_cls(event)
 
 
 def get_handler_by_tag(tag):
@@ -80,9 +85,10 @@ def get_handler_by_tag(tag):
     Returns:
     - handler_cls (object): The matching event handler class.
     """
-    for handler_cls in HANDLER_REGISTRY.values():
-        if handler_cls.HandleRef.tag == tag:
-            return handler_cls
+    for handler_classes in HANDLER_REGISTRY.values():
+        for handler_cls in handler_classes:
+            if handler_cls.HandleRef.tag == tag:
+                return handler_cls
     return None
 
 
