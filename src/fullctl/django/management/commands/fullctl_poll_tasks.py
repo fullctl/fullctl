@@ -1,6 +1,7 @@
 import asyncio
 import uuid
 
+import django.db
 import psycopg
 import reversion
 import structlog
@@ -26,12 +27,13 @@ class Worker:
     Will run fullctl_work_task command async through asyncio.subprocess
     """
 
-    def __init__(self, self_selecting: bool = False, poll_interval: float = 3.0):
+    def __init__(self, self_selecting: bool = False, poll_interval: float = 3.0, max_tasks: int = 0):
         self.id = f"{uuid.uuid4()}"[:8]
         self.task = None
         self.process = None
         self.self_selecting = self_selecting
         self.poll_interval = poll_interval
+        self.max_tasks = max_tasks
 
     def set_task(self, task):
         if task and self.task:
@@ -72,6 +74,10 @@ class Worker:
 
         if self.self_selecting:
             cmd.extend(["--poll-interval", str(self.poll_interval)])
+            
+            # Add max-tasks parameter if configured
+            if self.max_tasks > 0:
+                cmd.extend(["--max-tasks", str(self.max_tasks)])
 
         p = await asyncio.create_subprocess_shell(
             " ".join(cmd),
@@ -111,6 +117,14 @@ class Command(CommandInterface):
             type=int,
             default=0,
         )
+        parser.add_argument(
+            "-t",
+            "--max-tasks-per-process",
+            help="respawn self-selecting workers after processing this many tasks",
+            type=int,
+            # 0 means unlimited
+            default=1000,
+        )
 
     def _run(self, *args, **kwargs):
         self.sleep_interval = 0.5
@@ -118,16 +132,27 @@ class Command(CommandInterface):
         self.all_workers_busy = False
         self.workers_num = int(kwargs.get("workers"))
         self.processes = int(kwargs.get("processes"))
+        self.max_tasks_per_process = int(kwargs.get("max_tasks_per_process") or 0)
+
+        # if processes are > 0, force workers to 0
+        if self.processes > 0:
+            self.workers_num = 0
 
         self.log_info(
-            f"Starting task queue poller, {self.workers_num} workers, {self.processes} self-selecting workers, poll interval {self.poll_interval} seconds, sleep interval {self.sleep_interval} seconds"
+            f"Starting task queue poller, {self.workers_num} workers, {self.processes} self-selecting workers, "
+            f"poll interval {self.poll_interval} seconds, sleep interval {self.sleep_interval} seconds, "
+            f"respawning self-selecting workers after {self.max_tasks_per_process} tasks" if self.max_tasks_per_process > 0 else ""
         )
 
         self.workers = [Worker() for i in range(0, self.workers_num)]
 
         # instanctatie self selecting workers
         self.self_selecting_workers = [
-            Worker(self_selecting=True, poll_interval=self.poll_interval)
+            Worker(
+                self_selecting=True, 
+                poll_interval=self.poll_interval,
+                max_tasks=self.max_tasks_per_process
+            )
             for i in range(0, self.processes)
         ]
 
@@ -148,9 +173,31 @@ class Command(CommandInterface):
                 asyncio.create_task(self._poll_tasks()),
                 asyncio.create_task(self._process_workers()),
                 asyncio.create_task(self._progress_schedules()),
+                asyncio.create_task(self._monitor_self_selecting_workers()),
             )
 
         asyncio.run(_main())
+
+    async def _monitor_self_selecting_workers(self):
+        """Monitor self-selecting workers and respawn them when they exit"""
+        while True:
+            try:
+                await asyncio.sleep(self.sleep_interval)
+                
+                for i, worker in enumerate(self.self_selecting_workers):
+                    # Check if the worker process has exited
+                    if worker.process and worker.process.returncode is not None:
+                        self.log_info(f"Self-selecting worker {worker.id} exited, respawning")
+                        # Create a new worker
+                        self.self_selecting_workers[i] = Worker(
+                            self_selecting=True, 
+                            poll_interval=self.poll_interval,
+                            max_tasks=self.max_tasks_per_process
+                        )
+                        # Start the new worker
+                        await self.self_selecting_workers[i].work()
+            except Exception as exc:
+                log.exception("Error monitoring self-selecting workers", exc=exc)
 
     async def _process_workers(self):
         while True:
@@ -203,8 +250,11 @@ class Command(CommandInterface):
                 await sync_to_async(self.claim_task)(task)
 
                 await self.delegate_task(task)
-            except psycopg.OperationalError as exc:
+            except (psycopg.OperationalError, django.db.utils.OperationalError) as exc:
                 log.exception("Error polling tasks (db error)", exc=exc)
+                # Close and reestablish connections
+                await sync_to_async(django.db.close_old_connections)()
+                self.log_info("Closed old DB connections, will retry after delay")
                 await asyncio.sleep(3)
             except Exception as exc:
                 log.exception("Error polling tasks", exc=exc)
@@ -214,8 +264,15 @@ class Command(CommandInterface):
             try:
                 await asyncio.sleep(self.poll_interval)
                 await sync_to_async(progress_schedules)()
+            except (psycopg.OperationalError, django.db.utils.OperationalError) as exc:
+                log.exception("Error progressing schedules (db error)", exc=exc)
+                # Close and reestablish connections
+                await sync_to_async(django.db.close_old_connections)()
+                self.log_info("Closed old DB connections, will retry after delay")
+                await asyncio.sleep(3)  # Give some time before retrying
             except Exception as exc:
                 log.exception("Error progressing schedules", exc=exc)
+                await asyncio.sleep(1)  # Brief delay on general errors
 
     def claim_task(self, task):
         try:
