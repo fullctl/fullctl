@@ -1012,7 +1012,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
         $('<p>').text(op_to_label[task.op])
       );
 
-      if(task.status === "pending") {
+      if(task.status === "pending" || task.status === "running") {
         infoNode.append($('<div class="loading-indicator">'));
         removeInterval = false;
       } else if(task.status === "failed") {
@@ -1041,7 +1041,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       if(removeInterval) {
         clearInterval(this[`task_poller_${task.op}`]);
         delete this[`task_poller_${task.op}`];
-        // hide or show validate button based on if there are any pending tasks
+        // hide or show validate button based on if there are any pending or running tasks
         if(!this.has_validation_checks()) {
           this.form.element.find("[data-element='button_validate']").show();
         } else {
