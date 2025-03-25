@@ -19,7 +19,8 @@ def test_health_check(db):
     client = Client()
     response = client.get("/health/")
     assert response.status_code == 200
-    assert response.content == b""
+    assert b'"task_stack_queue": {"ok": true}' in response.content
+    assert b'"db": {"ok": true}' in response.content
 
 
 def test_failing_health_check(db):
@@ -36,8 +37,9 @@ def test_failing_health_check(db):
     # mock a sideeffect for django.db.connection.cursor
     with patch("django.db.connection.cursor") as mock_cursor:
         mock_cursor.side_effect = Exception("Test exception")
-        with pytest.raises(Exception):
-            client.get("/health/")
+        response = client.get("/health/")
+        assert response.status_code == 200
+        assert b'"db": {"ok": false' in response.content
 
 
 def test_health_check_task_stack_queue(db):
@@ -56,7 +58,8 @@ def test_health_check_task_stack_queue(db):
 
     response = client.get("/health/")
     assert response.status_code == 200
-    assert response.content == b""
+    assert b'"task_stack_queue": {"ok": true}' in response.content
+    assert b'"db": {"ok": true}' in response.content
 
 
 def test_failing_health_check_task_stack_queue_maximum_pending_tasks(db):
@@ -73,8 +76,9 @@ def test_failing_health_check_task_stack_queue_maximum_pending_tasks(db):
 
     client = Client()
 
-    with pytest.raises(Exception):
-        client.get("/health/")
+    response = client.get("/health/")
+    assert response.status_code == 200
+    assert b'"task_stack_queue": {"ok": false' in response.content
 
 
 def test_failing_health_check_task_stack_queue_for_maximum_age_threshold(db):
@@ -93,5 +97,6 @@ def test_failing_health_check_task_stack_queue_for_maximum_age_threshold(db):
 
     client = Client()
 
-    with pytest.raises(Exception):
-        client.get("/health/")
+    response = client.get("/health/")
+    assert response.status_code == 200
+    assert b'"task_stack_queue": {"ok": false' in response.content

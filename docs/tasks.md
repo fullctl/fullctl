@@ -260,8 +260,20 @@ The difference between `--workers` and `--processes` is that `--processes` will 
 
 `--processes` is faster and will likely replace `--workers` in the future.
 
-Its also a good idea to run `--processes` with `--workers` set to 0.
+When using `--processes`, the `--workers` parameter is automatically set to 0, so you don't need to specify it manually.
+
+### Limiting tasks per worker process
+
+You can specify a maximum number of tasks a self-selecting worker process should handle before it exits and gets respawned. This helps prevent memory leaks or resource issues in long-running worker processes.
 
 ```sh
-manage.py fullctl_poll_tasks --processes 4 --workers 0
+manage.py fullctl_poll_tasks --processes 4 --max-tasks-per-process 100
 ```
+
+Or using the short-form parameter:
+
+```sh
+manage.py fullctl_poll_tasks -p 4 -t 100
+```
+
+This will cause each worker process to automatically exit after processing 100 tasks, and a new worker process will be spawned to replace it. If not specified or set to 0, worker processes will continue running indefinitely.

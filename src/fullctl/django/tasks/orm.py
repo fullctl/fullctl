@@ -20,6 +20,9 @@ from fullctl.django.models.concrete.tasks import TaskClaim, TaskLimitError
 from fullctl.django.tasks import requeue as requeue_task
 from fullctl.django.tasks import specify_task
 from fullctl.django.tasks.util import worker_id
+import structlog
+
+log = structlog.get_logger(__name__)
 
 # (Task, timestamp)
 # tasks that are in the recheck stack are not
@@ -201,7 +204,8 @@ def claim_task(task):
         task.save()
         return claim
     except IntegrityError as exc:
-        print(exc)
+        if not str(exc).startswith('duplicate key value violates unique constraint'):
+            log.error(exc)
         raise TaskClaimed(task)
 
 
