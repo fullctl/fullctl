@@ -34,8 +34,13 @@ def handle_port_assignment(
     if isinstance(member, int):
         member = InternetExchangeMember.objects.get(pk=member)
 
-    if not port_set or not intent:
-        # no port set, no port configuration changes
+    if not intent:
+        # no intent, no port configuration changes
+        return
+        
+    # For unassign, we don't need a port_set
+    if intent != "unassign" and not port_set:
+        # no port set for non-unassign intents, no port configuration changes
         return
 
     if meta is None:
