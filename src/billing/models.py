@@ -1814,21 +1814,20 @@ class PaymentCharge(HandleRefModel):
         ).content.decode("utf-8")
 
         # notification to the customer
-
-        self.payment_method.billing_contact.notify(
-            "Payment Failure",
-            notification,
-        )
+        if settings.BILLING_NOTIFY_FAILURE_CUSTOMER:
+            self.payment_method.billing_contact.notify(
+                "Payment Failure",
+                notification,
+            )
 
         # notification to staff
-
-        email(
-            settings.SUPPORT_EMAIL,
-            # TODO: send to billing specific email?
-            [settings.SUPPORT_EMAIL],
-            f"Payment Failure for {self.org.name}",
-            notification,
-        )
+        if settings.BILLING_NOTIFY_FAILURE_STAFF:
+            email(
+                settings.BILLING_EMAIL,
+                [settings.BILLING_EMAIL],
+                f"Payment Failure for {self.org.name}",
+                notification,
+            )
 
         self.save()
 
