@@ -119,6 +119,11 @@ BILLING_HANDLERS = ["billing.product_handlers.fullctl.PrefixCtlPrefixes"]
 BILLING_PROCESSORS = ["billing.payment_processors.stripe.Stripe"]
 BILLING_DEFAULT_CURRENCY = "USD"
 
+# Control billing email behavior
+
+settings_manager.set_option("BILLING_NOTIFY_FAILURE_STAFF", True)
+settings_manager.set_option("BILLING_NOTIFY_FAILURE_CUSTOMER", True)
+settings_manager.set_option("BILLING_EMAIL", SERVER_EMAIL)
 
 # Auth
 

@@ -33,3 +33,17 @@ The signature to use for all outgoing emails.
 ### REDIRECT_TO_SERVICE
 
 The service name to redirect to after successfull login, redirects to `aaactl` if not set.
+
+## BILLING
+
+### BILLING_NOTIFY_FAILURE_STAFF (True)
+
+If `True` will send an email to staff when a billing failure occurs.
+
+### BILLING_NOTIFY_FAILURE_CUSTOMER (True)
+
+If `True` will send an email to the customer when a billing failure occurs.
+
+### BILLING_EMAIL (Defaults to SUPPORT_EMAIL)
+
+The email address to send billing related emails to.
