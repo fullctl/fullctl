@@ -479,6 +479,9 @@ class SettingsManager(confu.util.SettingsManager):
 
         # timeseries db
         self.set_timeseries_db()
+        
+        # redis settings
+        self.set_redis_settings()
 
     def set_timeseries_db(self):
         """
@@ -491,6 +494,17 @@ class SettingsManager(confu.util.SettingsManager):
         # User and password for timeseries database
         self.set_option("TIMESERIES_DB_USER", "")
         self.set_option("TIMESERIES_DB_PASSWORD", "")
+
+    def set_redis_settings(self):
+        """
+        Sets up variables required for Redis integration
+        """
+        # Redis connection settings
+        self.set_option("REDIS_HOST", "127.0.0.1")
+        self.set_option("REDIS_PORT", "6379")
+        self.set_option("REDIS_PASSWORD", "")
+        self.set_option("REDIS_DB", "0")
+        self.set_option("REDIS_SSL", False)
 
     def set_support(self):
         """
