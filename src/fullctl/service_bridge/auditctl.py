@@ -3,9 +3,11 @@ try:
 
     DEFAULT_SERVICE_KEY = settings.SERVICE_KEY
     BRIDGE_OBJECTS_CHUNK_SIZE = settings.BRIDGE_OBJECTS_CHUNK_SIZE
-except ImportError:
+except Exception:
     DEFAULT_SERVICE_KEY = ""
     BRIDGE_OBJECTS_CHUNK_SIZE = 50
+    class settings:
+        AUDITCTL_URL = ""
 
 import structlog
 
