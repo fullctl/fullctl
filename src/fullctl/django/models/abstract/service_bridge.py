@@ -11,7 +11,6 @@ __all__ = [
 
 
 class ServiceBridgeReferenceModel(HandleRefModel):
-
     """
     Enables a model to have a main reference at another service
     supported by the fullctl service bridge

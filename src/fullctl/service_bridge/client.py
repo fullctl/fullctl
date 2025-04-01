@@ -267,7 +267,6 @@ class Bridge:
 
 
 class AaaCtl(Bridge):
-
     """
     Service bridge to aaactl
 

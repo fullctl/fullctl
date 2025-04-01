@@ -14,7 +14,6 @@ class JSONEncoder(json.JSONEncoder):
 
 
 class DataObject:
-
     """
     Service bridge base data representation
 
@@ -106,7 +105,6 @@ class DataObject:
 
 
 class Relationships:
-
     """
     Relationship manager class
 

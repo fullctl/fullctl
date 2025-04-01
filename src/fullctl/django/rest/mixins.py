@@ -7,7 +7,6 @@ log = structlog.get_logger(__name__)
 
 
 class CachedObjectMixin:
-
     """
     Assures that a views get_object() call only
     queries the db once
@@ -21,7 +20,6 @@ class CachedObjectMixin:
 
 
 class SlugObjectMixin:
-
     """
     Assures that a views get_object() can do a lookup
     via either the slug or the id
@@ -85,7 +83,6 @@ class ContainerQuerysetMixin:
 
 
 class AuditCtlActionLogMixin:
-
     """
     This viewset mixin allows actions taken on a viewset to be logged
     to auditctl.
@@ -106,7 +103,6 @@ class AuditCtlActionLogMixin:
     """
 
     def is_action_enabled_for_logging(self, request, ref_tag: str, action: str) -> bool:
-
         """
         Check if a specific action is enabled for logging
         """
@@ -130,7 +126,6 @@ class AuditCtlActionLogMixin:
         return False
 
     def finalize_response(self, request, response, *args, **kwargs):
-
         """
         Logs certain api actions to the auditctl service
         """

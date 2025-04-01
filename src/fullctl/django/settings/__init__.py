@@ -479,7 +479,7 @@ class SettingsManager(confu.util.SettingsManager):
 
         # timeseries db
         self.set_timeseries_db()
-        
+
         # redis settings
         self.set_redis_settings()
 

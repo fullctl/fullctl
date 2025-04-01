@@ -17,7 +17,6 @@ class NetboxObject(DataObject):
 
 
 class Netbox(Bridge):
-
     """
     Service bridge for netbox data retrieval
     """
@@ -73,6 +72,7 @@ class Netbox(Bridge):
             return response.json()
         return super()._data(response)
 
+
 class DeviceTypeObject(NetboxObject):
     description = "Netbox Device Type"
 
@@ -81,6 +81,7 @@ class DeviceType(Netbox):
     class Meta(Netbox.Meta):
         ref_tag = "dcim/device-types"
         data_object_cls = DeviceTypeObject
+
 
 class DeviceRoleObject(NetboxObject):
     description = "Netbox Device Role"
@@ -91,13 +92,16 @@ class DeviceRole(Netbox):
         ref_tag = "dcim/device-roles"
         data_object_cls = DeviceRoleObject
 
+
 class ManufacturerObject(NetboxObject):
     description = "Netbox Manufacturer"
+
 
 class Manufacturer(Netbox):
     class Meta(Netbox.Meta):
         ref_tag = "dcim/manufacturers"
         data_object_cls = ManufacturerObject
+
 
 class DeviceObject(NetboxObject):
     description = "Netbox Device"

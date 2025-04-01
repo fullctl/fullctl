@@ -15,7 +15,6 @@ class PretendMode(IOError):
 
 
 class CommandInterface(BaseCommand):
-
     """
     Interface for fullctl commands
 

@@ -5,7 +5,6 @@ from django.conf import settings
 from django.http import HttpRequest
 
 from fullctl.django.auth import RemotePermissionsError
-from fullctl.django.models.concrete.account import Organization
 from fullctl.django.util import DEFAULT_FULLCTL_BRANDING
 from fullctl.service_bridge.aaactl import OrganizationBranding, ServiceApplication
 
@@ -197,9 +196,11 @@ def account_service(request):
 
     if local_auth:
         context["service_info"] = {
-            "name": f"{settings.SERVICE_TAG} {context['org_branding']['name']}"
-            if context["org_branding"].get("name", None)
-            else settings.SERVICE_TAG,
+            "name": (
+                f"{settings.SERVICE_TAG} {context['org_branding']['name']}"
+                if context["org_branding"].get("name", None)
+                else settings.SERVICE_TAG
+            ),
             "slug": settings.SERVICE_TAG,
             "description": "Local permissions",
             "org_has_access": True,

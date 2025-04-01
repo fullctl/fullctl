@@ -54,12 +54,11 @@ def roles_to_groups(backend, details, response, uid, user, *args, **kwargs):
 
     # add user to group
     # get group model from user.groups meta
-    Group:GroupBase = user.groups.model
+    Group: GroupBase = user.groups.model
 
     for role in roles:
 
         group_name = role
-
 
         group, _ = Group.objects.get_or_create(name=group_name)
 

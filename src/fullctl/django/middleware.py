@@ -13,7 +13,6 @@ log = structlog.get_logger(__name__)
 
 
 class CurrentRequestContext:
-
     """
     Middleware that sets the current request context
 
@@ -29,7 +28,6 @@ class CurrentRequestContext:
 
 
 class RequestAugmentation:
-
     """
     Augments the request by selecting org from `org_tag`
     passed in the URL
@@ -108,7 +106,6 @@ class RequestAugmentation:
 
 
 class TokenValidationMiddleware:
-
     """
     Uses the aaactl service bridge to check if the oAuth access
     token used to authenticate the requesting user is still
@@ -145,7 +142,6 @@ class TokenValidationMiddleware:
 
 
 class AutocompleteRequestPermsMiddleware:
-
     """
     Middleware that attached perms to the request object
     if the request is for an autocomplete path

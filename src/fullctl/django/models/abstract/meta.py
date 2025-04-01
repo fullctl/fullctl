@@ -2,6 +2,7 @@
 Abstract classes to facilitate the fetching, caching and retrieving of meta data
 sourced from third party sources.
 """
+
 import json
 import re
 import time
@@ -48,7 +49,6 @@ class DataMixin:
 
 
 class Data(HandleRefModel):
-
     """
     Normalized object meta data
     """
@@ -90,7 +90,6 @@ class Data(HandleRefModel):
 
 
 class Request(HandleRefModel):
-
     """
     Handles logic for requesting and rate-throttling third party meta data
     """
@@ -425,7 +424,6 @@ class Request(HandleRefModel):
 
 
 class Response(HandleRefModel):
-
     """
     Maintains a cache for third party data responses
     """

@@ -59,7 +59,6 @@ class UserSettings(HandleRefModel):
 @reversion.register()
 @grainy_model(namespace="org", namespace_instance="org.{instance.permission_id}")
 class Organization(HandleRefModel):
-
     """
     Describes an organization
     """
@@ -228,7 +227,6 @@ class Organization(HandleRefModel):
 
 @grainy_model(namespace="org")
 class Instance(HandleRefModel):
-
     """
     app instance, one per org per app
 
@@ -269,7 +267,6 @@ class Instance(HandleRefModel):
 @reversion.register()
 @grainy_model(namespace="org")
 class OrganizationUser(HandleRefModel):
-
     """
     Describes a user -> organization relationship
     """

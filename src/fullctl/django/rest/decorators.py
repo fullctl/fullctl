@@ -27,7 +27,6 @@ class base:
 
 
 class load_object(base):
-
     """
     Will load an object and pass it to the view handler
     for `model` Model as argument `argname`
@@ -72,7 +71,6 @@ class load_object(base):
 
 
 class grainy_endpoint_response(grainy_rest_viewset_response):
-
     """
     Override of grainy_rest_viewset_response so we can
     toggle permission application to responses on or off
@@ -203,7 +201,6 @@ class _aaactl:
 
 
 class billable(_aaactl):
-
     """
     Will use the aaactl service bridge to determine
     if the specified product/service has accumulated
