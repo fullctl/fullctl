@@ -17,9 +17,9 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
 ]
 
-#packages = [
-#    { include = "fullctl", from = "src" },
-#]
+packages = [
+    { include = "fullctl", from = "src" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.9"

@@ -166,7 +166,6 @@ class Data(meta.Data):
 
 
 class Response(meta.Response):
-
     """
     Maintains a cache for third party data responses
     """
@@ -219,7 +218,6 @@ class Request(meta.Request):
 
 
 class ModelWithSlug(SlugModel):
-
     """
     A model with a slug
     """

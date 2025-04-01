@@ -5,6 +5,7 @@ ORM based task delegation
 import time
 from datetime import timedelta
 
+import structlog
 from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.utils import timezone
@@ -20,7 +21,6 @@ from fullctl.django.models.concrete.tasks import TaskClaim, TaskLimitError
 from fullctl.django.tasks import requeue as requeue_task
 from fullctl.django.tasks import specify_task
 from fullctl.django.tasks.util import worker_id
-import structlog
 
 log = structlog.get_logger(__name__)
 
@@ -204,7 +204,7 @@ def claim_task(task):
         task.save()
         return claim
     except IntegrityError as exc:
-        if not str(exc).startswith('duplicate key value violates unique constraint'):
+        if not str(exc).startswith("duplicate key value violates unique constraint"):
             log.error(exc)
         raise TaskClaimed(task)
 

@@ -110,7 +110,6 @@ class ErrorNotificationConfig(pydantic.BaseModel):
 
 
 class Task(HandleRefModel):
-
     """
     Describes an asynchronous task
 
@@ -215,9 +214,11 @@ class Task(HandleRefModel):
             models.Index(fields=["op"]),
             models.Index(fields=["created"]),
             models.Index(fields=["queue_id"]),
-            models.Index(fields=["status", "-requeued", "created"], 
-                        condition=models.Q(queue_id__isnull=True), 
-                        name="idx_poll_next_tasks")
+            models.Index(
+                fields=["status", "-requeued", "created"],
+                condition=models.Q(queue_id__isnull=True),
+                name="idx_poll_next_tasks",
+            ),
         ]
 
     class HandleRef:
@@ -609,7 +610,6 @@ class Task(HandleRefModel):
 
 
 class TaskClaim(HandleRefModel):
-
     """
     Used by a worker to claim a task
 
@@ -634,7 +634,6 @@ class TaskClaim(HandleRefModel):
 
 
 class TaskSchedule(HandleRefModel):
-
     """
     Implements delayed and repeated task execution
     """
@@ -816,7 +815,6 @@ class Monitor(HandleRefModel):
 
 @fullctl.django.tasks.register
 class CallCommand(Task):
-
     """
     Django management tasks
     """

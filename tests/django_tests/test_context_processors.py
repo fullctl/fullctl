@@ -1,4 +1,3 @@
-from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 from django.http import HttpRequest
@@ -150,7 +149,7 @@ def test_conf(db, dj_account_objects, settings):
         "legal_url": "test://legal",
         "terms_of_service_url": "test://terms-of-service",
         "current_year": 2025,
-        "feature_request_form_clickup_link": "test://clickup"
+        "feature_request_form_clickup_link": "test://clickup",
     }
 
     conf = context_processors.conf(request)

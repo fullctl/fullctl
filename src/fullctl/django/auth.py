@@ -64,7 +64,6 @@ def require_user(aaactl_user_id):
 
 
 class RemotePermissions(django_grainy.remote.Permissions):
-
     """
     Permissions are provided from the oauth instance.
 

@@ -18,7 +18,6 @@ class SchemaGenerator(BaseSchemaGenerator):
 
 
 class BaseSchema(AutoSchema):
-
     """
     Augments the openapi schema generation for
     the fullctl API docs

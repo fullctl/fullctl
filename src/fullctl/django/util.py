@@ -1,8 +1,8 @@
 import sys
-from typing import Callable
 from datetime import datetime
-import structlog
+from typing import Callable
 
+import structlog
 from django.conf import settings
 from django.utils import timezone
 
@@ -33,7 +33,8 @@ DEFAULT_FULLCTL_BRANDING = {
     "show_logo": True,
 }
 
-def error_context(status:int, exception:Exception, request) -> dict:
+
+def error_context(status: int, exception: Exception, request) -> dict:
     if exception:
         exc_type = exception.__class__
     else:
@@ -50,7 +51,10 @@ def error_context(status:int, exception:Exception, request) -> dict:
         "timestamp": timezone.now(),
     }
 
-def load_branding_info(request, branding_org:str, fn_fetch:Callable, raise_errors:bool=False) -> dict | None:
+
+def load_branding_info(
+    request, branding_org: str, fn_fetch: Callable, raise_errors: bool = False
+) -> dict | None:
 
     if not branding_org:
         return None
@@ -69,11 +73,12 @@ def load_branding_info(request, branding_org:str, fn_fetch:Callable, raise_error
                 "custom_org": True,
             }
     except Exception as e:
-        # any exception here should be log, but not cause a 
+        # any exception here should be log, but not cause a
         # cascading error
         log.exception("Error getting branding", e=e)
         if raise_errors:
             raise e
+
 
 def host_url():
     """

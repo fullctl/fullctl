@@ -20,14 +20,18 @@ log = structlog.get_logger("django")
 
 
 class Worker:
-
     """
     Async task processor.
 
     Will run fullctl_work_task command async through asyncio.subprocess
     """
 
-    def __init__(self, self_selecting: bool = False, poll_interval: float = 3.0, max_tasks: int = 0):
+    def __init__(
+        self,
+        self_selecting: bool = False,
+        poll_interval: float = 3.0,
+        max_tasks: int = 0,
+    ):
         self.id = f"{uuid.uuid4()}"[:8]
         self.task = None
         self.process = None
@@ -74,7 +78,7 @@ class Worker:
 
         if self.self_selecting:
             cmd.extend(["--poll-interval", str(self.poll_interval)])
-            
+
             # Add max-tasks parameter if configured
             if self.max_tasks > 0:
                 cmd.extend(["--max-tasks", str(self.max_tasks)])
@@ -141,7 +145,9 @@ class Command(CommandInterface):
         self.log_info(
             f"Starting task queue poller, {self.workers_num} workers, {self.processes} self-selecting workers, "
             f"poll interval {self.poll_interval} seconds, sleep interval {self.sleep_interval} seconds, "
-            f"respawning self-selecting workers after {self.max_tasks_per_process} tasks" if self.max_tasks_per_process > 0 else ""
+            f"respawning self-selecting workers after {self.max_tasks_per_process} tasks"
+            if self.max_tasks_per_process > 0
+            else ""
         )
 
         self.workers = [Worker() for i in range(0, self.workers_num)]
@@ -149,9 +155,9 @@ class Command(CommandInterface):
         # instanctatie self selecting workers
         self.self_selecting_workers = [
             Worker(
-                self_selecting=True, 
+                self_selecting=True,
                 poll_interval=self.poll_interval,
-                max_tasks=self.max_tasks_per_process
+                max_tasks=self.max_tasks_per_process,
             )
             for i in range(0, self.processes)
         ]
@@ -183,16 +189,18 @@ class Command(CommandInterface):
         while True:
             try:
                 await asyncio.sleep(self.sleep_interval)
-                
+
                 for i, worker in enumerate(self.self_selecting_workers):
                     # Check if the worker process has exited
                     if worker.process and worker.process.returncode is not None:
-                        self.log_info(f"Self-selecting worker {worker.id} exited, respawning")
+                        self.log_info(
+                            f"Self-selecting worker {worker.id} exited, respawning"
+                        )
                         # Create a new worker
                         self.self_selecting_workers[i] = Worker(
-                            self_selecting=True, 
+                            self_selecting=True,
                             poll_interval=self.poll_interval,
-                            max_tasks=self.max_tasks_per_process
+                            max_tasks=self.max_tasks_per_process,
                         )
                         # Start the new worker
                         await self.self_selecting_workers[i].work()

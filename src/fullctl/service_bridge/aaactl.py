@@ -8,15 +8,18 @@ except Exception:
     # Improperly configured or django not installed
     # Improperly configured will be raised elsewhere in the app, so we can
     # ignore it here
-    # 
+    #
     # this allows us to use the service bridge in non-django environments
     DEFAULT_SERVICE_KEY = ""
+
     class settings:
         AAACTL_URL = ""
+
 
 from fullctl.service_bridge.client import Bridge, DataObject, url_join
 
 CACHE = {}
+
 
 class AaactlEntity(DataObject):
     source = "aaactl"
@@ -127,13 +130,16 @@ class User(Aaactl):
         ref_tag = "user"
         data_object_cls = AaactlEntity
 
+
 class OrganizationObject(AaactlEntity):
     description = "Aaactl Organization"
+
 
 class Organization(Aaactl):
     class Meta(Aaactl.Meta):
         ref_tag = "organization"
         data_object_cls = OrganizationObject
+
 
 class Product(Aaactl):
     class Meta(Aaactl.Meta):

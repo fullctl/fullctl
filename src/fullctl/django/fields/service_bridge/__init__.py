@@ -71,7 +71,6 @@ class ReferencedObject:
 
 
 class ReferencedObjectFieldMixin:
-
     """
     References an object on another fullctl service via the
     service bridge
@@ -162,7 +161,6 @@ class ReferencedObjectField(ReferencedObjectFieldMixin, PositiveIntegerField):
 
 
 class ReferencedObjectCharField(ReferencedObjectFieldMixin, CharField):
-
     """
     References an object on another fullctl service via the
     service bridge using a char field

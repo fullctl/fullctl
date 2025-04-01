@@ -3,7 +3,6 @@ import logging
 
 from django.apps import apps
 from django.db import models
-from django.utils.functional import lazy
 from django.utils.translation import gettext_lazy as _
 
 from fullctl.django.models.abstract import HandleRefModel
@@ -34,7 +33,6 @@ def handler_choices():
 
 
 class service_bridge_action:
-
     """
     Decorates a function to be a service bridge action handler
 
@@ -58,7 +56,6 @@ class service_bridge_action:
 
 @register
 class ServiceBridgeActionTask(Task):
-
     """
     Task handler for ServiceBridgeAction
     """
@@ -83,7 +80,6 @@ class ServiceBridgeActionTask(Task):
 
 
 class ServiceBridgeAction(HandleRefModel):
-
     """
     Maps a service bridge class to a fullctl handle-ref model for either
     push or pull operations in a configurable fashion.

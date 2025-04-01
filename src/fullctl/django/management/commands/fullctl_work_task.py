@@ -2,14 +2,15 @@ import os
 import time
 import traceback
 
-import structlog
 import django.db
 import psycopg
-from fullctl.django.management.commands.base import CommandInterface, CommandError
+import structlog
+
+from fullctl.django.management.commands.base import CommandError, CommandInterface
 from fullctl.django.models import Task
 from fullctl.django.tasks.orm import (
-    TaskClaimed,
     TaskAlreadyStarted,
+    TaskClaimed,
     claim_task,
     fetch_task,
     set_task_as_failed,
@@ -49,14 +50,14 @@ class Command(CommandInterface):
             help="Only self-select once, do not poll for additional tasks.",
             action="store_true",
         )
-        
+
         parser.add_argument(
             "-t",
             "--max-tasks",
             help="Exit after processing this many tasks (to allow respawning). This is only used when self-selecting.",
             type=int,
             # 0 means unlimited
-            default=1000, 
+            default=1000,
         )
 
     def handle(self, *args, **kwargs):
@@ -132,7 +133,7 @@ class Command(CommandInterface):
         """
         self.log_info("Worker " + self.worker_id + " polling for tasks.")
         tasks_processed = 0
-        
+
         while True:
             self.error = None
             task = None
@@ -145,18 +146,22 @@ class Command(CommandInterface):
                     work_task(task)
                     self.finalize_task_processing(task)
                     tasks_processed += 1
-                    
+
                     # Exit if we've reached the max tasks limit
                     if self.max_tasks > 0 and tasks_processed >= self.max_tasks:
-                        self.log_info(f"Worker {self.worker_id} reached task limit ({self.max_tasks}), exiting")
+                        self.log_info(
+                            f"Worker {self.worker_id} reached task limit ({self.max_tasks}), exiting"
+                        )
                         break
-                        
+
                     if self.once:
                         break
                 else:
                     time.sleep(self.poll_interval)
             except (TaskClaimed, TaskAlreadyStarted):
-                log.debug("Task already claimed or started by another worker", task=task)
+                log.debug(
+                    "Task already claimed or started by another worker", task=task
+                )
             except Exception as exc:
                 log.exception("Error polling tasks", exc=exc, typ=type(exc))
                 try:
@@ -166,7 +171,6 @@ class Command(CommandInterface):
                     raise CommandError("Error in task run")
 
     def handle_outer_error(self, exc: Exception, retries: int = 5, task: Task = None):
-
         """
         Handles errors that happen when setting up the task for processing
 
@@ -174,11 +178,13 @@ class Command(CommandInterface):
         """
 
         try:
-            if isinstance(exc, (psycopg.OperationalError, django.db.utils.OperationalError)):
+            if isinstance(
+                exc, (psycopg.OperationalError, django.db.utils.OperationalError)
+            ):
                 # Close old connections to force reconnection on next DB operation
                 django.db.close_old_connections()
                 log.info("Closed old DB connections due to database error")
-                
+
                 # db issue, give time to recover
                 if self.task_id:
                     time.sleep(3)
