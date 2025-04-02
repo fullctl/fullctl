@@ -203,6 +203,13 @@ class SettingsManager(confu.util.SettingsManager):
         # MAX_PENDING_TASKS is the maximum number of tasks that can be pending at any time
         self.set_option("MAX_PENDING_TASKS", 100)
 
+        # TASK_TRACK_INTERVAL_SECONDS is the interval in seconds to track task heartbeats
+        self.set_option("TASK_TRACK_INTERVAL_SECONDS", 10)
+
+        # HEALTH_CHECK_TASK_INTERVAL_SECONDS is the interval in seconds to track task for health checks
+        # should be greater than TASK_TRACK_INTERVAL_SECONDS
+        self.set_option("HEALTH_CHECK_TASK_INTERVAL_SECONDS", 20)
+
         # TASK_MAX_AGE_THRESHOLD is the maximum hours a task can be pending before it is considered stale
         self.set_option("TASK_MAX_AGE_THRESHOLD", 24)
 

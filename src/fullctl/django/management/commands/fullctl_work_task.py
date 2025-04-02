@@ -1,13 +1,16 @@
 import os
+import threading
 import time
 import traceback
 
 import django.db
 import psycopg
 import structlog
+from django.conf import settings
+from django.utils import timezone
 
 from fullctl.django.management.commands.base import CommandError, CommandInterface
-from fullctl.django.models import Task
+from fullctl.django.models import Task, TaskHeartbeat
 from fullctl.django.tasks.orm import (
     TaskAlreadyStarted,
     TaskClaimed,
@@ -18,6 +21,8 @@ from fullctl.django.tasks.orm import (
     work_task,
 )
 
+TASK_TRACK_INTERVAL_SECONDS = getattr(settings, "TASK_TRACK_INTERVAL_SECONDS", 10)
+
 log = structlog.get_logger("django")
 
 
@@ -25,6 +30,10 @@ class Command(CommandInterface):
     help = "Process the specified task"
 
     always_commit = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.stop_event = threading.Event()
 
     @property
     def worker_id(self) -> str:
@@ -111,6 +120,44 @@ class Command(CommandInterface):
 
         task.save()
 
+    def track_task_processing(self):
+        """
+        Track the task processing during the command run
+
+        The function updates the TaskHeartbeart while the task is running
+
+        This is done at intervals of the specified - env var `TASK_TRACK_INTERVAL_SECONDS`
+
+        The `timestamp` field in the TaskHeartbeat model is used to check if the task is still running and not dead.
+        """
+        while not self.stop_event.is_set():
+            try:
+                TaskHeartbeat.objects.update_or_create(
+                    task_id=self.task_id,
+                    defaults={
+                        "timestamp": timezone.now(),
+                    },
+                )
+            except Exception as exc:
+                log.exception("Error in heartbeat loop", exc=exc)
+            time.sleep(TASK_TRACK_INTERVAL_SECONDS)
+
+    def before_run(self):
+        """
+        This function starts a thread to track the task processing
+        """
+        super().before_run()
+        self.thread = threading.Thread(target=self.track_task_processing)
+        self.thread.start()
+
+    def after_run(self):
+        """
+        This function stops the thread to track the task processing
+        """
+        super().after_run()
+        self.stop_event.set()
+        self.thread.join()
+
     def run(self, *args, **kwargs):
         """
         Execute the specified task
@@ -120,12 +167,14 @@ class Command(CommandInterface):
 
         task = specify_task(Task.objects.get(id=self.task_id))
         self.log_info(f"Processing {task}")
+
         try:
             work_task(task)
         except (TaskClaimed, TaskAlreadyStarted):
             log.debug("Task already claimed or started by another worker", task=task)
             return
-        self.finalize_task_processing(task)
+        finally:
+            self.finalize_task_processing(task)
 
     def poll_tasks(self):
         """

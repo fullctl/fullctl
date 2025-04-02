@@ -19,6 +19,7 @@ from fullctl.django.models.concrete import (
     Response,
     Task,
     TaskClaim,
+    TaskHeartbeat,
     TaskSchedule,
     UserSettings,
 )
@@ -110,6 +111,12 @@ class TaskClaimInline(BaseTabularAdmin):
     extra = 0
 
 
+class TaskHeartbeatInline(BaseTabularAdmin):
+    model = TaskHeartbeat
+    extra = 0
+    readonly_fields = ("task", "timestamp")
+
+
 @admin.register(Task)
 class TaskAdmin(BaseAdmin):
     list_display = (
@@ -134,7 +141,10 @@ class TaskAdmin(BaseAdmin):
     actions = ["requeue_tasks"]
     # auto complete
     raw_id_fields = ("parent", "user", "org")
-    inlines = (TaskClaimInline,)
+    inlines = (
+        TaskClaimInline,
+        TaskHeartbeatInline,
+    )
 
     def requeue_tasks(self, request, queryset):
         """
@@ -350,3 +360,11 @@ class ResponseAdmin(BaseAdmin):
     search_fields = [
         "request__identifier",
     ]
+
+
+@admin.register(TaskHeartbeat)
+class TaskHeartbeatAdmin(BaseAdmin):
+    list_display = ("task", "timestamp")
+    search_fields = ("task__id",)
+    list_filter = ("task__status",)
+    readonly_fields = ("task", "timestamp")

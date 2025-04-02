@@ -5,7 +5,7 @@ Contains a bunch of concrete models to help testing
 from django.db import models
 
 import fullctl.django.models.abstract.meta as meta
-from fullctl.django.models import Task
+from fullctl.django.models import Task, TaskHeartbeat
 from fullctl.django.models.abstract.base import SlugModel
 from fullctl.django.tasks import qualifiers, register
 
@@ -23,6 +23,14 @@ class TestTask(Task):
 
     def run(self, a, b, *args, **kwargs):
         return a + b
+
+
+class TestTaskHeartbeat(TaskHeartbeat):
+    class Meta:
+        proxy = True
+
+    class HandleRef:
+        tag = "task_test_heartbeat"
 
 
 class UnregisteredTestTask(Task):

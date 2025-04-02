@@ -34,6 +34,7 @@ __all__ = [
     "ParentTaskNotFinished",
     "Task",
     "TaskClaim",
+    "TaskHeartbeat",
     "TaskSchedule",
     "CallCommand",
 ]
@@ -89,6 +90,14 @@ class TaskMaxAgeError(IOError):
     """
     Raised when a pending task is older than the
     specified threshold
+    """
+
+    pass
+
+
+class TaskHeartbeatError(IOError):
+    """
+    Raised when a running/pending task heartbeat is not updated
     """
 
     pass
@@ -607,6 +616,21 @@ class Task(HandleRefModel):
     def run_command(self, command):
         # TODO this needs to capture output
         subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+
+class TaskHeartbeat(models.Model):
+    task = models.OneToOneField(
+        Task, related_name="heartbeat", on_delete=models.CASCADE
+    )
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "fullctl_task_heartbeat"
+        verbose_name = _("Task Heartbeat")
+        verbose_name_plural = _("Task Heartbeats")
+
+    def __str__(self):
+        return f"{self.task.id} - {self.timestamp}"
 
 
 class TaskClaim(HandleRefModel):

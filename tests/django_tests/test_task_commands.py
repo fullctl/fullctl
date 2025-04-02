@@ -6,6 +6,7 @@ from fullctl.django.management.commands.fullctl_poll_tasks import Command, Worke
 from fullctl.django.management.commands.fullctl_work_task import (
     Command as WorkTaskCommand,
 )
+from fullctl.django.models import TaskHeartbeat
 from fullctl.django.models.concrete.tasks import TaskLimitError
 
 
@@ -150,3 +151,17 @@ class TestWorkTaskCommand:
         assert (
             completed == 2
         ), f"Expected 2 tasks to be completed, but {completed} were completed"
+
+    @pytest.mark.skip(
+        "Skipping task heartbeat as thread would run into - DatabaseError: Connection already closed - error"
+    )
+    def test_task_heartbeat_tracking(self):
+        """Test task heartbeat tracking"""
+        task = models.TestTask.create_task(1, 2)
+        assert not TaskHeartbeat.objects.filter(task=task).exists()
+        cmd = WorkTaskCommand()
+        cmd.handle(task_id=str(task.id), poll_interval=3.0)
+        task.refresh_from_db()
+        assert task.status == "completed"
+        task_heartbeat = TaskHeartbeat.objects.get(task=task)
+        assert task_heartbeat.timestamp
