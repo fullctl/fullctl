@@ -4,9 +4,13 @@ from django.utils import timezone
 
 import fullctl.django.tasks.orm as orm
 import tests.django_tests.testapp.models as models
-from fullctl.django.health_check import health_check_task_stack_queue
+from fullctl.django.health_check import (
+    health_check_task_heartbeat,
+    health_check_task_stack_queue,
+)
 from fullctl.django.models.concrete.tasks import (
     TaskClaimed,
+    TaskHeartbeatError,
     TaskLimitError,
     TaskMaxAgeError,
     TaskSchedule,
@@ -214,3 +218,29 @@ def test_task_stack_queue_for_tasks_exceeding_maximum_age_threshold():
 
     with pytest.raises(TaskMaxAgeError):
         health_check_task_stack_queue()
+
+
+@pytest.mark.django_db
+def test_task_heartbeat():
+    task = models.TestTask.create_task(1, 2)
+    task.status = "completed"
+    task.save()
+    task_heartbeat = models.TestTaskHeartbeat.objects.create(task=task)
+    task_heartbeat.save()
+    health_check_task_heartbeat()
+
+
+@pytest.mark.django_db
+def test_task_heartbeat_timeout():
+    settings.HEALTH_CHECK_TASK_INTERVAL_SECONDS = 20
+    task = models.TestTask.create_task(1, 2)
+    task.status = "running"
+    task.save()
+    task_heartbeat = models.TestTaskHeartbeat.objects.create(task=task)
+    task_heartbeat.timestamp = timezone.now() - timezone.timedelta(
+        seconds=settings.HEALTH_CHECK_TASK_INTERVAL_SECONDS + 10
+    )
+    task_heartbeat.save()
+
+    with pytest.raises(TaskHeartbeatError):
+        health_check_task_heartbeat()

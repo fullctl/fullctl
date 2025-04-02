@@ -6,7 +6,13 @@ from django.conf import settings
 from django.db import connection
 from django.utils import timezone
 
-from fullctl.django.models.concrete.tasks import Task, TaskLimitError, TaskMaxAgeError
+from fullctl.django.models.concrete.tasks import (
+    Task,
+    TaskHeartbeat,
+    TaskHeartbeatError,
+    TaskLimitError,
+    TaskMaxAgeError,
+)
 
 __all__ = [
     "register",
@@ -16,6 +22,10 @@ __all__ = [
 
 # holds all registered health checks
 HEALTH_CHECKS = {}
+
+HEALTH_CHECK_TASK_INTERVAL_SECONDS = getattr(
+    settings, "HEALTH_CHECK_TASK_INTERVAL_SECONDS", 20
+)
 
 
 class register:
@@ -74,6 +84,23 @@ def health_check_task_stack_queue():
         ).exists()
         if old_pending_tasks:
             raise TaskMaxAgeError()
+
+
+@register("task_heartbeat")
+def health_check_task_heartbeat():
+    """
+    Tests the task heartbeat
+    """
+    running_tasks = Task.objects.filter(status__in=["pending", "running"])
+    long_running_task_heartbeats = TaskHeartbeat.objects.filter(
+        timestamp__lte=timezone.now()
+        - timezone.timedelta(seconds=HEALTH_CHECK_TASK_INTERVAL_SECONDS),
+        task__in=running_tasks,
+    )
+    if long_running_task_heartbeats.exists():
+        raise TaskHeartbeatError(
+            f"Long running tasks: {[str(task) for task in long_running_task_heartbeats]}"
+        )
 
 
 @register("db")

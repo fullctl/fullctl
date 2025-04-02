@@ -277,3 +277,18 @@ manage.py fullctl_poll_tasks -p 4 -t 100
 ```
 
 This will cause each worker process to automatically exit after processing 100 tasks, and a new worker process will be spawned to replace it. If not specified or set to 0, worker processes will continue running indefinitely.
+
+
+# Task tracking
+
+In `CommandInterface` there is a function `before_run` that runs before the command is run
+
+In the worker `Command` a separate thread is created to track the task processing to avoid blocking the main thread for the command worker
+
+The function of this thread is to update the TaskHeartbeart while the task is running
+
+This is done at intervals of the specified - env var `TASK_TRACK_INTERVAL_SECONDS`
+
+The `timestamp` field in the `TaskHeartbeat` model is used to check if the task is still running and not dead.
+
+This is always checked for all tasks when `/health` is visited

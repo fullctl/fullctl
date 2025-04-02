@@ -61,6 +61,18 @@ class CommandInterface(BaseCommand):
             if not self.commit:
                 raise PretendMode()
 
+    def before_run(self):
+        """
+        process before the command is run
+        """
+        ...
+
+    def after_run(self):
+        """
+        process after the command is run
+        """
+        ...
+
     @auditlog()
     def handle(self, auditlog=None, *args, **kwargs):
         self.error = None
@@ -101,6 +113,7 @@ class CommandInterface(BaseCommand):
 
         sid = None
         try:
+            self.before_run()
             sid = transaction.savepoint()
             self._run(*args, **kwargs)
         except PretendMode:
@@ -119,6 +132,8 @@ class CommandInterface(BaseCommand):
                 transaction.rollback()
             err_txt = traceback.format_exc()
             self.log_error(err_txt)
+        finally:
+            self.after_run()
 
         if self.auditlog_enabled and self.commit:
             auditlog.append_data(output="\n".join(self.output))
