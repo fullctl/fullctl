@@ -12,6 +12,7 @@ from rest_framework.response import Response
 
 import django_auditctl.models.auditctl as models
 from django_auditctl.rest.serializers.service_bridge import Serializers
+from django_auditctl.limit import is_limited, set_limited
 
 
 @route
@@ -43,6 +44,18 @@ class Event(DataViewSet):
             data["org"] = org.id
 
         return data
+
+    def _create(self, request, *args, **kwargs):
+        
+        object_id = request.data.get("object_id")
+        if is_limited(object_id):
+            return Response(
+                {"error": "rate limit exceeded"},
+                status=429,
+            )
+        set_limited(object_id)
+
+        return super()._create(request, *args, **kwargs)
 
     @action(
         detail=False,

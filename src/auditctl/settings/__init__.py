@@ -108,9 +108,24 @@ settings_manager.set_option("EVENT_METRICS_ENABLED", True)
 # Prefix added to all measurement names
 settings_manager.set_option("EVENT_METRIC_PREFIX", "auditctl_")
 
+# EVENT RATE LIMITS
+settings_manager.set_option("RATE_LIMIT_EVENT_BGP_STAT", "1/second")
+
+
+
 # FINALIZE
 
 settings_manager.set_default_append()
+
+# CACHES
+
+CACHES["ratelimit"] = {
+    'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+    'LOCATION': f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}",
+    'OPTIONS': {
+        'password': REDIS_PASSWORD,
+    }
+}
 
 # look for mainsite/settings/${RELEASE_ENV}_append.py and load if it exists
 env_file = os.path.join(os.path.dirname(__file__), f"{RELEASE_ENV}_append.py")
