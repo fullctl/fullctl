@@ -334,8 +334,7 @@ class BGPSessionStateComponent(BaseModel):
     export_withdraws_accepted: Optional[int] = 0
 
 
-@register_model(r"^v0.1\/[^\/]+\/bgp\/stat\/[0-9\.]+\/[0-9]+$")
-class BGPSessionStateData(EventData, MetricsMultiComponentMixin):
+class BGPStatBase(EventData, MetricsMultiComponentMixin):
     components: List[BGPSessionStateComponent] = list()
 
     @classmethod
@@ -380,6 +379,14 @@ class BGPSessionStateData(EventData, MetricsMultiComponentMixin):
             "export_withdraws_accepted",
         ]
 
+
+@register_model(r"^v0.1\/[^\/]+\/bgp\/stat\/[0-9\.]+\/[0-9]+$")
+class BGPSessionStateData(BGPStatBase):
+    pass
+
+@register_model(r"^v0.2\/[^\/]+\/bgp\/stat\/[0-9\.]+$")
+class BatchedBGPSessionStateData(BGPStatBase):
+    pass
 
 class BGPSessionStateAggregateDataComponent(BaseModel):
     """
