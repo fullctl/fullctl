@@ -10,7 +10,7 @@ def conf(request):
         "settings": {
             "emails": {
                 "noreply": settings.NO_REPLY_EMAIL,
-                "support": settings.DEFAULT_FROM_EMAIL,
+                "support": settings.SUPPORT_EMAIL,
                 "peer_request_from": settings.PEER_REQUEST_FROM_EMAIL,
             },
             "peeringdb": {
