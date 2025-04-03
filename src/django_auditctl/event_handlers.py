@@ -46,7 +46,7 @@ def register_handler(pattern):
         # Initialize a list for this pattern if it doesn't exist yet
         if compiled_pattern not in HANDLER_REGISTRY:
             HANDLER_REGISTRY[compiled_pattern] = []
-            
+
         # Add the handler class to the list for this pattern
         HANDLER_REGISTRY[compiled_pattern].append(cls)
 
@@ -313,7 +313,6 @@ class ConfigLivenessDataHandler(BaseHandler):
     def __call__(self):
         self.heartbeat()
 
-
 @register_handler(r"^v0.1\/[^\/]+\/bgp\/stat\/[0-9\.]+\/[0-9]+$")
 class BGPSessionStateDataHandler(BaseHandler):
     """
@@ -376,6 +375,110 @@ class BGPSessionStateDataHandler(BaseHandler):
                 stat_type="bgp_stats",
             )
 
+@register_handler(r"^v0.2\/[^\/]+\/bgp\/stat\/[0-9\.]+$")
+class BatchedBGPSessionStateDataHandler(BaseHandler):
+    """
+    Handles BGP Sesssion State Data events (batched)
+    """
+
+    class HandleRef:
+        tag = "bgp_stat_batched"
+
+    def __call__(self):
+        self.heartbeat()
+        id_parts = object_id_to_parts(self.event.object_id)
+        org_slug = id_parts.get("org_tag")
+
+        member_bridge = ixctl.InternetExchangeMember()
+        physical_port_stats_bridge = devicectl.PhysicalPortStats()
+
+        members = {}
+        components = self.event.data.get("components", [])
+        log.debug("Processing BGP stats", org_slug=org_slug, components=len(components))
+
+        for component in components:
+            asn = int(component.get("asn"))
+            filters = {
+                "asn": asn,
+                "is_rs_peer": True,
+                "ix_verified": True,
+            }
+            address = component.get("address")
+            if ipaddress.ip_address(address).version == 4:
+                filters["ipaddr4"] = address
+            else:
+                filters["ipaddr6"] = address
+
+            key = (asn, address)
+
+            if key not in members:
+                member = member_bridge.first(**filters)
+                if member:
+                    members[key] = member
+                    member.address = address
+                    log.debug("Found member for key", member=member.id, key=key)
+                else:
+                    log.debug("No member found for key", key=key, filters=filters)
+
+        physical_ports = []
+        port_ids = []
+        port_to_member = {}
+        physical_port_to_member = {}
+
+        # collect port references from members
+        for member in members.values():
+            # skip members that dont have a devicectl port assigned
+            if not member.port:
+                continue
+
+            port_ids.append(member.port)
+            port_to_member[member.port] = member
+
+        if not port_ids:
+            return
+
+        # collect physical ports from port references
+        for port in devicectl.Port().objects(ids=port_ids, join=["physical_ports"]):
+            physical_ports.extend([p["id"] for p in port.physical_ports])
+
+            for p in port.physical_ports:
+                physical_port_to_member[p["id"]] = port_to_member[port.id]
+
+        # send bgp stats to each physical port
+        for physical_port in physical_ports:
+
+            # filter components by physical port, this is done by
+            # checking assigned member for the physical port (through physical_port_to_member)
+            # once we have the member we can collect all event components for that member
+            components_for_physical_port = []
+
+            for component in components:
+                member = physical_port_to_member[physical_port]
+
+                if member.asn == int(
+                    component.get("asn")
+                ) and member.address == component.get("address"):
+                    components_for_physical_port.append(component)
+
+            if not components_for_physical_port:
+                log.debug(
+                    "No components found for physical port", physical_port=physical_port
+                )
+                continue
+
+            log.debug(
+                "Posting stats for physical port",
+                physical_port=physical_port,
+                components=len(components_for_physical_port),
+            )
+
+            physical_port_stats_bridge.save_physical_port_stats(
+                data=components_for_physical_port,
+                org_slug=org_slug,
+                physical_port=physical_port,
+                stat_type="bgp_stats",
+            )
+
 
 @register_handler(r"^v0.1\/[^\/]+\/bgp\/stat\/aggregate\/[0-9\.]+$")
 class BGPSessionStateAggregateDataHandler(BaseHandler):
@@ -400,7 +503,7 @@ class BGPSessionStateAggregateDataHandler(BaseHandler):
         )
 
 
-@register_handler(r"^v0.1\/[^\/]+\/.+$")
+@register_handler(r"^v0.\d+\/[^\/]+\/.+$")
 class InsertMetrics(BaseHandler):
     """
     A class that inherits from the BaseHandler class and inserts
