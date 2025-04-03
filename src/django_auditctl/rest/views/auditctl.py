@@ -7,6 +7,7 @@ from django_auditctl.rest.decorators import grainy_endpoint
 from django_auditctl.rest.route.auditctl import route
 from django_auditctl.rest.serializers.auditctl import Serializers
 from django_auditctl.util import parts_to_object_id
+from django_auditctl.limit import is_limited, set_limited
 
 
 @route
@@ -62,6 +63,14 @@ class Event(CachedObjectMixin, viewsets.GenericViewSet):
             ref_tag=kwargs.get("ref_tag"),
             ref_id=kwargs.get("ref_id"),
         )
+
+        if is_limited(object_id):
+            return Response(
+                {"error": "rate limit exceeded"},
+                status=429,
+            )
+        set_limited(object_id)
+
         data = request.data
         data["object_id"] = object_id
         if hasattr(request, "api_key"):
