@@ -35,6 +35,23 @@ def is_dummy(name):
         or name.startswith("peerctl:")
     )
 
+@register
+class NetworkCompact(serializers.Serializer):
+    ref_tag = "network_compact"
+    id = serializers.IntegerField(source="pk", read_only=True)
+    asn = serializers.IntegerField(read_only=True)
+    name = serializers.SerializerMethodField()
+
+    class Meta:
+        fields = [
+            "id",
+            "asn",
+            "name",
+        ]
+
+    @models.ref_fallback(lambda s, o: f"AS{o.asn}")
+    def get_name(self, instance):
+        return instance.ref.name
 
 @register
 class Network(ModelSerializer):
@@ -87,6 +104,10 @@ class Network(ModelSerializer):
 
     def save_email_alert_recipients(self, recipients: list[str], asn: int):
         org = self.context.get("org")
+
+        if not org:
+            raise ValidationError("No org found in serializer context")
+
         aaactl.PointOfContact().save_poc(
             delivery_type="email",
             recipients=recipients,
@@ -114,6 +135,8 @@ class Network(ModelSerializer):
 
     def get_email_alert_recipients(self, asn: int) -> list[str]:
         org = self.context.get("org")
+        if not org:
+            return []
         return aaactl.PointOfContact().get_email_alert_recipients(
             org=org, service="peerctl", entity=asn
         )
