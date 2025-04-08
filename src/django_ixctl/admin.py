@@ -9,6 +9,7 @@ from django_ixctl.models import (
     InternetExchangePrefix,
     MacAddress,
     Network,
+    NetworkMeta,
     PermissionRequest,
     Routeserver,
     RouteserverConfig,
@@ -78,11 +79,14 @@ class MemberAdmin(BaseAdmin):
         "ix",
         "org",
         "asn",
+        "name",
         "ipaddr4",
         "ipaddr6",
         "port",
         "prefix_set",
         "billable",
+        "created",
+        "updated",
     )
     readonly_fields = ("org",)
     search_fields = (
@@ -97,6 +101,7 @@ class MemberAdmin(BaseAdmin):
 
     def org(self, obj):
         return obj.ix.instance.org
+
 
 
 @admin.register(Routeserver)
@@ -166,3 +171,20 @@ class TrafficAlertConfigAdmin(BaseAdmin):
 
     def org(self, obj):
         return obj.ix.instance.org
+
+@admin.register(NetworkMeta)
+class NetworkMetaAdmin(BaseAdmin):
+    list_display = ("org", "asn", "name")
+    readonly_fields = ("logo_url_set",)
+
+    search_fields = ("org__slug", "org__name", "asn", "name")
+
+    autocomplete_fields = ("org",)
+
+    def org(self, obj):
+        return obj.org
+
+    def logo_url_set(self, obj):
+        return True if obj.logo_url else False
+    logo_url_set.short_description = "Logo URL"
+    logo_url_set.boolean = True

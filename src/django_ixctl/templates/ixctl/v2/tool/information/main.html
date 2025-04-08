@@ -14,14 +14,20 @@
     <div class="shaded-box">
         <table>
             <tr>
+                <th><b>Logo</b></th>
                 <th><b>Name</b></th>
                 <th><b>ASN</b></th>
                 <th><b>IPv4</b></th>
                 <th><b>IPv6</b></th>
                 <th><b>Speed</b></th>
             </tr>
-            {% for member in select_ix.member_set.all %}
+            {% for member in members %}
             <tr>
+                {% if member.network_meta.logo_url %}
+                    <td class="logo-column"><img class="image-responsive" src="{{member.network_meta.logo_url}}" alt="{{member.name}}"></td>
+                {% else %}
+                    <td class="logo-column"></td>
+                {% endif %}
                 <td>{{member.name}}</td>
                 <td>{{member.asn}}</td>
                 <td>{{member.ipaddr4}}</td>
