@@ -44,15 +44,14 @@ class Network(CachedObjectMixin, viewsets.ModelViewSet):
     # no need to grainy gate this as list filtering does
     # its own permission check
 
-    @load_object("net", models.Network, asn="asn")
-    def list(self, request, asn, net, *args, **kwargs):
+    def list(self, request, *args, **kwargs):
         perms = permissions(request.user)
         perms.load()
         instances = perms.instances(
-            models.Network, "crud", explicit=False, ignore_grant_all=True
+            models.Network, "r", explicit=False, ignore_grant_all=True
         )
-        serializer = self.serializer_class(
-            instances, many=True, context={"org": net.org}
+        serializer = Serializers.network_compact(
+            instances, many=True,
         )
         return Response(serializer.data)
 
