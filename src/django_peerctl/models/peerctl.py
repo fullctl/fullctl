@@ -843,25 +843,6 @@ class PeerNetwork(PolicyHolderMixin, Base):
     def set_route_server_md5(self, md5):
         self.md5 = md5
         self.save()
-        self.sync_route_server_md5()
-
-    def sync_route_server_md5(self):
-        for session in self.peer_sessions.select_related(
-            "peer_port", "peer_port__port_info"
-        ):
-            if not session.port:
-                continue
-
-            port_info = session.port.object.port_info_object
-
-            if not port_info.is_rs_peer:
-                continue
-
-            peer_port_info = session.peer_port.port_info
-            SyncRouteServerMD5.create_task(
-                port_info.net.asn, self.md5, port_info.ipaddr4, peer_port_info.ipaddr4
-            )
-
 
 @reversion.register
 class InternetExchange(sot.ReferenceMixin, Base):
@@ -1264,6 +1245,18 @@ class PortObject(devicectl.DeviceCtlEntity, PolicyHolderMixin):
         )
 
         peer_port.peer_net.set_route_server_md5(md5)
+
+        ix_id = self.port_info_object.ref_ix_id.split(":")[1]
+
+        SyncRouteServerMD5.create_task(
+            # Port ASN
+            self.asn,
+            # MD5 Password
+            md5, 
+            # ix id
+            ix_id
+        )
+
 
     def set_is_route_server_peer(self, is_route_server_peer):
         self.port_info_object.is_route_server_peer = is_route_server_peer
@@ -2818,9 +2811,6 @@ class TemplateBase(models.Model):
         try:
             return strip_tags(template.render(**self.get_data()))
         except Exception as exc:
-            import traceback
-
-            print(traceback.format_exc())
             raise TemplateRenderError(exc)
 
 
