@@ -629,6 +629,10 @@ class TaskHeartbeat(models.Model):
         verbose_name = _("Task Heartbeat")
         verbose_name_plural = _("Task Heartbeats")
 
+        indexes = [
+            models.Index(fields=["timestamp"]),
+        ]
+
     def __str__(self):
         return f"{self.task.id} - {self.timestamp}"
 

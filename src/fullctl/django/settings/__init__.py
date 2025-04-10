@@ -206,6 +206,10 @@ class SettingsManager(confu.util.SettingsManager):
         # TASK_TRACK_INTERVAL_SECONDS is the interval in seconds to track task heartbeats
         self.set_option("TASK_TRACK_INTERVAL_SECONDS", 10)
 
+        # TASK_TRACK_CHECK_INTERVAL is the interval in seconds to check for task heartbeat evaluation
+        # This should be a very small number to allow the worker to be released quickly when the task is complete
+        self.set_option("TASK_TRACK_CHECK_INTERVAL", 0.01)
+
         # HEALTH_CHECK_TASK_INTERVAL_SECONDS is the interval in seconds to track task for health checks
         # should be greater than TASK_TRACK_INTERVAL_SECONDS
         self.set_option("HEALTH_CHECK_TASK_INTERVAL_SECONDS", 20)

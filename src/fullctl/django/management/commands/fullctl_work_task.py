@@ -22,7 +22,7 @@ from fullctl.django.tasks.orm import (
 )
 
 TASK_TRACK_INTERVAL_SECONDS = getattr(settings, "TASK_TRACK_INTERVAL_SECONDS", 10)
-
+TASK_TRACK_CHECK_INTERVAL = getattr(settings, "TASK_TRACK_CHECK_INTERVAL", 0.01)
 log = structlog.get_logger("django")
 
 
@@ -34,6 +34,8 @@ class Command(CommandInterface):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stop_event = threading.Event()
+        self.heartbeat_task_id = None
+        self.heartbeat_cleanup = False
 
     @property
     def worker_id(self) -> str:
@@ -90,8 +92,15 @@ class Command(CommandInterface):
                 self.poll_tasks()
             else:
                 self.finalize_task_processing(int(self.task_id))
+
+        except KeyboardInterrupt:
+            log.info("Keyboard interrupt received, stopping worker")
+            self.stop_heartbeat()
+            # Re-raise to allow the command to exit
+            raise
         except Exception as exc:
             log.exception("Error in task run", exc=exc)
+            self.stop_heartbeat()
             self.handle_outer_error(exc)
 
     def finalize_task_processing(self, task: int | Task):
@@ -120,43 +129,111 @@ class Command(CommandInterface):
 
         task.save()
 
+        self.stop_heartbeat(cleanup=True)
+
+        # wait for the heartbeat to be stopped
+        # this is to avoid race conditions
+        max_wait = 10
+        while self.heartbeat_task_id:
+            time.sleep(0.1)
+            max_wait -= 0.1
+            if max_wait <= 0:
+                log.warning("Heartbeat not stopped after 10 seconds, releasing lock")
+                break
+
     def track_task_processing(self):
         """
-        Track the task processing during the command run
+        Track the task processing by continuously updating the task heartbeat.
 
-        The function updates the TaskHeartbeart while the task is running
+        This function runs in a separate thread and periodically updates the
+        `TaskHeartbeat` record for the current task to indicate it's still running.
+        The heartbeat is used to detect "zombie" tasks that may have died without
+        proper cleanup.
 
-        This is done at intervals of the specified - env var `TASK_TRACK_INTERVAL_SECONDS`
+        The update frequency is controlled by TASK_TRACK_INTERVAL_SECONDS (default: 10s),
+        while the thread checks for the stop signal at TASK_TRACK_CHECK_INTERVAL (default: 0.01s)
+        intervals to ensure responsive shutdown.
 
-        The `timestamp` field in the TaskHeartbeat model is used to check if the task is still running and not dead.
+        The function will run until the stop_event is set by stop_heartbeat().
         """
+
+        if not self.heartbeat_task_id:
+            # no task id, no heartbeat
+            return
+
+        last_update = 0
+        heartbeat = None
+
         while not self.stop_event.is_set():
-            try:
-                TaskHeartbeat.objects.update_or_create(
-                    task_id=self.task_id,
-                    defaults={
-                        "timestamp": timezone.now(),
-                    },
-                )
-            except Exception as exc:
-                log.exception("Error in heartbeat loop", exc=exc)
-            time.sleep(TASK_TRACK_INTERVAL_SECONDS)
+            current_time = time.time()
 
-    def before_run(self):
+            # Only update the heartbeat when the interval has passed
+            if current_time - last_update >= TASK_TRACK_INTERVAL_SECONDS:
+                try:
+                    heartbeat, _ = TaskHeartbeat.objects.update_or_create(
+                        task_id=self.heartbeat_task_id,
+                        defaults={
+                            "timestamp": timezone.now(),
+                        },
+                    )
+                    last_update = current_time
+                except Exception as exc:
+                    log.exception("Error in heartbeat loop", exc=exc)
+
+            # Short sleep to check for stop event more frequently
+            time.sleep(TASK_TRACK_CHECK_INTERVAL)
+
+        self.heartbeat_task_id = None
+        if heartbeat and self.heartbeat_cleanup:
+            heartbeat.delete()
+
+    def start_heartbeat(self, task_id: int | None = None):
         """
-        This function starts a thread to track the task processing
+        Start the heartbeat tracking thread for a task.
+
+        Initializes and starts a separate thread that will periodically update
+        the heartbeat record for the given task to indicate it's still active.
+
+        Args:
+            task_id: The ID of the task to track. If None, uses self.task_id.
+                    Must be a valid Task ID that exists in the database.
+
+        The thread will continue running until stop_heartbeat() is called.
         """
-        super().before_run()
+        self.stop_event.clear()
+        self.heartbeat_cleanup = False
+        self.heartbeat_task_id = task_id or self.task_id
         self.thread = threading.Thread(target=self.track_task_processing)
         self.thread.start()
 
+    def stop_heartbeat(self, cleanup: bool = False):
+        """
+        Stop the heartbeat tracking thread.
+
+        Signals the heartbeat thread to stop and waits for it to terminate.
+        """
+        if hasattr(self, "thread"):
+            self.heartbeat_cleanup = cleanup
+            self.stop_event.set()
+            self.thread.join()
+
+    def before_run(self):
+        """
+        Hooks into the before_run method to start the heartbeat thread
+        when a specific task is being processed (e.g., a task id was passed as an argument)
+        """
+        super().before_run()
+        if self.task_id:
+            self.start_heartbeat()
+
     def after_run(self):
         """
-        This function stops the thread to track the task processing
+        Hooks into the after_run method to stop the heartbeat thread
+        when a specific task is finished (e.g., a task id was passed as an argument)
         """
         super().after_run()
-        self.stop_event.set()
-        self.thread.join()
+        if self.task_id:
+            self.stop_heartbeat()
 
     def run(self, *args, **kwargs):
         """
@@ -192,6 +269,10 @@ class Command(CommandInterface):
                     claim_task(task)
                     task = specify_task(task)
                     self.log_info(f"Processing {task}")
+
+                    # Start heartbeat with the current task's ID
+                    self.start_heartbeat(task.id)
+
                     work_task(task)
                     self.finalize_task_processing(task)
                     tasks_processed += 1
