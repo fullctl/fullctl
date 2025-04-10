@@ -101,13 +101,26 @@ class InternetExchangeMember(Ixctl):
         data = {"as_macro": as_macro, "asn": asn, "source": source}
         self.put("data/member/sync/as-macro", data=data)
 
-    def set_route_server_md5(self, asn, md5, member_ip, router_ip, source):
+    def set_route_server_md5(
+        self,
+        asn: int,
+        md5: str,
+        ix_id: int,
+        source: str,
+    ) -> dict:
+        """
+        Sets the ASN's md5 for the routeservers at an internet exchange
+        in ixctl
+
+        Arguments:
+            asn (`int`) -- the asn of the ix member
+            md5 (`str`) -- the md5 of the routeserver
+            ix_id (`int`) -- the id of the internet exchange
+            source (`str`) -- the source of the md5
+        """
         data = {"md5": md5, "asn": asn, "source": source}
 
-        member_ip = ipaddress.ip_interface(member_ip).ip
-        router_ip = ipaddress.ip_interface(router_ip).ip
-
-        self.put(f"data/member/sync/{asn}/{member_ip}/{router_ip}/md5", data=data)
+        return self.put(f"data/member/sync/{asn}/{ix_id}/md5", data=data)
 
     def set_ports_status(self, status: str, member_id: int, member_port: int):
         return self.patch(
