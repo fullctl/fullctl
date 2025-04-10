@@ -460,6 +460,33 @@ class OrganizationDefaultExchange(models.Model):
         return f"{self.org.name} -> {self.ix.name}"
 
 
+class NetworkMeta(models.Model):
+
+    """
+    Allows organizations to store reusable network information
+    """
+
+    org = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="network_meta_set",
+    )
+    
+    asn = models.PositiveIntegerField()
+    name = models.CharField(max_length=255, blank=True, null=True)
+    logo_url = models.URLField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "ixctl_network_meta"
+        verbose_name = _("Network Meta")
+        verbose_name_plural = _("Network Meta")
+        unique_together = (("org", "asn"),)
+
+
 @reversion.register()
 @grainy_model(
     namespace="member",
@@ -652,6 +679,23 @@ class InternetExchangeMember(PdbRefModel):
             member.port._object = port
 
     @classmethod
+    def preload_network_meta(cls, org, members):
+        """
+        Preloads network meta information
+        """
+
+        asns = {member.asn for member in members}
+        if not asns:
+            return members
+
+        network_meta = NetworkMeta.objects.filter(org=org, asn__in=asns)
+        network_meta_map = {network_meta.asn: network_meta for network_meta in network_meta}
+
+        for member in members:
+            member.network_meta = network_meta_map.get(member.asn)
+
+
+    @classmethod
     def set_ports_status(cls, member, status: str):
         """
         Update the status of a member's ports in deviceCtl.
@@ -837,6 +881,18 @@ class InternetExchangeMember(PdbRefModel):
             return []
 
         return [port["id"] for port in self.port.object.physical_ports]
+
+    @property
+    def network_meta(self):
+        if hasattr(self, "_network_meta"):
+            return self._network_meta
+
+        self._network_meta = NetworkMeta.objects.get(org=self.org, asn=self.asn)
+        return self._network_meta
+
+    @network_meta.setter
+    def network_meta(self, value: NetworkMeta):
+        self._network_meta = value
 
     def __str__(self):
         return f"AS{self.asn} - {self.ipaddr4} - {self.ipaddr6} ({self.id})"

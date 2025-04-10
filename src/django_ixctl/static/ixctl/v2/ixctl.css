@@ -106,3 +106,37 @@ textarea.form-control.learned-mac-addresses {
 .port-status-indicator.admin_down span {
   color: var(--primary-btn-clr) !important;
 }
+
+/* Public View */
+
+body.body-public {
+  padding: 50px;
+}
+
+/* Add flexbox styling for logo and name */
+body.body-public .app-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+body.body-public .app-logo {
+  flex-shrink: 0;
+}
+
+body.body-public .ix-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+div[data-component="information"] td.logo-column,
+body.body-public td.logo-column {
+  height: 50px;
+  text-align: center !important;
+}
+
+div[data-component="information"] img.image-responsive,
+body.body-public img.image-responsive {
+  height: 40px;
+  display: inline-block;
+}

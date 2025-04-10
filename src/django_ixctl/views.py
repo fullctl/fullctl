@@ -6,7 +6,7 @@ from fullctl.django.decorators import load_instance, require_auth
 
 import django_ixctl.exporters.ixf
 from django_ixctl.context_processors import check_trial_available
-from django_ixctl.models import InternetExchange, Routeserver
+from django_ixctl.models import InternetExchange, InternetExchangeMember, Routeserver
 from django_ixctl.rest.decorators import load_instance_ix, require_auth_ix
 
 # Create your views here.
@@ -48,6 +48,10 @@ def view_instance_load_ix(request, instance, ix_tag, **kwargs):
     env["select_ix"] = ix
     env.update(check_trial_available(request.org.slug, ix.slug))
 
+    members = ix.member_set.all().order_by("name")
+    InternetExchangeMember.preload_network_meta(instance.org, members)
+    env["members"] = members
+
     if ix.public_view and not request.user.is_authenticated:
         return render(request, "ixctl/v2/tool/information/public_main.html", env)
     return render(request, "theme-select.html", env)
@@ -69,6 +73,10 @@ def public_view_redirect(request, instance, ix_tag, **kwargs):
 
     env = make_env(request, instance=instance, org=instance.org)
     env["select_ix"] = ix
+
+    members = ix.member_set.all().order_by("name")
+    InternetExchangeMember.preload_network_meta(instance.org, members)
+    env["members"] = members
 
     return render(request, "ixctl/v2/tool/information/public_main.html", env)
 

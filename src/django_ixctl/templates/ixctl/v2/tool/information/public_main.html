@@ -51,15 +51,21 @@
             <div class="row header m-0" data-component="header">
                 <div>
                     {% if org_branding.dark_logo_url %}
-                        <img
-                            class="app-logo"
-                            src="{{ service_logo_dark}}"
-                            alt="{{ logo_alt_text }}"
-                            data-dark="{{ service_logo_dark }}"
-                            data-light="{{ service_logo_light }}"
-                        >
+                        <div class="app-logo-container">
+                            <img
+                                class="app-logo"
+                                src="{{ service_logo_dark}}"
+                                alt="{{ logo_alt_text }}"
+                                data-dark="{{ service_logo_dark }}"
+                                data-light="{{ service_logo_light }}"
+                            >
+                            <span class="ix-name">{{select_ix.name}}</span>
+                        </div>
                     {% else %}
-                        <img class="app-logo" src="{% static "ixctl/logo-darkbg.svg" %}" alt="ixctl" width="120" height="32">
+                        <div class="app-logo-container">
+                            <img class="app-logo" src="{% static "ixctl/logo-darkbg.svg" %}" alt="ixctl" width="120" height="32">
+                            <span class="ix-name">{{select_ix.name}}</span>
+                        </div>
                     {% endif %}
 
                 </div>
@@ -72,18 +78,24 @@
 
                         <br>
                         <br>
-                        <h4 style="font-size: 16px;">Participants</h4>
+                        <h3>Participants</h3>
                         <div class="shaded-box">
                             <table>
                                 <tr>
+                                    <th class="logo-column"><b>Logo</b></th>
                                     <th><b>Name</b></th>
                                     <th><b>ASN</b></th>
                                     <th><b>IPv4</b></th>
                                     <th><b>IPv6</b></th>
                                     <th><b>Speed</b></th>
                                 </tr>
-                                {% for member in select_ix.member_set.all %}
+                                {% for member in members %}
                                 <tr>
+                                    {% if member.network_meta.logo_url %}
+                                        <td class="logo-column"><img class="image-responsive" src="{{member.network_meta.logo_url}}" alt="{{member.name}}"></td>
+                                    {% else %}
+                                        <td class="logo-column"></td>
+                                    {% endif %}
                                     <td>{{member.name}}</td>
                                     <td>{{member.asn}}</td>
                                     <td>{{member.ipaddr4}}</td>
@@ -99,7 +111,7 @@
                                 <br>
                                 <br>
                                 {% if route_server.routeserverconfig.doc_md %}
-                                <h6 style="font-size: 16px;">Route Server Markdown: {{route_server.name}}</h6>
+                                <h3>Route Server Markdown: {{route_server.name}}</h3>
                                 <div class="shaded-box">
                                     {{ route_server.routeserverconfig.doc_md|render_markdown }}
                                 </div>
