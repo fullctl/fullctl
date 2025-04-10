@@ -254,33 +254,20 @@ class InternetExchangeMember(DataViewSet):
     @action(
         detail=False,
         methods=["PUT"],
-        url_path="sync/(?P<asn>[^/.]+)/(?P<member_ip>[^/]+)/(?P<router_ip>[^/]+)/md5",
+        url_path="sync/(?P<asn>[^/.]+)/(?P<ix_id>[^/]+)/md5",
     )
     @grainy_endpoint(namespace="service_bridge")
-    def md5(self, request, asn, member_ip, router_ip, *args, **kwargs):
+    def md5(self, request, asn, ix_id, *args, **kwargs):
         md5 = request.data.get("md5")
 
-        # find route servers at verified internet exchanges that
-        # match the provided router ip
-
-        route_servers = models.Routeserver.objects.filter(
-            ix__verified=True, router_id=router_ip
+        # find all members at the ix that match the asn
+        members = models.InternetExchangeMember.objects.filter(
+            ix_id=ix_id, asn=asn
         ).select_related("ix")
 
-        members = []
-
-        # update memember md5s using the member ip to identify them
-
-        for rs in route_servers:
-            try:
-                member = rs.ix.member_set.get(
-                    asn=asn, ipaddr4=member_ip, is_rs_peer=True
-                )
-                member.md5 = md5
-                member.save()
-                members.append(member)
-            except models.InternetExchangeMember.DoesNotExist:
-                continue
+        for member in members:
+            member.md5 = md5
+            member.save()
 
         return Response(Serializers.member(instance=members, many=True).data)
 
