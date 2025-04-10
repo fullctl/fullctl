@@ -62,6 +62,7 @@ class OrganizationUserInline(admin.TabularInline):
 class OrganizationAdmin(BaseAdmin):
     list_display = ("id", "name", "slug")
     inlines = (OrganizationUserInline,)
+    search_fields = ("name", "slug")
 
 
 @admin.register(OrganizationFile)
