@@ -58,9 +58,9 @@ class SyncRouteServerMD5(Task):
     class HandleRef:
         tag = "task_sync_md5"
 
-    def run(self, asn, md5, member_ip, router_ip, *args, **kwargs):
-        ixctl.InternetExchangeMember().set_route_server_md5(
-            asn, md5, member_ip, router_ip, source="peerctl"
+    def run(self, asn, md5, ix_id, *args, **kwargs):
+        return ixctl.InternetExchangeMember().set_route_server_md5(
+            asn, md5, ix_id, source="peerctl"
         )
 
 

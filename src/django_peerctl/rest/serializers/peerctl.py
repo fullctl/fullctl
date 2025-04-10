@@ -601,6 +601,11 @@ class PortUpdate(serializers.Serializer):
         # set mac address
         port.set_mac_address(macaddr_set)
 
+        # override is_route_server_peer - this needs to happen BEFORE MD5
+        # since MD5 requires the port to be a route server peer - otherwise
+        # changes to it will be ignored
+        port.port_info_object.set_is_route_server_peer(is_route_server_peer)
+
         # set md5
         port.set_route_server_md5(md5)
 
@@ -610,13 +615,25 @@ class PortUpdate(serializers.Serializer):
         net.prefix6_override = prefix6
         net.save()
 
-        # override is_route_server_peer
-        port.port_info_object.set_is_route_server_peer(is_route_server_peer)
-
         port.port_info_object.traffic_threshold_alert = self.validated_data.get(
             "traffic_threshold_alert"
         )
         port.port_info_object.save()
+
+    def validate(self, data:dict) -> dict:
+        """
+        Final validation
+        """
+
+        # When MD5 is provided but is_route_server_peer is not set we should
+        # raise an error
+
+        if data.get("md5") and not data.get("is_route_server_peer"):
+            raise ValidationError(
+                {"md5":"MD5 can only be set on route server peers, please enable 'Peer with Route Server' or remove the MD5 password"}
+            )
+
+        return data
 
     def validate_mac_address(self, macaddr: str):
         if not macaddr:
