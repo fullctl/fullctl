@@ -170,6 +170,10 @@ class Command(CommandInterface):
             # Only update the heartbeat when the interval has passed
             if current_time - last_update >= TASK_TRACK_INTERVAL_SECONDS:
                 try:
+                    # Close old connections before creating a new one
+                    # This helps prevent DB connection leaks
+                    django.db.close_old_connections()
+                    
                     heartbeat, _ = TaskHeartbeat.objects.update_or_create(
                         task_id=self.heartbeat_task_id,
                         defaults={
@@ -185,7 +189,12 @@ class Command(CommandInterface):
 
         self.heartbeat_task_id = None
         if heartbeat and self.heartbeat_cleanup:
-            heartbeat.delete()
+            try:
+                # Close connections before cleanup
+                django.db.close_old_connections()
+                heartbeat.delete()
+            except Exception as exc:
+                log.exception("Error cleaning up heartbeat", exc=exc)
 
     def start_heartbeat(self, task_id: int | None = None):
         """
@@ -200,10 +209,15 @@ class Command(CommandInterface):
 
         The thread will continue running until stop_heartbeat() is called.
         """
+        # Close any outstanding connections before starting a new thread
+        django.db.close_old_connections()
+        
         self.stop_event.clear()
         self.heartbeat_cleanup = False
         self.heartbeat_task_id = task_id or self.task_id
         self.thread = threading.Thread(target=self.track_task_processing)
+        # Make thread exit when main thread exits
+        self.thread.daemon = True 
         self.thread.start()
 
     def stop_heartbeat(self, cleanup: bool = False):
