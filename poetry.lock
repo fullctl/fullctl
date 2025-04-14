@@ -625,14 +625,14 @@ test = ["djangorestframework", "graphene-django", "pytest", "pytest-cov", "pytes
 
 [[package]]
 name = "django-crispy-forms"
-version = "2.3"
+version = "2.4"
 description = "Best way to have Django DRY forms"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "django_crispy_forms-2.3-py3-none-any.whl", hash = "sha256:efc4c31e5202bbec6af70d383a35e12fc80ea769d464fb0e7fe21768bb138a20"},
-    {file = "django_crispy_forms-2.3.tar.gz", hash = "sha256:2db17ae08527201be1273f0df789e5f92819e23dd28fec69cffba7f3762e1a38"},
+    {file = "django_crispy_forms-2.4-py3-none-any.whl", hash = "sha256:5a4b99876cfb1bdd3e47727731b6d4197c51c0da502befbfbec6a93010b02030"},
+    {file = "django_crispy_forms-2.4.tar.gz", hash = "sha256:915e1ffdeb2987d78b33fabfeff8e5203c8776aa910a3a659a2c514ca125f3bd"},
 ]
 
 [package.dependencies]
@@ -872,7 +872,7 @@ pyflakes = ">=3.3.0,<3.4.0"
 
 [[package]]
 name = "fullctl"
-version = "1.15.0-rc.51"
+version = "1.15.0-rc.52"
 description = "Core classes and functions for service applications"
 optional = false
 python-versions = "^3.9"
@@ -912,7 +912,7 @@ whitenoise = ">=6"
 type = "git"
 url = "https://github.com/fullctl/fullctl.git"
 reference = "prep-release"
-resolved_reference = "854c3590f0c3250866cdd7a952eea1744aec8367"
+resolved_reference = "1d13bcf0f9c86464d3c35e0678540349d2581ad3"
 
 [[package]]
 name = "ghp-import"
