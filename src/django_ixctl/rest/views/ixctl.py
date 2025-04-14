@@ -569,6 +569,12 @@ class Member(
         # preload ports
         models.InternetExchangeMember.preload_ports(org, [member])
 
+        # if port is set but the object is None, then it was not
+        # found in devicectl and can be considered a stale value
+        # so we unassign it
+        if member.port and not member.port.object:
+            member.port = None
+
         serializer = Serializers.member(
             member, data=request.data, context={"instance": instance}
         )
