@@ -200,6 +200,7 @@ class VirtualPort(Devicectl):
         self,
         pk,
         start_time: int | str = None,
+        end_time: int | str = None,
         duration: int = None,
         step: int = None,
         traffic_source: str = "vm_sflow",
@@ -207,6 +208,9 @@ class VirtualPort(Devicectl):
         params = {}
         if start_time:
             params["start_time"] = start_time
+
+        if end_time:
+            params["end_time"] = end_time
 
         if duration:
             params["duration"] = duration
