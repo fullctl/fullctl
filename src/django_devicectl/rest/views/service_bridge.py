@@ -344,6 +344,7 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
         """
 
         start_time = request.GET.get("start_time")
+        end_time = request.GET.get("end_time")
         duration = request.GET.get("duration")
         step = request.GET.get("step")
 
@@ -371,7 +372,7 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
                 port_id=pk,
                 step=step,
                 start=start_time,
-                end=None,
+                end=end_time,
             ).model_dump()
         elif traffic_source == "vm_sflow":
             # VICTORIAMETRICS SFLOW
@@ -380,7 +381,7 @@ class VirtualPort(PortTrafficMixin, DataViewSet):
                 port_id=pk,
                 step=step,
                 start=start_time,
-                end=None,
+                end=end_time,
             ).model_dump()
 
         return Response(data)
