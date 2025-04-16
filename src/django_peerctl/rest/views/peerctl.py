@@ -401,9 +401,11 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
     @grainy_endpoint(namespace="verified.asn.{asn}.?")
     def get_port_stats(self, request, asn, pk, *args, **kwargs):
         port = models.Port().object(id=pk)
-        if "ixctl" not in port.port_info_object.ref_ix_id:
-            return Response({})
 
+        ref_ix_id = port.port_info_object.ref_ix_id
+        if not ref_ix_id or "ixctl" not in ref_ix_id:
+            return Response({})
+        
         ix_id = int(port.port_info_object.ref_ix_id.split(":")[-1])
         port_traffic_alert_data_map = self.get_port_traffic_alert_data(
             ix_ids=[ix_id],
@@ -412,8 +414,13 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
         )
 
         member_id = int(port.port_info_object.ref_id.split(":")[-1])
-        member = ixctl.InternetExchangeMember().object(id=member_id)
-        member_port = models.Port().object(id=member.port, join="physical_ports")
+        try:
+            member = ixctl.InternetExchangeMember().object(id=member_id)
+            member_port = models.Port().object(id=member.port, join="physical_ports")
+        except ServiceBridgeError as e:
+            logger.error(f"Error getting member port: {e}")
+            return Response({})
+        
         physical_ports = [
             physical_port.get("id") for physical_port in member_port.physical_ports
         ]
@@ -661,6 +668,7 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
             return Response({}, status=403)
 
         start_time = request.GET.get("start_time") or request.GET.get("start")
+        end_time = request.GET.get("end_time") or request.GET.get("end")
         duration = request.GET.get("duration")
         step = request.GET.get("step")
 
@@ -668,6 +676,7 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
             ixctl.InternetExchangeMember().traffic(
                 port_info.ref_id.split(":")[1],
                 start_time=start_time,
+                end_time=end_time,
                 duration=duration,
                 step=step,
             )

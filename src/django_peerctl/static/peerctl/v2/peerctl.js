@@ -471,6 +471,10 @@ $peerctl.Ix = $tc.extend(
       this.$w.list.formatters.row = (row, data) => {
         row.find(".ix-header").attr("data-ix-header", data.ref_ix_id);
 
+        row.find("input.datepicker.start-date").attr("id", `custom_${data.id}_start_date`);
+        row.find("input.datepicker.end-date").attr("id", `custom_${data.id}_end_date`);
+        row.find('.date-range').attr("id", `custom_${data.id}_date_range`);
+
         // wire up clicking the ip column to change to the peering lists
         // page and auto select the port
 
@@ -654,7 +658,7 @@ $peerctl.Ix = $tc.extend(
     show_graph_controls(row, port) {
       fullctl.graphs.init_controls(row, this, (end_date, duration)=>{
         this.indicate_loading(row).show_graph(port, row, end_date, duration);
-      });
+      }, `custom_${port.id}_`);
       row.find('.graph-controls').show();
     },
 
