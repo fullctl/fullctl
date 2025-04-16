@@ -16,6 +16,7 @@ from django_devicectl.models import (
     IPAddress,
     LogicalPort,
     MacAddress,
+    OrganizationConfig,
     PhysicalPort,
     PhysicalPortStats,
     Port,
@@ -24,6 +25,12 @@ from django_devicectl.models import (
     Vlan,
 )
 
+
+@admin.register(OrganizationConfig)
+class OrganizationConfigAdmin(VersionAdmin):
+    list_display = ("id", "org")
+    search_fields = ("org__name", "org__slug")
+    autocomplete_fields = ("org",)
 
 @admin.register(Facility)
 class FacilityAdmin(VersionAdmin):

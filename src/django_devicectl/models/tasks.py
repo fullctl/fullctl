@@ -640,13 +640,16 @@ class RenderTrafficGraphs(Task):
 
     def render_from_victoriametrics(self, obj_id, obj_type):
         self.ix_graphs = {}
-
-        metrics = make_metrics()
-
-        object_label = None
         file_prefix = ""
 
-        for duration, resolution, suffix in self.periods:
+        org = self.org
+
+        if org.config:
+            periods = org.config.traffic_periods
+        else:
+            periods = self.periods
+
+        for duration, resolution, suffix in periods:
 
             # Determine object type and set parameters
             if obj_type == "virtual-port":
