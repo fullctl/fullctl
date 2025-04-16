@@ -16,7 +16,7 @@ from fullctl.django.models.abstract import (
     MetricModel,
     ServiceBridgeReferenceModel,
 )
-from fullctl.django.models.concrete import Instance
+from fullctl.django.models.concrete import Instance, Organization
 from fullctl.service_bridge import nautobot, netbox
 from netfields.fields import InetAddressField, MACAddressField
 from pydantic import BaseModel
@@ -25,9 +25,40 @@ from pydantic import ValidationError as PydanticValidationError
 
 import django_devicectl.referee as referee_util
 from django_devicectl.enum import PORT_STATE
+from django_devicectl.validators import validate_org_config
+import django_devicectl.schema as schema
 
 logger = structlog.getLogger("django_structlog")
 
+class OrganizationConfig(models.Model):
+
+    """
+    A model to store organization specific configuration.
+    """
+
+    org = models.OneToOneField(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="config",
+    )
+
+    config = models.JSONField(default=dict, help_text=_("Organization config"), validators=[validate_org_config], blank=True)
+    
+    class Meta:
+        db_table = "devicectl_organization_config"
+        verbose_name = _("Organization Config")
+        verbose_name_plural = _("Organization Configs")
+
+    def __str__(self):
+        return f"{self.org.name} Config [#{self.id}]"
+
+    @property
+    def config_object(self) -> schema.OrganizationConfig:
+        return schema.OrganizationConfig(**self.config)
+
+    @property
+    def traffic_periods(self) -> list[tuple[int, int, str]]:
+        return self.config_object.traffic_periods_as_tuples
 
 @reversion.register()
 @grainy_model(
