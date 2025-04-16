@@ -276,12 +276,13 @@ class InternetExchangeMember(DataViewSet):
     def traffic(self, request, pk=None, *args, **kwargs):
         member = self.get_object()
 
-        if not member.port:
+        if not member.port or not member.port.object:
             return Response({})
-
+        
         virtual_port_id = member.port.object.virtual_port
 
         start_time = request.query_params.get("start_time")
+        end_time = request.query_params.get("end_time")
         duration = request.query_params.get("duration")
         step = request.query_params.get("step")
 
@@ -289,6 +290,7 @@ class InternetExchangeMember(DataViewSet):
             devicectl.VirtualPort().traffic(
                 virtual_port_id,
                 start_time=start_time,
+                end_time=end_time,
                 duration=duration,
                 step=step,
                 traffic_source=member.ix.graph_traffic_source,
