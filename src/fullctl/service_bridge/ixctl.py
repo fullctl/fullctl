@@ -150,12 +150,16 @@ class InternetExchangeMember(Ixctl):
         self,
         pk: int,
         start_time: str | int = None,
+        end_time: str | int = None,
         duration: int = None,
         step: int = None,
     ):
         params = {}
         if start_time:
             params["start_time"] = start_time
+
+        if end_time:
+            params["end_time"] = end_time
 
         if duration:
             params["duration"] = duration
