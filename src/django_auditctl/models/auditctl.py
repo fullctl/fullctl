@@ -67,6 +67,9 @@ class Event(HandleRefModel):
             models.Index(fields=["created"]),
             models.Index(fields=["updated"]),
             models.Index(fields=["status"]),
+            # composite index for the most common query
+            # used by the auditctl api list endpoint
+            models.Index(fields=["org", "object_id", "-created"]),
         ]
 
     class HandleRef:

@@ -1,7 +1,10 @@
 from fullctl.django.rest.mixins import CachedObjectMixin
 from rest_framework import viewsets
 from rest_framework.response import Response
+from datetime import timedelta
+from django.utils import timezone
 
+from django.conf import settings
 import django_auditctl.models as models
 from django_auditctl.rest.decorators import grainy_endpoint
 from django_auditctl.rest.route.auditctl import route
@@ -42,8 +45,10 @@ class Event(CachedObjectMixin, viewsets.GenericViewSet):
         if status_filters:
             queryset = queryset.filter(status__in=status_filters)
 
+        # exclude older than EVENT_MAX_AGE (days)
+        queryset = queryset.filter(created__gte=timezone.now() - timedelta(days=settings.EVENT_MAX_AGE))
+        
         # apply a limit
-
         limit = min(int(request.query_params.get("limit", 100)), 1000)
 
         queryset = queryset[:limit]
