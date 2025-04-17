@@ -196,7 +196,7 @@ class BaseSchema(AutoSchema):
         if not isinstance(serializer, serializers.Serializer):
             item_schema = {}
         else:
-            item_schema = self._get_reference(serializer)
+            item_schema = self.get_reference(serializer)
 
         return {
             "content": {ct: {"schema": item_schema} for ct in self.request_media_types}
