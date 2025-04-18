@@ -629,14 +629,14 @@ django = ">=4.2"
 
 [[package]]
 name = "django-filter"
-version = "25.1"
+version = "24.3"
 description = "Django-filter is a reusable Django application for allowing users to filter querysets dynamically."
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "django_filter-25.1-py3-none-any.whl", hash = "sha256:4fa48677cf5857b9b1347fed23e355ea792464e0fe07244d1fdfb8a806215b80"},
-    {file = "django_filter-25.1.tar.gz", hash = "sha256:1ec9eef48fa8da1c0ac9b411744b16c3f4c31176c867886e4c48da369c407153"},
+    {file = "django_filter-24.3-py3-none-any.whl", hash = "sha256:c4852822928ce17fb699bcfccd644b3574f1a2d80aeb2b4ff4f16b02dd49dc64"},
+    {file = "django_filter-24.3.tar.gz", hash = "sha256:d8ccaf6732afd21ca0542f6733b11591030fa98669f8d15599b358e24a2cd9c3"},
 ]
 
 [package.dependencies]
@@ -839,7 +839,7 @@ pyflakes = ">=3.3.0,<3.4.0"
 
 [[package]]
 name = "fullctl"
-version = "1.15.0-rc.53"
+version = "1.15.0-rc.54"
 description = "Core classes and functions for service applications"
 optional = false
 python-versions = "^3.9"
@@ -854,7 +854,7 @@ django-autocomplete-light = ">=3.9.7"
 django-cors-headers = ">=4.3.1"
 django-countries = ">=7.6"
 django-crispy-forms = ">=2.0"
-django-filter = ">=23.4"
+django-filter = ">=23.4,<25"
 django-grainy = ">=2"
 django-handleref = ">=2"
 django-inet = ">=1"
@@ -879,7 +879,7 @@ whitenoise = ">=6"
 type = "git"
 url = "https://github.com/fullctl/fullctl.git"
 reference = "prep-release"
-resolved_reference = "3c4635b13b6db366a0cf99eaf43daefc53c83ba5"
+resolved_reference = "cfe45367f2f501520dddd1c4e780183b2af3f451"
 
 [[package]]
 name = "future"
