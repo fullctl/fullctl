@@ -90,8 +90,30 @@ $ctl.application.Peerctl.SessionsSummary = $tc.extend(
           });
 
           // common/v2/metric.js
-          let url = this.templates.list.data('api-metric-base');
-          $.fn.show_metric_list(url, row, data);
+          try {
+            // metrics come in as an array of objects with a metric property
+            // the parent object contains device name and status and will be the 
+            // same for all metrics.
+            //
+            // show_metric_list expects a single object with metric properties
+            // so we need to merge the metric properties of all objects in the array
+            // into a single object
+            if(data.metric && data.metric.length) {
+              // merge metric data into one object literal
+              let metric = {...data.metric[0]};
+              data.metric.forEach(item => {
+                let i;
+                for(i = 1; i < data.metric.length; i++) {
+                  for(const key in data.metric[i].metric) {
+                    metric.metric[key] = data.metric[i].metric[key];
+                  }
+                }
+              });
+              $.fn.show_metric_list(row, metric);
+            }
+          } catch (e) {
+            console.error("Error showing metric list", {error:e, row:row, data:data});
+          }
 
           // show session details
           row.find('a[data-action="view_session"]').click(() => {
