@@ -108,6 +108,13 @@ class Command(CommandInterface):
             for subscription_product in subscription.subscription_product_set.all():
                 self.collect(subscription_product, subscription.subscription_cycle)
 
+            if subscription.billing_paused:
+                self.log_info(
+                    f"-- billing paused, unpaid cycles will not be charged"
+                )
+                continue
+
+
             for subscription_cycle in subscription.subscription_cycle_set.filter(
                 status__in=["open", "failed"]
             ):

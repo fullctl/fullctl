@@ -195,6 +195,36 @@ def test_billing_cycle_progression_stripe_failure(billing_objects_w_pay, mock_st
 
 
 @pytest.mark.django_db
+def test_billing_cycle_paused_billing(billing_objects_w_pay, mock_stripe):
+    """
+    Test that billing cycles are processed but not charged when billing_paused=True
+    """
+    # Set billing_paused on the subscription
+    billing_objects_w_pay.monthly_subscription.billing_paused = True
+    billing_objects_w_pay.monthly_subscription.save()
+
+    result = run_billing_cycle_with_cutover(billing_objects_w_pay)
+
+    billing_cycle = result["billing_cycle"]
+    new_billing_cycle = result["new_billing_cycle"]
+
+    # Check that the old cycle is ended but not charged
+    assert billing_cycle.ended
+    assert not billing_cycle.charged
+
+    # Verify new cycle was still created
+    assert new_billing_cycle is not None
+    assert not new_billing_cycle.ended
+    assert not new_billing_cycle.charged
+
+    # Check that output contains message about billing being paused
+    assert "billing paused" in result["stdout"].lower()
+
+    # Assert no charges were attempted
+    assert_no_charge()
+
+
+@pytest.mark.django_db
 def test_billing_cycle_critical_errors(billing_objects_w_pay, mock_stripe):
     """
     Test proper handling of Stripe failure when billing cycle is progressed
