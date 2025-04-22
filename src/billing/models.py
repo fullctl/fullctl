@@ -536,6 +536,11 @@ class Subscription(HandleRefModel):
         default=dict, blank=True, help_text=_("Any extra data for the subscription")
     )
 
+    billing_paused = models.BooleanField(
+        default=False,
+        help_text=_("Whether billing is paused for this subscription. Cycles will still be processed but no charges will be made."),
+    )
+
     class HandleRef:
         tag = "subscription"
 

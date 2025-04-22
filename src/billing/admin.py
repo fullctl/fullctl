@@ -271,8 +271,9 @@ class SubscriptionAdminForm(forms.ModelForm):
 
 @admin.register(Subscription)
 class SubscriptionAdmin(BaseAdmin):
-    list_display = ("group", "org", "subscription_cycle", "subscription_cycle_start")
+    list_display = ("group", "org", "subscription_cycle", "subscription_cycle_start", "billing_paused")
     search_fields = ("group__name", "product__name", "org__name")
+    list_filter = ("status", "billing_paused",)
     autocomplete_fields = ("org",)
     inlines = (
         SubscriptionProductInline,
