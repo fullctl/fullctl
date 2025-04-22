@@ -70,6 +70,8 @@ class Event(HandleRefModel):
             # composite index for the most common query
             # used by the auditctl api list endpoint
             models.Index(fields=["org", "object_id", "-created"]),
+            # index for the heartbeat check
+            models.Index(fields=["object_id", "-created"])
         ]
 
     class HandleRef:
