@@ -23,33 +23,30 @@ METRIC_FIELDS = ["bps_in", "bps_in_max", "bps_out", "bps_out_max"]
 
 LABEL_PREFIX = "ctl_"
 
+# Grace period for the mrtg data (gaps under 15m are not shown)
+GRACE = settings.GRAPHS_MRTG_GRACE or "15m"
+
 TRAFFIC_GRAPH_QUERY_BASE = """
-sum by (metric) (
-    label_replace(
-        sum(mrtg_bps_in{{{tags_in}}}) or vector(0),
-        "metric", "bps_in", "", ""
-    )
-) or
-sum by (metric) (
-    label_replace(
-        sum(mrtg_bps_out{{{tags_out}}}) or vector(0),
-        "metric", "bps_out", "", ""
-    )
-) or
-max by (metric) (
-    label_replace(
-        sum(mrtg_bps_in_max{{{tags_in}}}) or vector(0),
-        "metric", "bps_in_max", "", ""
-    )
-) or
-max by (metric) (
-    label_replace(
-        sum(mrtg_bps_out_max{{{tags_out}}}) or vector(0),
-        "metric", "bps_out_max", "", ""
-    )
+label_replace(
+  last_over_time(sum(mrtg_bps_in{{{tags_in}}})[{grace}]) default 0,
+  "metric", "bps_in", "", ""
+)
+or
+label_replace(
+  last_over_time(sum(mrtg_bps_out{{{tags_out}}})[{grace}]) default 0,
+  "metric", "bps_out", "", ""
+)
+or
+label_replace(
+  last_over_time(max(mrtg_bps_in_max{{{tags_in}}})[{grace}]) default 0,
+  "metric", "bps_in_max", "", ""
+)
+or
+label_replace(
+  last_over_time(max(mrtg_bps_out_max{{{tags_out}}})[{grace}]) default 0,
+  "metric", "bps_out_max", "", ""
 )
 """
-
 
 def metrics_client() -> Metrics:
     return Metrics(
@@ -68,6 +65,7 @@ def query_graph_ix_total(
     step: str,
     start: str | int,
     end: str | int | None = None,
+    grace: str = GRACE,
     **kwargs,
 ) -> QueryResult:
     """
@@ -93,13 +91,13 @@ def query_graph_ix_total(
 
     tags = f'ctl_org_id="{org_id}", ctl_ix_id="{ix_id}"'
 
-    query = TRAFFIC_GRAPH_QUERY_BASE.format(tags_in=tags, tags_out=tags, step=step)
+    query = TRAFFIC_GRAPH_QUERY_BASE.format(tags_in=tags, tags_out=tags, step=step, grace=grace)
 
     return metrics.query_range(query, start=start, end=end, step=step)
 
 
 def query_graph_port_total(
-    org_id: int, port_id: int, step: str, start: str, end: str, **kwargs
+    org_id: int, port_id: int, step: str, start: str, end: str, grace: str = GRACE, **kwargs
 ) -> QueryResult:
     """
     Queries bits per second for a specific port (in and out)
@@ -114,6 +112,7 @@ def query_graph_port_total(
     - step: tick size (e.g. 15m)
     - start: start time (unix timestamp or relative time like -1h)
     - end: end time (unix timestamp or relative time like -1h)
+    - grace: grace period (e.g. 15m)
     """
 
     metrics = metrics_client()
@@ -122,7 +121,7 @@ def query_graph_port_total(
     tags_out = f'ctl_org_id="{org_id}", ctl_port_id="{port_id}"'
 
     query = TRAFFIC_GRAPH_QUERY_BASE.format(
-        tags_in=tags_in, tags_out=tags_out, step=step
+        tags_in=tags_in, tags_out=tags_out, step=step, grace=grace
     )
     return metrics.query_range(query, start=start, end=end, step=step)
 
