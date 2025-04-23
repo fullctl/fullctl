@@ -262,7 +262,7 @@ class RblsrvData(EventData, MetricsSelectiveComponentMixin):
 
     @classmethod
     def metric_tags(cls) -> list[ComponentTags]:
-        return [ComponentTags(kind="prefix", tags=["prefix"])]
+        return [ComponentTags(kind="prefix", tags=["target"])]
 
 
 class ConfigLivenessComponent(BaseModel):
