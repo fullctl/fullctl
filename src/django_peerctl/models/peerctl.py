@@ -844,6 +844,41 @@ class PeerNetwork(PolicyHolderMixin, Base):
         self.md5 = md5
         self.save()
 
+    def sync_route_server_md5(self):
+        """
+        For this peer network, sync the route server md5 for all route server peers
+        where the session has a port
+        """
+
+        try:
+            tasks = set()
+
+            for session in self.peer_sessions.select_related(
+                "peer_port", "peer_port__port_info"
+            ):
+                # no port on session, skip
+                if not session.port:
+                    continue
+
+                # not a route server peer, skip
+                port_info: PortInfo = session.port.object.port_info_object
+
+                if not port_info.is_rs_peer:
+                    continue
+
+                # not ixctl, skip
+                src, ix_id = port_info.ref_ix_id.split(":",1)
+                if src != "ixctl":
+                    continue
+
+                # add task to sync md5
+                tasks.add((port_info.net.asn, self.md5, ix_id))
+
+            for task in tasks:
+                SyncRouteServerMD5.create_task(*task)
+        except Exception as e:
+            logger.exception("Error syncing route server md5", error=e)
+
 @reversion.register
 class InternetExchange(sot.ReferenceMixin, Base):
     """
