@@ -130,7 +130,6 @@ settings_manager.set_option("AUDITCTL_URL", "")
 settings_manager.set_option("GRAPHS_PATH", "../graphs")
 settings_manager.set_option("GRAPHS_URL", "/graphs")
 settings_manager.set_option("GRAPHS_RRD_ENABLED", True)
-settings_manager.set_option("GRAPHS_MRTG_GRACE", "15m")
 
 # when are referee reports discarded (seconds, default=30 days)
 settings_manager.set_option("REFEREE_REPORT_MAX_AGE", 86400 * 30)
