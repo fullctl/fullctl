@@ -1,4 +1,5 @@
 import pydantic
+import pytimeparse2
 from django.conf import settings
 from fullctl.metrics import Metrics, Point, make_metrics
 from fullctl.metrics.schema import QueryResult
@@ -23,28 +24,30 @@ METRIC_FIELDS = ["bps_in", "bps_in_max", "bps_out", "bps_out_max"]
 
 LABEL_PREFIX = "ctl_"
 
+GRACE_MULTIPLIER = getattr(settings, "MTRG_GRACE_MULTIPLIER", 5)
+
 TRAFFIC_GRAPH_QUERY_BASE = """
 sum by (metric) (
     label_replace(
-        sum(mrtg_bps_in{{{tags_in}}}) or vector(0),
+        sum(mrtg_bps_in{{{tags_in}}})[{grace}:] or vector(0),
         "metric", "bps_in", "", ""
     )
 ) or
 sum by (metric) (
     label_replace(
-        sum(mrtg_bps_out{{{tags_out}}}) or vector(0),
+        sum(mrtg_bps_out{{{tags_out}}})[{grace}:] or vector(0),
         "metric", "bps_out", "", ""
     )
 ) or
 max by (metric) (
     label_replace(
-        sum(mrtg_bps_in_max{{{tags_in}}}) or vector(0),
+        sum(mrtg_bps_in_max{{{tags_in}}})[{grace}:] or vector(0),
         "metric", "bps_in_max", "", ""
     )
 ) or
 max by (metric) (
     label_replace(
-        sum(mrtg_bps_out_max{{{tags_out}}}) or vector(0),
+        sum(mrtg_bps_out_max{{{tags_out}}})[{grace}:] or vector(0),
         "metric", "bps_out_max", "", ""
     )
 )
@@ -92,8 +95,8 @@ def query_graph_ix_total(
     # return 4 series
 
     tags = f'ctl_org_id="{org_id}", ctl_ix_id="{ix_id}"'
-
-    query = TRAFFIC_GRAPH_QUERY_BASE.format(tags_in=tags, tags_out=tags, step=step)
+    grace = pytimeparse2.parse(step) * GRACE_MULTIPLIER
+    query = TRAFFIC_GRAPH_QUERY_BASE.format(tags_in=tags, tags_out=tags, step=step, grace=grace)
 
     return metrics.query_range(query, start=start, end=end, step=step)
 
@@ -120,9 +123,10 @@ def query_graph_port_total(
 
     tags_in = f'ctl_org_id="{org_id}", ctl_port_id="{port_id}"'
     tags_out = f'ctl_org_id="{org_id}", ctl_port_id="{port_id}"'
+    grace = pytimeparse2.parse(step) * GRACE_MULTIPLIER
 
     query = TRAFFIC_GRAPH_QUERY_BASE.format(
-        tags_in=tags_in, tags_out=tags_out, step=step
+        tags_in=tags_in, tags_out=tags_out, step=step, grace=grace
     )
     return metrics.query_range(query, start=start, end=end, step=step)
 
