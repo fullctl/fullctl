@@ -500,10 +500,34 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
 
     port_config_intent : function() {
       const port_set_container = this.form.element.find('[data-element="port_set_container"]');
+      const virtual_port_display = this.form.element.find('[data-element="virtual_port_display"]');
+      const btn_clear_port_assignment = this.form.element.find('[data-element="btn_clear_port_assignment"]');
+      
+      // Handle tooltips - hide both by default
+      this.form.element.find('.changing-virtual-port-name').hide();
+      this.form.element.find('.creating-virtual-port-name').hide();
+      
+      // Only show clear button if port is already set on an existing member
+      if (this.member && this.member.port) {
+        btn_clear_port_assignment.show();
+      } else {
+        btn_clear_port_assignment.hide();
+      }
 
       if(!this.member) {
         $(".port-config-intent").hide();
         port_set_container.show();
+        
+        // For new members, show virtual port field if ports are selected
+        const selected_ports = this.form.element.find('#port_set option:selected').length;
+        if (selected_ports > 0) {
+          virtual_port_display.show();
+          // Show the creating tooltip for new members
+          this.form.element.find('.creating-virtual-port-name').show();
+        } else {
+          virtual_port_display.hide();
+        }
+        
         return "create";
       }
 
@@ -519,9 +543,18 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       const port_quantity = Number(this.form.element.find('#member-port-quantity').val());
       const device = this.form.element.find('#device').val();
       const current_ports_container = this.form.element.find('[data-element="current_ports"]');
-      const virtual_port_display = this.form.element.find('[data-element="virtual_port_display"]');
       current_ports_container.show();
       this.form.element.find('#device').attr("disabled", false);
+
+      // Check if any ports are selected for an existing member without a port
+      const selected_ports = this.form.element.find('#port_set option:selected').length;
+      
+      if(!port && selected_ports > 0) {
+        // Existing member without a port, but with ports selected
+        virtual_port_display.show();
+        // Show the creating tooltip since we're creating a new port
+        this.form.element.find('.creating-virtual-port-name').show();
+      }
 
       if(
         port &&
@@ -531,6 +564,9 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
         device == port.device_id
       ) {
         virtual_port_display.show();
+        // Show the changing tooltip for existing port
+        this.form.element.find('.changing-virtual-port-name').show();
+        
         port_set_container.show();
         $(".port-config-intent").hide().filter('.intent-augment').show();
         if(port_quantity > member.port_quantity) {
@@ -551,9 +587,20 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
         )
       ) {
         current_ports_container.hide();
-        virtual_port_display.hide();
         port_set_container.show();
         $(".port-config-intent").hide().filter('.intent-resize').show();
+        
+        // Check if ports are selected for resize operation
+        const selected_ports = this.form.element.find('#port_set option:selected').length;
+        if (selected_ports > 0) {
+          // Show virtual port field with creating tooltip
+          virtual_port_display.show();
+          this.form.element.find('.creating-virtual-port-name').show();
+          this.form.element.find('.changing-virtual-port-name').hide();
+        } else {
+          virtual_port_display.hide();
+        }
+        
         return "resize";
       }
 
@@ -562,6 +609,8 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
 
       if(port) {
         virtual_port_display.show();
+        // Show the changing tooltip for existing port
+        this.form.element.find('.changing-virtual-port-name').show();
         this.form.element.find('#device').attr("disabled", true);
       } else {
         port_set_container.show();
@@ -644,6 +693,28 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
           // Provide feedback to the user
           alert('You can only select up to ' + selection_limit + ' options at once. Review the "Quantity" parameter.');
         }
+        
+        // Update virtual port display based on selection
+        if (selected_options.length > 0) {
+          modal.form.element.find('[data-element="virtual_port_display"]').show();
+          
+          // Determine which tooltip to show
+          if (modal.member && modal.member.port) {
+            // Existing member with existing port - show changing tooltip
+            modal.form.element.find('.changing-virtual-port-name').show();
+            modal.form.element.find('.creating-virtual-port-name').hide();
+          } else {
+            // New member OR existing member without a port - show creating tooltip
+            modal.form.element.find('.creating-virtual-port-name').show();
+            modal.form.element.find('.changing-virtual-port-name').hide();
+            // Hide clear button for new members since there's no port to clear yet
+            modal.form.element.find('[data-element="btn_clear_port_assignment"]').hide();
+          }
+        } else {
+          if (!modal.member || !modal.member.port) {
+            modal.form.element.find('[data-element="virtual_port_display"]').hide();
+          }
+        }
       });
 
       function load_device_ports(selectedValue) {
@@ -664,8 +735,10 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
           return url;
         };
         port_select.load().then(() => {
-          modal.port_config_intent();
+          // First auto-select ports based on quantity
           auto_select_ports();
+          // Then update the port config intent since selected ports might have changed
+          modal.port_config_intent();
         }).catch((error) => {
           console.error('Error during load ports:', error);
         });
@@ -676,6 +749,8 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
         form.element.find('#port_set option').each(function(index) {
           $(this).prop('selected', index < n);
         });
+        // Trigger the change event to update the virtual port display
+        form.element.find('#port_set').trigger('change');
       }
 
       // Auto selected ports when change the quantity

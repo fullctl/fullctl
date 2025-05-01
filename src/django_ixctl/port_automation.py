@@ -92,11 +92,15 @@ def create_device_port(
     if member.port:
         raise ValueError("Member already has a port set")
 
+    # A virtual port name was specified through the meta dict
+    port_name = meta.get("virtual_port_name", None)
+
     org = member.org
 
-    # TODO <sergio>: check customer name pattern
+    # TODO check customer name pattern
     # and it should not be hardcoded here
-    port_name = f"PortChannel-{member.id}"
+    if not port_name:
+        port_name = f"PortChannel-{member.id}"
 
     port = devicectl.Port().create_device_port(
         org_slug=org.slug,
@@ -136,7 +140,7 @@ def resize_member_port(
     if member.port:
         member.port = None
 
-    port = create_device_port(member, physical_ports)
+    port = create_device_port(member, physical_ports, meta=meta)
 
     member.port = port["id"]
 
