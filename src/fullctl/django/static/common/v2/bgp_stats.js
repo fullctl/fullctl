@@ -11,7 +11,9 @@
                     routes_imported = 0,
                     routes_exported = 0,
                     address = "",
-                    routeserver_hostname = ""
+                    routeserver_hostname = "",
+                    routeserver_name = "",
+                    routeserver_router_id = ""
                 } = stat;
 
                 // Tooltip
@@ -27,8 +29,9 @@
                     .attr("title", tooltip_data);
 
                 // Tooltip Container
+                const outer = $('<div>');
+                outer.append($('<span class="small-header decent">').text(routeserver_name || routeserver_hostname || routeserver_router_id));
                 const node = $('<div class="d-flex align-items-center">');
-                node.append($('<span>').text(`RS${routeserver_index + 1}: `));
                 if (up) {
                     node.append($('<span class="icon icon-triangle-fill-up">'));
                     node.addClass("up");
@@ -41,7 +44,8 @@
                         `${routes_imported} / ${routes_exported}`
                     )
                 );
-                bgp_stat.html(node);
+                bgp_stat.append(outer);
+                bgp_stat.append(node);
                 new bootstrap.Tooltip(bgp_stat);
                 if (address.includes(":")) {
                     bgp_stats_v6.append(bgp_stat)
