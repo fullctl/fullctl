@@ -2185,3 +2185,18 @@ div.tip {
   font-size: 11px;
   padding: 5px;
 }
+.small-header {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 12px;
+  max-width: 125px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.small-header.decent {
+  margin-bottom: -5px;
+}
