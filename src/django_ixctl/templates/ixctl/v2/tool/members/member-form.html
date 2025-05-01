@@ -291,12 +291,18 @@
         </div>
       </div>
 
-      <!-- read only virtual port -->
+      <!-- virtual port -->
       <div class="row mb-3 virtual-port-display" data-element="virtual_port_display" style="display:none">
-        <div class="col-12">
+        <div class="col-12" data-api-submit="yes">
           <label class="form-label" for="virtual_port">{% trans "Virtual Port" %}</label>
-          <input type="text" class="form-control" id="virtual_port_name" name="virtual_port_name" readonly />
-          <button type="button" data-element="btn_clear_port_assignment" class="btn-danger col btn form-control">
+          <input type="text" class="form-control" id="virtual_port_name" name="virtual_port_name" />
+          <div class="tip changing-virtual-port-name" style="display:none">
+            {% trans "Changing the name will rename the assigned virtual port in devicectl. This CANNOT be used to change to a different virtual port." %}
+          </div>
+          <div class="tip creating-virtual-port-name" style="display:none">
+            {% trans "Specify the name of the new virtual port to be created. Leaving blank will default to PortChannel-$MEMBER_ID naming." %}
+          </div>
+          <button type="button" data-element="btn_clear_port_assignment" class="mt-3 btn-danger col btn form-control">
             {% trans "Clear port assignment" %}
           </button>
         </div>

@@ -319,6 +319,14 @@ class InternetExchangeMember(ModelSerializer):
     # status in the rest api though
     billable = serializers.BooleanField(read_only=True)
 
+    # write only field for virtual port name
+    virtual_port_name = serializers.CharField(
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        write_only=True,
+    )
+
     # conditional field#
     if settings.MEMBER_CASE_NUMBERS_ENABLED:
         ALLOW_BLANK = True
@@ -372,6 +380,7 @@ class InternetExchangeMember(ModelSerializer):
             "lag",
             "meta",
             "billable",
+            "virtual_port_name",
         ]
 
         if settings.MEMBER_CASE_NUMBERS_ENABLED:
@@ -872,6 +881,8 @@ class InternetExchangeMember(ModelSerializer):
         # drf will pass them as kwargs to the save method
         intent = self.validated_data.pop("port_config_intent", None)
         port_set = self.validated_data.pop("port_set", [])
+        # port virtual port name
+        virtual_port_name = self.validated_data.pop("virtual_port_name", None)
 
         member = super().save()
         # member needs to be saved before we can set the macaddr_set
@@ -887,13 +898,23 @@ class InternetExchangeMember(ModelSerializer):
             meta={
                 "case_number": getattr(self, "_case_number", None),
                 "work_order": getattr(self, "_work_order", None),
+                "virtual_port_name": virtual_port_name,
             },
         )
 
         if member.port:
-            if intent:
-                member.port.load()
+            member.port.load()
             port_automation.sync_ip_addresses(member)
+
+            if not intent or intent in ["lag-increase", "lag-decrease"]:
+                # the intent is not set or doesnt result in a new virtual port, however
+                # a virtual port name was specified that differs
+                # from the current virtual port name so we update it
+                if virtual_port_name and virtual_port_name != member.port.object.virtual_port_name:
+                    devicectl.VirtualPort().update_name(
+                        member.port.object.virtual_port,
+                        virtual_port_name,
+                    )
 
         return member
 
