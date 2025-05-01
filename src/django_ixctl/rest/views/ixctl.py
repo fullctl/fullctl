@@ -493,21 +493,33 @@ class Member(
             json_dict = physical_port_stats.get(physical_port).json_dict
             data = json_dict.get("bgp_stats")
             if data:
-                routeserver_id = data[0].get("routeserver_router_id")
-
-                # attempt to get the Routeserver
-                try:
-                    rs = models.Routeserver.objects.filter(
-                        router_id=routeserver_id,
-                        ix__instance__org=org,
-                    ).first()
-                    if rs:
-                        for bgp_stat in data:
-                            bgp_stat["routeserver_name"] = rs.name
-                except Exception as e:
-                    logger.warning(f"get_stats_data: Error getting routeserver: {e}")
-
-                bgp_stats[routeserver_id] = data
+                # Process each bgp_stat individually to get the correct routeserver
+                routeserver_ids = {}
+                
+                for bgp_stat in data:
+                    routeserver_id = bgp_stat.get("routeserver_router_id")
+                    if routeserver_id not in routeserver_ids:
+                        try:
+                            rs = models.Routeserver.objects.filter(
+                                router_id=routeserver_id,
+                                ix__instance__org=org,
+                            ).first()
+                            routeserver_ids[routeserver_id] = rs.name if rs else None
+                        except Exception as e:
+                            logger.warning(f"get_stats_data: Error getting routeserver: {e}")
+                            routeserver_ids[routeserver_id] = None
+                    
+                    # Set the routeserver name for this specific bgp_stat
+                    if routeserver_ids[routeserver_id]:
+                        bgp_stat["routeserver_name"] = routeserver_ids[routeserver_id]
+                
+                # Group the bgp stats by routeserver_id
+                for bgp_stat in data:
+                    routeserver_id = bgp_stat.get("routeserver_router_id")
+                    if routeserver_id not in bgp_stats:
+                        bgp_stats[routeserver_id] = []
+                    bgp_stats[routeserver_id].append(bgp_stat)
+            
             device_metrics = json_dict.get("device_metrics")
 
         return bgp_stats, device_metrics
