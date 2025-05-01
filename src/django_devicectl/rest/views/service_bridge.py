@@ -310,6 +310,19 @@ class Portinfo(DataViewSet):
     queryset = models.PortInfo.objects.filter(status="ok")
     serializer_class = Serializers.port_info
 
+@route
+class LogicalPort(DataViewSet):
+    path_prefix = "/data"
+    allowed_http_methods = ["GET"]
+    valid_filters = [
+        ("org", "instance__org__remote_id"),
+        ("ids", "id__in"),
+    ]
+    allow_unfiltered = True
+
+    queryset = models.LogicalPort.objects.filter(status="ok")
+    serializer_class = Serializers.logical_port
+
 
 @route
 class VirtualPort(PortTrafficMixin, DataViewSet):
