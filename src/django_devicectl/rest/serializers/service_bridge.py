@@ -161,6 +161,7 @@ class Port(ModelSerializer):
     is_management = serializers.BooleanField(
         read_only=True, source="port_info.is_management"
     )
+    logical_port = serializers.SerializerMethodField()
     logical_port_name = serializers.SerializerMethodField()
     virtual_port_description = serializers.SerializerMethodField()
     virtual_port_name = serializers.SerializerMethodField()
@@ -189,6 +190,7 @@ class Port(ModelSerializer):
             "ip_address_4",
             "ip_address_6",
             "is_management",
+            "logical_port",
             "logical_port_name",
             "virtual_port_name",
             "virtual_port_description",
@@ -200,6 +202,9 @@ class Port(ModelSerializer):
 
     def get_org_id(self, port):
         return port.org.permission_id
+
+    def get_logical_port(self, port):
+        return port.virtual_port.logical_port.id
 
     def get_logical_port_name(self, port):
         return port.virtual_port.logical_port.name
@@ -340,6 +345,17 @@ class VirtualPort(ModelSerializer):
             "description",
         ]
         read_only_fields = ["port"]
+
+@register
+class LogicalPort(ModelSerializer):
+    class Meta:
+        model = models.LogicalPort
+        fields = [
+            "id",
+            "name",
+            "trunk",
+            "channel"
+        ]
 
 
 @register
@@ -482,21 +498,18 @@ class CreateDevicePort(serializers.Serializer):
             # Create a port
             # port is already auto created when virtual port is created,
             # more info signals.py, so here we only have to set the name
-            # TODO <sergio>: name pattern
             port, port_created = models.Port.objects.get_or_create(
                 virtual_port=virtual_port
             )
             if port_created or not port.name:
-                # TODO <sergio>: port id as autoincrement name
-                port.name = f"{name}{port.id}"
+                port.name = f"{name}"
                 port.save()
                 created_ports.append(port)
 
-                # append the port id do the names of vp and lp
-                virtual_port.name = f"{name}{port.id}"
+                virtual_port.name = f"{name}"
                 virtual_port.save()
 
-                logical_port.name = f"{name}{port.id}"
+                logical_port.name = f"{name}"
                 logical_port.save()
 
             port_automation_tasks.AssignPort.create_task(
