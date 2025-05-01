@@ -476,8 +476,10 @@ class Member(
 
     def get_stats_data(self, members):
         physical_ports = set()
+        org = None
         for member in members:
             physical_ports.update(member.physical_ports)
+            org = member.ix.instance.org
 
         physical_port_stats = devicectl.PhysicalPortStats().get_physical_port_stats(
             list(physical_ports)
@@ -491,7 +493,21 @@ class Member(
             json_dict = physical_port_stats.get(physical_port).json_dict
             data = json_dict.get("bgp_stats")
             if data:
-                bgp_stats[data[0].get("routeserver_router_id")] = data
+                routeserver_id = data[0].get("routeserver_router_id")
+
+                # attempt to get the Routeserver
+                try:
+                    rs = models.Routeserver.objects.filter(
+                        router_id=routeserver_id,
+                        ix__instance__org=org,
+                    ).first()
+                    if rs:
+                        for bgp_stat in data:
+                            bgp_stat["routeserver_name"] = rs.name
+                except Exception as e:
+                    logger.warning(f"get_stats_data: Error getting routeserver: {e}")
+
+                bgp_stats[routeserver_id] = data
             device_metrics = json_dict.get("device_metrics")
 
         return bgp_stats, device_metrics
