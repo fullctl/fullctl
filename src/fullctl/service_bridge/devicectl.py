@@ -272,6 +272,31 @@ class VirtualPort(Devicectl):
             },
         )
 
+    def update_name(self, virt_port_id: int, name: str, update_logical_port: bool = True):
+        """
+        Updates the name of a virtual port and its logical port if specified
+
+        Arguments:
+
+        - `virt_port_id` (`int`) -- virtual port id
+        - `name` (`str`) -- new name for the virtual port
+        - `update_logical_port` (`bool`) -- whether to update the logical port name as well
+        """
+        virt_port = self.object(virt_port_id)
+        if virt_port.name != name:
+            virt_port.name = name
+            self.partial_update(virt_port, {"name": name})
+
+        if update_logical_port:
+            logical_port = LogicalPort().object(virt_port.logical_port)
+            if logical_port.name != name:
+                logical_port.name = name
+                LogicalPort().partial_update(logical_port, {"name": name})
+
+class LogicalPort(Devicectl):
+    class Meta(Devicectl.Meta):
+        ref_tag = "logical_port"
+
 
 class IPAddress(Devicectl):
     class Meta(Devicectl.Meta):
