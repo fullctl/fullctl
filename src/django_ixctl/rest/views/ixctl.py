@@ -493,32 +493,38 @@ class Member(
             json_dict = physical_port_stats.get(physical_port).json_dict
             data = json_dict.get("bgp_stats")
             if data:
-                # Process each bgp_stat individually to get the correct routeserver
-                routeserver_ids = {}
-                
+                # Get unique routeserver_ids from the data
+                routeserver_ids = set()
                 for bgp_stat in data:
                     routeserver_id = bgp_stat.get("routeserver_router_id")
-                    if routeserver_id not in routeserver_ids:
-                        try:
-                            rs = models.Routeserver.objects.filter(
-                                router_id=routeserver_id,
-                                ix__instance__org=org,
-                            ).first()
-                            routeserver_ids[routeserver_id] = rs.name if rs else None
-                        except Exception as e:
-                            logger.warning(f"get_stats_data: Error getting routeserver: {e}")
-                            routeserver_ids[routeserver_id] = None
-                    
-                    # Set the routeserver name for this specific bgp_stat
-                    if routeserver_ids[routeserver_id]:
-                        bgp_stat["routeserver_name"] = routeserver_ids[routeserver_id]
+                    if routeserver_id:
+                        routeserver_ids.add(routeserver_id)
                 
-                # Group the bgp stats by routeserver_id
+                # Get routeserver names for each unique routeserver_id
+                routeserver_names = {}
+                for routeserver_id in routeserver_ids:
+                    try:
+                        rs = models.Routeserver.objects.filter(
+                            router_id=routeserver_id,
+                            ix__instance__org=org,
+                        ).first()
+                        if rs:
+                            routeserver_names[routeserver_id] = rs.name
+                    except Exception as e:
+                        logger.warning(f"get_stats_data: Error getting routeserver: {e}")
+                
+                # Add routeserver_name to each bgp_stat item
                 for bgp_stat in data:
                     routeserver_id = bgp_stat.get("routeserver_router_id")
-                    if routeserver_id not in bgp_stats:
-                        bgp_stats[routeserver_id] = []
-                    bgp_stats[routeserver_id].append(bgp_stat)
+                    if routeserver_id in routeserver_names:
+                        bgp_stat["routeserver_name"] = routeserver_names[routeserver_id]
+                
+                # Store the data in bgp_stats, properly grouped by routeserver_id
+                for routeserver_id in routeserver_ids:
+                    bgp_stats[routeserver_id] = [
+                        stat for stat in data 
+                        if stat.get("routeserver_router_id") == routeserver_id
+                    ]
             
             device_metrics = json_dict.get("device_metrics")
 
