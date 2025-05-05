@@ -152,6 +152,13 @@ class OrganizationCanTrialForObject(serializers.Serializer):
 
         return trial_product.can_add_to_org(org, component_object_id=obj["object_id"])
 
+@register
+class Organization(ModelSerializer):
+    ref_tag = "organization"
+
+    class Meta:
+        model = account_models.Organization
+        fields = ["id", "name", "slug", "created", "updated"]
 
 @register
 class User(ModelSerializer):
