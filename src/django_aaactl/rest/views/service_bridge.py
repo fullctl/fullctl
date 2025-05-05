@@ -171,6 +171,23 @@ class OrganizationProduct(AaactlDataViewSet):
     )
     serializer_class = Serializers.org_product
 
+@route
+class Organization(AaactlDataViewSet):
+    path_prefix = "/data"
+    allowed_http_methods = ["GET"]
+    valid_filters = [
+        ("ids", "id__in"),
+        ("slug", "slug__iexact"),
+        ("name", "name__iexact"),
+        ("username", "org_user_set__user__username__iexact"),
+    ]
+    autocomplete = "name"
+    allow_unfiltered = False
+
+    queryset = account_models.Organization.objects.all()
+    serializer_class = Serializers.organization
+
+
 
 @route
 class User(AaactlDataViewSet):

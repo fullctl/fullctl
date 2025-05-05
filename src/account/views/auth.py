@@ -158,13 +158,15 @@ def valid_frontend_redirect(path, fallback, user):
     if not path:
         return fallback
 
+    original_next = path
+
     parts = urlparse(path)
     origin = f"{parts.scheme}://{parts.netloc}"
     if origin not in settings.FRONTEND_ORIGINS:
         return fallback
 
     tokens = get_jwt_tokens(user)
-    parts = parts._replace(path=f'/login/{tokens.get("refresh")}/')
+    parts = parts._replace(path=f'/login/{tokens.get("refresh")}/?next={original_next}')
 
     return parts.geturl()
 
