@@ -194,8 +194,13 @@
             .x(function(d) { return x(d.timestamp * 1000); }) // Multiply by 1000 to convert unix timestamp to JavaScript timestamp
             .y(function(d) { return y(d.bps_out); });
 
-        // Calculate bps_in_peak and bps_out_low
+        // Calculate bps_in_peak and bps_out_peak
         const {bps_in_peak, bps_out_peak} = calculate_peak(data);
+
+        // Get the most recent bps_in and bps_out values
+        const lastDataPoint = data.length > 0 ? data[data.length - 1] : null;
+        const currentBpsIn = lastDataPoint ? lastDataPoint.bps_in || 0 : 0;
+        const currentBpsOut = lastDataPoint ? lastDataPoint.bps_out || 0 : 0;
 
         // Calculate the maximum data value
         const maxDataValue = d3.max(data, function(d) { return Math.max(d.bps_in, d.bps_out); });
@@ -325,8 +330,8 @@
             .attr("transform", "translate(0," + (height + margin.bottom - 20) + ")") // Move legend to the bottom
             .selectAll("g")
             .data([
-                {key: "bps_in", label: "bps IN"},
-                {key: "bps_out", label: "bps OUT"},
+                {key: "bps_in", label: "bps IN: " + format_y_axis(currentBpsIn)},
+                {key: "bps_out", label: "bps OUT: " + format_y_axis(currentBpsOut)},
                 {key: "bps_in_peak", label: "IN Peak: " + format_y_axis(bps_in_peak)},
                 {key: "bps_out_peak", label: "OUT Peak: " + format_y_axis(bps_out_peak)}
             ])
