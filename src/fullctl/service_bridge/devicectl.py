@@ -316,6 +316,17 @@ class PhysicalPortStats(Devicectl):
             for physical_port_stats in physical_port_stats
         }
 
+    def _merge_bgp_stats(self, physical_port_stats, bgp_stats:list[dict]):
+        return self.patch(
+            f"data/physical_port_stats/{physical_port_stats.id}/merge-bgp-stats",
+            json={
+                "physical_port": physical_port_stats.physical_port,
+                "bgp_stats": bgp_stats,
+            },
+        )
+
+
+
     def save_physical_port_stats(
         self,
         data: dict | list[dict],
@@ -328,6 +339,15 @@ class PhysicalPortStats(Devicectl):
         """
         physical_port_stats = list(self.objects(physical_port=physical_port))
         if physical_port_stats:
+            # physcal port stats exist already
+
+            if str(stat_type) == "bgp_stats":
+                # bgp stats cannot just override because multiple routeservers
+                # may post them independently, so we need to merge them
+                # using the merge-bgp-stats endpoint
+                return self._merge_bgp_stats(physical_port_stats[0], data)
+
+            # other stats (device metrics, ..) can just override
             initial_data = physical_port_stats[0].data.json_dict.copy()
             initial_data[stat_type] = data
             return self.put(
@@ -338,6 +358,9 @@ class PhysicalPortStats(Devicectl):
                     "data": initial_data,
                 },
             )
+
+        # physcal port stats do not exist yet, create new one, data can
+        # just be passed as is keyed to the stat_type
         return self.create(
             data={
                 "org": org_slug,
