@@ -346,8 +346,11 @@ class BGPSessionStateDataHandler(BaseHandler):
 
             members.update(list(member_bridge.objects(**filters)))
 
+
         physical_ports = []
         port_ids = []
+        port_to_ip = {}
+        physical_port_to_ip = {}
 
         # collect port references from members
         for member in members:
@@ -356,6 +359,10 @@ class BGPSessionStateDataHandler(BaseHandler):
                 continue
 
             port_ids.append(member.port)
+            port_to_ip[member.port] = (
+                ipaddress.ip_address(member.ipaddr4) if member.ipaddr4 else None,
+                ipaddress.ip_address(member.ipaddr6) if member.ipaddr6 else None
+            )
 
         if not port_ids:
             return
@@ -363,13 +370,23 @@ class BGPSessionStateDataHandler(BaseHandler):
         # collect physical ports from port references
         for port in devicectl.Port().objects(ids=port_ids, join=["physical_ports"]):
             physical_ports.extend([p["id"] for p in port.physical_ports])
-
-
-        # send bgp stats to each physical port
+            for p in port.physical_ports:
+                ipaddr4, ipaddr6 = port_to_ip[port.id]
+                physical_port_to_ip[p["id"]] = (ipaddr4, ipaddr6)
+    
         for physical_port in physical_ports:
 
+            # filter components by ip address
+            filtered_components = []
+            for component in components:
+                ipaddr4, ipaddr6 = physical_port_to_ip[physical_port]
+                if ipaddr4 and ipaddr4 == ipaddress.ip_address(component.get("address")):
+                    filtered_components.append(component)
+                elif ipaddr6 and ipaddr6 == ipaddress.ip_address(component.get("address")):
+                    filtered_components.append(component)
+
             physical_port_stats_bridge.save_physical_port_stats(
-                data=components,
+                data=filtered_components,
                 org_slug=org_slug,
                 physical_port=physical_port,
                 stat_type="bgp_stats",
@@ -415,7 +432,6 @@ class BatchedBGPSessionStateDataHandler(BaseHandler):
                 member = member_bridge.first(**filters)
                 if member:
                     members[key] = member
-                    member.address = address
                     log.debug("Found member for key", member=member.id, key=key)
                 else:
                     log.debug("No member found for key", key=key, filters=filters)
@@ -455,9 +471,17 @@ class BatchedBGPSessionStateDataHandler(BaseHandler):
             for component in components:
                 member = physical_port_to_member[physical_port]
 
-                if member.asn == int(
-                    component.get("asn")
-                ) and member.address == component.get("address"):
+                component_asn = int(component.get("asn"))
+                component_address = ipaddress.ip_address(component.get("address"))
+                member_ipaddr4 = ipaddress.ip_address(member.ipaddr4) if member.ipaddr4 else None
+                member_ipaddr6 = ipaddress.ip_address(member.ipaddr6) if member.ipaddr6 else None
+
+                if component_asn != member.asn:
+                    continue
+
+                if member_ipaddr4 and member_ipaddr4 == component_address:
+                    components_for_physical_port.append(component)
+                elif member_ipaddr6 and member_ipaddr6 == component_address:
                     components_for_physical_port.append(component)
 
             if not components_for_physical_port:
