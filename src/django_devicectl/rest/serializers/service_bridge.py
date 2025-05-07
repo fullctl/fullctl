@@ -464,7 +464,7 @@ class CreateDevicePort(serializers.Serializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        logger.debug(f"CreateDevicePort::create() {validated_data=}")
+        logger.debug(f"CreateDevicePort::create() validated_data={validated_data}")
 
         created_ports = []
 
@@ -733,3 +733,40 @@ class PhysicalPortStats(ModelSerializer):
     class Meta:
         model = models.PhysicalPortStats
         fields = "__all__"
+
+
+@register
+class MergeBGPStats(serializers.Serializer):
+    """
+    Allow merging of BGP stats into existing PhysicalPortStats entries.
+    """
+    ref_tag = "merge_bgp_stats"
+
+    bgp_stats = serializers.ListField(
+        child=serializers.DictField(),
+        required=False,
+        default=list
+    )
+    physical_port = serializers.PrimaryKeyRelatedField(
+        queryset=models.PhysicalPort.objects.all()
+    )
+    remove_stale = serializers.BooleanField(default=True)
+
+    class Meta:
+        fields = ["physical_port", "bgp_stats", "remove_stale"]
+
+    def save(self):
+        physical_port = self.validated_data["physical_port"]
+        bgp_stats = self.validated_data.get("bgp_stats", [])
+        remove_stale = self.validated_data.get("remove_stale", True)
+
+        stats, _ = models.PhysicalPortStats.objects.get_or_create(
+            physical_port=physical_port,
+            defaults={"data": {}}
+        )
+
+        stats.merge_update_bgp_stats(bgp_stats, remove_stale)
+        return stats
+
+
+    

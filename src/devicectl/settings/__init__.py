@@ -134,3 +134,6 @@ settings_manager.set_option("MRTG_GRACE_MULTIPLIER", 5)
 
 # when are referee reports discarded (seconds, default=30 days)
 settings_manager.set_option("REFEREE_REPORT_MAX_AGE", 86400 * 30)
+
+# when are old bgp stats discarded (seconds, default=10 minutes)
+settings_manager.set_option("PHYSICAL_PORT_STATS_BGP_STALE_AFTER", 600)
