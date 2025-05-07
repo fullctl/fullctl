@@ -12,3 +12,7 @@ Currently it is only possible to configure a global url and token for nautobot u
 - `GRAPHS_PATH` - path to store generated RRD graphs
 - `GRAPHS_URL` - url to access generated RRD graphs
 - `GRAPHS_RRD_ENABLED` - enable or disable RRD graphing (default: `True`)
+
+### Physical Port Stats
+
+- `PHYSICAL_PORT_STATS_BGP_STALE_AFTER` - after how long are bgp stats considered stale, in seconds (default: `600`)

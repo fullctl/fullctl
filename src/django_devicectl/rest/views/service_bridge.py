@@ -668,3 +668,33 @@ class PhysicalPortStats(DataViewSet):
 
     queryset = models.PhysicalPortStats.objects.filter(status="ok")
     serializer_class = Serializers.physical_port_stats
+
+    @action(detail=True, methods=["PATCH"], url_path="merge-bgp-stats")
+    def merge_bgp_stats(self, request, pk, *args, **kwargs):
+        """
+        Merge BGP stats data into existing port stats data.
+
+        We can't simply override the entire bgp_stats field as multiple routeservers
+        may be reporting stats independently.
+
+        Instead, we merge the data from the new stats into the existing stats.
+        """
+        physical_port_stats = self.get_object()
+        
+        # Prepare data for serializer
+        data = request.data
+        data["physical_port"] = physical_port_stats.physical_port.id
+        
+        # Use the MergeBGPStats serializer for validation and saving
+        serializer = Serializers.merge_bgp_stats(data=data)
+        
+        if not serializer.is_valid():
+            logger.error("Invalid data for merge_bgp_stats: {}".format(serializer.errors))
+            return BadRequest({"error": "Invalid data", "details": serializer.errors})
+        
+        # Save data through serializer
+        instance = serializer.save()
+        
+        # Return the updated object
+        return Response(self.serializer_class(instance).data)
+        
