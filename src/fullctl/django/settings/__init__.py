@@ -264,6 +264,9 @@ class SettingsManager(confu.util.SettingsManager):
             "https://forms.clickup.com/14289126/f/dm276-8191/22BRHTR36S1XXC7FG7",
         )
 
+        # Number of results to return for blank query in autocomplete requests
+        self.set_option("AUTOCOMPLETE_NUM_BLANK_QUERY_RESULTS", 10)
+
         # eval from default.py file
         filename = os.path.join(os.path.dirname(__file__), "default.py")
         self.try_include(filename)
