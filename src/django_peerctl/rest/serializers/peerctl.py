@@ -1967,12 +1967,14 @@ class PeerSession(ModelSerializer):
             return "No port assigned"
 
         port_object = obj.port.object
+        name = ""
         if port_object.port_info_object:
-            return port_object.port_info_object.ix_name
-        elif port_object.virtual_port_name:
-            return port_object.virtual_port_name
+            name = port_object.port_info_object.ix_name
 
-        return ""
+        if not name and port_object.virtual_port_name:
+            name = port_object.virtual_port_name
+
+        return name
 
     def get_metric(self, obj):
         if obj.port and obj.port.object and obj.port.object.physical_ports:
