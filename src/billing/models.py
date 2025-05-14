@@ -1,6 +1,7 @@
 import datetime
 import secrets
 import uuid
+import structlog
 
 import dateutil.relativedelta
 import reversion
@@ -32,6 +33,7 @@ from common.models import HandleRefModel
 
 # Create your models here.
 
+log = structlog.get_logger(__name__)
 
 @reversion.register()
 class ProductGroup(HandleRefModel):
@@ -988,30 +990,33 @@ class SubscriptionCycle(HandleRefModel):
         if pending_payment_charge:
             return pending_payment_charge
 
+        order_number = self.create_orders()
+        invoice = self.create_invoice(order_number)
+
         payment_charge = PaymentCharge.objects.create(
             payment_method=self.subscription.payment_method,
             price=self.price,
             description=self.subscription.charge_description,
         )
+        invoice.charge_object = payment_charge
+        invoice.save()
 
         subscription_cycle_charge = SubscriptionCycleCharge.objects.create(
             subscription_cycle=self, payment_charge=payment_charge, status="pending"
         )
 
-        order_number = self.create_orders()
-        invoice = self.create_invoice(order_number)
-
+        log.debug(f"{payment_charge.id}", details=payment_charge.details, price=payment_charge.price)
         if commit:
             self.subscription.payment_method.processor_instance.charge(payment_charge)
 
         payment_charge.refresh_from_db()
         if payment_charge.status == "failed":
             self.status = "failed"
+            payment_charge.subscription_cycle_charge.status = "failed"
+            payment_charge.subscription_cycle_charge.save()
             payment_charge.notify_failure()
             self.save()
 
-        invoice.charge_object = payment_charge
-        invoice.save()
 
         return subscription_cycle_charge
 
@@ -1097,9 +1102,7 @@ class SubscriptionCycleCharge(HandleRefModel):
 
     @property
     def invoice_number(self):
-        return (
-            self.subscription_cycle.subscription_cycle_product_set.first().invoice_number
-        )
+        return self.payment_charge.invoice.invoice_number
 
 
 @reversion.register()
@@ -1766,6 +1769,10 @@ class PaymentCharge(HandleRefModel):
 
         if self.status == "ok":
             self.create_payment_transaction()
+
+        if self.subscription_cycle_charge:
+            self.subscription_cycle_charge.status = self.status
+            self.subscription_cycle_charge.save()
 
         return self.status
 
