@@ -13,7 +13,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
-from django.db import models
+from django.db import IntegrityError, models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -36,6 +36,7 @@ __all__ = [
     "TaskClaim",
     "TaskHeartbeat",
     "TaskSchedule",
+    "TaskScheduleClaim",
     "CallCommand",
 ]
 
@@ -51,6 +52,9 @@ class TaskClaimed(IOError):
     def __init__(self, task):
         super().__init__(f"Task already claimed by another worker: {task}")
 
+class TaskScheduleClaimed(IOError):
+    def __init__(self, task_schedule):
+        super().__init__(f"Task schedule already claimed by another worker: {task_schedule}")
 
 class WorkerUnqualified(IOError):
     def __init__(self, task, qualifier):
@@ -759,6 +763,17 @@ class TaskSchedule(HandleRefModel):
 
         if self.are_limited_tasks_pending():
             return []
+        
+        # try to create a claim for the schedule
+        try:
+            TaskScheduleClaim.objects.create(
+                task_schedule=self,
+                worker_id=worker_id(),
+                schedule_date=self.schedule,
+            )
+        except IntegrityError:
+            raise TaskScheduleClaimed(self)
+
 
         for task in self.tasks.all():
             if task.status in ["pending", "running"]:
@@ -781,6 +796,19 @@ class TaskSchedule(HandleRefModel):
 
         return tasks
 
+class TaskScheduleClaim(HandleRefModel):
+    task_schedule = models.ForeignKey(TaskSchedule, on_delete=models.CASCADE)
+    worker_id = models.CharField(max_length=255)
+    schedule_date = models.DateTimeField()
+
+    class Meta:
+        db_table = "fullctl_task_schedule_claim"
+        verbose_name = _("Task Schedule Claim")
+        verbose_name_plural = _("Task Schedule Claims")
+        unique_together = (("task_schedule", "schedule_date"))
+
+    class HandleRef:
+        tag = "task_schedule_claim"
 
 class Monitor(HandleRefModel):
     email = models.EmailField(
