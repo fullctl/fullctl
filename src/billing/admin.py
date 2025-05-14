@@ -344,6 +344,8 @@ class SubscriptionCycleProductInline(admin.TabularInline):
 class SubscriptionCycleChargeInline(admin.TabularInline):
     model = SubscriptionCycleCharge
     extra = 0
+    fields = ("status", "payment_charge")
+    readonly_fields = ("payment_charge",)
 
 
 @admin.register(SubscriptionCycle)

@@ -168,8 +168,13 @@ def test_subscription_cycle_charge_exists(db, billing_objects, mocker):
     # Now we set status of payment charge from ok to pending
     subscription_cycle_charge = subscription_cycle.subscription_cycle_charge_set.first()
     payment_charge = subscription_cycle_charge.payment_charge
+    
+    # Verify initial status
+    assert subscription_cycle_charge.status == "pending"
+    
     payment_charge.status = "ok"
     payment_charge.save()
+    
     subscription_cycle.refresh_from_db()
 
     # Raises error if we retry an "ok" charge
@@ -368,3 +373,33 @@ def test_billing_contact_hard_delete_failure(billing_objects, ledger):
     # test that object is soft-deleted
     assert billing_objects.billing_contact.id is not None
     assert billing_objects.billing_contact.status == "deleted"
+
+
+@pytest.mark.django_db
+def test_invoice_number_from_payment_charge(db, billing_objects, mocker):
+    """
+    Test that invoice number is retrieved from payment charge's invoice.
+    """
+    # Overrides creating the charge on Stripe's end.
+    mocker.patch(
+        "billing.payment_processors.stripe.stripe.PaymentIntent.create",
+        return_value={"id": 1234, "receipt_url": "https://example.com"},
+    )
+    subscription = billing_objects.monthly_subscription
+    subscription.payment_method = billing_objects.payment_method
+    two_weeks_ago = (datetime.now(timezone.utc) - timedelta(days=14)).date()
+    subscription.start_subscription_cycle(two_weeks_ago)
+    subscription_cycle = subscription.subscription_cycle_set.first()
+
+    subscription_cycle.update_usage(subscription.subscription_product_set.first(), 1)
+    
+    # Charge the subscription cycle which creates orders and invoice
+    subscription_cycle.charge()
+    
+    # Get the subscription cycle charge
+    subscription_cycle_charge = subscription_cycle.subscription_cycle_charge_set.first()
+    payment_charge = subscription_cycle_charge.payment_charge
+    
+    # Verify invoice number is retrieved from payment charge's invoice
+    assert subscription_cycle_charge.invoice_number is not None
+    assert subscription_cycle_charge.invoice_number == payment_charge.invoice.invoice_number
