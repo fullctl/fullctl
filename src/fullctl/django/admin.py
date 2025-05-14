@@ -21,6 +21,7 @@ from fullctl.django.models.concrete import (
     TaskClaim,
     TaskHeartbeat,
     TaskSchedule,
+    TaskScheduleClaim,
     UserSettings,
 )
 from fullctl.django.models.concrete.service_bridge import (
@@ -188,6 +189,9 @@ class TaskScheduleAdmin(BaseAdmin):
         tasks = obj.tasks.all()[:5]
         return f"{tasks}"
 
+@admin.register(TaskScheduleClaim)
+class TaskScheduleClaimAdmin(BaseAdmin):
+    list_display = ("task_schedule", "worker_id", "schedule_date", "created", "updated")
 
 @admin.register(AuditLog)
 class AuditLogAdmin(admin.ModelAdmin):

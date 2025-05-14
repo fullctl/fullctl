@@ -1,6 +1,8 @@
 import pytest
 from django.conf import settings
+from django.db import IntegrityError, transaction
 from django.utils import timezone
+from unittest.mock import patch
 
 import fullctl.django.tasks.orm as orm
 import tests.django_tests.testapp.models as models
@@ -9,12 +11,17 @@ from fullctl.django.health_check import (
     health_check_task_stack_queue,
 )
 from fullctl.django.models.concrete.tasks import (
+    TaskClaim,
     TaskClaimed,
     TaskHeartbeatError,
     TaskLimitError,
     TaskMaxAgeError,
     TaskSchedule,
+    TaskScheduleClaim,
+    TaskScheduleClaimed,
+    TaskAlreadyStarted,
 )
+from fullctl.django.tasks.util import worker_id
 
 
 @pytest.mark.django_db
@@ -195,6 +202,41 @@ def test_schedule_limited_task_manually(dj_account_objects):
 
 
 @pytest.mark.django_db
+def test_task_schedule_cannot_be_claimed_twice(dj_account_objects):
+    """Test that a task schedule cannot be claimed twice."""
+    org = dj_account_objects.org
+    
+    # Create a task schedule
+    task_schedule = TaskSchedule.objects.create(
+        org=org,
+        task_config={
+            # NO tasks so it is forced to raise a TaskScheduleClaimed and not a TaskAlreadyStarted
+            "tasks": [
+            ],
+        },
+        description="test claiming",
+        repeat=True,
+        interval=3600,
+        schedule=timezone.now(),
+    )
+
+    schedule_date = task_schedule.schedule
+    
+    # First claim should succeed
+    task_schedule.spawn_tasks()
+    
+    # reset the schedule date to the original
+    task_schedule.schedule = schedule_date
+    task_schedule.save()
+
+    # Second claim should fail with TaskScheduleClaimed exception
+    with pytest.raises(TaskScheduleClaimed) as exc_info:
+        task_schedule.spawn_tasks()
+    
+    assert "Task schedule already claimed by another worker:" in str(exc_info.value)
+
+
+@pytest.mark.django_db
 def test_task_stack_queue_for_maximum_pending_tasks():
     settings.MAX_PENDING_TASKS = 10
     settings.TASK_MAX_AGE_THRESHOLD = 24
@@ -244,3 +286,56 @@ def test_task_heartbeat_timeout():
 
     with pytest.raises(TaskHeartbeatError):
         health_check_task_heartbeat()
+
+
+@pytest.mark.django_db
+def test_task_schedule_unique_claim_constraint(dj_account_objects):
+    """Test that the TaskScheduleClaim enforces the unique constraint."""
+    
+    org = dj_account_objects.org
+    
+    # Create a task schedule
+    task_schedule = TaskSchedule.objects.create(
+        org=org,
+        task_config={
+            "tasks": [],
+        },
+        description="test claiming constraint",
+        repeat=True,
+        interval=3600,
+        schedule=timezone.now(),
+    )
+    
+    # Create first claim
+    schedule_date = timezone.now()
+    claim1 = TaskScheduleClaim.objects.create(
+        task_schedule=task_schedule,
+        worker_id=worker_id(),
+        schedule_date=schedule_date,
+    )
+    assert claim1.id is not None
+    
+    # Use an atomic block to contain the IntegrityError
+    try:
+        with transaction.atomic():
+            # Attempting to create a second claim with the same task_schedule and schedule_date
+            # should raise an IntegrityError
+            TaskScheduleClaim.objects.create(
+                task_schedule=task_schedule,
+                worker_id=worker_id(),
+                schedule_date=schedule_date,
+            )
+            # If we get here, the test should fail
+            assert False, "Expected IntegrityError was not raised"
+    except IntegrityError:
+        # This is expected, continue with the test
+        pass
+    
+    # Creating a claim with a different schedule_date should succeed
+    different_date = timezone.now() + timezone.timedelta(hours=1)
+    claim2 = TaskScheduleClaim.objects.create(
+        task_schedule=task_schedule,
+        worker_id=worker_id(),
+        schedule_date=different_date,
+    )
+    assert claim2.id is not None

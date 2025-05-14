@@ -17,7 +17,7 @@ from fullctl.django.models import (
     TaskSchedule,
     WorkerUnqualified,
 )
-from fullctl.django.models.concrete.tasks import TaskClaim, TaskLimitError
+from fullctl.django.models.concrete.tasks import TaskClaim, TaskLimitError, TaskScheduleClaimed
 from fullctl.django.tasks import requeue as requeue_task
 from fullctl.django.tasks import specify_task
 from fullctl.django.tasks.util import worker_id
@@ -231,5 +231,7 @@ def progress_schedules(**filters):
 
     try:
         schedule.spawn_tasks()
+    except TaskScheduleClaimed as exc:
+        log.info(f"Task schedule already claimed by another worker: {exc}")
     except (TaskAlreadyStarted, TaskLimitError):
         schedule.reschedule()
