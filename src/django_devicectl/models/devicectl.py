@@ -1629,6 +1629,7 @@ class Vlan(ServiceBridgeReferenceModel):
             "description": "description",
             "name": "name",
             "id": "reference",
+            "vid": "vlan",
         }
 
     class Meta:

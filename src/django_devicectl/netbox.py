@@ -432,13 +432,32 @@ def sync_vlans(
     """
 
     log.info("[PULL] Syncing vlans ...")
+
+    # Retrieve and normalize VLAN role filter configuration (if any)
+    ctx = service_bridge_context.get()
+    VLAN_ROLE = ctx.get_service_config("netbox", "VLAN_ROLE") or []
+    vlan_roles = [r.lower() for r in VLAN_ROLE]
+
     for netbox_vlan in netbox.VLAN().objects(limit=NETBOX_PAGE_LIMIT):
+
+        vlan_role = None
+        # Apply VLAN role filter when configured
+        if vlan_roles:
+            vlan_role = getattr(netbox_vlan, "role", None)
+
+            # netbox v3 returns role as str, v4 as object/dict (converted to object)
+            if vlan_role and not isinstance(vlan_role, str):
+                vlan_role = vlan_role.name
+
+            if not vlan_role or vlan_role.lower() not in vlan_roles:
+                continue
 
         log.info(
             "[PULL] Netbox vlan",
             name=netbox_vlan.name,
             id=netbox_vlan.id,
             vid=netbox_vlan.vid,
+            role=vlan_role,
         )
 
         facility = None
@@ -448,22 +467,23 @@ def sync_vlans(
             site = netbox.Site().first(id=netbox_vlan.site.id)
 
             try:
+                log.info("Checking for facility", site=site, id=site.custom_fields.devicectl_id)
                 facility = models.Facility.objects.get(
-                    instance=instance, reference=str(site.custom_fields.devicectl_id)
+                    instance=instance, id=site.custom_fields.devicectl_id
                 )
             except models.Facility.DoesNotExist:
                 log.info(
                     f"[PULL] Netbox vlan {netbox_vlan.name} {netbox_vlan.id} no facility found, creating without facility ..."
                 )
 
-        vlan, created = models.Vlan.objects.get_or_create(
+        vlan, created = models.Vlan.objects.update_or_create(
             reference=str(netbox_vlan.id),
             instance=instance,
             defaults={
                 "facility": facility,
+                "vlan": netbox_vlan.vid,
             },
         )
-
         changed = vlan.sync_from_reference(ref_obj=netbox_vlan)
 
         if changed or created:
