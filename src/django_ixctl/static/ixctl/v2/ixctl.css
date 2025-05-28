@@ -26,6 +26,11 @@
   text-align: center;
 }
 
+.shaded-box a {
+  color: #0D6EFD;
+  text-decoration: underline;
+}
+
 .body-public {
  background-color: #191B22;
  font-family: sans-serif;
@@ -125,6 +130,7 @@ body.body-public .app-logo {
 }
 
 body.body-public .ix-name {
+  color: var(--heading-color);
   font-size: 1.6rem;
   font-weight: 700;
 }
