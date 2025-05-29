@@ -11,6 +11,7 @@ from django_devicectl.models import (
     Device,
     DeviceConfigHistory,
     DeviceOperationalStatus,
+    DeviceMetric,
     DeviceRefereeReport,
     Facility,
     IPAddress,
@@ -37,6 +38,12 @@ class FacilityAdmin(VersionAdmin):
     list_display = ("id", "org", "name", "slug", "created", "updated")
     search_fields = ("name", "slug", "instance__org__name", "instance__org__slug")
 
+
+@admin.register(DeviceMetric)
+class DeviceMetricAdmin(VersionAdmin):
+    list_display = ("id", "device")
+
+    autocomplete_fields = ("device",)
 
 class DeviceOperationalStatusInline(admin.TabularInline):
     model = DeviceOperationalStatus
@@ -114,11 +121,14 @@ class DeviceRefereeReportAdmin(VersionAdmin):
 @admin.register(LogicalPort)
 class LogicalPortAdmin(VersionAdmin):
     list_display = ("id", "org", "name", "trunk", "channel", "created", "updated")
+    search_fields = ("name", "trunk", "channel")
 
 
 @admin.register(PhysicalPort)
 class PhysicalPortAdmin(VersionAdmin):
     list_display = ("id", "org", "device", "name", "logical_port", "created", "updated")
+    search_fields = ("name", "device__name", "logical_port__name")
+    autocomplete_fields = ("device", "logical_port")
 
 
 @admin.register(VirtualPort)
@@ -224,4 +234,4 @@ class VlanAdmin(VersionAdmin):
 @admin.register(PhysicalPortStats)
 class PhysicalPortStatsAdmin(VersionAdmin):
     list_display = ("id", "physical_port", "data", "created", "updated")
-    readonly_fields = ("physical_port",)
+    autocomplete_fields = ("physical_port",)
