@@ -1882,10 +1882,18 @@ class PortInfo(sot.ReferenceMixin, Base):
                 continue
 
             if obj.ref_source == "pdbctl":
-                obj._ref = pdbctl_members[int(obj.ref_id.split(":")[1])]
+                try:
+                    obj._ref = pdbctl_members[int(obj.ref_id.split(":")[1])]
+                except KeyError:
+                    logger.error(f"Referencing non-existent pdbctl netixlan {obj.ref_id}")
+                    obj._ref = None
 
             elif obj.ref_source == "ixctl":
-                obj._ref = ixctl_members[int(obj.ref_id.split(":")[1])]
+                try:
+                    obj._ref = ixctl_members[int(obj.ref_id.split(":")[1])]
+                except KeyError:
+                    logger.error(f"Referencing non-existent ixctl member {obj.ref_id}")
+                    obj._ref = None
 
     @property
     @ref_fallback(0)
