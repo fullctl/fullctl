@@ -63,9 +63,52 @@
     });
   };
 
-  $.fn.show_metric_table = function(url, member) {
-    if ((member.port == null || member.port.virtual_port == null) && !member.port_id) return;
-    const port_id = member.port_id ?? member.port.virtual_port;
+  $.fn.show_metric_table = function(url, port_reference) {
+    if ((port_reference.port == null || port_reference.port.virtual_port == null) && !port_reference.port_id) return;
+    
+    // Extract metric data from member object
+    let metricsData = [];
+    
+    // Helper function to process metric entries
+    const processMetrics = (deviceName, interfaceName, metrics) => {
+      if (!metrics) return;
+      
+      Object.entries(metrics).forEach(([key, value]) => {
+        // Parse the metric key to extract the subject
+        const parts = key.split('.');
+        // Get only the last 2 parts of the metric key
+        let subjectParts = parts.slice(-2);
+        
+        // If the first part is the interface name or a digit, drop it
+        if (subjectParts.length === 2 && 
+            (subjectParts[0] === interfaceName || /^\d+$/.test(subjectParts[0]))) {
+          subjectParts = subjectParts.slice(1);
+        }
+        
+        let subject = subjectParts.join('.');
+        
+        metricsData.push({
+          device: deviceName,
+          interface: interfaceName,
+          subject: subject,
+          value: value
+        });
+      });
+    };
+    
+    // Check if port_reference has metric array (first format)
+    if (port_reference.metric && Array.isArray(port_reference.metric)) {
+      port_reference.metric.forEach(metricItem => {
+        processMetrics(metricItem.device_name, metricItem.name, metricItem.metric);
+      });
+    }
+    // Check if port_reference has port.physical_ports (second format)
+    else if (port_reference.port && port_reference.port.physical_ports && Array.isArray(port_reference.port.physical_ports)) {
+      port_reference.port.physical_ports.forEach(physicalPort => {
+        const deviceName = physicalPort.device_name || port_reference.device_name || port_reference.port.device_name;
+        processMetrics(deviceName, physicalPort.name, physicalPort.metric);
+      });
+    }
 
     $('#metric_table').DataTable({
       // https://datatables.net/manual/options
@@ -73,16 +116,16 @@
       paging: false,
       searching: false,
       info: false,
-      autoWidth:false,
-      processing: true,
+      autoWidth: true,
+      // No need for processing indicator since data is local
+      processing: false, 
       responsive: true,
-      language: {"emptyTable": "No port assigned"},
+      language: {"emptyTable": "No metrics available"},
       scrollCollapse: true,
       scrollY: '200px',
 
-      ajax: {
-        url: url.replace("/0/", `/${port_id}/`)
-      },
+      // Use data option instead of ajax
+      data: metricsData,
 
       columns: [
         { data: "device" },
@@ -90,7 +133,18 @@
         { data: "subject" },
         { data: "value" }
       ],
+      
+      // Add initComplete callback
+      initComplete: function() {
+        // Force a redraw after initialization
+        this.api().columns.adjust().draw();
+      }
     });
+    
+    // Also try with a small delay in case the container is still rendering
+    setTimeout(function() {
+      $('#metric_table').DataTable().columns.adjust().draw();
+    }, 100);
   };
 
   $.fn.reset_metric_table = function(url, member) {
