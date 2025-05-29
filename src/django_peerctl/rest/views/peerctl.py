@@ -800,18 +800,18 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
         # the port to an exchange
 
         if not port_info or not port_info.ref_id:
-            return Response({})
+            return Response([])
 
         # port info reference needs to be from ixctl
 
         if not port_info.ref_source == "ixctl":
-            return Response({})
+            return Response([])
 
         # port info reference needs to be from the same asn as this
         # network (everyone is only allowed to see their own metrics)
 
         if int(port_info.ref.asn) != int(asn):
-            return Response({}, status=403)
+            return Response([], status=403)
 
         metric_data = ixctl.InternetExchangeMember().metric(
             port_info.ref_id.split(":")[1]
@@ -835,22 +835,24 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
         # the port to an exchange
 
         if not port_info or not port_info.ref_id:
-            return Response({})
+            return Response([])
 
         # port info reference needs to be from ixctl
 
         if not port_info.ref_source == "ixctl":
-            return Response({})
+            return Response([])
 
         # port info reference needs to be from the same asn as this
         # network (everyone is only allowed to see their own metrics)
 
         if int(port_info.ref.asn) != int(asn):
-            return Response({}, status=403)
+            return Response([], status=403)
+
+        member_id = port_info.ref_id.split(":")[1]
 
         return Response(
             ixctl.InternetExchangeMember().metric_table(
-                port_info.ref_id.split(":")[1],
+                member_id,
             )
         )
 
