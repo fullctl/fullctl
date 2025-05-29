@@ -78,7 +78,7 @@
 
                         <br>
                         <br>
-                        <h3>Participants</h3>
+                        <h4>Participants</h4>
                         <div class="shaded-box">
                             <table>
                                 <tr>
@@ -111,7 +111,7 @@
                                 <br>
                                 <br>
                                 {% if route_server.routeserverconfig.doc_md %}
-                                <h3>Route Server Markdown: {{route_server.name}}</h3>
+                                <h4>Route Server Markdown: {{route_server.name}}</h4>
                                 <div class="shaded-box">
                                     {{ route_server.routeserverconfig.doc_md|render_markdown }}
                                 </div>
@@ -119,7 +119,7 @@
                                 <br>
                                 {% if route_server.ix.notes %}
                                 <div class="shaded-box">
-                                    <u><b><h4>Notes</h4></b></u>
+                                    <u><b><h3>Notes</h3></b></u>
                                     {{ route_server.ix.notes|render_markdown }}
                                 </div>
                                 {% endif %}
