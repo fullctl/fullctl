@@ -804,19 +804,6 @@ class InternetExchangeMember(ModelSerializer):
                 "Please validate the case number and provide a work order."
             )
 
-        # if case numbers are enabled, case_number is required
-        # when making port assignment changes
-        intent = self.initial_data.get("port_config_intent")
-        port_set = self.initial_data.get("port_set")
-        member = self.instance
-        if (not member or not member or not member.port) and port_set:
-            intent = "create"
-        if (
-            intent in ["create", "resize", "lag-increase", "lag-decrease"]
-            and not case_number
-        ):
-            raise ValidationError(_("Required when making port assignment changes."))
-
         return case_number
 
     def validate(self, data: dict) -> dict:
