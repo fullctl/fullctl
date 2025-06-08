@@ -126,11 +126,20 @@ def login(request):
             "custom_org": True,
         }
 
+    oauth_enabled = any([
+        getattr(settings, "SOCIAL_AUTH_GOOGLE_OAUTH2_ENABLED", False),
+        getattr(settings, "SOCIAL_AUTH_PEERINGDB_ENABLED", False),
+        getattr(settings, "SOCIAL_AUTH_OKTA_OPENIDCONNECT_ENABLED", False),
+        getattr(settings, "SOCIAL_AUTH_FULLCTL_ENABLED", False),
+    ])
+
     env.update(
         login_form=form,
         password_login_enabled=settings.PASSWORD_LOGIN_ENABLED,
         org_branding=org_branding_components,
         show_register_link=show_register_link,
+        oauth_enabled = oauth_enabled,
+        show_peeringdb_text=settings.SOCIAL_AUTH_PEERINGDB_ENABLED
     )
 
     return render(request, "account/auth/login.html", env)
