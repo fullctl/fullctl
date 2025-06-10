@@ -124,6 +124,35 @@ class Event(HandleRefModel):
             'error': self.error,
         }
 
+    def augment_data(self, incoming_data):
+        """
+        Augment the existing event data with incoming data.
+        
+        This method is used when status="info" is sent to update an existing event.
+        Components are appended to existing components, other fields are overwritten.
+        
+        Arguments:
+        - incoming_data (dict): The new data to merge with existing data
+        """
+        if not incoming_data:
+            return
+            
+        existing_data = self.data or {}
+        
+        # Handle components specially - append to existing
+        if "components" in incoming_data:
+            incoming_components = incoming_data.pop("components")
+            if "components" in existing_data:
+                existing_data["components"].extend(incoming_components)
+            else:
+                existing_data["components"] = incoming_components
+        
+        # Overwrite other fields
+        existing_data.update(incoming_data)
+        
+        self.data = existing_data
+        self.save()
+
 
 @grainy_model("audit")
 class EventTask(HandleRefModel):
