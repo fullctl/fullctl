@@ -689,13 +689,9 @@ class ManagedPermission(HandleRefModel):
         tag = "mperm"
 
     @classmethod
-    def apply_roles(cls, org, user, delete_permissions=True):
+    def _apply_roles(cls, org, user):
         user_roles = [ur.role_id for ur in user.roles.filter(org=org)]
-        # delete all those namespaces for the user in the org
-        if delete_permissions and org:
-            for ns in cls.namespaces():
-                user.grainy_permissions.delete_permission(ns.format(org_id=org.id))
-
+        
         # re-apply automatically granted permissions through roles
         for auto_grant in ManagedPermissionRoleAutoGrant.objects.filter(
             role__in=user_roles
@@ -706,11 +702,34 @@ class ManagedPermission(HandleRefModel):
                 continue
 
             ns = managed_permission.namespace.format(org_id=org.id)
+
+            print("apply_roles", {"user": user.email, "ns": ns, "permissions": auto_grant.permissions, "roles": user_roles})
             user.grainy_permissions.add_permission(ns, auto_grant.permissions)
 
         # re-apply permission overrides
         for override in UserPermissionOverride.objects.filter(user=user):
             override.apply()
+
+    @classmethod
+    def apply_roles(cls, org, user, delete_permissions:bool=True):
+        """
+        Recalculate the user's permissions for all orgs they are a member of
+        """
+
+        if delete_permissions:
+            cls.clear_user_permissions(user)
+        orgs = OrganizationUser.objects.filter(user=user)
+        for org_user in orgs:
+            cls._apply_roles(org_user.org, user)
+
+    @classmethod
+    def clear_user_permissions(cls, user):
+        """
+        Clear all permissions for a user
+        """
+        user.grainy_permissions.all().delete()
+
+
 
     @classmethod
     def apply_roles_all(cls):
@@ -731,7 +750,7 @@ class ManagedPermission(HandleRefModel):
 
         for org in org_qset:
             for user in org.org_user_set.all().select_related("user", "org"):
-                cls.apply_roles(org, user.user, delete_permissions=False)
+                cls._apply_roles(org, user.user)
 
     @classmethod
     def apply_roles_org(cls, org):

@@ -213,6 +213,7 @@ def test_org_users(db, account_objects, data_account_api_org_users):
     )
 
     assert response.status_code == int(data_account_api_org_users.status)
+
     assert strip_api_fields(response.json()) == strip_api_fields(
         data_account_api_org_users.expected
     )
