@@ -154,6 +154,15 @@ class Event(ModelSerializer):
         schema_id = kwargs.get("context", {}).get("object_id", "default")
         self.fields["data"].schema_id = schema_id
 
+        # if status=="error" and `data` is set when `error` is not,
+        # then `data` is supposed to be the error details, simply transfer it
+        # over to the `error` field
+        data = kwargs.get("data", {})
+        if data.get("status") == "error" and not data.get("error") and data.get("data"):
+            data["error"] = data["data"]
+            del data["data"]
+            kwargs["data"] = data
+
         super().__init__(*args, **kwargs)
 
     def to_representation(self, instance):
@@ -164,6 +173,10 @@ class Event(ModelSerializer):
         if data:
             for comp in data.get("components", []):
                 self._sanitize_component_output(comp)
+
+        # for status="error" also mirror the `error` field to the `data` field
+        if out.get("status") == "error":
+            out["data"] = out.get("error", {})
 
         return out
 

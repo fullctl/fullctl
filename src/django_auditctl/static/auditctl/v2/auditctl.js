@@ -343,10 +343,15 @@ $ctl.application.Auditctl.EventViewer = $tc.extend(
         // if status == error, display the error message
 
         if(data.status=="error") {
-          object_id_node = $("<span>").text(trimmed);
-          let error_node = $("<span>").addClass("text-danger").text(" "+data.error.message);
-          object_id_node.append(error_node);
-          url = data.error.url;
+          // error details can come from either `data` or `error` field
+          // the `error` field will eventually be deprecated
+          const errorObject = data.error || data.data;
+          if(errorObject !== null) {
+            object_id_node = $("<span>").text(trimmed);
+            let error_node = $("<span>").addClass("text-danger").text(" "+errorObject.message);
+            object_id_node.append(error_node);
+            url = errorObject.url;
+          }
         } else {
           object_id_node = $("<span>").text(trimmed);
           url = data.data.url;
@@ -373,13 +378,16 @@ $ctl.application.Auditctl.EventViewer = $tc.extend(
 
       this.$w.list.formatters.data = (value, data) => {
         let content;
-        if(data.status=="ok") {
-          data.data.created = data.created;
-          content = JSON.stringify(data.data, null, 2);
+
+        const dataObject = data.data || data.error;
+
+        if(dataObject !== null) {
+          dataObject.created = data.created;
+          content = JSON.stringify(dataObject, null, 2);
         } else {
-          data.error.created = data.created;
-          content = JSON.stringify(data.error, null, 2)
+          content = "No data: "+data.id;
         }
+
         return $("<div>").text(content);
       };
 
