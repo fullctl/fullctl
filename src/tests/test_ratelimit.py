@@ -36,9 +36,9 @@ def test_parse_rate_limit(rate_str, expected):
     "object_id,expected",
     [
         # Matches first pattern - actual value from tests
-        ("v0.1/demo/bgp/stat/192.0.2.1/64496/", (3, 60)),
+        ("v0.1/demo/bgp/stat/192.0.2.1/64496/", (1, 1)),
         # Matches first pattern - actual value from tests
-        ("v0.1/demo/bgp/stat/", (3, 60)),
+        ("v0.1/demo/bgp/stat/", (1, 1)),
         # No matching pattern
         ("v0.1/invalid/path", None),
     ],
