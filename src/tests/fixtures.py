@@ -3,6 +3,26 @@ from django.test import Client
 from grainy.const import PERM_CRUD
 
 
+def reset_auto_fields():
+    from django.core.management.color import no_style
+    from django.db import connection
+    from account.models import (
+        ManagedPermission,
+        ManagedPermissionRoleAutoGrant,
+        Organization,
+        OrganizationRole,
+        Role,
+    )
+
+    sequence_sql = connection.ops.sequence_reset_sql(
+        no_style(), [Organization, ManagedPermission, ManagedPermissionRoleAutoGrant, OrganizationRole, Role]
+    )
+    with connection.cursor() as cursor:
+        for sql in sequence_sql:
+            cursor.execute(sql)
+
+
+
 class BillingObjects:
     def __init__(self, handle="test"):
         from django.contrib.auth import get_user_model
@@ -206,6 +226,7 @@ class AccountObjects:
             ManagedPermission,
             ManagedPermissionRoleAutoGrant,
             Organization,
+            OrganizationManagedPermission,
             OrganizationRole,
             Role,
         )
@@ -293,12 +314,19 @@ class AccountObjects:
             namespace="service_bridge.*",
             description="",
             group="aaactl",
+            grant_mode="restricted"
         )
 
         ManagedPermissionRoleAutoGrant.objects.get_or_create(
             managed_permission=service_bridge_managed_permission,
             role=admin_role,
             permissions=PERM_CRUD,
+        )
+        
+        OrganizationManagedPermission.objects.get_or_create(
+            org=self.org,
+            managed_permission=service_bridge_managed_permission,
+            reason="Test",
         )
 
         ManagedPermission.apply_roles_all()

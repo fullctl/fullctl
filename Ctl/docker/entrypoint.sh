@@ -33,6 +33,7 @@ case "$@" in
     export DJANGO_SETTINGS_MODULE=aaactl.settings
     export RELEASE_ENV=run_tests
     unset AUTO_USER_TO_ORG
+    unset ENABLE_ACCOUNT_REGISTRATION
     pytest tests/ -vv --cov-report=term-missing --cov-report=xml --cov=account --cov=billing --cov=common --cov=applications 
     ;;
   "test_mode" )

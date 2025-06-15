@@ -2,7 +2,7 @@ import tempfile
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.core.management import call_command
+from django.core.management import call_command, CommandError
 from django_grainy.models import UserPermission
 
 from account.models import ManagedPermission, Organization, OrganizationUser
@@ -62,13 +62,9 @@ def test_aaactl_import_users_missing_fields(caplog):
         csv_file = file.name
 
     # Call the aaactl_import_users command
-    call_command("aaactl_import_users", csv_file, commit=True)
-
-    # Check if a ValueError was logged
-    assert any(
-        "CSV file does not contain all the expected fields" in record.message
-        for record in caplog.records
-    )
+    with pytest.raises(CommandError) as exc_info:
+        call_command("aaactl_import_users", csv_file, commit=True)
+    assert "CSV file does not contain all the expected fields" in str(exc_info.value)
 
 
 @pytest.mark.django_db
