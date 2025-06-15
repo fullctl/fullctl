@@ -1599,8 +1599,9 @@ class TrafficThresholdAlerts:
             return True
 
         next_alert_time = virtual_port.capacity_notified_net + timedelta(
-            days=self.traffic_alert_config.operator_emails_max_frequency
+            days=self.traffic_alert_config.member_emails_max_frequency
         )
+
         return timezone.now() >= next_alert_time
 
     def member_activated_threshold_alerts(
