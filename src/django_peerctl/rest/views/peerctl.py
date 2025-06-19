@@ -1039,8 +1039,14 @@ class SessionsSummary(CachedObjectMixin, viewsets.GenericViewSet):
     @load_object("net", models.Network, asn="asn")
     @grainy_endpoint(namespace="verified.asn.{asn}.?")
     def list_by_port(self, request, asn, net, port_pk, *args, **kwargs):
-        port = models.Port().object(id=port_pk)
-        instances = list(port.peer_session_qs_prefetched.filter(status="ok"))
+        port = models.Port().first(id=port_pk, org=net.org.remote_id)
+
+        if not port:
+            raise Response([], status=404)
+
+        instances = list(
+            port.peer_session_qs_prefetched.filter(status="ok", peer_port__peer_net__net=net)
+        )
 
         self.prefetch_relations(instances)
 
@@ -1054,8 +1060,12 @@ class SessionsSummary(CachedObjectMixin, viewsets.GenericViewSet):
     @load_object("net", models.Network, asn="asn")
     @grainy_endpoint(namespace="verified.asn.{asn}.?")
     def list_by_device(self, request, asn, net, device_pk, *args, **kwargs):
-        device = models.Device().object(id=device_pk)
-        instances = list(device.peer_session_qs.filter(status="ok"))
+        device = models.Device().first(id=device_pk, org=net.org.remote_id)
+
+        if not device:
+            raise Response([], status=404)
+
+        instances = list(device.peer_session_qs.filter(status="ok", peer_port__peer_net__net=net))
         self.prefetch_relations(instances)
         instances = self._filter_peer(instances, request.GET.get("peer"))
         serializer = self.serializer_class(instances, many=True)
@@ -1066,20 +1076,25 @@ class SessionsSummary(CachedObjectMixin, viewsets.GenericViewSet):
     @load_object("net", models.Network, asn="asn")
     @grainy_endpoint(namespace="verified.asn.{asn}.?")
     def list_by_facility(self, request, asn, net, facility_tag, *args, **kwargs):
-        devices = list(models.Device().objects(facility_slug=facility_tag))
+        devices = list(
+            models.Device().objects(facility_slug=facility_tag, org_id=net.org.remote_id)
+        )
 
         instances = []
 
         models.Device.load_references(devices, org=net.org.slug)
 
         for device in devices:
-            instances.extend(list(device.peer_session_qs.filter(status="ok")))
+            instances.extend(
+                list(device.peer_session_qs.filter(status="ok", peer_port__peer_net__net=net))
+            )
 
         self.prefetch_relations(instances)
 
         instances = self._filter_peer(instances, request.GET.get("peer"))
         serializer = self.serializer_class(instances, many=True)
         data = sorted(serializer.data, key=lambda x: (x["peer_asn"], x["id"]))
+
         return Response(data)
 
     @action(
@@ -1092,8 +1107,10 @@ class SessionsSummary(CachedObjectMixin, viewsets.GenericViewSet):
     def list_by_port_and_device(
         self, request, asn, net, device_pk, port_pk, *args, **kwargs
     ):
-        port = models.Port().object(id=port_pk)
-        instances = port.peer_session_qs_prefetched.filter(status="ok")
+        port = models.Port().first(id=port_pk, org=net.org.remote_id)
+        if not port:
+            raise Response([], status=404)
+        instances = port.peer_session_qs_prefetched.filter(status="ok", peer_port__peer_net__net=net)
 
         serializer = self.serializer_class(instances, many=True)
 
