@@ -480,6 +480,13 @@ class NetworkMeta(models.Model):
         blank=True,
     )
 
+    web_url = models.URLField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Public web site of the network"),
+    )
+
     class Meta:
         db_table = "ixctl_network_meta"
         verbose_name = _("Network Meta")

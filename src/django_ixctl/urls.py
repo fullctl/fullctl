@@ -112,6 +112,11 @@ urlpatterns += [
         include(("django_ixctl.rest.urls.ixctl", "ixctl_api"), namespace="ixctl_api"),
     ),
     path(
+        "<str:org_tag>/<str:ix_tag>/export/members.json",
+        views.export_ixp_manager,
+        name="ixp_manager_export",
+    ),
+    path(
         "<str:org_tag>/<str:ix_tag>/export/memberlist.json",
         views.export_ixf,
         name="ixf export",

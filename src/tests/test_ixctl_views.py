@@ -141,3 +141,48 @@ def test_view_ixf_export_error(db, pdb_data, account_objects, client_anon):
         )
     )
     assert response.status_code == 404
+
+
+def test_view_ixp_manager_export(db, pdb_data, account_objects):
+    """Ensure the members JSON export (IXP Manager format) works."""
+    ix = account_objects.ix
+
+    url = reverse(
+        "ixp_manager_export",
+        args=(
+            account_objects.org.slug,
+            ix.slug,
+        ),
+    ) + "?pretty"
+
+    response = account_objects.client.get(url)
+
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/json"
+
+    data = json.loads(response.content)
+
+    # Basic structure checks
+    assert "member_list" in data
+    assert "member_count" in data
+    assert data["member_count"] == len(data["member_list"])
+
+    # Sanity-check a sample member entry (if any)
+    if data["member_list"]:
+        sample = data["member_list"][0]
+        expected_keys = {
+            "type",
+            "url",
+            "name",
+            "numberofports",
+            "logo",
+            "asnum",
+            "peeringpolicy",
+            "rs",
+            "ipv4",
+            "ipv6",
+            "ports",
+            "reseller",
+            "resold",
+        }
+        assert expected_keys.issubset(sample.keys())
