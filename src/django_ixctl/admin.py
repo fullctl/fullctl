@@ -174,8 +174,8 @@ class TrafficAlertConfigAdmin(BaseAdmin):
 
 @admin.register(NetworkMeta)
 class NetworkMetaAdmin(BaseAdmin):
-    list_display = ("org", "asn", "name")
-    readonly_fields = ("logo_url_set",)
+    list_display = ("org", "asn", "name", "web_url_set")
+    readonly_fields = ("logo_url_set", "web_url_set")
 
     search_fields = ("org__slug", "org__name", "asn", "name")
 
@@ -188,3 +188,8 @@ class NetworkMetaAdmin(BaseAdmin):
         return True if obj.logo_url else False
     logo_url_set.short_description = "Logo URL"
     logo_url_set.boolean = True
+
+    def web_url_set(self, obj):
+        return True if obj.web_url else False
+    web_url_set.short_description = "Website URL"
+    web_url_set.boolean = True
