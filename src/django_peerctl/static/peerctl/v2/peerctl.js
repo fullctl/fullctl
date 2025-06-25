@@ -430,6 +430,7 @@ $peerctl.Ix = $tc.extend(
   {
     Ix: function() {
       this.Tool("ix");
+      this.initialized = false;
 
       // init list
 
@@ -615,6 +616,24 @@ $peerctl.Ix = $tc.extend(
       $(this.$w.list).on("insert:after", (_, row_element, data) => {
         this.port_ids.add(data.id);
       });
+
+      setTimeout(() => {
+        this.ensureInitialized();
+      }, 100);
+    },
+
+    /**
+     * Ensures list widget exists before triggering data load
+     * @method ensureInitialized
+     */
+    ensureInitialized: function() {
+      if (!this.initialized && this.$w.list && this.$w.list.element.length > 0) {
+        this.initialized = true;
+        // Force a sync if the list hasn't loaded yet
+        if (!this.$w.list.element.data("last-sync")) {
+          this.sync(true);
+        }
+      }
     },
 
     /**
@@ -624,6 +643,12 @@ $peerctl.Ix = $tc.extend(
      */
 
     sync: function(force) {
+
+      // Ensure the list is initialized
+      if (!this.initialized) {
+        this.ensureInitialized();
+        return;
+      }
 
       // if force is false check if we have already loaded the list
       // in the last minute and dont sync if we have
