@@ -237,7 +237,7 @@ class OrganizationManagedPermissionAdmin(admin.ModelAdmin):
         "product",
         "created",
     )
-    autocomplete_fields = ("org",)
+    autocomplete_fields = ("org", "product", "managed_permission")
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj=obj, **kwargs)
