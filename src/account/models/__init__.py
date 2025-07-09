@@ -2,6 +2,7 @@ import datetime
 import secrets
 from typing import Literal
 
+import structlog
 import reversion
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -33,6 +34,7 @@ from common.models import HandleRefModel
 
 # Create your models here.
 
+log = structlog.get_logger(__name__)
 
 @reversion.register
 class UserSettings(HandleRefModel):
@@ -690,25 +692,95 @@ class ManagedPermission(HandleRefModel):
 
     @classmethod
     def _apply_roles(cls, org, user):
+        """
+        Apply roles to a user
+
+        This expects that related permissions are already cleared for the user.
+        """
+
         user_roles = [ur.role_id for ur in user.roles.filter(org=org)]
         
-        # re-apply automatically granted permissions through roles
-        for auto_grant in ManagedPermissionRoleAutoGrant.objects.filter(
+        # Collect all permissions to be added
+        permissions_to_add = []
+        
+        # Get all auto grants with related data in one query
+        auto_grants = ManagedPermissionRoleAutoGrant.objects.filter(
             role__in=user_roles
-        ).order_by("-role__level"):
+        ).select_related('managed_permission').order_by("-role__level")
+        
+        org_managed_perms = set()
+
+        # Pre-fetch restricted permissions if needed
+        if any(ag.managed_permission.grant_mode == 'restricted' for ag in auto_grants):
+            # Cache org's managed permissions
+            org_managed_perms = set(
+                org.org_managed_permission_set.values_list('managed_permission_id', flat=True)
+            )
+        
+        for auto_grant in auto_grants:
             managed_permission = auto_grant.managed_permission
-
-            if not managed_permission.can_grant_to_org(org):
-                continue
-
+            
+            # Check grant permission efficiently
+            if managed_permission.grant_mode == 'restricted':
+                if managed_permission.id not in org_managed_perms:
+                    continue
+            
             ns = managed_permission.namespace.format(org_id=org.id)
+            permissions_to_add.append({
+                'namespace': ns,
+                'permission': auto_grant.permissions,
+                'user': user
+            })
+        
+        if permissions_to_add:
+            log.debug(f"Applying {len(permissions_to_add)} permissions to {user.email}")
+            # Bulk create new permissions
+            UserPermission.objects.bulk_create([
+                UserPermission(
+                    user=user,
+                    namespace=p['namespace'],
+                    permission=p['permission']
+                ) for p in permissions_to_add
+            ])
+        else:
+            log.debug(f"No permissions to apply to {user.email}")
 
-            print("apply_roles", {"user": user.email, "ns": ns, "permissions": auto_grant.permissions, "roles": user_roles})
-            user.grainy_permissions.add_permission(ns, auto_grant.permissions)
+    @classmethod
+    def _apply_permission_overrides(cls, user):
+        """
+        Apply permission overrides for a user.
 
-        # re-apply permission overrides
-        for override in UserPermissionOverride.objects.filter(user=user):
-            override.apply()
+        This should be done after all roles are applied.
+        """
+        overrides = UserPermissionOverride.objects.filter(user=user).distinct("namespace")
+        
+        if not overrides:
+            return
+        
+        # Collect all override data
+        override_data = []
+        namespaces = []
+        
+        for override in overrides:
+            override_data.append({
+                'namespace': override.namespace,
+                'permission': override.permissions
+            })
+            namespaces.append(override.namespace)
+        
+        if override_data:
+            log.debug(f"Re-applying {len(override_data)} permission overrides for {user.email}")
+            # Delete existing permissions for these namespaces
+            user.grainy_permissions.filter(namespace__in=namespaces).delete()
+            
+            # Bulk create the override permissions
+            UserPermission.objects.bulk_create([
+                UserPermission(
+                    user=user,
+                    namespace=od['namespace'],
+                    permission=od['permission']
+                ) for od in override_data
+            ])
 
     @classmethod
     def apply_roles(cls, org, user, delete_permissions:bool=True):
@@ -722,14 +794,14 @@ class ManagedPermission(HandleRefModel):
         for org_user in orgs:
             cls._apply_roles(org_user.org, user)
 
+        cls._apply_permission_overrides(user)
+
     @classmethod
     def clear_user_permissions(cls, user):
         """
         Clear all permissions for a user
         """
         user.grainy_permissions.all().delete()
-
-
 
     @classmethod
     def apply_roles_all(cls):
@@ -748,9 +820,15 @@ class ManagedPermission(HandleRefModel):
         # delete all user permissions
         UserPermission.objects.all().delete()
 
+        users = []
+
         for org in org_qset:
             for user in org.org_user_set.all().select_related("user", "org"):
                 cls._apply_roles(org, user.user)
+                users.append(user.user)
+
+        for user in users:
+            cls._apply_permission_overrides(user)
 
     @classmethod
     def apply_roles_org(cls, org):
@@ -758,7 +836,7 @@ class ManagedPermission(HandleRefModel):
         Takes an organization id and re-applies permissions for all
         users in the organization.
         """
-        for user in org.org_user_set.all().select_related("user", "org"):
+        for user in org.org_user_set.all().select_related("user", "org").prefetch_related("org__org_managed_permission_set"):
             cls.apply_roles(org, user.user)
 
     @classmethod
