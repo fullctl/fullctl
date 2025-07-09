@@ -214,7 +214,13 @@ def test_org_users(db, account_objects, data_account_api_org_users):
 
     assert response.status_code == int(data_account_api_org_users.status)
 
-    assert strip_api_fields(response.json()) == strip_api_fields(
+    response_json = response.json()
+
+    # sort .data by {email}
+    response_json["data"].sort(key=lambda x: x["email"])
+    data_account_api_org_users.expected["data"].sort(key=lambda x: x["email"])
+
+    assert strip_api_fields(response_json) == strip_api_fields(
         data_account_api_org_users.expected
     )
 

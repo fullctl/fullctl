@@ -11,7 +11,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
-from django.db import models, transaction
+from django.db import models, transaction, IntegrityError
 from django.shortcuts import render
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -30,6 +30,11 @@ from applications.service_bridge import get_client_bridge, get_client_bridge_cls
 from billing.exceptions import OrgProductAlreadyExists
 from common.email import email
 from common.models import HandleRefModel
+from billing.process_cycle import (
+    handle_existing_cycle_charge,
+    initial_cycle_charge,
+    reconcile_invoice_and_charge,
+)
 
 # Create your models here.
 
@@ -875,6 +880,25 @@ class SubscriptionCycle(HandleRefModel):
     start = models.DateField()
     end = models.DateField()
 
+    # Persisted financial objects for this cycle. These allow us to reuse the same
+    # order / invoice when a charge has to be retried, keeping a stable invoice
+    # number for the customer and preventing duplicate Order* / Invoice* rows.
+    order = models.OneToOneField(
+        "billing.Order",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="subscription_cycle",
+    )
+
+    invoice = models.OneToOneField(
+        "billing.Invoice",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="subscription_cycle",
+    )
+
     class Meta:
         db_table = "billing_subscription_cycle"
         verbose_name = _("Subscription Cycle")
@@ -888,6 +912,10 @@ class SubscriptionCycle(HandleRefModel):
         """
         The current total of the subscription_cycle
         """
+
+        #if invoice exists, return invoice price
+        if self.invoice:
+            return self.invoice.price
 
         price = 0
         for charge in self.subscription_cycle_product_set.all():
@@ -912,7 +940,7 @@ class SubscriptionCycle(HandleRefModel):
         """
 
         return self.subscription_cycle_charge_set.filter(
-            payment_charge__status="ok"
+            payment_charge__status__in=["ok", "pending"]
         ).exists()
 
     @property
@@ -970,55 +998,68 @@ class SubscriptionCycle(HandleRefModel):
             subscription_product=subscription_product,
         )
 
-    def charge(self, commit=True):
+    def charge(self, commit:bool=True) -> "SubscriptionCycleCharge | None":
         """
         Charge the cost of the subscription_cycle to the customer's payment method
         """
 
-        if self.charged:
-            raise OSError("Cycle was already charged successfully")
+        # 1. Handle pre-existing charges (pending / succeeded / failed)
+        existing_cycle_charge = self.subscription_cycle_charge_set.first()
+        if existing_cycle_charge:
+            status = existing_cycle_charge.payment_charge.status
 
-        self.status = "paid"
-        self.save()
+            # Re-use existing pending charge; do not attempt to process again
+            if status == "pending":
+                return existing_cycle_charge
 
-        if not self.price:
-            return
+            # Delegate further handling (ok / failed / etc.) to helper
+            handled_charge = handle_existing_cycle_charge(self, existing_cycle_charge)
 
-        pending_payment_charge = self.subscription_cycle_charge_set.filter(
-            payment_charge__status="pending"
-        ).first()
-        if pending_payment_charge:
-            return pending_payment_charge
+            # _handle_existing_cycle_charge returns a cycle_charge ready for processing
+            # or None if no further work is required (e.g., nothing to bill).
+            if handled_charge is None:
+                # Nothing to do
+                return  
 
-        order_number = self.create_orders()
-        invoice = self.create_invoice(order_number)
+            target_cycle_charge = handled_charge
+        else:
+            # 2. No existing charge – create a fresh one (unless there is nothing to bill)
+            created_charge = initial_cycle_charge(self)
+            if created_charge is None:
+                # Nothing to charge (zero total)
+                return  
+            target_cycle_charge = created_charge
 
-        payment_charge = PaymentCharge.objects.create(
-            payment_method=self.subscription.payment_method,
-            price=self.price,
-            description=self.subscription.charge_description,
-        )
-        invoice.charge_object = payment_charge
-        invoice.save()
+        # 3. Ensure invoice / payment_charge amounts & relations are in sync
+        reconcile_invoice_and_charge(self, target_cycle_charge)
 
-        subscription_cycle_charge = SubscriptionCycleCharge.objects.create(
-            subscription_cycle=self, payment_charge=payment_charge, status="pending"
-        )
-
-        log.debug(f"{payment_charge.id}", details=payment_charge.details, price=payment_charge.price)
+        # 4. Trigger processor charge if requested
         if commit:
-            self.subscription.payment_method.processor_instance.charge(payment_charge)
+            self.subscription.payment_method.processor_instance.charge(
+                target_cycle_charge.payment_charge
+            )
 
-        payment_charge.refresh_from_db()
-        if payment_charge.status == "failed":
+        # 5. Refresh status and propagate failures
+        target_cycle_charge.payment_charge.refresh_from_db()
+        if target_cycle_charge.payment_charge.status == "failed":
             self.status = "failed"
-            payment_charge.subscription_cycle_charge.status = "failed"
-            payment_charge.subscription_cycle_charge.save()
-            payment_charge.notify_failure()
+            target_cycle_charge.status = "failed"
+            target_cycle_charge.save()
+            target_cycle_charge.payment_charge.notify_failure()
             self.save()
 
+        return target_cycle_charge
 
-        return subscription_cycle_charge
+    def invoice_exists(self):
+        # Prefer the explicit FK once present (new logic) but fall back to the
+        # historical behaviour so that older data continues to work until we
+        # run a back-fill.
+        if self.invoice_id:
+            return True
+
+        return InvoiceLine.objects.filter(
+            subscription_cycle_product__subscription_cycle=self
+        ).exists()
 
     def create_invoice(self, order_number):
         org = self.subscription.org
@@ -1096,6 +1137,11 @@ class SubscriptionCycleCharge(HandleRefModel):
         db_table = "billing_subscription_cycle_charge"
         verbose_name = _("Subscription Cycle Charge")
         verbose_name_plural = _("Subscription Cycle Charges")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["subscription_cycle"], name="uniq_cycle_charge"
+            )
+        ]
 
     class HandleRef:
         tag = "subscription_cycle_charge"
@@ -1771,8 +1817,33 @@ class PaymentCharge(HandleRefModel):
             self.create_payment_transaction()
 
         if self.subscription_cycle_charge:
+            # sync status on the intermediate SubscriptionCycleCharge record
             self.subscription_cycle_charge.status = self.status
             self.subscription_cycle_charge.save()
+
+            # Keep the parent SubscriptionCycle status in sync with the final
+            # outcome of the charge. We do this here – after the charge status
+            # has been refreshed from the payment processor – to guarantee we
+            # only mark the cycle as "paid" once the processor has confirmed
+            # success. Likewise, if the charge ultimately fails we reflect
+            # that on the cycle (unless it was already flagged as a more
+            # severe "error" by earlier logic).
+
+            cycle = self.subscription_cycle_charge.subscription_cycle
+
+            # Successful payment – mark cycle as paid
+            if self.status == "ok" and cycle.status != "paid":
+                cycle.status = "paid"
+                cycle.save(update_fields=["status"])
+
+            # Failed payment – ensure cycle.status shows failure (do not
+            # overwrite a previously set "error" state).
+            elif (
+                self.status == "failed"
+                and cycle.status not in ["failed", "error"]
+            ):
+                cycle.status = "failed"
+                cycle.save(update_fields=["status"])
 
         return self.status
 
@@ -1875,7 +1946,7 @@ class Order(HandleRefModel):
     def price(self):
         price = 0
         for order_line in self.order_line_set.all():
-            price += order_line.price
+            price += order_line.amount
         return price
 
     @property
@@ -1988,7 +2059,7 @@ class Invoice(HandleRefModel):
     def price(self):
         price = 0
         for invoice_line in self.invoice_line_set.all():
-            price += invoice_line.price
+            price += invoice_line.amount
         return price
 
     @property

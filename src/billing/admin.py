@@ -347,6 +347,9 @@ class SubscriptionCycleChargeInline(admin.TabularInline):
     fields = ("status", "payment_charge")
     readonly_fields = ("payment_charge",)
 
+    def has_add_permission(self, request, obj=None):
+        return False
+
 
 @admin.register(SubscriptionCycle)
 class SubscriptionCycleAdmin(BaseAdmin):
