@@ -1,6 +1,7 @@
 import json
 
 import structlog
+from django.db.models import Prefetch
 from django.utils.translation import gettext_lazy as _
 from flatten_json import flatten
 from fullctl.django.inet.validators import validate_mac_addresses
@@ -155,6 +156,66 @@ class Device(TagMixin, ModelSerializer):
             "meta",
         ]
 
+    @property
+    def management_ips(self) -> dict:
+        """
+        Build a cache of management IPs for all devices being serialized.
+        This significantly reduces database queries when serializing many devices.
+        """
+            
+        # Check if parent already has the cache
+        if hasattr(self, '_management_ips'):
+            return self._management_ips
+            
+        # Initialize the cache on the parent
+        self._management_ips = {}
+        
+        # Get all device IDs from the parent's instance (which is the queryset)
+        if isinstance(self.instance, models.Device):
+            device_ids = [self.instance.id]
+        else:
+            device_ids = [device.id for device in self.instance]
+
+        # Bulk fetch all management port infos with their IPs
+        port_infos = models.PortInfo.objects.filter(
+            is_management=True,
+            port__virtual_port__logical_port__physical_ports__device_id__in=device_ids
+        ).prefetch_related(
+            Prefetch('ips', queryset=models.IPAddress.objects.all())
+        ).select_related(
+            'port__virtual_port__logical_port'
+        ).prefetch_related(
+            'port__virtual_port__logical_port__physical_ports'
+        ).distinct()
+
+        # Build a mapping from port_info to device_id
+        for port_info in port_infos:
+            # Find all devices connected to this port_info
+            physical_ports = port_info.port.virtual_port.logical_port.physical_ports.all()
+            for physical_port in physical_ports:
+                device_id = physical_port.device_id
+
+                if device_id in self._management_ips:
+                    continue
+
+                ipv4 = None
+                ipv6 = None
+                
+                # Process IPs - they're already prefetched
+                for ip in port_info.ips.all():
+                    if ip.address.version == 4 and not ipv4:
+                        ipv4 = str(ip.address)
+                    elif ip.address.version == 6 and not ipv6:
+                        ipv6 = str(ip.address)
+                        
+                self._management_ips[device_id] = {
+                    'ipv4': ipv4,
+                    'ipv6': ipv6,
+                    'port_info_id': port_info.id  # for debugging
+                }
+
+        return self._management_ips
+
     def get_facility_name(self, obj):
         if obj.facility is None:
             return None
@@ -166,16 +227,12 @@ class Device(TagMixin, ModelSerializer):
         return obj.facility.slug
 
     def get_management_ip_address_4(self, obj):
-        port = obj.management_port
-        if not port or not port.ip_address_4:
-            return None
-        return f"{port.ip_address_4}"
+        return self.management_ips.get(obj.id, {}).get('ipv4')
+
 
     def get_management_ip_address_6(self, obj):
-        port = obj.management_port
-        if not port or not port.ip_address_6:
-            return None
-        return f"{port.ip_address_6}"
+        return self.management_ips.get(obj.id, {}).get('ipv6')
+            
 
     def get_operational_status(self, obj):
         try:

@@ -61,14 +61,18 @@ $ctl.application.Devicectl = $tc.extend(
       });
 
       $(this.$c.toolbar.$w.select_facility.element).on("change", () => {
+        this.selectedDeviceId = null;
         this.$c.toolbar.$w.select_device.load().then(() => {
         });
       });
 
+      this.$c.toolbar.$w.select_device.element.on("change", () => {
+        this.selectedDeviceId = this.$c.toolbar.$w.select_device.element.val();
+      });
 
       $('#ports-tab').on('show.bs.tab', () => {
         this.$c.toolbar.$e.select_device_toggle.show();
-        this.$c.toolbar.$w.select_device.load();
+        this.$c.toolbar.$w.select_device.load(this.selectedDeviceId);
       });
       $('#ports-tab').on('hide.bs.tab', () => { this.$c.toolbar.$e.select_device_toggle.hide(); });
 
@@ -222,10 +226,7 @@ $ctl.application.Devicectl.DeviceDashboard = $tc.extend(
 
         row.click(() => {
 
-          $(fullctl.devicectl.$c.toolbar.$w.select_device).one("load:after", ()=> {
-            fullctl.devicectl.$c.toolbar.$w.select_device.element.val(data.id);
-            fullctl.devicectl.$c.toolbar.$w.select_device.sync();
-          })
+          fullctl.devicectl.selectedDeviceId = data.id;
 
           if(data.facility != parseInt(fullctl.devicectl.facility())) {
 

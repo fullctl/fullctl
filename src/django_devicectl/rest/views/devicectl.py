@@ -5,6 +5,7 @@ import time
 import fullctl.service_bridge.pdbctl as pdbctl
 import structlog
 from django.conf import settings
+from django.db import connection
 from fullctl.django.auditlog import auditlog
 from fullctl.django.decorators import service_bridge_sync
 from fullctl.django.rest.core import BadRequest
@@ -153,7 +154,15 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
 
     @action(detail=True, serializer_class=Serializers.device)
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
-    @service_bridge_sync(pull="sot")
+    # TODO: service_bridge_sync here seems crazy, itll pull the device information
+    # for each device from netbox/nautobox for each device in the facility on the back of 
+    # a GET request.
+    #
+    # With a periodically running sync job this should NOT be needed. The org-wide devices
+    # list endpoint does not do this, so no reason to do it here either.
+    #
+    # Commenting out for now and lets evaluate if we need it.
+    # @service_bridge_sync(pull="sot")
     def devices(self, request, org, instance, *args, **kwargs):
         ordering_filter = CaseInsensitiveOrderingFilter(["name", "type", "status"])
         facility = self.get_object()
@@ -163,8 +172,8 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         if request.GET.get("include-unassigned"):
             queryset |= models.Device.objects.filter(facility__isnull=True)
 
+        queryset = queryset.select_related("facility", "instance", "instance__org", "operational_status")
         queryset = queryset.order_by("name")
-        queryset = ordering_filter.filter_queryset(request, queryset, self)
 
         serializer = Serializers.device(
             queryset,
@@ -211,7 +220,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
     def list(self, request, org, instance, *args, **kwargs):
         queryset = instance.devices.all()
         queryset = (
-            queryset.select_related("facility")
+            queryset.select_related("facility", "operational_status")
             .order_by("operational_status__status", "name")
             .exclude(name__startswith="peerctl:")
         )
