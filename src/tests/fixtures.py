@@ -175,6 +175,7 @@ class BillingObjects:
             namespace="org.{org_id}",
             description="",
             group="aaactl",
+            grant_mode="auto",
         )
 
         ManagedPermissionRoleAutoGrant.objects.get_or_create(
@@ -187,6 +188,7 @@ class BillingObjects:
             namespace="user.{org_id}",
             description="",
             group="aaactl",
+            grant_mode="auto",
         )
 
         ManagedPermissionRoleAutoGrant.objects.create(
@@ -199,6 +201,7 @@ class BillingObjects:
             namespace="billing.{org_id}",
             description="",
             group="aaactl",
+            grant_mode="auto",
         )
 
         ManagedPermissionRoleAutoGrant.objects.create(
@@ -278,6 +281,7 @@ class AccountObjects:
             namespace="org.{org_id}",
             description="",
             group="aaactl",
+            grant_mode="auto",
         )
 
         ManagedPermissionRoleAutoGrant.objects.get_or_create(
@@ -290,6 +294,7 @@ class AccountObjects:
             namespace="user.{org_id}",
             description="",
             group="aaactl",
+            grant_mode="auto",
         )
 
         ManagedPermissionRoleAutoGrant.objects.get_or_create(
@@ -302,6 +307,7 @@ class AccountObjects:
             namespace="billing.{org_id}",
             description="",
             group="aaactl",
+            grant_mode="auto",
         )
 
         ManagedPermissionRoleAutoGrant.objects.get_or_create(
