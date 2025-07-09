@@ -1298,6 +1298,9 @@ class OrganizationProduct(HandleRefModel):
 
         return timezone.now() >= self.expires
 
+    def __str__(self):
+        return f"{self.org.name} - {self.product.name}"
+
     def add_to_history(self):
         OrganizationProductHistory.objects.create(
             org=self.org,
