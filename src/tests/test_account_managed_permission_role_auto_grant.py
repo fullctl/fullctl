@@ -32,6 +32,7 @@ def test_managed_permission_role_auto_grant_add_and_delete(account_objects):
         group="test",
         description="test",
         managable=True,
+        grant_mode="auto",
     )
 
     update_permissions_count = UpdatePermissions.objects.count()

@@ -24,6 +24,7 @@ def test_grant_mode_auto(account_objects, role_objects):
         group="test",
         description="test",
         managable=True,
+        grant_mode="auto",
     )
 
     ManagedPermissionRoleAutoGrant.objects.create(

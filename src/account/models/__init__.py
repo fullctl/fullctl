@@ -672,7 +672,7 @@ class ManagedPermission(HandleRefModel):
 
     grant_mode = models.CharField(
         max_length=16,
-        default="auto",
+        default="restricted",
         choices=(
             ("auto", _("Automatically")),
             ("restricted", _("Restricted")),

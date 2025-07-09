@@ -41,11 +41,13 @@ def multi_org_user(db, account_objects):
         namespace="test.a.{org_id}",
         group="test",
         description="Permission A",
+        grant_mode="auto",
     )
     mperm_b = ManagedPermission.objects.create(
         namespace="test.b.{org_id}",
         group="test",
         description="Permission B",
+        grant_mode="auto",
     )
 
     # setup role grants
@@ -210,6 +212,7 @@ def test_org_agnostic_namespace_permission(multi_org_user):
         namespace=perm_agnostic,
         group="test",
         description="Agnostic Permission",
+        grant_mode="auto",
     )
     ManagedPermissionRoleAutoGrant.objects.create(
         managed_permission=mperm_agnostic, role=u.role_a, permissions=PERM_CRUD

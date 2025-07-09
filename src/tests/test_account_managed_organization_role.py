@@ -27,6 +27,7 @@ def test_organization_role_add_and_delete(account_objects):
         group="test",
         description="test",
         managable=True,
+        grant_mode="auto",
     )
 
     ManagedPermissionRoleAutoGrant.objects.create(
