@@ -1,7 +1,9 @@
 import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.devicectl as devicectl
-from fullctl.django.models.concrete import Task
+from fullctl.django.models.concrete import Task, Organization
 from fullctl.django.tasks import register
+import django_peerctl.utils as utils
+
 
 import structlog
 logger = structlog.getLogger("django_structlog")
@@ -153,5 +155,62 @@ class SyncDevicePorts(Task):
 
         devicectl_create_devices(self.org, [net.asn for net in self.org.net_set.all()])
 
+    @property
     def generate_limit_id(self):
         return self.org_id
+
+
+@register
+class RequestDummyPorts(Task):
+
+    """
+    Request dummy ports from devicectl
+    """
+
+    class Meta:
+        proxy = True
+        verbose_name = "Request Dummy Ports"
+        verbose_name_plural = "Request Dummy Ports"
+
+    class TaskMeta:
+        limit = 1
+
+    class HandleRef:
+        tag = "task_request_dummy_ports"
+    
+
+    @classmethod
+    def create_task(cls, org:Organization, asns:list[int], **kwargs):
+        kwargs.pop("org", None)
+        return super().create_task(org=org, asns=asns, **kwargs)
+
+    @property
+    def generate_limit_id(self):
+        return self.org_id
+
+    def run(self, *args, **kwargs):
+
+        asns:list[int] = kwargs.get("asns", [])
+
+        for asn in asns:
+            self.claim_asn(asn)
+
+        # now we need to request dummy ports for the asns
+        # this is already smart enough to only do this for ports currently
+        # missing, so we can just call it with the asns
+        utils.devicectl_create_devices(self.org, asns)
+
+
+    def claim_asn(self, asn:int):
+        
+        org = self.org
+
+        # this will raise an ASNClaimed exception if the asn is already claimed
+        # otherwise the network will be created and claimed by the org
+
+        # claim issues need to be manually followed up, so the error is raised
+        # as is and the task will fail
+        utils.get_network(asn, org)
+
+
+
