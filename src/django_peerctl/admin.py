@@ -28,6 +28,8 @@ from django_peerctl.models import (
 )
 
 
+from django_peerctl.models.tasks import RequestDummyPorts
+
 def status_form(choices=None):
     if not choices:
         choices = [
@@ -389,3 +391,92 @@ class ExtendedUserAdmin(UserAdmin):
 
     def sessions(self, obj):
         return UserSession.objects.filter(user=obj).count()
+
+
+class RequestDummyPortsForm(forms.ModelForm):
+    """
+    Form for creating ``RequestDummyPorts`` tasks.
+
+    The form adds an extra ``asn`` integer field while keeping the model's
+    ``org`` ForeignKey untouched.  By relying on the standard ``autocomplete_fields``
+    mechanism in the corresponding ``ModelAdmin`` we get the regular Django-admin
+    autocomplete widget out of the box.
+    """
+
+    # Extra (non-model) field – single ASN to request dummy ports for.
+    asn = forms.IntegerField(
+        label="ASN",
+        help_text="Enter a single ASN to request dummy ports for",
+        min_value=1,
+        max_value=4294967295,  # Max ASN value
+    )
+
+    class Meta:
+        model = RequestDummyPorts
+        # Only include model fields we actually want to expose.  ``org`` is kept so
+        # that ``autocomplete_fields`` can inject the standard AutocompleteSelect
+        # widget automatically.
+        fields = ("org",)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Restrict organizations to those in "ok" status.
+        self.fields["org"].queryset = Organization.objects.filter(status="ok")
+
+    def save(self, commit: bool = True):
+        """Create and return a ``RequestDummyPorts`` task instance.
+
+        Instead of persisting the bound instance coming from *ModelForm*, we
+        delegate to the model's ``create_task`` class-method so that the new
+        task is set up exactly the same way it would be from application code.
+        """
+
+        # Make sure the form is valid – this mirrors the behaviour of the
+        # default *ModelForm.save* implementation.
+        if not self.is_valid():  # pragma: no cover – admin already validates
+            raise ValueError("Cannot save an invalid form.")
+
+        org = self.cleaned_data["org"]
+        asn = self.cleaned_data["asn"]
+
+        # The task API expects a list of ASNs.
+        task = RequestDummyPorts.create_task(org=org, asns=[asn])
+
+        return task
+
+    # The admin changeform processing pipeline calls ``form.save_m2m`` even when
+    # the form has no many-to-many fields.  Provide a harmless no-op implementation
+    # so that the custom save logic above does not raise an AttributeError.
+    def save_m2m(self):  # pragma: no cover
+        return None
+
+
+@admin.register(RequestDummyPorts)
+class RequestDummyPortsAdmin(admin.ModelAdmin):
+    list_display = ("org", "asns", "status", "created", "updated", "error_type")
+    readonly_fields = ("asns", "status", "error_type")
+    form = RequestDummyPortsForm
+    search_fields = ("org__name", "org__slug")
+
+    # Use the built-in autocomplete widget for the ``org`` relation.
+    autocomplete_fields = ("org",)
+
+    # Display just the relevant fields in the form.
+    fields = ("org", "asn")
+
+    # this query set needs to filter `op` = "task_request_dummy_ports"
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(op="task_request_dummy_ports")
+
+    def asns(self, obj):
+        return ", ".join(str(asn) for asn in obj.param.get("kwargs", {}).get("asns", []))
+
+    def org(self, obj):
+        return obj.org
+
+    def error_type(self, obj):
+        if obj.status == "failed":
+            if "ASNClaimed" in obj.error:
+                return "ASN already claimed"
+            return "Unhandled error"
+        return None

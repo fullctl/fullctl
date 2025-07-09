@@ -9,14 +9,14 @@ from django.db import IntegrityError
 from grainy.const import PERM_READ
 
 from django_peerctl.exceptions import ASNClaimed
-from django_peerctl.models import Network, PortInfo
+import django_peerctl.models as models
 
 log = structlog.get_logger(__name__)
 
 
 def get_network(asn, org):
     try:
-        return Network.get_or_create(asn, org)
+        return models.Network.get_or_create(asn, org)
     except IntegrityError:
         # another org already claimed this asn
         raise ASNClaimed()
@@ -168,7 +168,7 @@ def devicectl_create_devices(org, verified_asns):
             if not ip or ip not in ports:
                 continue
             network = networks[member.asn]
-            PortInfo.require_for_pdb_netixlan(network, ports[ip]["id"], member)
+            models.PortInfo.require_for_pdb_netixlan(network, ports[ip]["id"], member)
 
 
 def port_components(member):
