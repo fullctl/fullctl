@@ -3,6 +3,7 @@ import traceback
 
 import reversion
 from django.core.management.base import CommandError
+from django.db.models import QuerySet
 from django.utils import timezone
 from fullctl.django.auditlog import auditlog
 from fullctl.django.management.commands.base import CommandInterface
@@ -37,7 +38,26 @@ class Command(CommandInterface):
 
     commit = False
 
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
+
+        parser.add_argument(
+            "--group",
+            "-g",
+            dest="group",
+            metavar="GROUP",
+            type=str,
+            required=False,
+            help=(
+                "Limit processing to a single ProductGroup. "
+                "Accepts either the numeric ID or the name of the group."
+            ),
+        )
+
     def handle(self, *args, **kwargs):
+        # Extract optional group filter so that it can be used by helper methods
+        self.group_filter = kwargs.get("group")
+
         self.critical_cycle_errors = []
 
         super().handle(*args, **kwargs)
@@ -51,6 +71,11 @@ class Command(CommandInterface):
 
     def progress_product_expiry(self, *args, **kwargs):
         qset = OrganizationProduct.objects.filter(expires__lt=timezone.now())
+
+        # Apply --group filter if provided
+        if getattr(self, "group_filter", None):
+            qset = self._filter_by_group(qset, "product__group")
+
         for org_prod in qset:
             self.log_info(f"Expiring {org_prod.product} for {org_prod.org}")
             if org_prod.product.expiry_replacement_product_id:
@@ -86,7 +111,12 @@ class Command(CommandInterface):
 
     @catch_internal_processor_error
     def progress_subscription_cycles(self):
+        # Base queryset: active subscriptions only
         qset = Subscription.objects.filter(status="ok")
+
+        # Apply --group filter if provided
+        if getattr(self, "group_filter", None):
+            qset = self._filter_by_group(qset, "group")
 
         errored = self.critical_cycle_errors
 
@@ -173,6 +203,8 @@ class Command(CommandInterface):
                         self.log_error(
                             f"INTERNAL ERROR (possibly charged)\n{error_info}"
                         )
+                        subscription_cycle.status = "error"
+                        subscription_cycle.save(update_fields=["status"])
 
             # sync charge processing status
 
@@ -233,3 +265,35 @@ class Command(CommandInterface):
 
             self.log_info(f"syncing open invoice {invoice}")
             invoice.sync_status(commit=self.commit)
+
+    def _filter_by_group(self, queryset:QuerySet, lookup_prefix:str) -> QuerySet:
+        """
+        Return the queryset filtered down to the selected ProductGroup.
+
+        The lookup_prefix argument is the relation path to the ProductGroup field
+        on the supplied queryset model. 
+        
+        For instance:
+            * "group" for Subscription
+            * "product__group" for OrganizationProduct
+        """
+        group_value = getattr(self, "group_filter", None)
+        if not group_value:
+            return queryset
+
+        # Try to interpret the value as an integer primary key first; if that
+        # fails (ValueError) or results in no match we fall back to filtering by
+        # group name. This makes the option flexible for both CI scripts (which
+        # often prefer ids) and humans (who prefer names).
+        try:
+            group_id = int(group_value)
+            criteria = {f"{lookup_prefix}__id": group_id}
+            qs = queryset.filter(**criteria)
+            if qs.exists():
+                return qs
+        except (ValueError, TypeError):
+            # Not an int – interpret as name
+            pass
+
+        criteria = {f"{lookup_prefix}__name": group_value}
+        return queryset.filter(**criteria)

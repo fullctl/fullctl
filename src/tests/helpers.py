@@ -38,6 +38,7 @@ def strip_api_fields(data):
             set_assert_field_exists("group", v)
             set_assert_field_exists("user", v)
             set_assert_field_exists("id", v)
+            set_assert_field_exists("role", v)
             strip_api_fields(v)
         if isinstance(v, list):
             strip_api_fields(v)

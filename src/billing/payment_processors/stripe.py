@@ -129,6 +129,14 @@ class Stripe(PaymentProcessor):
         if self.source.startswith("card_"):
             raise LegacyPaymentMethodDetected()
 
+        # Ensure a stable idempotency key for this payment charge across retries
+        idemp_key = payment_charge.data.get("idemp_key")
+        if not idemp_key:
+            # Use the payment_charge primary key to keep it unique and deterministic
+            idemp_key = f"cycle-{payment_charge.id}"
+            payment_charge.data["idemp_key"] = idemp_key
+            payment_charge.save(update_fields=["data"])
+
         try:
             payment_intent = stripe.PaymentIntent.create(
                 amount=int(payment_charge.price * 100),
@@ -139,6 +147,7 @@ class Stripe(PaymentProcessor):
                 confirm=True,
                 automatic_payment_methods={"enabled": True, "allow_redirects": "never"},
                 payment_method_options=None,
+                idempotency_key=idemp_key,
                 api_key=self.api_key,
             )
             self.log.info(
@@ -222,10 +231,20 @@ class Stripe(PaymentProcessor):
         Creates a strip invoice from a aaactl Invoice instance
         """
 
-        # if the invoice has already been created raise ValueError
+        # If the invoice has already been created on Stripe we simply return
+        # the existing invoice object instead of erroring out. This makes the
+        # operation idempotent – important when `SubscriptionCycle.charge()`
+        # is retried and wants to ensure an invoice exists.
 
         if invoice.data.get("stripe_invoice"):
-            raise ValueError("Stripe invoice already created")
+            try:
+                return stripe.Invoice.retrieve(
+                    invoice.data["stripe_invoice"], api_key=self.api_key
+                )
+            except Exception:
+                # If Stripe can't find the invoice we fall through to create
+                # a fresh copy to keep accounting consistent.
+                pass
 
         for invoice_line in invoice.invoice_line_set.all():
             stripe.InvoiceItem.create(
