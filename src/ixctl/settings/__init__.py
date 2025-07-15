@@ -118,7 +118,7 @@ settings_manager.set_option("DEFAULT_PORT_SIZE", 1)
 settings_manager.set_option("PORT_LIMIT_MAX", 8)
 
 # upper limit of mac limit that can be set
-settings_manager.set_option("MAC_LIMIT_MAX", 9)
+settings_manager.set_option("MAC_LIMIT_MAX", 20)
 
 # member validation
 
