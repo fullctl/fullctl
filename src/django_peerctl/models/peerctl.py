@@ -1985,6 +1985,29 @@ class PortInfo(sot.ReferenceMixin, Base):
 
         return overrides
 
+    @property
+    @ref_fallback(1)
+    def macaddr_limit(self):
+        """
+        Returns the MAC address limit from the referenced ixctl member.
+        Falls back to 1 if not available or if reference is from pdbctl.
+        """
+        if self.ref_source == "ixctl" and hasattr(self.ref, "macaddr_limit"):
+            return self.ref.macaddr_limit
+        return 1
+
+    @property
+    @ref_fallback(False)
+    def limit_mac_addresses(self):
+        """
+        Returns whether MAC addresses are limited for this port's exchange.
+        Only relevant for ixctl references.
+        """
+        if self.ref_source == "ixctl" and hasattr(self.ref, "ix") and hasattr(self.ref.ix, "limit_mac_addresses"):
+            ix = InternetExchange.ref_bridge(self.ref_source).object(self.ref.ix_id)
+            return ix.limit_mac_addresses
+        return False
+
     # setter for macaddr_set field
     @macaddr_set.setter
     def macaddr_set(self, macs: list[str]):
