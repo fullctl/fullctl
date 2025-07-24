@@ -35,6 +35,7 @@ class InternetExchange(ModelSerializer):
             "vlan_id",
             "graph_traffic_source",
             "traffic_poll_time",
+            "limit_mac_addresses",
         ]
 
     def get_org_id(self, ix):
@@ -84,6 +85,7 @@ class InternetExchangeMember(ModelSerializer):
             "macaddr",
             "macaddr_set",
             "macaddr_warnings",
+            "macaddr_limit",
             "md5",
             "port",
             "status",

@@ -299,6 +299,27 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
         $ctl.template("form_member")
       );
 
+      if (form.element.find('#member-macaddr-limit').length > 0) {
+        function updateMacLimitMessage() {
+          var limit = Number(form.element.find('#member-macaddr-limit').val());
+          var messageDiv = form.element.find('.macaddr-limit-info');
+          var countSpan = form.element.find('.macaddr-limit-count');
+          
+          if (limit > 1) {
+            countSpan.text(limit);
+            messageDiv.show();
+          } else {
+            messageDiv.hide();
+          }
+        }
+        
+        form.element.find('#member-macaddr-limit').change(updateMacLimitMessage);
+        
+        if (member && member.macaddr_limit) {
+          form.element.find('#member-macaddr-limit').val(member.macaddr_limit);
+          updateMacLimitMessage();
+        }
+      }
       this.member = member;
       form.base_url = form.base_url.replace("/default", "/"+ix_slug);
 

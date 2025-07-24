@@ -93,19 +93,21 @@
 
     <!-- mac addresses -->
 
-    <div class="row" >
+    <div class="row">
       <div class="col-12">
-        <div class="alert alert-info">
-          {% if not select_ix.learned_mac_addresses %}
+        {% if not select_ix.limit_mac_addresses %}
+          <div class="alert alert-info">
             {% blocktrans %}
             You can add multiple MAC addresses. Each MAC address must be on a new line.
             {% endblocktrans %}
-          {% else %}
+          </div>
+        {% else %}
+          <div class="alert alert-info macaddr-limit-info" style="display:none;">
             {% blocktrans %}
-            MAC addresses are automatically learned from the switch.
+            You can enter up to <span class="macaddr-limit-count">1</span> MAC addresses.
             {% endblocktrans %}
-          {% endif %}
-        </div>
+          </div>
+        {% endif %}
       </div>
     </div>
     <div class="row mb-3">
