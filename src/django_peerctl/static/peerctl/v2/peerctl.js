@@ -857,6 +857,15 @@ $peerctl.ModalIxPort = $tc.extend(
         return data;
       });
 
+      var alertDiv = form.element.find('.macaddr-info');      
+      if (port.limit_mac_addresses && port.macaddr_limit > 1) {
+        var limitMessage = 'You can enter up to ' + port.macaddr_limit + ' MAC addresses.';
+        alertDiv.html(limitMessage);
+        alertDiv.show();
+      } else if (port.limit_mac_addresses && port.macaddr_limit === 1) {
+        alertDiv.hide();
+      }
+
       // fill form
       form.fill(port);
 

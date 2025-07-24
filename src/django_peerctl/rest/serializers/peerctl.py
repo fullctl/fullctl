@@ -271,6 +271,8 @@ class Port(serializers.Serializer):
     ix_graph_traffic_source = serializers.SerializerMethodField()
     virtual_port = serializers.SerializerMethodField()
     traffic_threshold_alert = serializers.SerializerMethodField()
+    macaddr_limit = serializers.SerializerMethodField()
+    limit_mac_addresses = serializers.SerializerMethodField()
 
     class Meta:
         fields = [
@@ -304,6 +306,8 @@ class Port(serializers.Serializer):
             "ix_graph_traffic_source",
             "virtual_port",
             "traffic_threshold_alert",
+            "macaddr_limit",
+            "limit_mac_addresses",
         ]
 
     # caching
@@ -413,6 +417,14 @@ class Port(serializers.Serializer):
     @models.ref_fallback([])
     def get_macaddr_set(self, instance):
         return instance.port_info_object.macaddr_set
+
+    @models.ref_fallback(1)
+    def get_macaddr_limit(self, instance):
+        return instance.port_info_object.macaddr_limit
+
+    @models.ref_fallback(False)
+    def get_limit_mac_addresses(self, instance):
+        return instance.port_info_object.limit_mac_addresses
 
     @models.ref_fallback([])
     def get_macaddr_warnings(self, instance):
