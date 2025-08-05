@@ -45,11 +45,6 @@ def handle_info_status(org, object_id, data):
         # update the event's data using the model method
         existing_event.augment_data(data.get("data", {}))
 
-
-        
-        # Update the existing event's data using the model method
-        existing_event.augment_data(data.get("data", {}))
-        
         return True, existing_event, None
         
     except models.Event.DoesNotExist:
