@@ -5,7 +5,6 @@ import fullctl.django.inet.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("django_prefixctl", "0018_cleanup_task"),
     ]

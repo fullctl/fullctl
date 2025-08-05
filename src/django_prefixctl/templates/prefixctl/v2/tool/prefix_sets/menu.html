@@ -6,6 +6,16 @@
         <span class="heading">{% trans "Prefix Sets" %}</span>
       </div>
       <div class="col">
+        {% if has_reputation_access %}
+        <button type="button" class="primary col-md-auto ms-auto btn d-flex" data-element="button_org_source_config" style="margin-bottom: 10px;">
+          <div class="row align-items-center">
+            <div class="col label pe-0">{% trans "Source Config" %}</div>
+            <div class="col-auto">
+              <span class="icon icon-settings"></span>
+            </div>
+          </div>
+        </button>
+        {% endif %}
         <button type="button" class="primary col-md-auto btn ms-auto d-flex" data-element="button_add_prefix_set" style="margin-bottom: 10px;">
           <div class="row align-items-center">
             <div class="col label pe-0">{% trans "Add Prefix Set" %}</div>

@@ -6,8 +6,8 @@ from django.utils import timezone
 
 DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "prefix_meta")
 
-def test_seen_in_routing_tables(db, account_objects):
 
+def test_seen_in_routing_tables(db, account_objects):
     prefix = "216.176.40.0/22"
 
     # open data/prefix_meta/routing_status/meta.json
@@ -29,7 +29,9 @@ def test_seen_in_routing_tables(db, account_objects):
             "prefix": prefix,
             "seen": False,
             "more_specific": False,
-            "last_seen": datetime.datetime(2023, 12, 14, 16, 0, tzinfo=datetime.timezone.utc),
+            "last_seen": datetime.datetime(
+                2023, 12, 14, 16, 0, tzinfo=datetime.timezone.utc
+            ),
         },
         {
             "prefix": "216.176.40.0/24",
@@ -57,7 +59,7 @@ def test_seen_in_routing_tables(db, account_objects):
         },
     ]
 
-    # test 2 - main target prefix is currently visible, and more specifics are as well 
+    # test 2 - main target prefix is currently visible, and more specifics are as well
 
     metadata["last_seen"]["time"] = now.strftime("%Y-%m-%dT%H:%M:%S")
     data = routing_status.RoutingStatusData(data=metadata, prefix=prefix, date=now)
@@ -118,10 +120,5 @@ def test_seen_in_routing_tables(db, account_objects):
     seen = data.seen_in_routing_tables(now)
 
     assert seen == [
-        {
-            "prefix": prefix,
-            "seen": False,
-            "more_specific": False,
-            "last_seen": None
-        },
+        {"prefix": prefix, "seen": False, "more_specific": False, "last_seen": None},
     ]

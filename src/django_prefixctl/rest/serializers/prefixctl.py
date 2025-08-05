@@ -95,6 +95,7 @@ class PrefixSet(SlugSerializerMixin, ModelSerializer):
 
     num_monitors = serializers.SerializerMethodField()
     num_prefixes = serializers.SerializerMethodField()
+    has_custom_source_selection = serializers.SerializerMethodField()
 
     duplicate_prefixes = serializers.SerializerMethodField()
 
@@ -113,13 +114,13 @@ class PrefixSet(SlugSerializerMixin, ModelSerializer):
             "irr_import_status",
             "num_monitors",
             "num_prefixes",
+            "has_custom_source_selection",
             "ux_keep_list_open",
             "duplicate_prefixes",
         ]
 
     @property
     def duplicate_prefix_map(self) -> dict:
-
         """
         Preloads a map of duplicate prefixes for all the PrefixSets to be serialized.
         """
@@ -135,7 +136,9 @@ class PrefixSet(SlugSerializerMixin, ModelSerializer):
             except IndexError:
                 return {}
 
-        prefixes = models.Prefix.objects.filter(prefix_set__instance=org_instance).select_related("prefix_set")
+        prefixes = models.Prefix.objects.filter(
+            prefix_set__instance=org_instance
+        ).select_related("prefix_set")
         prefix_map = {}
 
         for prefix in prefixes:
@@ -144,7 +147,6 @@ class PrefixSet(SlugSerializerMixin, ModelSerializer):
         self._duplicate_prefix_map = {k: v for k, v in prefix_map.items() if len(v) > 1}
 
         return self._duplicate_prefix_map
-        
 
     def get_num_monitors(self, obj):
         """
@@ -173,6 +175,21 @@ class PrefixSet(SlugSerializerMixin, ModelSerializer):
         """
         return obj.prefix_set.count()
 
+    def get_has_custom_source_selection(self, obj):
+        """
+        Determines if the PrefixSet has custom source selection configured.
+
+        Arguments:
+        obj: The PrefixSet instance.
+
+        Returns:
+        Boolean indicating if the PrefixSet has custom source configurations
+        that override the organization defaults.
+        """
+        from prefix_meta.sources.prefixmetad.models import PrefixSetPrefixMetaSource
+        
+        return PrefixSetPrefixMetaSource.objects.filter(prefix_set=obj).exists()
+
     def get_monitors(self, obj):
         """
         Retrieves a list of monitors associated with the PrefixSet.
@@ -185,7 +202,7 @@ class PrefixSet(SlugSerializerMixin, ModelSerializer):
         """
         return list_monitors(obj.instance, prefix_set=obj)
 
-    def get_duplicate_prefixes(self, obj:models.PrefixSet) -> list:
+    def get_duplicate_prefixes(self, obj: models.PrefixSet) -> list:
         """
         Gets a list of duplicate prefixes associated with the PrefixSet.
 
@@ -213,17 +230,18 @@ class PrefixSet(SlugSerializerMixin, ModelSerializer):
 
         for prefix in obj.prefix_set.all():
             if prefix.prefix in self.duplicate_prefix_map:
-                
                 other_prefix_sets = [
-                    {"name": prefix_set.name, "id": prefix_set.id} 
-                    for prefix_set in self.duplicate_prefix_map[prefix.prefix] 
+                    {"name": prefix_set.name, "id": prefix_set.id}
+                    for prefix_set in self.duplicate_prefix_map[prefix.prefix]
                     if prefix_set != obj
                 ]
-                
-                result.append({
-                    "prefix": str(prefix.prefix),
-                    "prefix_sets": other_prefix_sets,
-                })
+
+                result.append(
+                    {
+                        "prefix": str(prefix.prefix),
+                        "prefix_sets": other_prefix_sets,
+                    }
+                )
 
         return result
 

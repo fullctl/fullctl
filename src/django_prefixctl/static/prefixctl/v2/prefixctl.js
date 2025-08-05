@@ -250,7 +250,7 @@ $ctl.application.Prefixctl.PrefixSets = $tc.extend(
       $(this.$w.list).on("prefix-removed", (ev, prefix_set) => {
         sync_dupe_prefixes(prefix_set);
       });
-      
+
       // prefix set list row formatting
 
       this.$w.list.formatters.row = (row, data) => {
@@ -386,6 +386,23 @@ $ctl.application.Prefixctl.PrefixSets = $tc.extend(
       return new $ctl.application.Prefixctl.ModalPrefixSet(prefix_set);
     },
 
+    /**
+     * Opens organization-level source configuration modal
+     * 
+     * @returns {ModalSourceConfig} Configured modal instance for current org
+     */
+    prompt_org_source_config: function() {
+      const org = fullctl.org.slug;
+      
+      return new $ctl.application.Prefixctl.ModalSourceConfig({
+        level: 'org',
+        org: org,
+        on_save: () => {
+          console.log('Organization source configuration saved');
+        }
+      });
+    },
+
     prompt_add_prefix_monitor : function(prefix_set) {
       let available_monitor_classes = $ctl.prefixctl.PREFIX_MONITOR_CLASSES;
 
@@ -491,6 +508,13 @@ $ctl.application.Prefixctl.PrefixSets = $tc.extend(
       let menu = this.Tool_menu();
       menu.find('[data-element="button_add_prefix_set"]').click(() => {
         this.prompt_add_prefix_set();
+      });
+      /**
+       * Binds click handler to organization source config button
+       * Opens the org source configuration modal when button is clicked
+       */
+      menu.find('[data-element="button_org_source_config"]').click(() => {
+        this.prompt_org_source_config();
       });
 
       menu.find('[data-element="button_schedule_remove_prefix_sets"]').click(() => {
@@ -598,7 +622,7 @@ $ctl.application.Prefixctl.PrefixSetList = $tc.extend(
           list.element.find('.mask-length-range-col').toggleClass("hidden")
       });
 
-      $(form).on('api-write:success', () => { 
+      $(form).on('api-write:success', () => {
         list.load();
         $(this).trigger("prefix-added", [prefix_set]);
       });
@@ -821,6 +845,52 @@ $ctl.application.Prefixctl.PrefixSetList = $tc.extend(
       });
 
       return row_ids;
+    },
+
+    /**
+     * Refresh the custom source selection indicator for a specific prefix set
+     * Makes an API call to get updated prefix set data and updates the indicator
+     * 
+     * @method refresh_custom_source_indicator
+     * @param {number} prefix_set_id - The ID of the prefix set to refresh
+     */
+    refresh_custom_source_indicator: function(prefix_set_id) {
+      var self = this;
+      var row = this.find_row(prefix_set_id);
+      
+      if (!row.length) {
+        return;
+      }
+
+      $.ajax({
+        url: this.base_url + '/' + prefix_set_id,
+        method: 'GET',
+        success: function(response) {
+          if (response.data && response.data.length > 0) {
+            var updated_data = response.data[0];
+            var indicator = row.find('[data-field="has_custom_source_selection"]');
+            
+            // Update the data attribute on the row for consistency
+            var current_data = row.data('apiobject');
+            if (current_data) {
+              current_data.has_custom_source_selection = updated_data.has_custom_source_selection;
+              row.data('apiobject', current_data);
+            }
+            
+            // Update the indicator visibility
+            if (updated_data.has_custom_source_selection) {
+              indicator.find('[data-true]').show();
+              indicator.attr('data-checked', 'true');
+            } else {
+              indicator.find('[data-true]').hide();
+              indicator.attr('data-checked', 'false');
+            }
+          }
+        },
+        error: function(xhr, status, error) {
+          console.warn('Failed to refresh custom source indicator:', error);
+        }
+      });
     },
   },
   twentyc.rest.List
@@ -1087,7 +1157,7 @@ $ctl.application.Prefixctl.ModalMonitorBase = $tc.extend(
       }
 
       this.modal();
-      
+
       form.wire_submit(this.$e.button_submit);
       return form;
     },
@@ -1162,6 +1232,567 @@ $ctl.application.Prefixctl.ModalMonitorBase = $tc.extend(
   },
   $ctl.application.Modal
 )
+
+/**
+ * Opens a modal for configuring metadata sources at org or prefix-set level
+ *
+ * @class ModalSourceConfig
+ * @param {Object} config - Configuration object
+ * @param {string} config.level - 'org' or 'prefixset'
+ * @param {string} config.org - Organization slug
+ * @param {string} config.prefix_set_id - Prefix Set ID (for prefixset level)
+ * @param {Function} config.on_save - Callback function after successful save
+ */
+$ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
+  "ModalSourceConfig",
+  {
+    ModalSourceConfig: function(config) {
+      this.config = config || {};
+      this.level = config.level || 'org';
+      this.org = config.org;
+      this.prefix_set_id = config.prefix_set_id;
+      this.on_save = config.on_save || function() {};
+
+      this.original_data = {};
+      this.current_data = {};
+
+      var title = this.level === 'org' 
+        ? "Organization Source Configuration" 
+        : "Prefix Set Source Configuration";
+
+      var element = $('<div>');
+
+      // Use level-specific template name
+      var template_name = this.level === 'org' ? 'source_config_org' : 'source_config_prefixset';
+      var template = $ctl.template(template_name);
+      element.append(template);
+
+      this.content_element = element;
+
+      this.Modal("no_button_lg", title, element);
+
+      // Set up event handlers after modal is ready
+      var self = this;
+      $(this).on("modal:ready", function() {
+        self.setup_event_handlers();
+        self.load_sources();
+      });
+
+      // If modal:ready event doesn't exist, use a timeout as fallback
+      setTimeout(function() {
+        if (!self.handlers_setup) {
+          self.setup_event_handlers();
+          self.load_sources();
+        }
+      }, 100);
+    },
+
+    /**
+     * Closes the modal dialog
+     * Finds the closest modal container and triggers the Bootstrap modal hide event
+     * 
+     * @method close
+     */
+    close: function() {
+      var modal = this.content_element.closest('.modal');
+      modal.modal('hide');
+    },
+
+    /**
+     * Sets up event handlers for modal interactions
+     * Binds click handlers for save/cancel buttons and checkbox change events
+     * Includes fallback logic for element availability
+     * 
+     * @method setup_event_handlers
+     * @private
+     */
+    setup_event_handlers: function() {
+      var self = this;
+      this.handlers_setup = true;
+
+      // Use the modal's element or fallback to content element
+      var element = this.element || this.content_element;
+      
+      if (!element || !element.find) {
+        console.error("Element not available for event handlers");
+        return;
+      }
+
+      element.find('[data-action="save"]').click(function() {
+        self.save_changes();
+      });
+
+      element.find('[data-action="cancel"]').click(function() {
+        self.close();
+      });
+
+      element.find('[data-action="reset_to_defaults"]').click(function() {
+        self.reset_to_defaults();
+      });
+
+      // Handle checkbox changes
+      element.on('change', '[data-field="enabled_checkbox"]', function() {
+        var source_name = $(this).closest('.source-item').data('source-name');
+        var enabled = $(this).is(':checked');
+
+        self.current_data[source_name].status = enabled ? "ok" : "disabled";
+        self.update_save_button_state();        
+      });
+    },
+
+    /**
+     * Creates and shows a loading indicator in the source list
+     * 
+     * @method show_loading
+     * @private
+     */
+    show_loading: function() {
+      var element = this.element || this.content_element;
+      var source_list = element.find('[data-field="source_list"]');
+      
+      source_list.html(
+        '<div class="text-center py-4">' +
+          '<div class="spinner-border" role="status">' +
+            '<span class="visually-hidden">Loading...</span>' +
+          '</div>' +
+        '</div>'
+      );
+    },
+
+    /**
+     * Loads source configuration data from the API
+     * Makes AJAX request to appropriate endpoint based on level (org/prefixset)
+     * Updates the modal with loading state and handles success/error responses
+     * 
+     * @method load_sources
+     * @private
+     */
+    load_sources: function() {
+      var self = this;
+      
+      // Show loading indicator
+      this.show_loading();
+
+      var api_url;
+      if (this.level === 'org') {
+        api_url = '/api/org_prefix_meta_source/' + this.org + '/';
+      } else {
+        api_url = '/api/prefixset_prefix_meta_source/' + this.org + '/' + this.prefix_set_id;
+      }
+
+      $.ajax({
+        url: api_url,
+        method: 'GET',
+        success: function(response) {
+          // Extract source data from the response
+          var sources_data = self.extract_sources_data(response);
+          
+          if (!sources_data || Object.keys(sources_data).length === 0) {
+            self.show_error('No source configuration data found');
+            self.update_reset_button_visibility(false);
+            return;
+          }
+
+          self.original_data = $.extend(true, {}, sources_data);
+          self.current_data = $.extend(true, {}, sources_data);
+          self.render_sources(sources_data);
+        },
+        error: function(xhr, status, error) {
+          self.show_error('Failed to load source configuration: ' + error);
+        }
+      });
+    },
+
+    /**
+     * Extracts and cleans source data from API response
+     * Handles various response formats and removes default/empty properties
+     * 
+     * @method extract_sources_data
+     * @param {Object} response - Raw API response containing source data
+     * @returns {Object} Cleaned source data object with default values removed
+     * @private
+     */
+    extract_sources_data: function(response) {
+      var sources = {};
+      
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        response.data.forEach(function(source_group) {
+          Object.assign(sources, source_group);
+        });
+      }
+      else if (response.data && typeof response.data === 'object' && !Array.isArray(response.data)) {
+        sources = response.data;
+      }
+      else if (typeof response === 'object' && !response.data && !response.errors) {
+        sources = response;
+      }
+      else {
+        console.warn('Unexpected API response format:', response);
+        return {};
+      }
+      
+      // Remove 'default' properties from each source
+      var cleaned_sources = {};
+      Object.keys(sources).forEach(function(source_name) {
+        var source_data = sources[source_name];
+        
+        if (source_name === 'default') {
+          return;
+        }
+        
+        if (source_data && typeof source_data === 'object') {
+          cleaned_sources[source_name] = {};          
+          Object.keys(source_data).forEach(function(prop) {
+            if (prop !== 'default') {
+              cleaned_sources[source_name][prop] = source_data[prop];
+            }
+          });
+          
+          // Only include sources that have actual configuration (not just default values)
+          if (Object.keys(cleaned_sources[source_name]).length === 0) {
+            delete cleaned_sources[source_name];
+          }
+        }
+      });
+      return cleaned_sources;
+    },
+
+    /**
+     * Renders source configuration items in the modal
+     * Creates DOM elements for each source using appropriate templates
+     * Sets up checkboxes and labels based on source status
+     * 
+     * @method render_sources
+     * @param {Object} sources_data - Source configuration data to render
+     * @private
+     */
+    render_sources: function(sources_data) {
+      var self = this;
+      var element = this.element || this.content_element;
+      var source_list = element.find('[data-field="source_list"]');
+      source_list.empty();
+
+      // Check if we have any sources to display
+      if (!sources_data || Object.keys(sources_data).length === 0) {
+        this.update_reset_button_visibility(false);
+        return;
+      }
+
+      var source_names = Object.keys(sources_data);
+      var has_custom_configs = false;
+      
+      // Iterate sources and lists elements
+      source_names.forEach(function(source_name) {
+        var source_data = sources_data[source_name];
+        
+        // Skip if source_data is not a valid object
+        if (!source_data || typeof source_data !== 'object') {
+          return;
+        }
+        
+        // Skip default value,
+        if (source_name === 'default') {
+          return;
+        }
+        
+        if (Object.keys(source_data).length === 1 && source_data.hasOwnProperty('default')) {
+          return;
+        }
+
+        // Check if this source has a prefix-set level override
+        if (source_data.has_prefix_set_override) {
+          has_custom_configs = true;
+        }
+        
+        // Get the template
+        var template_name = self.level === 'org' ? 'source_item_org' : 'source_item_prefixset';
+        var template_element = $ctl.template(template_name).first();        
+        var source_item = template_element.clone();
+        
+        source_item.data('source-name', source_name);
+        
+        source_item.find('[data-field="source_name"]').text(self.format_source_name(source_name));
+        
+        // Add warning message for specific sources
+        self.add_source_warning(source_item, source_name);
+        
+        var checkbox = source_item.find('[data-field="enabled_checkbox"]');
+        var is_enabled = source_data.status === "ok";
+        checkbox.prop('checked', is_enabled);
+        checkbox.attr('id', 'source_' + source_name + '_' + self.level);
+        
+        var label = source_item.find('.form-check-label');
+        label.attr('for', 'source_' + source_name + '_' + self.level);
+        
+        source_list.append(source_item);
+      });
+
+      this.update_reset_button_visibility(has_custom_configs);
+      this.update_save_button_state();
+    },
+
+    /**
+     * Adds warning messages for specific sources
+     * 
+     * @method add_source_warning
+     * @param {jQuery} source_item - The source item element
+     * @param {string} source_name - Raw source name from API
+     * @private
+     */
+    add_source_warning: function(source_item, source_name) {
+      var warning_messages = {
+        'talos': 'Report may fail',
+        'spamcop': 'Excess time needed for report',
+        'pbl': 'Block will have issues'
+      };
+      
+      var source_name_lower = source_name.toLowerCase();
+      var warning_text = warning_messages[source_name_lower];
+      
+      if (warning_text) {
+        var warning_element = source_item.find('[data-field="source_warning"]');
+        warning_element.find('[data-field="warning_text"]').text('Warn: ' + warning_text);
+        warning_element.show();
+      }
+    },
+
+    /**
+     * Formats source names for display
+     * Converts underscores/hyphens to spaces and applies title case
+     * 
+     * @method format_source_name
+     * @param {string} source_name - Raw source name from API
+     * @returns {string} Formatted source name for display
+     * @private
+     */
+    format_source_name: function(source_name) {
+      return source_name
+        .replace(/[_-]/g, ' ')
+        .replace(/\b\w/g, l => l.toUpperCase());
+    },
+
+    /**
+     * Saves configuration changes to the API
+     * Compares current data with original data to identify changes
+     * Makes POST request with only modified source statuses
+     * Handles success/error responses and updates UI accordingly
+     * 
+     * @method save_changes
+     * @private
+     */
+    save_changes: function() {
+      var self = this;
+      var element = this.element || this.content_element;
+
+      var save_btn = element.find('[data-action="save"]');
+      save_btn.prop('disabled', true).text('Saving...');
+
+      var csrftoken = $('[name=csrfmiddlewaretoken]').val() || $('meta[name=csrf-token]').attr('content');
+
+      // Prepare data for API - only include changed sources
+      var post_data = {};
+      Object.keys(this.current_data).forEach(function(source_name) {
+        post_data[source_name] = self.current_data[source_name].status;
+      });
+
+      var api_url;
+      if (this.level === 'org') {
+        api_url = '/api/org_prefix_meta_source/' + this.org + '/';
+      } else {
+        api_url = '/api/prefixset_prefix_meta_source/' + this.org + '/' + this.prefix_set_id + '/';
+        post_data.prefix_set_id = this.prefix_set_id;
+      }
+
+      $.ajax({
+        url: api_url,
+        method: 'POST',
+        data: JSON.stringify(post_data),
+        contentType: 'application/json',
+        headers: {
+          'X-CSRFToken': csrftoken
+        },
+        success: function(response) {
+          // Update original data to reflect saved state
+          self.original_data = $.extend(true, {}, self.current_data);
+          
+          // Call callback
+          self.on_save(response);
+          
+          // Close modal
+          self.close();
+        },
+        error: function(xhr, status, error) {
+          // Re-enable save button
+          save_btn.prop('disabled', false).text('Save Changes');
+          
+          var error_msg = 'Failed to save configuration';
+          if (xhr.responseJSON && xhr.responseJSON.error) {
+            error_msg += ': ' + xhr.responseJSON.error;
+          }
+          self.show_error(error_msg);
+        }
+      });
+    },
+
+    /**
+     * Updates the save button state based on data changes
+     * Compares current configuration with original data
+     * Enables/disables save button based on whether changes exist
+     * 
+     * @method update_save_button_state
+     * @private
+     */
+    update_save_button_state: function() {
+      var has_changes = false;
+      var self = this;
+
+      // Check if current data differs from original
+      Object.keys(this.current_data).forEach(function(source_name) {
+        if (self.original_data[source_name] && 
+            self.current_data[source_name].status !== self.original_data[source_name].status) {
+          has_changes = true;
+        }
+      });
+
+      // Enable/disable save button based on changes
+      var element = this.element || this.content_element;
+      element.find('[data-action="save"]').prop('disabled', !has_changes);
+    },
+
+    /**
+     * Updates the visibility of the reset button based on whether custom configurations exist
+     * Only shows reset button for prefix-set level configurations
+     * 
+     * @method update_reset_button_visibility
+     * @param {boolean} has_custom_configs
+     * @private
+     */
+    update_reset_button_visibility: function(has_custom_configs) {
+      var element = this.element || this.content_element;
+      var reset_btn = element.find('[data-action="reset_to_defaults"]');
+      
+      if (this.level === 'prefix-set' && has_custom_configs) {
+        reset_btn.show();
+      } else {
+        reset_btn.hide();
+      }
+    },
+
+    /**
+     * Resets prefix-set source configuration to organization defaults
+     * Shows confirmation dialog before making DELETE request
+     * Refreshes the modal data on success
+     * 
+     * @method reset_to_defaults
+     * @private
+     */
+    reset_to_defaults: function() {
+      var self = this;
+      
+      // Only show reset option for prefix-set level configurations
+      if (this.level !== 'prefix-set') {
+        return;
+      }
+
+      var confirmation_msg = 'This will remove the custom source selection for this prefix-set and the organization default configuration will be used the next time a report is generated. Continue?';
+      
+      if (!confirm(confirmation_msg)) {
+        return;
+      }
+
+      var api_url = '/api/prefixset_prefix_meta_source/' + this.org + '/' + this.prefix_set_id + '/reset_to_defaults/';
+      // Disable reset button during request
+      var element = this.element || this.content_element;
+      var reset_btn = element.find('[data-action="reset_to_defaults"]');
+      reset_btn.prop('disabled', true).text('Resetting...');
+
+      $.ajax({
+        url: api_url,
+        method: 'DELETE',
+        headers: {
+          'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(response) {
+          // Re-enable reset button
+          reset_btn.prop('disabled', false).text('Reset to Organization Defaults');
+          
+          // Show success message and reload data
+          self.show_success(response.message || 'Successfully reset to organization defaults');
+          
+          // Reload the source data to reflect changes
+          setTimeout(function() {
+            self.load_sources();
+            // Call on_save callback to refresh parent list
+            if (self.on_save) {
+              self.on_save();
+            }
+          }, 1500);
+        },
+        error: function(xhr, status, error) {
+          // Re-enable reset button
+          reset_btn.prop('disabled', false).text('Reset to Organization Defaults');
+          
+          var error_msg = 'Failed to reset configuration';
+          if (xhr.responseJSON && xhr.responseJSON.message) {
+            error_msg += ': ' + xhr.responseJSON.message;
+          }
+          self.show_error(error_msg);
+        }
+      });
+    },
+
+    /**
+     * Displays error messages in the modal
+     * Auto-hides error message after 5 seconds
+     * 
+     * @method show_error
+     * @param {string} message - Error message
+     * @private
+     */
+    show_error: function(message) {
+      var element = this.element || this.content_element;
+      var source_list = element.find('[data-field="source_list"]');
+      
+      source_list.html(
+        '<div class="alert alert-danger" role="alert">' +
+          '<strong>Error:</strong> ' + $('<div>').text(message).html() +
+        '</div>'
+      );
+      
+      // Auto-hide after 5 seconds and try to reload
+      setTimeout(function() {
+        source_list.find('.alert').fadeOut(function() {
+          self.load_sources();
+        });
+      }, 5000);
+    },
+
+    /**
+     * Displays success messages in the modal
+     * Auto-hides success message after 3 seconds
+     * 
+     * @method show_success
+     * @param {string} message - Success message
+     * @private
+     */
+    show_success: function(message) {
+      var element = this.element || this.content_element;
+      var source_list = element.find('[data-field="source_list"]');
+      
+      source_list.html(
+        '<div class="alert alert-success" role="alert">' +
+          '<strong>Success:</strong> ' + $('<div>').text(message).html() +
+        '</div>'
+      );
+      
+      // Auto-hide after 3 seconds
+      setTimeout(function() {
+        source_list.find('.alert').fadeOut();
+      }, 3000);
+    }
+  },
+  $ctl.application.Modal
+);
 
 $ctl.application.Prefixctl.ASNSets = $tc.extend(
   "ASNSets",

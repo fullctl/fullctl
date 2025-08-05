@@ -30,7 +30,7 @@ class PrefixSet(DataViewSet):
         ("org", "instance__org__slug"),
         ("q", MethodFilter("autocomplete")),
         ("slug", "slug"),
-        ("ids", "id__in")
+        ("ids", "id__in"),
     ]
     autocomplete = "name"
     allow_unfiltered = True
@@ -38,7 +38,7 @@ class PrefixSet(DataViewSet):
     queryset = models.PrefixSet.objects.filter(status="ok")
     serializer_class = Serializers.prefix_set
 
-    def filter_autocomplete(self, qset, value:str):
+    def filter_autocomplete(self, qset, value: str):
         return models.PrefixSet.objects.filter(
             Q(name__icontains=value) | Q(slug__icontains=value)
         )

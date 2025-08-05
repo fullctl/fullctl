@@ -114,8 +114,8 @@ tr.monitor-details td div.row div{
   color: #000 !important;
 }
 
-.status-row.green-border .rep-status.field, 
-.status-row.orange-border .rep-status.field, 
+.status-row.green-border .rep-status.field,
+.status-row.orange-border .rep-status.field,
 .status-row.green-border,
 .status-row.orange-border {
   color: #000 !important;
