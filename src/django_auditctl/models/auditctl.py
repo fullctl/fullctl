@@ -136,8 +136,11 @@ class Event(HandleRefModel):
         """
         if not incoming_data:
             return
-            
-        existing_data = self.data or {}
+
+        if self.status == "error":
+            existing_data = self.error or {}
+        else:
+            existing_data = self.data or {}
         
         # Handle components specially - append to existing
         if "components" in incoming_data:
@@ -150,7 +153,10 @@ class Event(HandleRefModel):
         # Overwrite other fields
         existing_data.update(incoming_data)
         
-        self.data = existing_data
+        if self.status == "error":
+            self.error = existing_data
+        else:
+            self.data = existing_data
         self.save()
 
 
