@@ -8,6 +8,7 @@ from pygments.formatters import HtmlFormatter
 from pygments.lexers import JsonLexer
 
 from prefix_meta.models import Data, DataSubnet, Request, Response
+from prefix_meta.sources.prefixmetad.models import PrefixMetaSourceConfig, OrganizationPrefixMetaSource, PrefixSetPrefixMetaSource
 
 
 class PrefixMetaResponseInline(admin.TabularInline):
@@ -76,3 +77,33 @@ class PrefixMetaDataAdmin(BaseAdmin):
             highlight("{}", JsonLexer(), HtmlFormatter(style="colorful")),
             json.dumps(obj.data, indent=4, sort_keys=True),
         )
+
+@admin.register(PrefixMetaSourceConfig)
+class PrefixMetaSourceConfigAdmin(admin.ModelAdmin):
+    list_display = [
+        "source",
+        "namespace"
+    ]
+    list_filter = ["source", "namespace"]
+    search_fields = ["source", "namespace"]
+
+@admin.register(OrganizationPrefixMetaSource)
+class OrganizationPrefixMetaSourceAdmin(admin.ModelAdmin):
+    list_display = [
+        "org",
+        "source",
+        "status"
+    ]
+    list_filter = ["org", "source", "status"]
+    search_fields = ["org__name", "source_"]
+    autocomplete_fields = ("org",)
+
+@admin.register(PrefixSetPrefixMetaSource)
+class PrefixSetPrefixMetaSourceAdmin(admin.ModelAdmin):
+    list_display = [
+        "prefix_set",
+        "source",
+        "status"
+    ]
+    list_filter = ["prefix_set", "source", "status"]
+    search_fields = ["prefix_set__name", "source"]

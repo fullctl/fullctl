@@ -1,5 +1,4 @@
 import prefix_meta.models as prefix_meta
-import ipaddress
 
 from fullctl.service_bridge.client import url_join
 
@@ -31,7 +30,7 @@ class RegCtlData(prefix_meta.Data):
 
         See rdap library for more information
         """
-        return IPNetwork(**self.data) 
+        return IPNetwork(**self.data)
 
     @classmethod
     def get_prefix_queryset(cls, prefix):
@@ -40,6 +39,7 @@ class RegCtlData(prefix_meta.Data):
             .get_prefix_queryset(prefix)
             .filter(type=cls.config("type"), source_name=cls.config("source_name"))
         )
+
 
 class RegCtlRequest(prefix_meta.Request):
     class Meta:
@@ -60,7 +60,6 @@ class RegCtlRequest(prefix_meta.Request):
 
     @classmethod
     def target_to_url(cls, target):
-
         if not settings.REGCTL_URL:
             raise ValueError("REGCTL_URL is not set in settings")
 

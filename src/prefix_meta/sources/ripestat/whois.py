@@ -9,6 +9,7 @@ __all__ = [
 
 NOT_MANAGED_BY_RIPE = "IPv4 address block not managed by the RIPE NCC"
 
+
 class HistoricalWhoisData(RipestatData):
     class Meta:
         proxy = True
@@ -80,10 +81,11 @@ class HistoricalWhois(RipestatRequest):
             # We also only keep inetnum suggestions
 
             normalized = {
-                k: v for k, v in normalized.items() 
-                if v.get("source") == "RIPE" and 
-                v.get("descr") != NOT_MANAGED_BY_RIPE and 
-                v.get("type") == "inetnum"
+                k: v
+                for k, v in normalized.items()
+                if v.get("source") == "RIPE"
+                and v.get("descr") != NOT_MANAGED_BY_RIPE
+                and v.get("type") == "inetnum"
             }
 
         return normalized

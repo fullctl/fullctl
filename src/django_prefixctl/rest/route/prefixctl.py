@@ -11,6 +11,8 @@ def route(viewset):
 
     if getattr(viewset, "ix_tag_needed", None):
         prefix = f"{ref_tag}/(?P<org_tag>[^/]+)/(?P<ix_tag>[^/]+)"
+    elif hasattr(viewset, "needs_prefix_set_id") and viewset.needs_prefix_set_id:
+        prefix = f"{ref_tag}/(?P<org_tag>[^/]+)/(?P<prefix_set_id>[^/]+)"
     else:
         prefix = f"{ref_tag}/(?P<org_tag>[^/]+)"
 

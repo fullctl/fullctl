@@ -165,7 +165,7 @@ class ASN(HandleRefModel):
     namespace="prefix",
     namespace_instance="prefix.{instance.org.permission_id}.{instance.id}",
 )
-@reversion.register(follow=['prefix_set'])
+@reversion.register(follow=["prefix_set"])
 class PrefixSet(SlugModel):
     """
     Represents a set of IP network prefixes.
@@ -388,7 +388,7 @@ class PrefixSetIRRImporter(Monitor):
     namespace="prefix",
     namespace_instance="prefix.{instance.prefix_set.org.permission_id}.{instance.prefix_set_id}.{instance.id}",
 )
-@reversion.register(follow=['prefix_set'])
+@reversion.register(follow=["prefix_set"])
 class Prefix(HandleRefModel):
     """
     Represents an IP network prefix within a set.
@@ -591,7 +591,7 @@ class AlertLogRecipient(AlertRecipientBase):
     Attributes:
     alertlog: Foreign key to the AlertLog this recipient is associated with.
     """
-    
+
     alertlog = models.ForeignKey(
         AlertLog, related_name="alert_log_recipient_set", on_delete=models.CASCADE
     )

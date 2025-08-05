@@ -123,3 +123,10 @@ settings_manager.set_option("PREFIXMETAD_URLS", "")
 
 # Prefixmetad enabled
 settings_manager.set_bool("PREFIXMETAD_ENABLED", False)
+
+# Reputation check source settings
+# Moved here since it can't detect prefixctl-reputation settings
+settings_manager.set_bool("TALOS_ENABLED", False)
+settings_manager.set_bool("SPAMCOP_ENABLED", False)
+settings_manager.set_bool("RBLSRV_ENABLED", True)
+settings_manager.set_bool("PBL_ENABLED", False)

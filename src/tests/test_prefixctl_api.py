@@ -454,6 +454,7 @@ def test_delete_prefix_from_prefixset(db, account_objects):
     assert response.status_code == 200
     assert prefixset.prefix_set.all().count() == 0
 
+
 def test_delete_prefixsets_after_x_days(db, account_objects):
     prefixset = account_objects.prefixset
     instance = account_objects.prefixctl_instance
@@ -749,7 +750,7 @@ def test_prefix_set_dupe_prefix_notifications(db, account_objects):
     request prefix set list from api
     confirm that duplicate_prefixes is there and contains
     the prefix that was added to both sets
-    
+
     ```
     "duplicate_prefixes": [
         {
@@ -811,7 +812,9 @@ def test_prefix_set_dupe_prefix_notifications(db, account_objects):
         "prefix": prefix.prefix,
         "prefix_sets": [
             {
-                "name": prefixset2.name if prefixset_id == prefixset.id else prefixset.name,
+                "name": prefixset2.name
+                if prefixset_id == prefixset.id
+                else prefixset.name,
                 "id": prefixset2.id if prefixset_id == prefixset.id else prefixset.id,
             }
         ],
@@ -825,7 +828,9 @@ def test_prefix_set_dupe_prefix_notifications(db, account_objects):
         "prefix": prefix.prefix,
         "prefix_sets": [
             {
-                "name": prefixset.name if prefixset_id == prefixset.id else prefixset2.name,
+                "name": prefixset.name
+                if prefixset_id == prefixset.id
+                else prefixset2.name,
                 "id": prefixset.id if prefixset_id == prefixset.id else prefixset2.id,
             }
         ],

@@ -30,6 +30,13 @@ def make_env(request, **kwargs):
 @load_instance()
 def view_instance(request, instance, **kwargs):
     env = make_env(request, instance=instance, org=instance.org)
+    
+    has_reputation_access = request.perms.check(
+        f"reputation_report.{request.org.id}", "r"
+    )
+    
+    env['has_reputation_access'] = has_reputation_access
+    
     return render(request, "theme-select.html", env)
 
 

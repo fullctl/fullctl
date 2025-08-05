@@ -1,4 +1,7 @@
-from fullctl.django.rest.decorators import grainy_endpoint as _grainy_endpoint, grainy_file_response as _grainy_file_response
+from fullctl.django.rest.decorators import (
+    grainy_endpoint as _grainy_endpoint,
+    grainy_file_response as _grainy_file_response,
+)
 
 from django_prefixctl.models import Instance
 

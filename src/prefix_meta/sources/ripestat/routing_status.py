@@ -58,7 +58,6 @@ class RoutingStatusData(RipestatData):
         return seen
 
     def prefix_seen(self, last_seen: dict, prefix: str, date: datetime):
-
         if not last_seen:
             return {
                 "prefix": prefix,

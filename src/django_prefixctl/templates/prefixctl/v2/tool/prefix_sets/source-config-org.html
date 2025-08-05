@@ -1,0 +1,41 @@
+{% load i18n %}
+{% csrf_token %}
+<div data-template="source_config_org" class="source-config-org">
+    <div class="source-config-container">        
+        <div class="source-list" data-field="source_list">
+            <!-- Sources will be dynamically populated here -->
+        </div>
+        
+        <div class="source-config-actions mt-4">
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-secondary me-2" data-action="cancel">
+                    {% trans "Cancel" %}
+                </button>
+                <button type="button" class="btn btn-primary" data-action="save">
+                    {% trans "Save Changes" %}
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Templates -->
+    <div class="templates" style="display: none;">
+        <div data-template="source_item_org" class="source-item mb-2 p-3 border rounded">
+            <div class="row align-items-center">
+                <div class="col">
+                    <span data-field="source_name" class="fw-medium"></span>
+                    <div data-field="source_warning" class="text-warning small mt-1" style="display: none;">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <span data-field="warning_text"></span>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" data-field="enabled_checkbox">
+                        <label class="form-check-label">{% trans "Enabled" %}</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
