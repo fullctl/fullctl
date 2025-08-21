@@ -1,7 +1,7 @@
 import ipaddress
 import traceback
 
-import fullctl.service_bridge.netbox as netbox
+import pynetbox
 import structlog
 from django.utils.translation import gettext_lazy as _
 from fullctl.django.models.concrete.service_bridge import service_bridge_action
@@ -9,10 +9,22 @@ from fullctl.service_bridge.context import service_bridge_context
 
 import django_devicectl.models.devicectl as models
 
-# TODO: work around to deal with pagination for now
-# Needs to be fixed in fullctl service bridge client to naturally
-# support pagination arguments
-NETBOX_PAGE_LIMIT = 999999
+# Global NetBox API client cache
+_netbox_api_cache = {}
+
+
+def get_netbox_api():
+    """Get the configured NetBox API client from service bridge context"""
+    ctx = service_bridge_context.get()
+
+    url = ctx.get_service("netbox").service_url
+    token = ctx.get_service_config("netbox", "API_TOKEN")
+
+    if not url or not token:
+        raise RuntimeError("NetBox URL and token must be configured")
+
+    return pynetbox.api(url, token=token, threading=True)
+
 
 log = structlog.get_logger("django")
 
@@ -41,11 +53,22 @@ def push_device_loc(action, device):
     facility = device.facility
 
     # site exists in netbox?
-    site = netbox.Site().first(cf_devicectl_id=facility.id)
+    api = get_netbox_api()
+    sites = list(api.dcim.sites.filter(cf_devicectl_id=facility.id))
+    site = sites[0] if sites else None
 
     if site:
         # assign device to site in netbox
-        netbox.Device().partial_update(device.reference.object, {"site": str(site.id)})
+        try:
+            device_obj = api.dcim.devices.get(device.reference.object)
+            if device_obj:
+                device_obj.update({"site": str(site.id)})
+        except Exception as exc:
+            log.error(
+                "Failed to get/update device in netbox",
+                device_reference=device.reference.object,
+                exc=exc,
+            )
 
 
 @service_bridge_action(
@@ -86,24 +109,21 @@ def sync_custom_fields():
     Make sure the necessary custom fields exist in netbox
     """
 
-    netbox.CustomField().sync(
-        [
-            {
-                # netbox 1.3.6
-                "name": "devicectl_id",
-                # netbox 1.4.1
-                "slug": "devicectl_id",
-                "label": "deviceCtl ID",
-                # v3
-                "content_types": ["dcim.site"],
-                # v4
-                "object_types": ["dcim.site"],
-                "type": "integer",
-                "description": "deviceCtl reference id",
-                "required": False,
-            },
-        ]
-    )
+    api = get_netbox_api()
+    field_data = {
+        "name": "devicectl_id",
+        "slug": "devicectl_id",
+        "label": "deviceCtl ID",
+        "content_types": ["dcim.site"],
+        "object_types": ["dcim.site"],
+        "type": "integer",
+        "description": "deviceCtl reference id",
+        "required": False,
+    }
+
+    existing_fields = list(api.extras.custom_fields.filter(name="devicectl_id"))
+    if not existing_fields:
+        api.extras.custom_fields.create(field_data)
 
 
 def sync_tags(netbox_object, devicectl_object):
@@ -138,7 +158,8 @@ def pull_ip_addresses(virtual_port):
     ip4 = None
     ip6 = None
 
-    for netbox_ip in netbox.IPAddress().objects(limit=NETBOX_PAGE_LIMIT):
+    api = get_netbox_api()
+    for netbox_ip in api.ipam.ip_addresses.all():
         if ip4 and ip6:
             break
 
@@ -187,9 +208,8 @@ def pull_interfaces(device):
     Pulls interfaces into virtual ports from netbox for the specified devices
     """
 
-    for netbox_if in netbox.Interface().objects(
-        device_id=str(device.reference), limit=NETBOX_PAGE_LIMIT
-    ):
+    api = get_netbox_api()
+    for netbox_if in api.dcim.interfaces.filter(device_id=str(device.reference)):
         # for now only pull virtual and lag  interfaces
 
         if netbox_if.type.value in ["virtual", "lag"] or interface_is_physical(
@@ -349,7 +369,8 @@ def pull(org, *args, **kwargs):
 
     # create / update devices from netbox data
 
-    for netbox_device in netbox.Device().objects(limit=NETBOX_PAGE_LIMIT):
+    api = get_netbox_api()
+    for netbox_device in api.dcim.devices.all():
 
         # v3 has role in .device_role
         # v4 has role in .role
@@ -395,11 +416,17 @@ def pull(org, *args, **kwargs):
 
         # assign to facility
 
-        site = netbox.Site().first(id=netbox_device.site.id)
+        try:
+            site = api.dcim.sites.get(netbox_device.site.id)
+        except Exception as exc:
+            log.error(
+                "Failed to get site from netbox", site_id=netbox_device.site.id, exc=exc
+            )
+            site = None
 
-        if site.custom_fields.devicectl_id:
+        if site and site.custom_fields.get("devicectl_id"):
             facility = models.Facility.objects.get(
-                instance=instance, id=site.custom_fields.devicectl_id
+                instance=instance, id=site.custom_fields.get("devicectl_id")
             )
             device.facility = facility
             device.save()
@@ -438,7 +465,8 @@ def sync_vlans(
     VLAN_ROLE = ctx.get_service_config("netbox", "VLAN_ROLE") or []
     vlan_roles = [r.lower() for r in VLAN_ROLE]
 
-    for netbox_vlan in netbox.VLAN().objects(limit=NETBOX_PAGE_LIMIT):
+    api = get_netbox_api()
+    for netbox_vlan in api.ipam.vlans.all():
 
         vlan_role = None
         # Apply VLAN role filter when configured
@@ -464,17 +492,30 @@ def sync_vlans(
 
         if netbox_vlan.site:
 
-            site = netbox.Site().first(id=netbox_vlan.site.id)
-
             try:
-                log.info("Checking for facility", site=site, id=site.custom_fields.devicectl_id)
-                facility = models.Facility.objects.get(
-                    instance=instance, id=site.custom_fields.devicectl_id
+                site = api.dcim.sites.get(netbox_vlan.site.id)
+            except Exception as exc:
+                log.error(
+                    "Failed to get site from netbox",
+                    site_id=netbox_vlan.site.id,
+                    exc=exc,
                 )
-            except models.Facility.DoesNotExist:
-                log.info(
-                    f"[PULL] Netbox vlan {netbox_vlan.name} {netbox_vlan.id} no facility found, creating without facility ..."
-                )
+                site = None
+
+            if site:
+                try:
+                    log.info(
+                        "Checking for facility",
+                        site=site,
+                        id=site.custom_fields.get("devicectl_id"),
+                    )
+                    facility = models.Facility.objects.get(
+                        instance=instance, id=site.custom_fields.get("devicectl_id")
+                    )
+                except models.Facility.DoesNotExist:
+                    log.info(
+                        f"[PULL] Netbox vlan {netbox_vlan.name} {netbox_vlan.id} no facility found, creating without facility ..."
+                    )
 
         vlan, created = models.Vlan.objects.update_or_create(
             reference=str(netbox_vlan.id),
@@ -510,7 +551,8 @@ def push(org, *args, **kwargs):
 
     # preload netbox data
 
-    netbox_sites = [fac for fac in netbox.Site().objects(limit=NETBOX_PAGE_LIMIT)]
+    api = get_netbox_api()
+    netbox_sites = list(api.dcim.sites.all())
 
     # sync devicectl facility -> netbox site
 
@@ -523,7 +565,7 @@ def push(org, *args, **kwargs):
 
         for netbox_site in netbox_sites:
             # check if id match exists
-            if netbox_site.custom_fields.devicectl_id == fac.id:
+            if netbox_site.custom_fields.get("devicectl_id") == fac.id:
                 exists = netbox_site
                 break
 
@@ -538,24 +580,24 @@ def push(org, *args, **kwargs):
             # site does not exist (searched slug and devicectl reference id matches)
             # create it
 
-            netbox_site = netbox.Site().create(fac.service_bridge_data("netbox"))
+            netbox_site = api.dcim.sites.create(fac.service_bridge_data("netbox"))
 
         else:
             # site exists (searched slug and devicectl reference id matches)
             # update it
 
-            netbox.Site().update(exists, fac.service_bridge_data("netbox"))
+            exists.update(fac.service_bridge_data("netbox"))
 
     # delete netbox sites if they no longer exist as facilities in devicectl
     if purge:
         for site in netbox_sites:
-            if not site.custom_fields.devicectl_id:
+            if not site.custom_fields.get("devicectl_id"):
                 continue
 
             if not models.Facility.objects.filter(
-                id=site.custom_fields.devicectl_id
+                id=site.custom_fields.get("devicectl_id")
             ).exists():
-                netbox.Site().destroy(site)
+                site.delete()
 
 
 def push_facility(facility):
@@ -567,15 +609,19 @@ def push_facility(facility):
     """
 
     # check if site exists in netbox by devicectl id
-    site = netbox.Site().first(cf_devicectl_id=facility.id)
+    api = get_netbox_api()
+    sites = list(api.dcim.sites.filter(cf_devicectl_id=facility.id))
+    site = sites[0] if sites else None
 
     # if not, match by slug
     if not site:
-        site = netbox.Site().first(slug=facility.slug)
+        sites = list(api.dcim.sites.filter(slug=facility.slug))
+        site = sites[0] if sites else None
 
     # if not match by name
     if not site:
-        site = netbox.Site().first(name=facility.name)
+        sites = list(api.dcim.sites.filter(name=facility.name))
+        site = sites[0] if sites else None
 
     data = {
         "name": facility.name,
@@ -589,18 +635,17 @@ def push_facility(facility):
 
     if site:
         # update existing site
-        netbox.Site().update(site, data)
+        site.update(data)
         log.info("[PUSH] Updated netbox site", site=site, facility=facility)
     else:
         # create new site
-        site = netbox.Site().create(data)
+        site = api.dcim.sites.create(data)
         log.info("[PUSH] Created netbox site", site=site, facility=facility)
 
     return site
 
 
 def push_require_device_role():
-
     """
     Will attempt to fetch any matching device role from netbox
 
@@ -615,22 +660,24 @@ def push_require_device_role():
         )
         DEVICE_ROLE = ["Router"]
 
+    api = get_netbox_api()
     for role in DEVICE_ROLE:
-        netbox_role = netbox.DeviceRole().first(name=role)
+        roles = list(api.dcim.device_roles.filter(name=role))
+        netbox_role = roles[0] if roles else None
 
         if netbox_role:
             return netbox_role
 
     log.info("[PUSH] Creating netbox device role", role=DEVICE_ROLE[0])
 
-    data = netbox.DeviceRole().create(
+    data = api.dcim.device_roles.create(
         {
             "name": DEVICE_ROLE[0],
             "slug": DEVICE_ROLE[0].lower().replace(" ", "_"),
             "color": "ffffff",
         }
     )
-    return netbox.DeviceRoleObject(**data)
+    return data
 
 
 def push_require_device_type(device_type: str):
@@ -640,18 +687,20 @@ def push_require_device_type(device_type: str):
     If type doesn't exist will create it
     """
 
-    netbox_device_type = netbox.DeviceType().first(model=device_type)
+    api = get_netbox_api()
+    device_types = list(api.dcim.device_types.filter(model=device_type))
+    netbox_device_type = device_types[0] if device_types else None
 
     if not netbox_device_type:
         log.info("[PUSH] Creating netbox device type", type=device_type)
-        data = netbox.DeviceType().create(
+        data = api.dcim.device_types.create(
             {
                 "model": device_type,
                 "slug": device_type.lower().replace(" ", "_"),
                 "manufacturer": push_require_manufacturer().id,
             }
         )
-        return netbox.DeviceTypeObject(**data)
+        return data
 
     return netbox_device_type
 
@@ -672,14 +721,16 @@ def push_require_manufacturer(manufacturer: str | None = None):
             )
             manufacturer = "Unknown"
 
-    netbox_manufacturer = netbox.Manufacturer().first(name=manufacturer)
+    api = get_netbox_api()
+    manufacturers = list(api.dcim.manufacturers.filter(name=manufacturer))
+    netbox_manufacturer = manufacturers[0] if manufacturers else None
 
     if not netbox_manufacturer:
         log.info("[PUSH] Creating netbox manufacturer", manufacturer=manufacturer)
-        data = netbox.Manufacturer().create(
+        data = api.dcim.manufacturers.create(
             {"name": manufacturer, "slug": manufacturer.lower().replace(" ", "_")}
         )
-        return netbox.ManufacturerObject(**data)
+        return data
 
     return netbox_manufacturer
 
@@ -698,7 +749,9 @@ def push_device(device):
         return
 
     # get netbox site for facility
-    site = netbox.Site().first(cf_devicectl_id=device.facility.id)
+    api = get_netbox_api()
+    sites = list(api.dcim.sites.filter(cf_devicectl_id=device.facility.id))
+    site = sites[0] if sites else None
     if not site:
         log.error(
             "[PUSH] Could not find netbox site for facility",
@@ -710,11 +763,20 @@ def push_device(device):
     # check if device exists in netbox
     netbox_device = None
     if device.reference:
-        netbox_device = netbox.Device().first(id=str(device.reference))
+        try:
+            netbox_device = api.dcim.devices.get(str(device.reference))
+        except Exception as exc:
+            log.error(
+                "Failed to get device from netbox",
+                device_reference=device.reference,
+                exc=exc,
+            )
+            netbox_device = None
 
     if not netbox_device:
-        # look by site id and device name
-        netbox_device = netbox.Device().first(site=site.name, name=device.name)
+        # look by site slug and device name
+        devices = list(api.dcim.devices.filter(site=site.slug, name=device.name))
+        netbox_device = devices[0] if devices else None
 
     data = {
         "name": device.name,
@@ -728,7 +790,7 @@ def push_device(device):
         # update existing device
         data["role"] = netbox_device.role.id
         data["device_type"] = netbox_device.device_type.id
-        netbox.Device().update(netbox_device, data)
+        netbox_device.update(data)
         log.info(
             "[PUSH] Updated netbox device",
             device=device.id,
@@ -740,7 +802,7 @@ def push_device(device):
         data["device_type"] = push_require_device_type(device.type).id
 
         # create new device
-        netbox_device = netbox.DeviceObject(**netbox.Device().create(data))
+        netbox_device = api.dcim.devices.create(data)
         log.info(
             "[PUSH] Created netbox device",
             device=device.id,
@@ -764,15 +826,27 @@ def push_physical_interface(physical_port, netbox_device):
     """
 
     # check if interface exists in netbox
+    api = get_netbox_api()
     netbox_interface = None
     if physical_port.reference:
-        netbox_interface = netbox.Interface().first(id=str(physical_port.reference))
+        try:
+            netbox_interface = api.dcim.interfaces.get(str(physical_port.reference))
+        except Exception as exc:
+            log.error(
+                "Failed to get interface from netbox",
+                interface_reference=physical_port.reference,
+                exc=exc,
+            )
+            netbox_interface = None
 
     # if no match, try by name
     if not netbox_interface:
-        netbox_interface = netbox.Interface().first(
-            device=netbox_device.name, name=physical_port.name
+        interfaces = list(
+            api.dcim.interfaces.filter(
+                device=netbox_device.name, name=physical_port.name
+            )
         )
+        netbox_interface = interfaces[0] if interfaces else None
 
     ctx = service_bridge_context.get()
 
@@ -789,7 +863,7 @@ def push_physical_interface(physical_port, netbox_device):
         data["type"] = netbox_interface.type.value
 
         # update existing interface
-        netbox.Interface().update(netbox_interface, data)
+        netbox_interface.update(data)
         log.info(
             "[PUSH] Updated netbox interface",
             interface=physical_port.id,
@@ -807,7 +881,7 @@ def push_physical_interface(physical_port, netbox_device):
         data["type"] = DEFAULT_PHY_TYPE
 
         # create new interface
-        netbox_interface = netbox.InterfaceObject(**netbox.Interface().create(data))
+        netbox_interface = api.dcim.interfaces.create(data)
         log.info(
             "[PUSH] Created netbox interface",
             interface=physical_port.id,
@@ -834,15 +908,27 @@ def push_virtual_interface(virtual_port, netbox_device):
     """
 
     # check if interface exists in netbox
+    api = get_netbox_api()
     netbox_interface = None
     if virtual_port.reference:
-        netbox_interface = netbox.Interface().first(id=str(virtual_port.reference))
+        try:
+            netbox_interface = api.dcim.interfaces.get(str(virtual_port.reference))
+        except Exception as exc:
+            log.error(
+                "Failed to get interface from netbox",
+                interface_reference=virtual_port.reference,
+                exc=exc,
+            )
+            netbox_interface = None
 
     # if no match, try by name
     if not netbox_interface:
-        netbox_interface = netbox.Interface().first(
-            device=netbox_device.name, name=virtual_port.name
+        interfaces = list(
+            api.dcim.interfaces.filter(
+                device=netbox_device.name, name=virtual_port.name
+            )
         )
+        netbox_interface = interfaces[0] if interfaces else None
 
     # determine interface type based on port
     interface_type = "virtual"
@@ -862,7 +948,7 @@ def push_virtual_interface(virtual_port, netbox_device):
 
     if netbox_interface:
         # update existing interface
-        netbox.Interface().update(netbox_interface, data)
+        netbox_interface.update(data)
         log.info(
             "[PUSH] Updated netbox interface",
             interface=virtual_port.id,
@@ -870,7 +956,7 @@ def push_virtual_interface(virtual_port, netbox_device):
         )
     else:
         # create new interface
-        netbox_interface = netbox.InterfaceObject(**netbox.Interface().create(data))
+        netbox_interface = api.dcim.interfaces.create(data)
         # update reference
         log.info(
             "[PUSH] Created netbox interface",
@@ -902,16 +988,26 @@ def push_interface_ips(virtual_port, netbox_interface):
 
     qset = models.IPAddress.objects.filter(port_info=port_info)
 
+    api = get_netbox_api()
     for ip_address in qset:
 
         # check if IP address exists in netbox
         netbox_ip = None
         if ip_address.reference:
-            netbox_ip = netbox.IPAddress().first(id=str(ip_address.reference))
+            try:
+                netbox_ip = api.ipam.ip_addresses.get(str(ip_address.reference))
+            except Exception as exc:
+                log.error(
+                    "Failed to get IP address from netbox",
+                    ip_reference=ip_address.reference,
+                    exc=exc,
+                )
+                netbox_ip = None
 
         # if no match try by address
         if not netbox_ip:
-            netbox_ip = netbox.IPAddress().first(address=str(ip_address.address))
+            ips = list(api.ipam.ip_addresses.filter(address=str(ip_address.address)))
+            netbox_ip = ips[0] if ips else None
 
         data = {
             "address": str(ip_address.address),
@@ -922,7 +1018,7 @@ def push_interface_ips(virtual_port, netbox_interface):
 
         if netbox_ip:
             # update existing IP address
-            netbox.IPAddress().update(netbox_ip, data)
+            netbox_ip.update(data)
             log.info(
                 "[PUSH] Updated netbox IP address",
                 ip_address=ip_address.id,
@@ -930,7 +1026,7 @@ def push_interface_ips(virtual_port, netbox_interface):
             )
         else:
             # create new IP address
-            netbox_ip = netbox.IPAddressObject(**netbox.IPAddress().create(data))
+            netbox_ip = api.ipam.ip_addresses.create(data)
             # update reference
             log.info(
                 "[PUSH] Created netbox IP address",
