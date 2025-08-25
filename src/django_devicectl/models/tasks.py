@@ -17,12 +17,14 @@ from django.utils import timezone
 from fullctl.django.models import Task
 from fullctl.django.models.concrete import OrganizationFile
 from fullctl.django.tasks import register
+from fullctl.service_bridge.context import ServiceBridgeContext
 from fullctl.graph.render.traffic import render_graph
 from fullctl.metrics import Metrics, make_metrics
 from fullctl.metrics.schema import Point
 
 import django_devicectl.models.devicectl as models
 import django_devicectl.mrtg as mrtg
+import django_devicectl.netbox as netbox
 import django_devicectl.sflow as sflow
 
 log = structlog.get_logger("django_structlog")
@@ -1637,3 +1639,60 @@ class TrafficThresholdAlerts:
             },
             timestamp=timezone.now().timestamp(),
         )
+
+
+@register
+class NetboxSync(Task):
+    """
+    Sync data between devicectl and netbox
+    """
+
+    class TaskMeta:
+        limit = 1
+
+    class Meta:
+        proxy = True
+
+    class HandleRef:
+        tag = "task_netbox_sync"
+
+    @property
+    def generate_limit_id(self):
+        return self.org_id
+
+    @classmethod
+    def create_task(cls, org, push=False, purge=False, **kwargs):
+        """
+        Create netbox sync task with parameters
+
+        Args:
+            org: Organization instance
+            push: Whether to push updates to netbox
+            purge: Whether to purge devicectl data for non-existent netbox items
+        """
+        return super().create_task(org=org, push=push, purge=purge, **kwargs)
+
+    def run(self, push=False, purge=False, **kwargs):
+        """
+        Execute netbox sync operation
+        """
+        org = self.org
+
+        log.info(f"Starting netbox sync for {org.slug} (push={push}, purge={purge})")
+
+        with ServiceBridgeContext(org):
+            if push:
+                log.info(f"NETBOX SYNC: Pushing updates to netbox for {org.slug}")
+                netbox.push(org, full_sync=push, purge=purge)
+                log.info(
+                    f"NETBOX SYNC: Finished pushing updates to netbox for {org.slug}"
+                )
+
+            log.info(f"NETBOX SYNC: Pulling netbox data for {org.slug}")
+            netbox.pull(org, purge=purge)
+            log.info(f"NETBOX SYNC: Finished pulling netbox data for {org.slug}")
+
+            if purge:
+                log.info(f"NETBOX SYNC: Purge was enabled for {org.slug}")
+
+            log.info(f"NETBOX SYNC: Completed all operations for {org.slug}")
