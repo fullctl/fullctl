@@ -1,7 +1,7 @@
 ARG python_ver=3.11
 # current main base is alpine, but we need to use slim for this
 ARG _base_repo=python
-ARG _base_tag=${python_ver}-slim
+ARG _base_tag=${python_ver}-slim-bookworm
 
 ARG install_to=/srv/service
 ARG poetry_pin="==1.6.1"
