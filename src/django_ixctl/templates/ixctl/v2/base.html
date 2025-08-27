@@ -24,7 +24,8 @@ $(fullctl.application).on("initialized", function(e, ixctl, id) {
 $(document).ready(function() {
 
   var public_view_share = document.getElementById('public-view-share');
-  public_view_share.value = window.location.href;
+  public_view_share.value = '{% url "ixctl-information" org_tag=instance.org.slug ix_tag=select_ix.slug %}';
+  public_view_share.value = window.location.origin + public_view_share.value;
   var text_length = public_view_share.value.length;
 
   var width = text_length * 8;
