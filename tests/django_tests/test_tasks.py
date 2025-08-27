@@ -289,6 +289,208 @@ def test_task_heartbeat_timeout():
 
 
 @pytest.mark.django_db
+def test_cleanup_orphaned_running_tasks_with_stale_heartbeat():
+    """Test that cleanup_orphaned_running_tasks marks tasks with stale heartbeats as failed."""
+    task = models.TestTask.create_task(1, 2)
+    task.status = "running"
+    task.save()
+    
+    # Create an old heartbeat (older than default timeout of 30 seconds)
+    heartbeat = models.TestTaskHeartbeat.objects.create(task=task)
+    old_timestamp = timezone.now() - timezone.timedelta(seconds=60)
+    heartbeat.timestamp = old_timestamp
+    heartbeat.save()
+    
+    assert task.status == "running"
+    assert models.TestTaskHeartbeat.objects.filter(task=task).exists()
+    
+    orm.cleanup_orphaned_running_tasks()
+    
+    # Refresh and verify task is now failed
+    task.refresh_from_db()
+    assert task.status == "failed"
+    assert "Task orphaned - no heartbeat detected for 30 seconds" in task.error
+    assert str(old_timestamp) in task.error
+    
+    assert not models.TestTaskHeartbeat.objects.filter(task=task).exists()
+
+
+@pytest.mark.django_db
+def test_cleanup_orphaned_running_tasks_with_recent_heartbeat():
+    """Test that cleanup_orphaned_running_tasks leaves tasks with recent heartbeats alone."""
+    task = models.TestTask.create_task(1, 2)
+    task.status = "running"
+    task.save()
+    
+    # Create a recent heartbeat (within timeout)
+    heartbeat = models.TestTaskHeartbeat.objects.create(task=task)
+    recent_timestamp = timezone.now() - timezone.timedelta(seconds=15)
+    heartbeat.timestamp = recent_timestamp
+    heartbeat.save()
+    
+    assert task.status == "running"
+    
+    orm.cleanup_orphaned_running_tasks()
+    
+    # Refresh and verify task status unchanged
+    task.refresh_from_db()
+    assert task.status == "running"
+    assert task.error is None or task.error == ""
+    
+    # Verify heartbeat still exists
+    assert models.TestTaskHeartbeat.objects.filter(task=task).exists()
+
+
+@pytest.mark.django_db
+def test_cleanup_orphaned_running_tasks_with_custom_timeout(settings):
+    """Test that cleanup_orphaned_running_tasks respects custom timeout settings."""
+    settings.TASK_ORPHANED_HEARTBEAT_TIMEOUT = 60
+    
+    task = models.TestTask.create_task(1, 2)
+    task.status = "running"
+    task.save()
+    
+    # Create a heartbeat that's 45 seconds old (within custom timeout)
+    heartbeat = models.TestTaskHeartbeat.objects.create(task=task)
+    old_timestamp = timezone.now() - timezone.timedelta(seconds=45)
+    heartbeat.timestamp = old_timestamp
+    heartbeat.save()
+    
+    # Run cleanup
+    orm.cleanup_orphaned_running_tasks()
+    
+    # Task should still be running since it's within the 60-second timeout
+    task.refresh_from_db()
+    assert task.status == "running"
+    
+    # Now make the heartbeat older than the custom timeout
+    heartbeat.timestamp = timezone.now() - timezone.timedelta(seconds=90)
+    heartbeat.save()
+    
+    orm.cleanup_orphaned_running_tasks()
+    
+    # Now the task should be failed
+    task.refresh_from_db()
+    assert task.status == "failed"
+    assert "Task orphaned - no heartbeat detected for 60 seconds" in task.error
+
+
+@pytest.mark.django_db
+def test_cleanup_orphaned_running_tasks_ignores_non_running_tasks():
+    """Test that cleanup_orphaned_running_tasks only affects running tasks."""
+    pending_task = models.TestTask.create_task(1, 2)
+    pending_task.status = "pending"
+    pending_task.save()
+    
+    completed_task = models.TestTask.create_task(3, 4)
+    completed_task.status = "completed"
+    completed_task.save()
+    
+    failed_task = models.TestTask.create_task(5, 6)
+    failed_task.status = "failed"
+    failed_task.save()
+    
+    # Create old heartbeats for all tasks
+    old_timestamp = timezone.now() - timezone.timedelta(seconds=60)
+    
+    for task in [pending_task, completed_task, failed_task]:
+        heartbeat = models.TestTaskHeartbeat.objects.create(task=task)
+        heartbeat.timestamp = old_timestamp
+        heartbeat.save()
+    
+    orm.cleanup_orphaned_running_tasks()
+    
+    # Verify none of the non-running tasks were affected
+    for task in [pending_task, completed_task, failed_task]:
+        task.refresh_from_db()
+        assert task.status != "failed" or task.status == "failed"
+        # Heartbeats should still exist for non-running tasks
+        assert models.TestTaskHeartbeat.objects.filter(task=task).exists()
+
+
+@pytest.mark.django_db
+def test_cleanup_orphaned_running_tasks_with_no_heartbeat():
+    """Test that running tasks without heartbeats are not affected by cleanup."""
+    task = models.TestTask.create_task(1, 2)
+    task.status = "running"
+    task.save()
+    
+    assert not models.TestTaskHeartbeat.objects.filter(task=task).exists()
+    
+    # Run cleanup
+    orm.cleanup_orphaned_running_tasks()
+    
+    # Task should remain running (no heartbeat to be stale)
+    task.refresh_from_db()
+    assert task.status == "running"
+
+
+@pytest.mark.django_db
+def test_cleanup_orphaned_running_tasks_multiple_tasks():
+    """Test cleanup with multiple tasks having different heartbeat states."""
+    stale_task1 = models.TestTask.create_task(1, 2)
+    stale_task1.status = "running"
+    stale_task1.save()
+    
+    stale_task2 = models.TestTask.create_task(3, 4)
+    stale_task2.status = "running"
+    stale_task2.save()
+    
+    fresh_task = models.TestTask.create_task(5, 6)
+    fresh_task.status = "running"
+    fresh_task.save()
+    
+    # Create stale heartbeats for first two tasks
+    old_timestamp = timezone.now() - timezone.timedelta(seconds=60)
+    for task in [stale_task1, stale_task2]:
+        heartbeat = models.TestTaskHeartbeat.objects.create(task=task)
+        heartbeat.timestamp = old_timestamp
+        heartbeat.save()
+    
+    # Create recent heartbeat for third task
+    recent_heartbeat = models.TestTaskHeartbeat.objects.create(task=fresh_task)
+    recent_heartbeat.timestamp = timezone.now() - timezone.timedelta(seconds=10)
+    recent_heartbeat.save()
+    
+    orm.cleanup_orphaned_running_tasks()
+    
+    stale_task1.refresh_from_db()
+    stale_task2.refresh_from_db()
+    fresh_task.refresh_from_db()
+    
+    # Stale tasks should be failed
+    assert stale_task1.status == "failed"
+    assert stale_task2.status == "failed"
+    
+    # Fresh task should still be running
+    assert fresh_task.status == "running"
+    
+    assert not models.TestTaskHeartbeat.objects.filter(task=stale_task1).exists()
+    assert not models.TestTaskHeartbeat.objects.filter(task=stale_task2).exists()
+    assert models.TestTaskHeartbeat.objects.filter(task=fresh_task).exists()
+
+
+@pytest.mark.django_db
+def test_cleanup_orphaned_running_tasks_with_no_running_tasks():
+    """Test that cleanup handles the case where there are no running tasks."""
+    completed_task = models.TestTask.create_task(1, 2)
+    completed_task.status = "completed"
+    completed_task.save()
+    
+    old_heartbeat = models.TestTaskHeartbeat.objects.create(task=completed_task)
+    old_heartbeat.timestamp = timezone.now() - timezone.timedelta(seconds=60)
+    old_heartbeat.save()
+    
+    # Run cleanup - should complete without error
+    orm.cleanup_orphaned_running_tasks()
+    
+    # Verify nothing was changed
+    completed_task.refresh_from_db()
+    assert completed_task.status == "completed"
+    assert models.TestTaskHeartbeat.objects.filter(task=completed_task).exists()
+
+
+@pytest.mark.django_db
 def test_task_schedule_unique_claim_constraint(dj_account_objects):
     """Test that the TaskScheduleClaim enforces the unique constraint."""
     

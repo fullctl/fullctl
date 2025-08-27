@@ -11,6 +11,7 @@ from fullctl.django.management.commands.base import CommandInterface
 from fullctl.django.tasks.orm import (
     TaskClaimed,
     claim_task,
+    cleanup_orphaned_running_tasks,
     fetch_task,
     progress_schedules,
     tasks_max_time_reached,
@@ -243,6 +244,9 @@ class Command(CommandInterface):
 
                 # check on stuck tasks and perform requeuing on those that have max times reached
                 await sync_to_async(tasks_max_time_reached)()
+                
+                # check for orphaned running tasks and mark them as failed
+                await sync_to_async(cleanup_orphaned_running_tasks)()
 
                 # django call needs to be wrapped in sync_to_async
 
