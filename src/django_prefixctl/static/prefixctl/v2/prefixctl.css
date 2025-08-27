@@ -104,25 +104,37 @@ tr.monitor-details td div.row div{
   border-left: 4px solid var(--clr-accent-400);
 }
 
+.with-border.blue-border {
+  border-left: 4px solid var(--clr-accent-710);
+}
+
 .rep-ok, .status-row.green-border {
   background:  var(--clr-accent-400) !important;
 }
 
+.rep-refresh-needed, .status-row.blue-border {
+  background:  var(--clr-accent-710) !important;
+}
+
 .rep-issues,
-.rep-ok {
+.rep-ok,
+.rep-refresh-needed {
   border: none !important;
   color: #000 !important;
 }
 
 .status-row.green-border .rep-status.field,
 .status-row.orange-border .rep-status.field,
+.status-row.blue-border .rep-status.field,
 .status-row.green-border,
-.status-row.orange-border {
+.status-row.orange-border,
+.status-row.blue-border {
   color: #000 !important;
 }
 
 .status-row.green-border .rep-status .icon,
-.status-row.orange-border .rep-status .icon {
+.status-row.orange-border .rep-status .icon,
+.status-row.blue-border .rep-status .icon {
   background: #000 !important;
 }
 
