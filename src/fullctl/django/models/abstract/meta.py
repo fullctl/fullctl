@@ -371,6 +371,14 @@ class Request(HandleRefModel):
                 # older than the normal cache expiry we will ignore it and send a new request
                 return None
 
+        if cached.http_status >= 500:
+            server_error_cache_expiry = getattr(settings, "SERVER_ERROR_CACHE_EXPIRY", 60)
+            
+            if tdiff > server_error_cache_expiry:
+                # if the cached request is a 5xx error and it's older than the configured time
+                # we will ignore it and send a new request
+                return None
+
         return cached
 
     @classmethod

@@ -239,6 +239,10 @@ class SettingsManager(confu.util.SettingsManager):
         # TASK_ORPHANED_HEARTBEAT_TIMEOUT (seconds) is the default task orphaned heartbeat timeout checks - default is 30 second
         self.set_option("TASK_ORPHANED_HEARTBEAT_TIMEOUT", 30)
 
+        # SERVER_ERROR_CACHE_EXPIRY (Request server error cache expiry - 1 minute for 5xx errors)
+        self.set_option("SERVER_ERROR_CACHE_EXPIRY", 60)
+
+
         # The maximum number of parameters that may be received via GET or POST before a
         # SuspiciousOperation (TooManyFields) is raised.
         #
