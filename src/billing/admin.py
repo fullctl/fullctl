@@ -58,7 +58,7 @@ class ProductModifierInline(admin.TabularInline):
 
 class RecurringProductInline(admin.StackedInline):
     model = RecurringProduct
-    fields = ("type", "price", "unit", "unit_plural", "metered_url", "data")
+    fields = ("type", "price", "reset_price", "unit", "unit_plural", "metered_url", "data")
     extra = 0
 
 
@@ -79,6 +79,7 @@ class ProductAdmin(BaseAdmin):
         "price",
         "is_recurring_product",
         "recurring_price",
+        "recurring_reset_price",
         "trial_product",
     )
     search_fields = (
@@ -89,6 +90,7 @@ class ProductAdmin(BaseAdmin):
     readonly_fields = BaseAdmin.readonly_fields + (
         "is_recurring_product",
         "recurring_price",
+        "recurring_reset_price",
     )
     inlines = (
         ProductModifierInline,
@@ -105,6 +107,14 @@ class ProductAdmin(BaseAdmin):
     def recurring_price(self, obj):
         if obj.is_recurring_product:
             return obj.recurring_product.price
+
+    def recurring_reset_price(self, obj):
+        if obj.is_recurring_product:
+            return obj.recurring_product.reset_price
+        return None
+
+    recurring_reset_price.short_description = "Reset Price"
+    recurring_reset_price.boolean = True
 
 
 @admin.register(ProductModifier)
