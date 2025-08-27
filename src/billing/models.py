@@ -448,6 +448,13 @@ class RecurringProduct(HandleRefModel):
         default=dict,
     )
 
+    reset_price = models.BooleanField(
+        default=False,
+        help_text=_(
+            "When toggled on, the product's price is reset to 0.0 after successful billing"
+        ),
+    )
+
     class Meta:
         db_table = "billing_recurring_product"
         verbose_name = _("Recurring Product Settings")
@@ -473,6 +480,7 @@ class RecurringProduct(HandleRefModel):
 
     def __str__(self):
         return f"{self.name}({self.id})"
+
 
 
 @reversion.register()
@@ -1041,14 +1049,34 @@ class SubscriptionCycle(HandleRefModel):
 
         # 5. Refresh status and propagate failures
         target_cycle_charge.payment_charge.refresh_from_db()
+
         if target_cycle_charge.payment_charge.status == "failed":
             self.status = "failed"
             target_cycle_charge.status = "failed"
             target_cycle_charge.save()
             target_cycle_charge.payment_charge.notify_failure()
             self.save()
+        elif target_cycle_charge.payment_charge.status == "ok":
+            # 6. Reset prices for products with reset_price = True after successful billing
+            self._reset_prices_after_billing()
 
         return target_cycle_charge
+
+    def _reset_prices_after_billing(self):
+        """
+        Reset prices to 0.0 for any RecurringProducts in this cycle that have reset_price = True
+        """
+        for cycle_product in self.subscription_cycle_product_set.all():
+            try:
+                recurring_product = cycle_product.subscription_product.product.recurring_product
+            except RecurringProduct.DoesNotExist:
+                log.warning(f"No recurring product found for {cycle_product.subscription_product.product}")
+                continue
+
+            if recurring_product.reset_price:
+                log.info(f"Resetting recurring product price for {cycle_product.subscription_product.product}")
+                recurring_product.price = 0.0
+                recurring_product.save()
 
     def invoice_exists(self):
         # Prefer the explicit FK once present (new logic) but fall back to the
@@ -1838,6 +1866,7 @@ class PaymentCharge(HandleRefModel):
             if self.status == "ok" and cycle.status != "paid":
                 cycle.status = "paid"
                 cycle.save(update_fields=["status"])
+                cycle._reset_prices_after_billing()
 
             # Failed payment – ensure cycle.status shows failure (do not
             # overwrite a previously set "error" state).
