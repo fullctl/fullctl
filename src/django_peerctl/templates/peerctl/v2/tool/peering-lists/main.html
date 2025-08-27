@@ -252,15 +252,9 @@
           </div>
           <div class="switch-col col-xs-12 col-auto switch-col d-flex align-items-center">
             <div class="row align-items-center flex-nowrap d-flex w-100 ps-2 position-relative">
-              <label class="switch col-auto">
-                <input type="checkbox"
-                  class="peer_session-add solid-inactive"
-                  data-api-base="{% url "peerctl_api:peer_session-set-status" asn=selected_asn port_pk="port_id"  pk="peer_session_id" %}"
-                  data-confirm-off="{% trans "Remove this peering session?" %}"
-                  data-api-method="post"
-                >
-                <span class="slider round"></span>
-              </label>
+              <div class="col-auto">
+                <span class="badge bg-secondary" data-field="peer_session_status"></span>
+              </div>
             </div>
           </div>
           <div class="ip-col col-xs-12 col">

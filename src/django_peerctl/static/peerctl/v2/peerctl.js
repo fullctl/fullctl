@@ -1533,7 +1533,7 @@ $peerctl.PeerSessionToggle = $tc.extend(
       }
 
       if (this.mode.toUpperCase() == "DELETE") {
-        payload.status = "configured";
+        payload.status = "requested";
       }
 
       return payload
@@ -1664,44 +1664,22 @@ $peerctl.PeerSessionList = $tc.extend(
       const list = this;
       const port_row = this.List_insert(data);
 
-      const switch_init_method = data.peer_session_status == "ok" ? "delete" : "post";
-      const switch_add = new $peerctl.PeerSessionToggle(
-        port_row.find("input.peer_session-add"),
-        data,
-        this.peer,
-        switch_init_method
-      );
-
       const button_show_config = port_row.find('button[data-element="peer_session_device_config"]');
 
       button_show_config.click(()=>{
         new $peerctl.modals.DeviceConfig(data);
       });
 
-
-      const row = this.find_row(this.peer.id);
-      $(switch_add).on("api-write:success", (ev, endpoint, sent_data, response) => {
-        const loading_shim = fullctl.peerctl.$t.peering_lists.$w.peers.loading_shim;
-
-        const offset_top = row.first().position().top;
-        const offset_height = row.first().height();
-
-        loading_shim.height(offset_height);
-        loading_shim.css('top', offset_top);
-        loading_shim.show();
-
-        fullctl.peerctl.$t.peering_lists.$w.peers.reload_row(this.peer.id)
-        .then(() => {
-          fullctl.peerctl.$t.peering_lists.$w.peers.update_counts()
-        })
-        .finally(() => {
-          loading_shim.height('');
-          loading_shim.css('top', 0);
-        });
-        //fullctl.peerctl.sync_except(fullctl.peerctl.$t.peering_lists);
-      });
-
-      switch_add.element.data("peer_session-id", data.peer_session);
+      const status_badge = port_row.find('[data-field="peer_session_status"]');
+      if(data.peer_session_status == "ok") {
+        status_badge.removeClass("bg-secondary bg-warning").addClass("bg-success").text("Active");
+      } else if(data.peer_session_status == "requested") {
+        status_badge.removeClass("bg-secondary bg-success").addClass("bg-warning").text("Requested");
+      } else if(data.peer_session_status == "configured") {
+        status_badge.removeClass("bg-secondary bg-success").addClass("bg-success").text("Configured");
+      } else {
+        status_badge.removeClass("bg-success bg-warning").addClass("bg-secondary").text("Inactive");
+      }
 
       list.fill_policy_selects(port_row, data);
 
@@ -2122,7 +2100,7 @@ $peerctl.PeerList = $tc.extend(
       const status_counts = {"complete": 0, "incomplete": 0, "todo": 0}
 
       peer_data.ipaddr.forEach((port) => {
-        if (port.peer_session_status == "ok") {
+        if (port.peer_session_status == "ok" || port.peer_session_status == "configured") {
           status_counts["complete"] += 1;
         } else if(port.peer_session_status != "ok" && peer_data.peer_request_status == "pending") {
           status_counts["incomplete"] += 1;
