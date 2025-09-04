@@ -1269,7 +1269,8 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
 
       this.content_element = element;
 
-      this.Modal("no_button_lg", title, element);
+      this.Modal("no_button_lg_subtitle", title, element);
+      this.set_subtitle("Click the toggles to enable the RBL checks below");
 
       // Set up event handlers after modal is ready
       var self = this;
