@@ -1774,7 +1774,7 @@ footer div[type="button"]:is(:hover, :focus){
   display: block;
   padding: 1rem;
   text-decoration: none;
-  color: var(--foreground);
+  color: var(--foreground) !important;
 }
 
 .help-box.js-hide {
