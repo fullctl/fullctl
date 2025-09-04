@@ -590,6 +590,10 @@ fullctl.application.Modal = $tc.extend(
       this.jquery.find('.modal-title').text(title);
     },
 
+    set_subtitle : function(subtitle) {
+      this.jquery.find('.modal-subtitle').text(subtitle);
+    },
+
     set_content : function(content) {
       this.jquery.find('.modal-body').empty().append(content);
       this.track_form_changes();
