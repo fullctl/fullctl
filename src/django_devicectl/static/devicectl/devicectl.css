@@ -41,3 +41,7 @@ div.sequential-report .report-row .path {
 
 div.sequential-report .report-row .value {
 }
+
+.device-container [data-field="error_message"] {
+    white-space: pre-wrap;
+}
