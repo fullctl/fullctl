@@ -245,7 +245,10 @@ class DeviceOperationalStatus(ForwardToService):
 
             if kind == "device":
                 if self.event.status == "error":
-                    device_error_message = f"{error_message}\n\n{component['error']}"
+                    if component.get("error") != error_message:
+                        device_error_message = f"{error_message}\n\n{component['error']}"
+                    else:
+                        device_error_message = error_message
                 else:
                     device_error_message = None
 
