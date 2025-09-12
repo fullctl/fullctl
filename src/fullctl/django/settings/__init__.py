@@ -556,11 +556,11 @@ class SettingsManager(confu.util.SettingsManager):
         self.set_option("DOCS_URL", "https://docs.fullctl.com")
 
         # Legal URL
-        self.set_option("LEGAL_URL", "https://www.fullctl.com/legal")
+        self.set_option("LEGAL_URL", "https://20c.com/legal")
 
         # Terms of Service URL
         self.set_option(
-            "TERMS_OF_SERVICE_URL", "https://www.fullctl.com/legal#section=collapseToS"
+            "TERMS_OF_SERVICE_URL", "https://20c.com/s/20C-TOS.pdf"
         )
 
         # PDB_OAUTH_PROMPT_LINK
