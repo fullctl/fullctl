@@ -19,11 +19,13 @@
 </script>
 <div class="col-xs-12">
   <a class="logo-container" href="/">
+    {% block header_logo %}
     {% if org_branding.custom_org %}
       <img class="fullctl logo" src={{ org_branding.dark_logo_url }} alt="{{ org_branding.name }}">
     {% else %}
       <img class="fullctl logo" src="{% static "common/fullctl.svg" %}" alt="{{ service_tag }}">
     {% endif %}
+    {% endblock %}
   </a>
 </div>
 {% endblock %}
