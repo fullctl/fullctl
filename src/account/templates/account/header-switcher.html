@@ -7,11 +7,13 @@
     data-api-base="{% url "applications_api:service_application-list" %}"
   >
     <div class="selected d-flex align-items-center">
+      {% block switcher_logo %}
       {% if org_branding.custom_org == "true" %}
         <img class="app-logo" src="{{ org_branding.dark_logo_url }}" alt="{{ org_branding.name }}">
       {% else %}
         <img class="app-logo" src="{% static "common/fullctl.svg" %}" alt="{{ service_tag }}">
       {% endif %}
+      {% endblock %}
       <span class="icon {{ request.app_id }} icon-caret-y ms-4"></span>
       <div class="others list-body" style="display:none">
       </div>
