@@ -766,7 +766,7 @@ class TaskSchedule(HandleRefModel):
         
         # try to create a claim for the schedule
         try:
-            TaskScheduleClaim.objects.create(
+            schedule_claim = TaskScheduleClaim.objects.create(
                 task_schedule=self,
                 worker_id=worker_id(),
                 schedule_date=self.schedule,
@@ -774,25 +774,32 @@ class TaskSchedule(HandleRefModel):
         except IntegrityError:
             raise TaskScheduleClaimed(self)
 
+        # clear old claims
+        TaskScheduleClaim.objects.filter(task_schedule=self).exclude(id=schedule_claim.id).delete()
 
         for task in self.tasks.all():
             if task.status in ["pending", "running"]:
                 raise TaskAlreadyStarted()
 
-        tasks = fullctl.django.tasks.create_tasks_from_json(
-            self.task_config,
-            user=self.user,
-            org=self.org,
-        )
+        try:
+            tasks = fullctl.django.tasks.create_tasks_from_json(
+                self.task_config,
+                user=self.user,
+                org=self.org,
+            )
 
-        if self.repeat:
-            self.reschedule()
-        else:
-            self.status = "deactivated"
-            self.save()
+            for task in tasks:
+                self.tasks.add(task)
+        finally:
+            # ALWAYS reschedule the schedule, otherwise a failure in task creation
+            # can cause the schedule to get stuck (a task schedule claim will exist)
+            if self.repeat:
+                self.reschedule()
+            else:
+                self.status = "deactivated"
+                self.save()
 
-        for task in tasks:
-            self.tasks.add(task)
+
 
         return tasks
 
