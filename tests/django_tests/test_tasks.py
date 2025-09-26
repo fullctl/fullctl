@@ -493,9 +493,9 @@ def test_cleanup_orphaned_running_tasks_with_no_running_tasks():
 @pytest.mark.django_db
 def test_task_schedule_unique_claim_constraint(dj_account_objects):
     """Test that the TaskScheduleClaim enforces the unique constraint."""
-    
+
     org = dj_account_objects.org
-    
+
     # Create a task schedule
     task_schedule = TaskSchedule.objects.create(
         org=org,
@@ -507,7 +507,7 @@ def test_task_schedule_unique_claim_constraint(dj_account_objects):
         interval=3600,
         schedule=timezone.now(),
     )
-    
+
     # Create first claim
     schedule_date = timezone.now()
     claim1 = TaskScheduleClaim.objects.create(
@@ -516,7 +516,7 @@ def test_task_schedule_unique_claim_constraint(dj_account_objects):
         schedule_date=schedule_date,
     )
     assert claim1.id is not None
-    
+
     # Use an atomic block to contain the IntegrityError
     try:
         with transaction.atomic():
@@ -532,7 +532,7 @@ def test_task_schedule_unique_claim_constraint(dj_account_objects):
     except IntegrityError:
         # This is expected, continue with the test
         pass
-    
+
     # Creating a claim with a different schedule_date should succeed
     different_date = timezone.now() + timezone.timedelta(hours=1)
     claim2 = TaskScheduleClaim.objects.create(
@@ -541,3 +541,95 @@ def test_task_schedule_unique_claim_constraint(dj_account_objects):
         schedule_date=different_date,
     )
     assert claim2.id is not None
+
+
+@pytest.mark.django_db
+def test_task_schedule_reschedules_even_when_task_creation_fails(dj_account_objects):
+    """Test that task schedule gets rescheduled even if task creation fails."""
+
+    org = dj_account_objects.org
+
+    # Create a task schedule with invalid config that will cause task creation to fail
+    initial_schedule = timezone.now()
+    task_schedule = TaskSchedule.objects.create(
+        org=org,
+        task_config={
+            "tasks": [
+                {
+                    "op": "nonexistent_task_type",  # This should cause create_tasks_from_json to fail
+                    "param": {"args": ["test"]},
+                }
+            ],
+        },
+        description="test schedule resilience",
+        repeat=True,
+        interval=3600,
+        schedule=initial_schedule,
+    )
+
+    original_schedule_time = task_schedule.schedule
+
+    # Mock create_tasks_from_json to simulate failure
+    with patch('fullctl.django.tasks.create_tasks_from_json') as mock_create_tasks:
+        mock_create_tasks.side_effect = Exception("Task creation failed")
+
+        # This should raise an exception but still reschedule
+        with pytest.raises(Exception, match="Task creation failed"):
+            task_schedule.spawn_tasks()
+
+    # Refresh the object from database
+    task_schedule.refresh_from_db()
+
+    # Despite the task creation failure, the schedule should have been rescheduled
+    assert task_schedule.schedule > original_schedule_time
+
+    # Check that it was rescheduled approximately 3600 seconds later (allowing for small timing differences)
+    expected_schedule = original_schedule_time + timezone.timedelta(seconds=3600)
+    time_difference = abs((task_schedule.schedule - expected_schedule).total_seconds())
+    assert time_difference < 1.0, f"Schedule difference too large: {time_difference} seconds"
+
+
+@pytest.mark.django_db
+def test_task_schedule_old_claims_cleanup(dj_account_objects):
+    """Test that old TaskScheduleClaims get cleaned up after successful spawn."""
+
+    org = dj_account_objects.org
+
+    task_schedule = TaskSchedule.objects.create(
+        org=org,
+        task_config={
+            "tasks": [],  # Empty so it doesn't fail
+        },
+        description="test claims cleanup",
+        repeat=True,
+        interval=3600,
+        schedule=timezone.now(),
+    )
+
+    # Create some old claims for the same schedule
+    old_claims = []
+    for i in range(3):
+        old_claim = TaskScheduleClaim.objects.create(
+            task_schedule=task_schedule,
+            worker_id=f"old_worker_{i}",
+            schedule_date=task_schedule.schedule - timezone.timedelta(hours=i+1),
+        )
+        old_claims.append(old_claim)
+
+    # Verify old claims exist
+    assert TaskScheduleClaim.objects.filter(task_schedule=task_schedule).count() == 3
+
+    # Spawn tasks should clean up old claims and create a new one
+    task_schedule.spawn_tasks()
+
+    # Should now have only one claim (the new one)
+    remaining_claims = TaskScheduleClaim.objects.filter(task_schedule=task_schedule)
+    assert remaining_claims.count() == 1
+
+    # The remaining claim should be for the current worker
+    new_claim = remaining_claims.first()
+    assert new_claim.worker_id == worker_id()
+
+    # All old claims should be gone
+    for old_claim in old_claims:
+        assert not TaskScheduleClaim.objects.filter(id=old_claim.id).exists()
