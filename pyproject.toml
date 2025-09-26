@@ -20,7 +20,7 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.11"
 fullctl = { git = "https://github.com/fullctl/fullctl.git", branch = "prep-release" }
 
 # django-peeringdb = ">=2.8"
