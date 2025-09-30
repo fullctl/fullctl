@@ -143,6 +143,10 @@ fullctl.util.is_valid_ip4 = (ip) => {
 }
 
 fullctl.formatters.pretty_speed = (value) => {
+
+  if(value === null || value === undefined)
+    return "-";
+
   if(value >= 1000000)
     value = parseInt(value / 1000000)+"T";
   else if(value >= 1000)
@@ -153,6 +157,9 @@ fullctl.formatters.pretty_speed = (value) => {
 }
 
 fullctl.formatters.pretty_speed_bits = (value) => {
+
+  if(value === null || value === undefined)
+    return "-";
 
   if(value >= 1e13)
     value = parseInt(value / 1e12)+"T";
