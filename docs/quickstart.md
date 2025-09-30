@@ -25,7 +25,7 @@ Ctl/dev/compose.sh up
 ```
 
 
-The first time you run `compose.sh up` it will create a folder `postgres_data` in the top-level `devicectl` directory which contains your Postgres data and will initialize the Postgres database with a user according to the settings you've provided. Generally, the compose script will automatically perform migrations within the Django app; however, the first time you run `compose.sh up` you may find that the Django app is unable to perform migrations because the Postgres database is still being initialized. To solve this, simply wait until the Postgres db is initialized, and then stop the Docker containers with
+The first time you run `compose.sh up` it will create a docker volume named `devicectldev_postgres_data` and will initialize the Postgres database with a user according to the settings you've provided. Generally, the compose script will automatically perform migrations within the Django app; however, the first time you run `compose.sh up` you may find that the Django app is unable to perform migrations because the Postgres database is still being initialized. To solve this, simply wait until the Postgres db is initialized, and then stop the Docker containers with
 
 ```sh
 Ctl/dev/compose.sh down
