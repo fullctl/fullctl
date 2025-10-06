@@ -810,6 +810,9 @@ class Vlan(ModelSerializer):
     facility_name = serializers.SerializerMethodField()
     facility_slug = serializers.SerializerMethodField()
 
+    v4_secondaries = serializers.ListField(child=serializers.IPAddressField())
+    v6_secondaries = serializers.ListField(child=serializers.IPAddressField())
+
     class Meta:
         model = models.Vlan
         fields = "__all__"
