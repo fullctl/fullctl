@@ -1,5 +1,5 @@
 import ipaddress
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 
 import ripestat
 import ripestat.stat.routing_status
@@ -68,7 +68,7 @@ class RoutingStatusData(RipestatData):
 
         seen_dtime = datetime.strptime(last_seen["time"], "%Y-%m-%dT%H:%M:%S")
         # set timezone to UTC
-        seen_dtime = seen_dtime.replace(tzinfo=timezone.utc)
+        seen_dtime = seen_dtime.replace(tzinfo=dt_timezone.utc)
         # if time difference is less than 24 hours we consider it as seen
 
         seen = False
