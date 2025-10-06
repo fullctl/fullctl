@@ -5,6 +5,7 @@ import time
 import reversion
 import structlog
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Q
@@ -1619,6 +1620,22 @@ class Vlan(ServiceBridgeReferenceModel):
         services=[
             "fullctl.service_bridge.netbox.VLAN",
         ],
+    )
+    v4_primary = InetAddressField(blank=True, null=True, store_prefix_length=True)
+    v4_secondaries: list[InetAddressField] = ArrayField(
+        InetAddressField(store_prefix_length=True),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=_("IPv4 secondary addresses"),
+    )
+    v6_primary = InetAddressField(blank=True, null=True, store_prefix_length=True)
+    v6_secondaries: list[InetAddressField] = ArrayField(
+        InetAddressField(store_prefix_length=True),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=_("IPv6 secondary addresses"),
     )
 
     class HandleRef:

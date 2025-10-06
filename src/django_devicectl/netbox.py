@@ -568,9 +568,49 @@ def sync_vlans(
                         f"[PULL] Netbox vlan {netbox_vlan.name} {netbox_vlan.id} no facility found, creating without facility ..."
                     )
 
+        if custom_fields := netbox_vlan.custom_fields:
+            v4_primary = None
+            v6_primary = None
+            v4_secondaries = []
+            v6_secondaries = []
+
+            try:
+                v4_primary = custom_fields.get("v4_primary", {}).get("address", None)
+            except Exception as exc:
+                log.info(
+                    f"[PULL] Netbox vlan {netbox_vlan.name} {netbox_vlan.id} malformed v4_primary custom field, creating without one ..."
+                )
+
+            try:
+                v6_primary = custom_fields.get("v6_primary", {}).get("address", None)
+            except Exception as exc:
+                log.info(
+                    f"[PULL] Netbox vlan {netbox_vlan.name} {netbox_vlan.id} malformed v6_primary custom field, creating without one ..."
+                )
+
+            try:
+                _v4_secondaries = custom_fields.get("v4_secondaries", None)
+                v4_secondaries = [addr["address"] for addr in _v4_secondaries] if _v4_secondaries else []
+            except Exception as exc:
+                log.info(
+                    f"[PULL] Netbox vlan {netbox_vlan.name} {netbox_vlan.id} malformed v4_secondaries custom field, creating without one ..."
+                )
+                
+            try:
+                _v6_secondaries = custom_fields.get("v6_secondaries", None)
+                v6_secondaries = [addr["address"] for addr in _v6_secondaries] if _v6_secondaries else []
+            except Exception as exc:
+                log.info(
+                    f"[PULL] Netbox vlan {netbox_vlan.name} {netbox_vlan.id} malformed v6_secondaries custom field, creating without one ..."
+                )
+
         vlan, created = models.Vlan.objects.update_or_create(
             reference=str(netbox_vlan.id),
             instance=instance,
+            v4_primary=v4_primary,
+            v6_primary=v6_primary,
+            v4_secondaries=v4_secondaries,
+            v6_secondaries=v6_secondaries,
             defaults={
                 "facility": facility,
                 "vlan": netbox_vlan.vid,
