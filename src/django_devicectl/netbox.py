@@ -517,7 +517,7 @@ def sync_vlans(
     vlan_roles = [r.lower() for r in VLAN_ROLE]
 
     api = get_netbox_api()
-    for netbox_vlan in api.ipam.vlans.all(limit=NETBOX_PAGE_LIMIT):
+    for netbox_vlan in api.ipam.vlans.filter(ordering="-last_updated", limit=NETBOX_PAGE_LIMIT):
 
         vlan_role = None
         # Apply VLAN role filter when configured
