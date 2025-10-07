@@ -614,6 +614,10 @@ def sync_vlans(
             defaults={
                 "facility": facility,
                 "vlan": netbox_vlan.vid,
+                "v4_primary": v4_primary,
+                "v6_primary": v6_primary,
+                "v4_secondaries": v4_secondaries,
+                "v6_secondaries": v6_secondaries,
             },
         )
         changed = vlan.sync_from_reference(ref_obj=netbox_vlan)
