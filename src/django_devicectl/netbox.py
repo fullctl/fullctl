@@ -607,10 +607,6 @@ def sync_vlans(
         vlan, created = models.Vlan.objects.update_or_create(
             reference=str(netbox_vlan.id),
             instance=instance,
-            v4_primary=v4_primary,
-            v6_primary=v6_primary,
-            v4_secondaries=v4_secondaries,
-            v6_secondaries=v6_secondaries,
             defaults={
                 "facility": facility,
                 "vlan": netbox_vlan.vid,
