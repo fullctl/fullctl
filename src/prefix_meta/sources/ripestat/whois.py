@@ -99,7 +99,7 @@ class HistoricalWhois(RipestatRequest, ObjectSeparationMixin):
 
             flattened_refs.sort(key=lambda x: x.get("from_time", ""), reverse=True)
 
-            referencing_by_type = self._group_objects_by_type(flattened_refs, "type")
-            normalized[first_key]["referencing_by_type"] = referencing_by_type
+            ripe_historical_references = self._group_objects_by_type(flattened_refs, "type")
+            normalized[first_key]["ripe_historical_references"] = ripe_historical_references
 
         return self._separate_whois_objects_by_type(normalized)

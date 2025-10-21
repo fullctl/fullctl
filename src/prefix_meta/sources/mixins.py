@@ -15,9 +15,10 @@ class ObjectSeparationMixin:
     Currently supports:
     - RIPE Historical Whois: Groups referencing objects by type (mntner, org, role, etc.)
 
-    Future support planned for:
-    - ARIN RDAP data
-    - APNIC, LACNIC, AFRINIC data sources
+    Future support may be added for:
+    - ARIN RDAP data (if they add referencing object history)
+    - LACNIC, AFRINIC data sources (if similar data becomes available)
+
 
     This mixin provides methods to group whois/registry objects by their type
     for consistent display across different RIR data sources.
@@ -72,7 +73,7 @@ class ObjectSeparationMixin:
         if not isinstance(data, dict):
             return data
 
-        if "referencing_by_type" in data:
+        if "ripe_historical_references" in data:
             return data
 
         # TODO: Handle Other RIR style data
