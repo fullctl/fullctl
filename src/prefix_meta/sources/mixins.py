@@ -12,16 +12,9 @@ class ObjectSeparationMixin:
     """
     Mixin to provide object type separation for whois/registry data.
 
-    Currently supports:
-    - RIPE Historical Whois: Groups referencing objects by type (mntner, org, role, etc.)
+    Used by RIPE Historical Whois to group referencing objects by type (mntner, org, role, etc.)
 
-    Future support may be added for:
-    - ARIN RDAP data (if they add referencing object history)
-    - LACNIC, AFRINIC data sources (if similar data becomes available)
-
-
-    This mixin provides methods to group whois/registry objects by their type
-    for consistent display across different RIR data sources.
+    This mixin provides methods to group whois/registry objects by their type.
     """
 
     def _group_objects_by_type(self, objects_data, key_field="type"):
