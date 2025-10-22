@@ -1137,7 +1137,7 @@ files = [
 
 [[package]]
 name = "fullctl"
-version = "1.15.0-rc.72"
+version = "1.15.0-rc.73"
 description = "Core classes and functions for service applications"
 optional = false
 python-versions = "^3.9"
@@ -1177,7 +1177,7 @@ whitenoise = ">=6"
 type = "git"
 url = "https://github.com/fullctl/fullctl.git"
 reference = "prep-release"
-resolved_reference = "70bac1cb5bed79ccd3133f0fd16e9ffb65f37296"
+resolved_reference = "24e49d98bea39440f02c3ba06b6cc00be992c857"
 
 [[package]]
 name = "future"
