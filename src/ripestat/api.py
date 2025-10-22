@@ -30,6 +30,8 @@ class Output:
         status: Optional[str] = "",
         status_code: Optional[int] = 0,
         time: Optional[str] = "",
+        # Need this so we can ignore any extra fields that are returned from the API
+        **kwargs,
     ):
         """Initialize the Output object."""
         self._url = _url
