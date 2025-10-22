@@ -105,19 +105,30 @@ def cleanup_orphaned_running_tasks():
     
     cutoff_time = timezone.now() - timedelta(seconds=heartbeat_timeout)
 
-    running_tasks = Task.objects.filter(status="running")
+    running_tasks = Task.objects.filter(status="running", updated__lt=cutoff_time)
     stale_heartbeats = TaskHeartbeat.objects.filter(
         timestamp__lt=cutoff_time,
         task__in=running_tasks
     ).select_related("task")
 
     if not stale_heartbeats.exists():
+        # we don't have stale hearbeats, if there are any running tasks
+        # we still need to check if they have a heartbeat at all. If not,
+        # we mark the task as failed. (Heartbeats should be created within the first couple of seconds of a task being started.)
+        for task in running_tasks:
+            if not TaskHeartbeat.objects.filter(task=task).exists():
+                task_age = timezone.now() - task.created
+                error_msg = f"Task {task.id} orphaned - task still `running` but no heartbeat was ever received. This should not happen. Task age: {task_age}"
+                log.info(error_msg)
+                set_task_as_failed(task, error_msg)
+
         return
 
     for heartbeat in stale_heartbeats:
         task = specify_task(heartbeat.task)
         if task:
-            error_msg = f"Task orphaned - no heartbeat detected for {heartbeat_timeout} seconds. Last heartbeat: {heartbeat.timestamp}"
+            error_msg = f"Task {task.id} orphaned - no heartbeat detected for {heartbeat_timeout} seconds. Last heartbeat: {heartbeat.timestamp}"
+            log.info(error_msg)
             set_task_as_failed(task, error_msg)
             heartbeat.delete()
 
