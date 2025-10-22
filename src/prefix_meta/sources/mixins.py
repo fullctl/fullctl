@@ -11,9 +11,7 @@ __all__ = [
 class ObjectSeparationMixin:
     """
     Mixin to provide object type separation for whois/registry data.
-
     Used by RIPE Historical Whois to group referencing objects by type (mntner, org, role, etc.)
-
     This mixin provides methods to group whois/registry objects by their type.
     """
 
