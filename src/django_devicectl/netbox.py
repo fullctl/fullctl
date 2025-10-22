@@ -568,11 +568,12 @@ def sync_vlans(
                         f"[PULL] Netbox vlan {netbox_vlan.name} {netbox_vlan.id} no facility found, creating without facility ..."
                     )
 
+        v4_primary = None
+        v6_primary = None
+        v4_secondaries = []
+        v6_secondaries = []
+
         if custom_fields := netbox_vlan.custom_fields:
-            v4_primary = None
-            v6_primary = None
-            v4_secondaries = []
-            v6_secondaries = []
 
             try:
                 v4_primary = custom_fields.get("v4_primary", {}).get("address", None)
