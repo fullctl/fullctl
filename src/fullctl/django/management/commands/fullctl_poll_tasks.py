@@ -5,6 +5,8 @@ import django.db
 import psycopg
 import reversion
 import structlog
+import time
+from django.conf import settings
 from asgiref.sync import sync_to_async
 
 from fullctl.django.management.commands.base import CommandInterface
@@ -185,11 +187,29 @@ class Command(CommandInterface):
 
         asyncio.run(_main())
 
+    async def perform_cleanup(self):
+        """
+        Performs cleanup of tasks that have reached their max time or are orphaned.
+
+        This is rate limited to prevent excessive database queries. 
+
+        The period can be configured with the `TASK_CLEANUP_INTERVAL_SECONDS` setting.
+        """
+        period = settings.TASK_CLEANUP_INTERVAL_SECONDS
+        last_check = getattr(self, "last_cleanup_check", 0)
+        if time.time() - last_check < period:
+            return
+        self.last_cleanup_check = time.time()
+        await sync_to_async(tasks_max_time_reached)()
+        await sync_to_async(cleanup_orphaned_running_tasks)()
+
     async def _monitor_self_selecting_workers(self):
         """Monitor self-selecting workers and respawn them when they exit"""
         while True:
             try:
                 await asyncio.sleep(self.sleep_interval)
+
+                await self.perform_cleanup()
 
                 for i, worker in enumerate(self.self_selecting_workers):
                     # Check if the worker process has exited
@@ -242,14 +262,8 @@ class Command(CommandInterface):
                         self.log_info("Worker available")
                     self.all_workers_busy = False
 
-                # check on stuck tasks and perform requeuing on those that have max times reached
-                await sync_to_async(tasks_max_time_reached)()
+                await self.perform_cleanup()
                 
-                # check for orphaned running tasks and mark them as failed
-                await sync_to_async(cleanup_orphaned_running_tasks)()
-
-                # django call needs to be wrapped in sync_to_async
-
                 task = await sync_to_async(fetch_task)()
 
                 if not task or task.queue_id:

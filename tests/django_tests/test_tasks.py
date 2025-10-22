@@ -20,9 +20,29 @@ from fullctl.django.models.concrete.tasks import (
     TaskScheduleClaim,
     TaskScheduleClaimed,
     TaskAlreadyStarted,
+    Task,
 )
 from fullctl.django.tasks.util import worker_id
 
+
+def backdate_task(task: Task, seconds: int) -> None:
+    """
+    Backdate a task's updated timestamp by a specified number of seconds.
+
+    This is a test utility that temporarily disables the auto_now behavior
+    on the updated field to allow manual backdating for testing cleanup
+    and timeout scenarios.
+
+    Args:
+        task: The task instance to backdate
+        seconds: Number of seconds to subtract from the current updated timestamp
+    """
+    try:
+        task._meta.get_field("updated").auto_now = False
+        task.updated = task.updated - timezone.timedelta(seconds=seconds)
+        task.save()
+    finally:
+        task._meta.get_field("updated").auto_now = True
 
 @pytest.mark.django_db
 def test_task_with_max_run_time():
@@ -294,6 +314,8 @@ def test_cleanup_orphaned_running_tasks_with_stale_heartbeat():
     task = models.TestTask.create_task(1, 2)
     task.status = "running"
     task.save()
+
+    backdate_task(task, 60)
     
     # Create an old heartbeat (older than default timeout of 30 seconds)
     heartbeat = models.TestTaskHeartbeat.objects.create(task=task)
@@ -309,9 +331,9 @@ def test_cleanup_orphaned_running_tasks_with_stale_heartbeat():
     # Refresh and verify task is now failed
     task.refresh_from_db()
     assert task.status == "failed"
-    assert "Task orphaned - no heartbeat detected for 30 seconds" in task.error
+    assert "orphaned - no heartbeat detected for 30 seconds" in task.error
     assert str(old_timestamp) in task.error
-    
+
     assert not models.TestTaskHeartbeat.objects.filter(task=task).exists()
 
 
@@ -349,6 +371,8 @@ def test_cleanup_orphaned_running_tasks_with_custom_timeout(settings):
     task = models.TestTask.create_task(1, 2)
     task.status = "running"
     task.save()
+
+    backdate_task(task, 60)
     
     # Create a heartbeat that's 45 seconds old (within custom timeout)
     heartbeat = models.TestTaskHeartbeat.objects.create(task=task)
@@ -372,7 +396,7 @@ def test_cleanup_orphaned_running_tasks_with_custom_timeout(settings):
     # Now the task should be failed
     task.refresh_from_db()
     assert task.status == "failed"
-    assert "Task orphaned - no heartbeat detected for 60 seconds" in task.error
+    assert "orphaned - no heartbeat detected for 60 seconds" in task.error
 
 
 @pytest.mark.django_db
@@ -410,19 +434,42 @@ def test_cleanup_orphaned_running_tasks_ignores_non_running_tasks():
 
 @pytest.mark.django_db
 def test_cleanup_orphaned_running_tasks_with_no_heartbeat():
-    """Test that running tasks without heartbeats are not affected by cleanup."""
+    """Test that old running tasks without heartbeats are marked as failed."""
     task = models.TestTask.create_task(1, 2)
     task.status = "running"
     task.save()
-    
+
+    # Backdate the task to make it older than the heartbeat timeout
+    backdate_task(task, 60)
+
     assert not models.TestTaskHeartbeat.objects.filter(task=task).exists()
-    
+
     # Run cleanup
     orm.cleanup_orphaned_running_tasks()
-    
-    # Task should remain running (no heartbeat to be stale)
+
+    # Task should now be marked as failed since it's old and has no heartbeat
+    task.refresh_from_db()
+    assert task.status == "failed"
+    assert "orphaned - task still `running` but no heartbeat was ever received" in task.error
+
+
+@pytest.mark.django_db
+def test_cleanup_orphaned_running_tasks_ignores_recent_tasks():
+    """Test that recently updated running tasks without heartbeats are not cleaned up."""
+    task = models.TestTask.create_task(1, 2)
+    task.status = "running"
+    task.save()
+
+    # Task is recent (not backdated), so it should not be cleaned up even without heartbeat
+    assert not models.TestTaskHeartbeat.objects.filter(task=task).exists()
+
+    # Run cleanup
+    orm.cleanup_orphaned_running_tasks()
+
+    # Task should remain running since it's recent
     task.refresh_from_db()
     assert task.status == "running"
+    assert task.error is None or task.error == ""
 
 
 @pytest.mark.django_db
@@ -446,6 +493,7 @@ def test_cleanup_orphaned_running_tasks_multiple_tasks():
         heartbeat = models.TestTaskHeartbeat.objects.create(task=task)
         heartbeat.timestamp = old_timestamp
         heartbeat.save()
+        backdate_task(task, 60)
     
     # Create recent heartbeat for third task
     recent_heartbeat = models.TestTaskHeartbeat.objects.create(task=fresh_task)

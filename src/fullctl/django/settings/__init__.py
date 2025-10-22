@@ -221,6 +221,9 @@ class SettingsManager(confu.util.SettingsManager):
         # TASK_MAX_AGE_THRESHOLD is the maximum hours a task can be pending before it is considered stale
         self.set_option("TASK_MAX_AGE_THRESHOLD", 24)
 
+        # TASK_CLEANUP_INTERVAL_SECONDS is the interval in seconds to perform cleanup of tasks that have reached their max time or are orphaned
+        self.set_option("TASK_CLEANUP_INTERVAL_SECONDS", 30)
+
         # TASK_DEFAULT_MAX_AGE (seconds) is the default maximum age for a task - default is 6 hours
         self.set_option("TASK_DEFAULT_MAX_AGE", 3600 * 6)
 
