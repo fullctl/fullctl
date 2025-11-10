@@ -14,6 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+import account.views.auth
 import oauth2_provider.views as oauth2_views
 from django.conf import settings
 from django.conf.urls.static import static
@@ -121,6 +122,8 @@ urlpatterns += [
     ),
     # social-auth urls
     path("social/", include("social_django.urls", namespace="social")),
+    # support login shortcut
+    path("login-support/", account.views.auth.login_support, name="login-support"),
     # grainy
     path(
         "grainy/get/<str:namespace>/",

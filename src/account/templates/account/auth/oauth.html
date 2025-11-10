@@ -1,5 +1,8 @@
 {% load static i18n %}
 {% for backend in backends.backends %}
+{% if backend == "fullctl" and hide_fullctl_oauth %}
+  {# Skip rendering fullctl button when hidden flag is set #}
+{% else %}
 <div class="oauth-badges">
   <div class="oauth-backend {{ backend }}" title="{{ backend }}">
     <a href="{% url 'social:begin' backend %}?next={{ request.GET.next|urlencode }}" class="btn btn-light btn-oauth">
@@ -44,4 +47,5 @@
     </a>
   </div>
 </div>
+{% endif %}
 {% endfor %}

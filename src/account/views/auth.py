@@ -1,5 +1,5 @@
 import logging
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlencode
 
 from django.conf import settings
 from django.contrib import messages
@@ -55,6 +55,18 @@ def get_fallback_url(user):
         log.error(f"Service {redirect_to_service} not found.")
 
     return default
+
+
+def login_support(request):
+    """
+    Redirect to fullctl OAuth login for support staff.
+    Alias for /social/login/fullctl/
+    """
+    next_param = request.GET.get("next", "")
+    redirect_url = reverse("social:begin", kwargs={"backend": "fullctl"})
+    if next_param:
+        redirect_url = f"{redirect_url}?{urlencode({'next': next_param})}"
+    return redirect(redirect_url)
 
 
 def login(request):
@@ -139,7 +151,8 @@ def login(request):
         org_branding=org_branding_components,
         show_register_link=show_register_link,
         oauth_enabled = oauth_enabled,
-        show_peeringdb_text=settings.SOCIAL_AUTH_PEERINGDB_ENABLED
+        show_peeringdb_text=settings.SOCIAL_AUTH_PEERINGDB_ENABLED,
+        hide_fullctl_oauth=settings.SOCIAL_AUTH_FULLCTL_HIDDEN_FROM_LOGIN
     )
 
     return render(request, "account/auth/login.html", env)
