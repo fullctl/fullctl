@@ -2,6 +2,7 @@ import ripestat
 import ripestat.stat.historical_whois
 
 from .base import RipestatData, RipestatRequest
+from ..mixins import ObjectSeparationMixin
 
 __all__ = [
     "HistoricalWhois",
@@ -19,7 +20,7 @@ class HistoricalWhoisData(RipestatData):
         source_name = "ripestat-historicalwhois"
 
 
-class HistoricalWhois(RipestatRequest):
+class HistoricalWhois(RipestatRequest, ObjectSeparationMixin):
     class Meta:
         proxy = True
 
@@ -35,9 +36,8 @@ class HistoricalWhois(RipestatRequest):
 
     def prepare_data(self, data):
         """
-        Normalize the data
+        Normalize the data and include historical versions information
         """
-
         normalized = {}
         references = {}
 
@@ -88,4 +88,18 @@ class HistoricalWhois(RipestatRequest):
                 and v.get("type") == "inetnum"
             }
 
-        return normalized
+        if normalized:
+            first_key = next(iter(normalized.keys()))
+
+            referencing_data = data.get("referencing", [])
+            flattened_refs = []
+            for ref_group in referencing_data:
+                for ref in ref_group:
+                    flattened_refs.append(ref)
+
+            flattened_refs.sort(key=lambda x: x.get("from_time", ""), reverse=True)
+
+            ripe_historical_references = self._group_objects_by_type(flattened_refs, "type")
+            normalized[first_key]["ripe_historical_references"] = ripe_historical_references
+
+        return self._separate_whois_objects_by_type(normalized)
