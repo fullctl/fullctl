@@ -26,10 +26,20 @@ class IRRExplorerData(prefix_meta.Data):
 
     @classmethod
     def get_prefix_queryset(cls, prefix):
+        # Exclude records that have DataSubnet entries with default routes (0.0.0.0/0 and ::/0)
+        # as they match everything and are not valid subnet matches. This is a data quality
+        # issue on the IRR Explorer side - these default routes should not exist in IRR databases
+        # but occasionally appear due to misconfigurations or errors.
+        default_routes = [
+            ipaddress.ip_network("0.0.0.0/0"),
+            ipaddress.ip_network("::/0"),
+        ]
+        
         return (
             super()
             .get_prefix_queryset(prefix)
             .filter(type=cls.config("type"), source_name=cls.config("source_name"))
+            .exclude(subnets__prefix__in=default_routes)
         )
 
     def _expected_in_rir_warning(self, messages, rir_name):
@@ -74,13 +84,31 @@ class IRRExplorerData(prefix_meta.Data):
         if not self.data:
             return []
 
+        # Filter out default routes (0.0.0.0/0 and ::/0) as they match everything
+        # and are not valid subnet matches. This is a data quality issue on the
+        # IRR Explorer side - these default routes should not exist in IRR databases
+        # but occasionally appear due to misconfigurations or errors.
+        default_routes = {
+            ipaddress.ip_network("0.0.0.0/0"),
+            ipaddress.ip_network("::/0"),
+        }
+
         collected_routes = []
 
         for entry in self.data:
+            # Skip entries where the entry prefix itself is a default route
+            try:
+                entry_prefix = ipaddress.ip_network(entry.get("prefix", ""))
+                if entry_prefix in default_routes:
+                    continue
+            except (ValueError, ipaddress.AddressValueError):
+                continue
+
             for dataset, routes in entry.get("irrRoutes", {}).items():
-                collected_routes += self._augment_route_objects(
+                augmented_routes = self._augment_route_objects(
                     routes, entry["prefix"], dataset
                 )
+                collected_routes += augmented_routes
 
         return collected_routes
 
