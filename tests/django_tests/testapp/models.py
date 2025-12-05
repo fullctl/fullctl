@@ -2,12 +2,15 @@
 Contains a bunch of concrete models to help testing
 """
 
+import time
+
 from django.db import models
 
 import fullctl.django.models.abstract.meta as meta
 from fullctl.django.models import Task, TaskHeartbeat
 from fullctl.django.models.abstract.base import SlugModel
 from fullctl.django.tasks import qualifiers, register
+from fullctl.django.tasks.context import check_task_cancelled
 
 
 @register
@@ -100,7 +103,6 @@ class LongTask(TestTask):
         tag = "task_long"
 
     def run(self, a, b, *args, **kwargs):
-        import time
 
         time.sleep(1)
         return a + b
@@ -150,6 +152,63 @@ class FailingTask(Task):
 
     def run(self, *args, **kwargs):
         return int("string")
+
+
+@register
+class CancellableTask(Task):
+    """
+    Test task that can be cancelled during execution.
+    Simulates a long-running task by processing items in a loop.
+    """
+
+    class Meta:
+        proxy = True
+
+    class HandleRef:
+        tag = "task_cancellable"
+
+    class TaskMeta:
+        result_type = int
+
+    def run(self, iterations=10, *args, **kwargs):
+        """
+        Run a loop that checks for cancellation before each iteration.
+
+        Args:
+            iterations: Number of iterations to perform
+        """
+
+        processed = 0
+        for i in range(iterations):
+            # Check for cancellation before processing each iteration
+            check_task_cancelled()
+            time.sleep(0.1)
+            processed += 1
+        return processed
+
+
+@register
+class NonCancellableTask(Task):
+    """
+    Test task that doesn't check for cancellation.
+    Will run to completion even if cancelled.
+    """
+
+    class Meta:
+        proxy = True
+
+    class HandleRef:
+        tag = "task_non_cancellable"
+
+    class TaskMeta:
+        result_type = int
+
+    def run(self, iterations=5, *args, **kwargs):
+        """Run without any cancellation checks"""
+
+        for i in range(iterations):
+            time.sleep(0.1)
+        return iterations
 
 
 class Data(meta.Data):
