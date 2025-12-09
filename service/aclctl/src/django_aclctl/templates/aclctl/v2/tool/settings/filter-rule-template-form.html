@@ -1,0 +1,73 @@
+{% load static i18n %}
+
+<div data-template="filter_rule_template_wizard" class="wizard wiz-step-1">
+  <div class="rs-form wiz-step wiz-step-1">
+
+  </div>
+</div>
+
+<form data-template="form_filter_rule_template_page"
+  data-api-base="{% url "aclctl_api:filter_rule_template-list" org_tag=request.org.slug %}"
+  data-api-action=""
+  data-api-method="POST"
+  >
+  <div class="row controls" style="display:flex">
+    <div class="col-12">
+
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes">
+          <label for="filter-rule-template-name" class="form-label">{% trans "Name" %}</label>
+          <input type="text" class="form-control" id="filter-rule-template-name" name="name" />
+        </div>
+      </div>
+      <h5>{% trans "Device type" %}</h5>
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes">
+          <label for="filter-rule-template-type" class="form-label">{% trans "Type" %}</label>
+          <span class="modal-control">
+          <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+          <select class="form-control" id="filter-rule-template-type" name="type">
+            <option value="cisco-nexus">Cisco Nexus</option>
+          <select>
+          </span>
+        </div>
+      </div>
+
+      <div class="row mb-3" style="height:300px">
+        <div class="col-12" data-api-submit="yes">
+          <label for="filter-rule-template-body" class="form-label">{% trans "Template Body" %}</label>
+          <textarea type="text" data-api-base="{% url "default-template" template_type="cisco-nexus" %}" value="32" style="height:93%" class="form-control" id="filter-rule-template-body" name="body" /></textarea>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="row controls marg-top-lg">
+    <div class="col-6 left">
+      <button
+        class="edit-toggled btn secondary btn-secondary"
+        data-btn-type="delete"
+        data-element="filter_rule_template_delete"
+        data-confirm="{% trans "Are you sure you want to delete this filter_rule_template?" %}"
+        data-api-base="{% url "aclctl_api:filter_rule_template-list" org_tag=request.org.slug %}"
+        data-api-action=""
+        data-api-method="delete"
+      >
+        <div class="row align-items-center">
+          <div class="col label pe-0">Delete</div>
+          <div class="col-auto">
+            <span class="icon icon-delete"></span>
+          </div>
+        </div>
+      </button>
+    </div>
+    <div class="col-6 right">
+      <button class="submit primary btn">
+        <span class="label">Save</span>
+        <span class="icon icon-edit"></span>
+      </button>
+    </div>
+  </div>
+</form>
+
+

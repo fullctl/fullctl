@@ -1,0 +1,17 @@
+{% load static i18n %}
+<div class="tool shift-down" data-component="settings">
+
+  {% include "common/tool_base.html" %}
+
+  <div class="templates">
+
+    {% include "aclctl/tool/settings/menu.html" %}
+    {% include "aclctl/tool/settings/filter-rule-template-form.html" %}
+    {% include "aclctl/tool/settings/create-access-control-list-form.html" %}
+    {% include "aclctl/tool/settings/delete-access-control-list-form.html" %}
+    {% include "aclctl/tool/settings/general-settings.html" %}
+
+
+  </div>
+</div>
+
