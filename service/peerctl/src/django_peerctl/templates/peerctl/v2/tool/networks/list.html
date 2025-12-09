@@ -1,0 +1,64 @@
+{% load static i18n %}
+<table
+  class="table table-borderless"
+  data-api-base="{% url "peerctl_api:network_search-detail" asn=selected_asn other_asn="other_asn" %}"
+  data-template="list">
+  <thead>
+    <tr>
+      <th>{{ selected_asn }}</th>
+      <th id="searched-asn"></th>
+      <th>{% trans "Mutual" %}</th>
+    </tr>
+  </thead>
+  <tbody class="list-body">
+  </tbody>
+  <tbody>
+    <tr data-element="request_peering_tr" style="display: none;">
+      <td colspan="3" class="right">
+        <div class="dropdown-btn">
+
+          <button
+            class="primary btn | small"
+            data-element="request_peering"
+            data-option-text="E-mail"
+          >
+            <div class="row align-items-center">
+              <div class="col label pe-0">
+                {% trans "Request peering" %}
+              </div>
+              <div class="col-auto">
+                <span class="icon icon-mail"></span>
+              </div>
+            </div>
+          </button>
+
+          <details>
+            <summary><span class="visually-hidden">Select peering method</span></summary>
+          </details>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+  <tbody class="templates">
+    <tr data-template="row">
+      <td class="compact-list our-locations">
+        <div class="compact-row mb-2">
+          <input type="checkbox" id="our-locations-select-all" class="select-all">
+          <label for="our-locations-select-all"><b>Select All</b></span>
+        </div>
+      </td>
+      <td class="compact-list their-locations">
+        <div class="compact-row mb-2">
+          <input type="checkbox" id="their-locations-select-all" class="select-all">
+          <label for="their-locations-select-all"><b>Select All</b></span>
+        </div>
+      </td>
+      <td class="compact-list mutual-locations">
+        <div class="compact-row mb-2">
+          <input type="checkbox" id="mutual-locations-select-all" class="select-all">
+          <label for="mutual-locations-select-all"><b>Select All</b></span>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>

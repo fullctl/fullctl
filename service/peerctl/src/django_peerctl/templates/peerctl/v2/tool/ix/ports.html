@@ -1,0 +1,161 @@
+{% load i18n static %}
+<div
+    class="marg-top-lg"
+    data-api-load="yes"
+    data-api-base="{% url "peerctl_api:port-list" asn=selected_asn %}"
+    data-api-port-stats="{% url "peerctl_api:port-get-port-stats" asn=selected_asn pk="0" %}"
+    data-api-port-status="{% url "peerctl_api:port-set-status" asn=selected_asn port_pk="0" %}"
+    data-template="ix_list"
+    >
+    <div class="list-header marg-top-lg">
+        <div class="row">
+            <div data-sort-target="ix_simple_name" data-sort-initial="yes" class="col-12 list-th sortable-button selected-order-header-asc">{% trans "Name" %}</div>
+        </div>
+    </div>
+    <div class="list-body">
+    </div>
+
+    <div class="templates">
+
+        <div data-template="row" class="pad-top-lg">
+            <div class="row ix-header" style="display:none;">
+                <div class="col-12">
+                    <h3><span data-field="ix_simple_name"></span><span data-field="ref_source"></span></h3>
+                </div>
+            </div>
+
+            <div class="federation-info">
+
+            </div>
+
+            <div class="row port-display">
+                <div class="col-sm-5 col-md-3">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="port-link mb-3" data-element="ips">
+                                <h5 data-field="ip4" class="highlight action"></h5>
+                                <div class="bgp_stat_v4" data-element="bgp_stat_v4"></div>
+                                <div data-field="ip6" class="small-info action"></div>
+                                <div class="bgp_stat_v6" data-element="bgp_stat_v6"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="light_level_stat" data-element="light_level_stat"></div>
+                        </div>
+                    </div>
+
+                    <!-- graph controls -->
+                    <div class="controls graph-controls" style="display:none">
+                        <div class="row mb-3">
+                            <div class="col-6">
+
+                                <select class="form-select form-control mb-3" id="date_range_select">
+                                    <option value="1">1 hour</option>
+                                    <option value="24" selected>24 hours</option>
+                                    <option value="168">7 days</option>
+                                    <option value="720">30 days</option>
+                                    <option value="current_month">Current Month</option>
+                                    <option value="last_month">Last Month</option>
+                                    <option value="2160">90 days</option>
+                                    <option value="8760">365 days</option>
+                                    <option value="custom">Custom</option>
+                                </select>
+
+                            </div>
+                            <div class="col-6 right">
+
+                                <button class="secondary col-md-auto btn btn-sm ms-3" data-element="refresh_traffic_graph">
+                                    <div class="row align-items-center">
+                                    <div class="col label pe-0">Refresh</div>
+                                    <div class="col-auto">
+                                        <span class="icon icon-refresh"></span>
+                                    </div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div id="custom_date_range" style="display: none;" class="right row date-range">
+
+                                    <div class="col-12 col-md-6">
+                                        <input placeholder="Select start date" type="text" id="custom_start_date" class="form-control datepicker start-date">
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <input placeholder="Select end date" type="text" id="custom_end_date" class="form-control datepicker end-date">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="col-sm-7 col-md-9 secondary">
+                    <div class="property">
+                        <div class="field" style="display:block">
+                          <div class="row">
+                                <div class="col-sm-6 col-md-3">
+                                    <div>
+                                        <span>{% trans "Speed" %}</span> 
+                                        <span data-field="speed"></span>
+                                        <span class="port_is_hot" data-element="port_is_hot"></span>
+                                    </div>
+                                    <div><span>{% trans "Is RS Peer" %}</span> <span data-field="is_route_server_peer"></span></div>
+                                </div>
+                                <div class="col-sm-6 col-md-2">
+                                    <div><span>{% trans "Prefix 4" %}</span> <span data-field="maxprefix4"></span></div>
+                                    <div><span>{% trans "Prefix 6" %}</span> <span data-field="maxprefix6"></span></div>
+                                </div>
+                                <div class="col-sm-6 col-md-2">
+                                    <div><span>{% trans "MTU" %}</span> <span data-field="mtu"></span></div>
+                                    <div><span>{% trans "MD5" %}</span> <span data-field="md5"></span></div>
+                                </div>
+                                <div class="col-sm-6 col-md-3">
+                                    <div><span>{% trans "MAC-Addresses" %}</span> <p data-field="macaddr_set"></p></div>
+                                    <div></div>
+                                </div>
+                                <div class="col-sm-12 col-md-2 right">
+                                    <div><a class="secondary btn" data-action="edit">Edit <span class="icon fullctl icon-edit"></span></a></div>
+
+                                    <div>
+                                      <!-- <div class="row mb-3"> -->
+                                        <!--   <div class="col-3"> -->
+                                          <button class="secondary btn"
+                                                  title="This will disable your port on the IX switch"
+                                                  data-action="toggle_status"
+                                                  >
+                                            <span data-field="status" data-toggle="checked" class="label">
+                                              <span data-false>{% trans "Enable IX Port" %}</span>
+                                              <span data-true>{% trans "Disable IX Port" %}</span>
+                                            </span>
+                                          </button>
+                                          <!--   </div> -->
+                                        <!-- </div> -->
+                                    </div>
+
+                                </div>
+                            </div>  
+                            <div class="row">
+                                <div class="col-12" data-field="macaddr_warnings">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div
+                            class="graph_container"
+                            data-element="graph_container"
+                            style="height:250px">
+
+                        </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

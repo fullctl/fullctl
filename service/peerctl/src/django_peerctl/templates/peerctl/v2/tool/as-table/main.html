@@ -1,0 +1,90 @@
+{% load static i18n %}
+<div class="tool" data-component="as_table">
+  <div data-element="menu" class="row">
+  </div>
+
+  <div class="row">
+
+  <table
+    class="table list-table table-borderless center"
+    data-api-load="yes"
+    data-api-base="{% url "peerctl_api:port-asn-table" asn=selected_asn pk="port_id" %}"
+    data-template="list">
+    <thead>
+        <tr>
+        <th>
+            <div>{% trans "ASN" %}</div>
+        </th>
+        <th>
+            <div>{% trans "Name" %}</div>
+        </th>
+        <th>
+            <div>{% trans "BPS In Current" %}</div>
+        </th>
+        <th>
+            <div>{% trans "BPS In Average" %}</div>
+        </th>
+        <th>
+            <div>{% trans "BPS In Max" %}</div>
+        </th>
+        <th>
+            <div>{% trans "BPS Out Current" %}</div>
+        </th>
+        <th>
+            <div>{% trans "BPS Out Average" %}</div>
+        </th>
+        <th>
+            <div>{% trans "BPS Out Max" %}</div>
+        </th>
+        <th>
+            <div>{% trans "Action" %}</div>
+        </th>
+        </tr>
+
+    </thead>
+
+    <tbody class="list-body">
+    </tbody>
+
+    <tbody class="templates">
+        <tr data-template="row" class="with-border">
+            <td>
+            <span data-field="asn"></span>
+            </td>
+            <td>
+            <span data-field="name"></span>
+            </td>
+            <td>
+            <span data-field="bps_in_current"></span>
+            </td>
+            <td>
+            <span data-field="bps_in_average"></span>
+            </td>
+            <td>
+            <span data-field="bps_in_max"></span>
+            </td>
+            <td>
+            <span data-field="bps_out_current"></span>
+            </td>
+            <td>
+            <span data-field="bps_out_average"></span>
+            </td>
+            <td>
+            <span data-field="bps_out_max"></span>
+            </td>
+            <td>
+                <span>
+                    <button class="col-auto py-2 btn secondary" data-element="button_display_graph">
+                        <span class="icon fullctl icon-graph-up"></span>
+                    </button>
+                </span>
+            </td>
+        </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="templates">
+    <div data-template="menu"></div>
+  </div>
+</div>

@@ -1,0 +1,130 @@
+{% load static i18n %}
+<div class="tool" data-component="peering_summary-sessions">
+  <div data-element="menu" class="row">
+  </div>
+
+  <div class="row">
+  <table
+  class="table list-table table-borderless center"
+  data-api-load="yes"
+  data-api-base="{% url "peerctl_api:sessions_summary-list" asn=selected_asn %}"
+  data-api-metric-base="{% url "peerctl_api:port-ix-metric" asn=selected_asn pk=0 %}"
+  data-template="list">
+  <thead>
+      <th>
+        <div>{% trans "ASN" %}</div>
+        <div>{% trans "Type" %}</div>
+      </th>
+      <th>
+        <div>{% trans "IP4" %}</div>
+        <div>{% trans "IP6" %}</div>
+      </th>
+      <th>
+        <div>{% trans "Policy4" %}</div>
+        <div>{% trans "Policy6" %}</div>
+      </th>
+      <th>
+        <div>{% trans "Site" %}</div>
+      </th>
+      <th>
+        <div>{% trans "Port - Device" %}</div>
+      </th>
+      <th>
+        <div>{% trans "status4" %}</div>
+        <div>{% trans "status6" %}</div>
+      </th>
+      <th>
+        <div>{% trans "Port Metrics" %}</div>
+      </th>
+      <th></th>
+      </tr>
+
+  </thead>
+
+  <tbody class="list-body">
+  </tbody>
+
+  <tbody class="templates">
+      <tr data-template="row" class="with-border">
+        <td>
+          <div data-field="peer_asn" class="highlight pb-1"></div>
+          <div data-field="peer_session_type" class="pt-1"></div>
+        </td>
+        <td>
+          <div data-element="ip_container">
+            <div data-field="peer_ip4" class="pb-1"></div>
+            <div data-field="peer_ip6" class="pt-1"></div>
+          </div>
+        </td>
+        <td class="secondary">
+          <div class="pb-1">
+            <span data-field="policy4_name"></span>
+          </div>
+          <div class="pt-1">
+            <span data-field="policy6_name"></span>
+          </div>
+        </td>
+        <td>
+          <div data-field="facility_slug"></div>
+        </td>
+        <td>
+          <span data-field="port_display_name"></span>
+          <span data-field="device_name"></span>
+        </td>
+        <td>
+          <div data-field="meta4" class="pb-1"></div>
+          <div data-field="meta6" class="pt-1"></div>
+        </td>
+        <td>
+          <div class="light_level_stat" data-element="light_level_stat"></div>
+        </td>
+        <td data-field="controls" class="right">
+          <a
+            class="button btn"
+            data-action="view_session"
+            role="button"
+          >
+            <span class="icon ixctl icon-view"></span>
+          </a>
+          <a
+            class="button btn"
+            data-action="edit_session"
+            role="button"
+          >
+            <span class="icon ixctl icon-edit"></span>
+          </a>
+          <a
+            class="button btn"
+            data-api-action="{id}"
+            data-api-callback="remove"
+            data-confirm="Remove peer session?"
+            data-api-method="DELETE"
+            role="button"
+          >
+            <span class="icon fullctl icon-delete"></span></span>
+          </a>
+        </td>
+      </tr>
+  </tbody>
+  </table>
+  </div>
+
+  <div class="row">
+    <a class="secondary col-md-auto btn d-flex ms-auto" data-element="btn_api_view" type="button" role="button" target="_blank">
+      <div class="row align-items-center">
+          <div class="col label pe-0">{% trans "API View" %}</div>
+          <div class="col-auto">
+              <span class="icon icon-api"></span>
+          </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="templates">
+
+    <div data-template="menu"></div>
+    {% include "peerctl/v2/tool/peering-summary-sessions/form-manual-session.html" %}
+    {% include "common/v2/app/delete_selected.html" %}
+
+  </div>
+</div>
