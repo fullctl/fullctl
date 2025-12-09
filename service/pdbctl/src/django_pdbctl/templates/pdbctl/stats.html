@@ -1,0 +1,37 @@
+{% load i18n %}
+<div class="row marg-top-lg center">
+  <div class="col-4"></div>
+  <div class="col-4">
+  <h3>{% trans "Synchronization Status" %}</h3>
+  {% if last_sync %}
+  {%   if last_sync.data.error %}
+    <div class="panel panel-danger">
+      {{ last_sync.created|date:"Y-m-d H:i:s" }} |
+      {% trans "Failed" %}</div>
+  {%   else %}
+    <div class="alert alert-success">
+      {{ last_sync.created|date:"Y-m-d H:i:s" }} |
+      {% trans "Success" %}</div>
+  {% endif %}
+  {% else %}
+  Never synced
+  {% endif %}
+  </div>
+  <div class="col-4"></div>
+</div>
+
+<div class="row marg-top-lg center">
+  <div class="col-12">
+  <h3>{% trans "Objects" %}</h3>
+  </div>
+</div>
+
+
+{% for ref_tag, count in stats.items %}
+<div class="row">
+  <div class="col-6 right"><strong>{{ ref_tag }}</strong></div>
+  <div class="col-6">{{ count }}</div>
+</div>
+{% endfor %}
+
+<div class="row marg-top-lg center"></div>

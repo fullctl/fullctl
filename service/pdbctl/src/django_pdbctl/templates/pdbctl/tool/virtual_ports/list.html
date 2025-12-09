@@ -1,0 +1,49 @@
+{% load static i18n %}
+<table
+  class="table"
+  data-api-base="{% url "devicectl_api:virtual_port-list" org_tag=request.org.slug %}"
+  data-api-action=""
+  data-template="list">
+  <thead>
+    <tr>
+      <th data-sort-target="name" class="sortable-button">{% trans "Name" %}</th>
+      <th data-sort-target="logical_port" class="sortable-button">{% trans "Logical Port" %}</th>
+      <th data-sort-target="vlan_id" class="sortable-button">{% trans "VLAN id" %}</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody class="list-body">
+  </tbody>
+  <tbody class="templates">
+    <tr data-template="row">
+      <td data-field="display_name" class="highlight"></td>
+      <td data-field="logical_port_name"></td>
+      <td data-field="vlan_id"></td>
+      <td data-field="controls" class="right">
+        <div class="row">
+          <div class="col-xs-12 col-lg-6">
+            <a data-action="edit_virtual_port"><span class="icon devicectl icon-edit"></span><span class="label devicectl">{% trans "Edit" %}</span></a>
+          </div>
+          <div class="col-xs-12 col-lg-6">
+        <a
+          data-api-action="{id}"
+          data-api-callback="remove"
+          data-confirm="Remove virtual_port?"
+          data-api-method="DELETE"><span class="icon devicectl icon-delete"></span><span class="devicectl label">{% trans "Delete" %}</span></a>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <!--
+    <tr data-template="row" class="secondary">
+      <td class="indent"></td>
+      <td class="property" colspan="5">
+        <div class="row">
+        </div>
+      </td>
+    </tr>
+    -->
+
+  </tbody>
+</table>
+
