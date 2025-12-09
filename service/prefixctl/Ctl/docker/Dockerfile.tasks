@@ -4,6 +4,7 @@ ARG install_to=/srv/service
 ARG build_deps=""
 ARG poetry_pin="==1.4.1"
 ARG python_ver=3.11
+ARG service_dir=service/prefixctl
 
 ARG build_deps=" \
     gcc \
@@ -32,6 +33,7 @@ FROM base as builder
 # ** from fullctl-builder
 ARG build_deps
 ARG poetry_pin
+ARG service_dir
 
 RUN apt-get update \
     && apt-get upgrade -y \
@@ -48,35 +50,38 @@ RUN python3 -m venv "$VIRTUAL_ENV"
 
 WORKDIR /build
 
-# poetry install
-COPY pyproject.toml poetry.lock ./
+# For monorepo: copy fullctl source for path dependency resolution
+COPY pyproject.toml poetry.lock README.md ./
+COPY src/ src/
+
+# Set workdir to service directory (path = "../.." resolves to builder workdir)
+WORKDIR ${service_dir}
+
+# Copy service files
+COPY ${service_dir}/pyproject.toml ${service_dir}/poetry.lock ./
 
 # Need to upgrade pip and wheel within Poetry for all its installs
 RUN poetry run pip install --upgrade pip wheel
-# ** / fullctl-builder
-
 
 ARG extra_pip_install_dir
-
-# only these two individual files before install instead for caching
-COPY pyproject.toml poetry.lock ./
 
 # Need to upgrade pip and wheel within Poetry for all its installs
 RUN poetry install --no-root --only main,tasks
 
 # RUN pip --no-cache-dir install playwright
 
-COPY Ctl/VERSION Ctl/
+COPY ${service_dir}/Ctl/VERSION Ctl/
 
 # gitignore is just a placeholder for if extra is empty
 # this will trigger a cache invalidate
-COPY .gitignore $extra_pip_install_dir ./plugins/
+COPY ${service_dir}/.gitignore $extra_pip_install_dir ./plugins/
 RUN test -z "$extra_pip_install_dir" || pip install plugins/*.tar.gz
 
 #### final image
 
 FROM base as final
 
+ARG service_dir
 ARG run_deps
 ARG run_dirs=".cache locale media static"
 ARG playwright_deps=" \
@@ -115,8 +120,8 @@ WORKDIR $SERVICE_HOME
 COPY --from=builder "$VIRTUAL_ENV" "$VIRTUAL_ENV"
 
 RUN mkdir -p etc $run_dirs
-COPY Ctl/VERSION etc/
-COPY docs/ docs
+COPY ${service_dir}/Ctl/VERSION etc/
+COPY ${service_dir}/docs/ docs
 
 RUN chown -R $uid:$uid $run_dirs
 
@@ -130,16 +135,17 @@ RUN apt-get update \
 #### entry point from final image, not tester
 FROM final
 
+ARG service_dir
 ARG uid
 ENV HOME=$SERVICE_HOME
 
-COPY src/ main/
-COPY Ctl/docker/entrypoint.sh .
+COPY ${service_dir}/src/ main/
+COPY ${service_dir}/Ctl/docker/entrypoint.sh .
 RUN ln -s "$SERVICE_HOME/entrypoint.sh" /entrypoint
 RUN ln -s /venv "$SERVICE_HOME/venv"
 
-COPY Ctl/docker/django-uwsgi.ini etc/
-COPY Ctl/docker/manage.sh /usr/bin/manage
+COPY ${service_dir}/Ctl/docker/django-uwsgi.ini etc/
+COPY ${service_dir}/Ctl/docker/manage.sh /usr/bin/manage
 
 #ENV UWSGI_SOCKET=127.0.0.1:6002
 
