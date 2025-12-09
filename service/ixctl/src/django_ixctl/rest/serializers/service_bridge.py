@@ -1,0 +1,231 @@
+from fullctl.django.rest.decorators import serializer_registry
+from fullctl.django.rest.serializers import ModelSerializer
+from rest_framework import serializers
+
+import django_ixctl.models.ixctl as models
+from django_ixctl.enum import PORT_STATE
+
+Serializers, register = serializer_registry()
+
+
+@register
+class Prefix(ModelSerializer):
+    class Meta:
+        model = models.InternetExchangePrefix
+        fields = ["id", "ix", "prefix"]
+
+
+@register
+class InternetExchange(ModelSerializer):
+    org_id = serializers.SerializerMethodField()
+    org_slug = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.InternetExchange
+        fields = [
+            "org_id",
+            "org_slug",
+            "id",
+            "slug",
+            "pdb_id",
+            "name",
+            "slug",
+            "verified",
+            "mtu",
+            "vlan_id",
+            "graph_traffic_source",
+            "traffic_poll_time",
+            "limit_mac_addresses",
+        ]
+
+    def get_org_id(self, ix):
+        return ix.instance.org.permission_id
+
+    def get_org_slug(self, ix):
+        return ix.instance.org.slug
+
+
+@register
+class InternetExchangeMember(ModelSerializer):
+    ix = serializers.SerializerMethodField()
+    ix_name = serializers.SerializerMethodField()
+    pdb_ix_id = serializers.SerializerMethodField()
+    org_id = serializers.SerializerMethodField()
+
+    macaddr_set = serializers.ListSerializer(
+        child=serializers.CharField(),
+        read_only=True,
+    )
+
+    macaddr_warnings = serializers.SerializerMethodField()
+
+    status = serializers.ChoiceField(
+        choices=PORT_STATE,
+        allow_blank=True,
+        allow_null=True,
+        required=False,
+        default="ok",
+    )
+
+    class Meta:
+        model = models.InternetExchangeMember
+        fields = [
+            "id",
+            "ix_id",
+            "org_id",
+            "pdb_ix_id",
+            "ix",
+            "ix_name",
+            "name",
+            "speed",
+            "asn",
+            "ipaddr4",
+            "ipaddr6",
+            "is_rs_peer",
+            "macaddr",
+            "macaddr_set",
+            "macaddr_warnings",
+            "macaddr_limit",
+            "md5",
+            "port",
+            "status",
+        ]
+
+    @property
+    def macaddresses(self) -> dict[str, models.MacAddress]:
+        """
+        Returns mac addresses cached.
+        If the cache does not exist, it will be created.
+        """
+        if hasattr(self, "_macaddresses"):
+            return self._macaddresses
+
+        if isinstance(self.instance, models.InternetExchangeMember):
+            members = [self.instance]
+        else:
+            members = self.instance
+
+        exchanges = {member.ix for member in members}
+        macaddresses = models.MacAddress.objects.filter(
+            member__ix__in=exchanges
+        ).select_related("member")
+
+        self._macaddresses = {
+            "by_mac": {},
+            "by_member": {},
+        }
+
+        for mac in macaddresses:
+            ix_id = mac.member.ix_id
+            self._macaddresses["by_mac"].setdefault(ix_id, {}).setdefault(
+                str(mac.address), []
+            ).append(mac.member)
+            self._macaddresses["by_member"].setdefault(ix_id, {}).setdefault(
+                mac.member.id, []
+            ).append(str(mac.address))
+
+        return self._macaddresses
+
+    def get_macaddr_warnings(self, obj):
+        """
+        Checks if macaddr_set contains any mac addresses
+        that exist on another member
+        """
+
+        # collect member's mac addresses from self.macaddresses
+        macaddr_set = self.macaddresses["by_member"].get(obj.ix_id, {}).get(obj.id, [])
+
+        if not macaddr_set:
+            return []
+
+        warnings = []
+
+        for macaddr in macaddr_set:
+            warnings.extend(
+                [
+                    f"MAC address {macaddr} also exists on AS{member.asn} - {member.ipaddr4}"
+                    for member in self.macaddresses["by_mac"]
+                    .get(obj.ix_id, {})
+                    .get(macaddr, [])
+                    if member.id != obj.id
+                ]
+            )
+
+        return warnings
+
+    def get_ix(self, member):
+        if "ix" in self.context.get("joins", []):
+            return InternetExchange(instance=member.ix).data
+        return None
+
+    def get_ix_name(self, member):
+        return member.ix.name
+
+    def get_pdb_ix_id(self, member):
+        return member.ix.pdb_id
+
+    def get_org_id(self, member):
+        return member.ix.instance.org.permission_id
+
+
+@register
+class InternetExchangeMemberAssignPort(ModelSerializer):
+
+    """
+    Assigns a devicectl Port to a member and allows updating
+    of port configuration of the member at the same time.
+    """
+
+    port = serializers.IntegerField()
+    port_size = serializers.IntegerField()
+    port_quantity = serializers.IntegerField()
+    ref_tag = "member_assign_port"
+
+    class Meta:
+        model = models.InternetExchangeMember
+        fields = ["id", "port", "port_size", "port_quantity"]
+
+    def save(self):
+        member = self.instance
+        member.port = self.validated_data["port"]
+        member.port_size = self.validated_data["port_size"]
+        member.port_quantity = self.validated_data["port_quantity"]
+        member.lag = member.port_quantity > 1
+        member.save()
+        return member
+
+
+@register
+class Routeserver(ModelSerializer):
+    ix = serializers.SerializerMethodField()
+    pdb_ix_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Routeserver
+        fields = [
+            "id",
+            "ix_id",
+            "pdb_ix_id",
+            "ix",
+            "name",
+            "asn",
+            "router_id",
+            "event",
+        ]
+
+    def get_ix(self, member):
+        if "ix" in self.context.get("joins", []):
+            return InternetExchange(instance=member.ix).data
+        return None
+
+    def get_pdb_ix_id(self, member):
+        return member.ix.pdb_id
+
+
+@register
+class TrafficAlertConfig(ModelSerializer):
+    ref_tag = "traffic_alert_config"
+
+    class Meta:
+        model = models.TrafficAlertConfig
+        fields = "__all__"

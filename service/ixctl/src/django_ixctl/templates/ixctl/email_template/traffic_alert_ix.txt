@@ -1,0 +1,1 @@
+Notice: {{ member }} has exceeded {{ traffic_alert_config.traffic_level }}% utilization on their port/LAG for about {{ downtime }} minutes in the past 30 days.

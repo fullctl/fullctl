@@ -1,0 +1,148 @@
+.filter-non-md5-hidden,
+.filter-non-active-hidden {
+  display: none;
+}
+
+.status-badge.error {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+
+.shaded-box {
+  background-color: white; /* Semi-transparent black background */
+  padding: 20px; /* Add some padding */
+  border-radius: 10px; /* Rounded corners */
+  color: black; /* Text color */
+  z-index: 9999; /* Ensure the box appears above other elements */
+}
+
+/* Style for the content inside the shaded box */
+.shaded-box-content {
+  /* Add styles for the content inside the shaded box */
+  /* Example styles: */
+  font-size: 18px;
+  text-align: center;
+}
+
+.shaded-box a {
+  color: #0D6EFD;
+  text-decoration: underline;
+}
+
+.body-public {
+ background-color: #191B22;
+ font-family: sans-serif;
+ --heading-color: white;
+}
+
+h4, h6 {
+  color: var(--heading-color);
+  transition: color 0.3s;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+th, td {
+  border: 1px solid black;
+  padding: 8px;
+  text-align: left;
+}
+
+span.icon {
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+span.icon-lg {
+  width: 32px;
+  height: 32px;
+}
+
+p[data-field="macaddr_set"] {
+  white-space: pre-wrap;
+}
+
+tr.secondary td.property div.row div p[data-field="macaddr_set"] {
+  margin-left: 0px;
+}
+
+textarea.form-control.learned-mac-addresses {
+  background-color: transparent !important;
+  border: none;
+}
+
+.port_is_hot {
+  margin-bottom: 5px;
+}
+
+.port-speed {
+  text-align: center;
+}
+
+.port-status-indicator {
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.port-status-indicator.ok {
+  background-color: var(--clr-accent-400);
+}
+
+.port-status-indicator.awaiting_cross_connect,
+.port-status-indicator.provisioning,
+.port-status-indicator.suspended,
+.port-status-indicator.pending_deletion,
+.port-status-indicator.down,
+.port-status-indicator.admin_down {
+  background-color: var(--clr-accent-500);
+  color: var(--clr-primary-100);
+}
+
+.port-status-indicator.ok span,
+.port-status-indicator.awaiting_cross_connect span,
+.port-status-indicator.provisioning span,
+.port-status-indicator.suspended span,
+.port-status-indicator.down span,
+.port-status-indicator.pending_deletion span,
+.port-status-indicator.admin_down span {
+  color: var(--primary-btn-clr) !important;
+}
+
+/* Public View */
+
+body.body-public {
+  padding: 50px;
+}
+
+/* Add flexbox styling for logo and name */
+body.body-public .app-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+body.body-public .app-logo {
+  flex-shrink: 0;
+}
+
+body.body-public .ix-name {
+  color: var(--heading-color);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+div[data-component="information"] td.logo-column,
+body.body-public td.logo-column {
+  height: 50px;
+  text-align: center !important;
+}
+
+div[data-component="information"] img.image-responsive,
+body.body-public img.image-responsive {
+  height: 40px;
+  display: inline-block;
+}

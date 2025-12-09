@@ -1,0 +1,132 @@
+ARG python_ver=3.11
+# current main base is alpine, but we need to use slim for this
+ARG _base_repo=python
+ARG _base_tag=${python_ver}-slim-bookworm
+
+ARG install_to=/srv/service
+ARG poetry_pin="==1.6.1"
+ARG virtual_env=/venv
+ARG uid=6300
+ARG user=fullctl
+
+ARG build_deps=" \
+    gcc \
+    git \
+    bgpq4 \
+    python3-dev \
+    "
+ARG run_deps=" \
+    libpq5 \
+    "
+ARG debug_deps=" \
+    tar \
+    vim \
+    "
+
+FROM ${_base_repo}:${_base_tag} as base
+
+ARG install_to
+ARG virtual_env
+
+# env to pass to sub images
+ENV SERVICE_HOME=$install_to
+ENV VIRTUAL_ENV=$virtual_env
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# build container
+FROM base as builder
+
+ARG build_deps
+ARG poetry_pin
+
+# TODO pin bgpq4
+ARG bgpq4_version
+
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && apt-get install --no-install-recommends -y ${build_deps} \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+
+# Use Pip to install Poetry
+RUN python3 -m pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir "poetry$poetry_pin"
+
+# Create a VENV
+RUN python3 -m venv "$VIRTUAL_ENV"
+
+WORKDIR /build
+
+# poetry install
+COPY pyproject.toml poetry.lock ./
+
+RUN poetry run python -m pip install --no-cache-dir --upgrade pip \
+    && poetry install --no-root --only main,tasks
+
+#### final image
+
+FROM base as final
+
+ARG run_deps
+ARG uid
+ARG user
+
+# extra settings file if needed
+# TODO keep in until final production deploy
+ARG COPY_SETTINGS_FILE=src/ixctl/settings/dev.py
+
+# add dependencies
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y ${run_deps} \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -lu $uid $user
+
+COPY --from=builder "$VIRTUAL_ENV" "$VIRTUAL_ENV"
+COPY --from=builder /usr/bin/bgpq4 /usr/bin/bgpq4
+
+WORKDIR $SERVICE_HOME
+RUN mkdir -p etc locale media static
+COPY Ctl/VERSION etc/
+COPY docs/ docs
+
+RUN chown -R $uid:$uid locale media
+
+#### entry point from final image, not tester
+FROM final
+
+ARG debug_deps
+ARG user
+ARG uid
+ARG ars_home=/arouteserver
+
+#ENV UWSGI_SOCKET=127.0.0.1:6002
+
+WORKDIR $SERVICE_HOME
+
+# add dependencies
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y ${debug_deps} \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY src/ main/
+COPY Ctl/docker/entrypoint.sh .
+
+RUN ln -s "$SERVICE_HOME/entrypoint.sh" /entrypoint \
+    && ln -s /venv "$SERVICE_HOME/venv"
+
+COPY Ctl/docker/django-uwsgi.ini etc/
+COPY Ctl/docker/manage.sh /usr/bin/manage
+
+
+# this 777 will be replaced by 700 at runtime (allows semi-arbitrary "--user" values)
+RUN mkdir -p "$ars_home" && chown -R $uid:$uid "$ars_home" && chmod 777 "$ars_home"
+VOLUME ${ars_home}
+
+USER $uid
+
+ENTRYPOINT ["/entrypoint"]
+CMD ["runserver"]

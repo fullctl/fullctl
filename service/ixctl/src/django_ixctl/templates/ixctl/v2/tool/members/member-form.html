@@ -1,0 +1,375 @@
+{% load static i18n %}
+<form data-template="form_member"
+  data-api-base="{% url "ixctl_api:member-list" org_tag=request.org.slug ix_tag="default" %}"
+  data-api-action=""
+  data-api-method="POST"
+  >
+  <div class="container-fluid">
+    {% if MEMBER_CASE_NUMBERS_ENABLED %}
+    <!-- case number -->
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label class="form-label" for="case_number">{% trans "Case Number" %}</label>
+        <input type="text" class="form-control" id="case_number" name="case_number" />
+      </div>
+    </div>
+
+    <!-- work order(s), populated by validation -->
+    <div class="row mb-1">
+      <div class="col-12" data-api-submit="yes" id="work-orders">
+      </div>
+    </div>
+    {% endif %}
+    {% if EXTENDED_MEMBER_VALIDATION %}
+    <div class="row mb-3">
+      <div class="col-12">
+        <div id="validation-results-container" style="display:none;">
+          <div class="alert alert-info" id="validation-results">
+          </div>
+        </div>
+        <button type="button" data-element="button_validate" class="primary col btn form-control">
+          {% trans "Validate" %}
+        </button>
+      </div>
+    </div>
+    {% endif %}
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label class="form-label" for="member-name">{% trans "Name" %}</label>
+        <input type="text" class="form-control" id="member-name" name="name" />
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label class="form-label" for="member-asn">{% trans "ASN" %}*</label>
+        <input type="text" class="form-control" id="member-asn" name="asn" />
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label class="form-label" for="member-status">{% trans "Status" %}</label>
+        <span class="modal-control">
+        <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+        <select
+          class="form-control"
+          id="member-status"
+          name="status"
+          data-api-base="{% url "ixctl_api:member-list" org_tag=request.org.slug ix_tag="default" %}"
+          data-api-action=""
+          data-load-type="drf-choices"
+          >
+        </select>
+        </span>
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label class="form-label" for="member-type">{% trans "Member Type" %}</label>
+        <span class="modal-control">
+        <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+        <select
+          class="form-control"
+          id="member-type"
+          name="ixf_member_type"
+          data-api-base="{% url "ixctl_api:member-list" org_tag=request.org.slug ix_tag="default" %}"
+          data-load-type="drf-choices"
+          >
+        </select>
+        </span>
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label class="form-label" for="member-ipaddr4">{% trans "IPv4 Address" %}</label>
+        <input type="text" class="form-control" id="member-ipaddr4" name="ipaddr4" />
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label class="form-label" for="member-ipaddr6">{% trans "IPv6 Address" %}</label>
+        <input type="text" class="form-control" id="member-ipaddr6" name="ipaddr6" />
+      </div>
+    </div>
+
+    <!-- mac addresses -->
+
+    <div class="row">
+      <div class="col-12">
+        {% if not select_ix.limit_mac_addresses %}
+          <div class="alert alert-info">
+            {% blocktrans %}
+            You can add multiple MAC addresses. Each MAC address must be on a new line.
+            {% endblocktrans %}
+          </div>
+        {% else %}
+          <div class="alert alert-info macaddr-limit-info" style="display:none;">
+            {% blocktrans %}
+            You can enter up to <span class="macaddr-limit-count">1</span> MAC addresses.
+            {% endblocktrans %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label class="form-label" for="member-macaddr">{% trans "MAC Addresses" %}</label>
+        {% if select_ix.learned_mac_addresses %}
+          <textarea disabled class="form-control learned-mac-addresses" id="member-macaddr-set" name="macaddr_set" rows="3"></textarea>
+        {% else %}
+          <textarea class="form-control" id="member-macaddr-set" name="macaddr_set" rows="3"></textarea>
+        {% endif %}
+
+      </div>
+    </div>
+
+      <!-- mac limit -->
+
+      {% if select_ix.limit_mac_addresses %}
+      <div class="row macaddr-limit-warning" style="display:none;">
+        <div class="col-12">
+          <div class="alert alert-error">
+            {% blocktrans %}
+            Number of mac addresses exceeds your specified limit.
+            {% endblocktrans %}
+          </div>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes">
+          <label class="form-label" for="member-macaddr-limit">{% trans "MAC Limit" %}</label>
+          <!-- select 1 to 9 -->
+          <span class="modal-control">
+            <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+            <select
+              class="form-control"
+              id="member-macaddr-limit"
+              name="macaddr_limit"
+              >
+              {% for num in MAC_LIMITS %}
+              <option value="{{ num }}">{{ num }}</option>
+              {% endfor %}
+            </select>
+          </span>
+        </div>
+      </div>
+      {% endif %}
+
+    <!-- MD5 -->
+
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label class="form-label" for="member-md5">{% trans "MD5" %}</label>
+        <input type="text" class="form-control" id="member-md5" name="md5" />
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label class="form-label" for="member-as-macro">{% trans "AS Set" %}</label>
+        <input type="text" class="form-control" id="member-as-macro" name="as_macro_override" />
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <input type="checkbox" class="form-check-input" id="member-as-macro-negate" name="as_macro_negate" />
+        <label for="member-as-macro-negate" class="form-check-label">{% trans "Negate AS Set" %}</label>
+      </div>
+    </div>
+
+
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <input type="checkbox" class="form-check-input" id="member-is-rs-peer" name="is_rs_peer" />
+        <label for="member-is-rs-peer" class="form-check-label">{% trans "Route Server" %}</label>
+      </div>
+    </div>
+
+    <!-- port size, lag, port quantity in a single row
+
+    - port size (drop down from PORT_SIZES)
+    - lag (checkbox)
+    - port quantity (drop down from PORT_QUANTITIES)
+    -->
+
+    <div class="row" data-element="port_config_load_error" style="display:none">
+      <div class="col-12">
+        <div class="alert alert-info">
+          IX not linked to a devicectl facility.
+        </div>
+      </div>
+    </div>
+
+    <div data-element="port_config_fields" style="display:none">
+
+      <div class="row mb-3">
+        <div class="col-12">
+          <h6>{% trans "Port Configuration" %}</h6>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-4" data-api-submit="yes">
+          <label class="form-label" for="member-port-size">{% trans "Size" %}</label>
+          <span class="modal-control">
+            <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+            <select id="member-port-size" name="port_size" class="form-control">
+              {% for size in select_ix.port_sizes %}
+              <option value="{{ size }}">{{ size }}G</option>
+              {% endfor %}
+            </select>
+          </span>
+        </div>
+        <div class="col-4" data-api-submit="yes">
+          <input type="checkbox" class="form-check-input" id="member-lag" name="lag" />
+          <label for="member-lag" class="form-check-label">{% trans "LAG" %}</label>
+        </div>
+        <div class="col-4" data-api-submit="yes">
+          <label class="form-label" for="member-port-quantity">{% trans "Quantity" %}</label>
+          <span class="modal-control">
+            <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+            <select disabled id="member-port-quantity" name="port_quantity" class="form-control">
+              {% for num in PORT_QUANTITIES %}
+              <option value="{{ num }}">{{ num }}</option>
+              {% endfor %}
+            </select>
+          </span>
+        </div>
+      </div>
+
+
+      <!-- speed -->
+
+      <div class="row mb-3">
+        <div class="col-12">
+          <span data-api-field="speed"></span>
+        </div>
+      </div>
+
+      <!-- DEVICECTL REF -->
+
+      <!-- devicectl logo -->
+      <!-- <img src="{% static "common/logos/devicectl-dark.svg" %}"> -->
+
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes">
+          <label class="form-label" for="device">{% trans "Device" %}</label>
+          <span class="modal-control">
+            <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+            <select
+              class="form-control"
+              id="device"
+              name="device"
+              data-api-base="{% url "ixctl_api:ix-devices" org_tag=request.org.slug ix_tag="__ix_tag__"  %}"
+              >
+            </select>
+          </span>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes">
+          <div data-element="current_ports" style="display:none">
+            <label class="form-label" for="port_set">{% trans "Assigned Port(s)" %}</label>
+            <ul class="port-list">
+            </li>
+          </div>
+
+          <div data-element="port_set_container" style="display:none">
+            <label class="form-label" for="port_set">{% trans "Add Port(s)" %}</label>
+            <span class="modal-control">
+              <select
+                class="form-control"
+                id="port_set"
+                name="port_set"
+                data-api-base="{% url "proxies-api-devicectl-device-physical-ports" org_tag=request.org.slug pk="0" %}"
+                multiple
+                >
+              </select>
+            </span>
+            <div class="right">
+              <a data-element="btn_clear_port_selection" class="action">Clear selection</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- virtual port -->
+      <div class="row mb-3 virtual-port-display" data-element="virtual_port_display" style="display:none">
+        <div class="col-12" data-api-submit="yes">
+          <label class="form-label" for="virtual_port">{% trans "Virtual Port" %}</label>
+          <input type="text" class="form-control" id="virtual_port_name" name="virtual_port_name" />
+          <div class="tip changing-virtual-port-name" style="display:none">
+            {% trans "Changing the name will rename the assigned virtual port in devicectl. This CANNOT be used to change to a different virtual port." %}
+          </div>
+          <div class="tip creating-virtual-port-name" style="display:none">
+            {% trans "Specify the name of the new virtual port to be created. Leaving blank will default to PortChannel-$MEMBER_ID naming." %}
+          </div>
+          <button type="button" data-element="btn_clear_port_assignment" class="mt-3 btn-danger col btn form-control">
+            {% trans "Clear port assignment" %}
+          </button>
+        </div>
+
+      </div>
+
+      <div class="row mb-3 port-config-intent intent-resize" style="display:none">
+        <div class="col-12">
+          <div class="alert alert-info">
+            {% blocktrans %}
+            You are resizing the port configuration. A new virtual port will be created. The old port will remain functional until the member has moved, after which it can be deleted in deviceCtl.
+            {% endblocktrans %}
+          </div>
+        </div>
+      </div>
+
+      <div class="row mb-3 port-config-intent intent-augment" style="display:none">
+        <div class="col-12">
+          <div class="alert alert-info">
+            {% blocktrans %}
+            You are changing the number of physical ports assigned to the LAG.
+            {% endblocktrans %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div data-element="unassign_port" style="display:none">
+      <div class="row mb-3">
+        <div class="col-12">
+          <div class="alert alert-info">
+            {% blocktrans %}
+            You are unassigning the currently assigned port(s) from the member. This will free
+            up the physical ports in devicectl and retire the virtual port. A new virtual port will be created if the member is assigned a port in the future.
+            {% endblocktrans %}
+            <ul class="port-list mt-3">
+            </ul>
+            <div class="right">
+              <a data-element="btn_cancel_unassign_port" class="action">Cancel</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label class="form-label" for="prefix-set">{% trans "PrefixCtl Prefix Set" %}</label>
+        <span class="modal-control">
+        <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+        <select
+          class="form-control"
+          id="prefix-set"
+          name="prefix_set"
+          data-api-base="{% url "proxies-api-prefixctl-list" org_tag=request.org.slug %}"
+          >
+        </select>
+        </span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="validation-error-hint"></div>
+
+
+</form>

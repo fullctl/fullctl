@@ -1,0 +1,26 @@
+{
+    "data": [
+        {
+            "instance": 1,
+            "name": "Test",
+            "description": "",
+            "slug": "test",
+            "prefixes": [
+              {
+                "prefix": "109.74.193.0/24",
+                "mask_length_range": "exact",
+                "grainy": "prefix.3.97.1861",
+                "id": 1861,
+                "status": "ok",
+                "created": "2024-05-06T14:26:07.663264Z",
+                "updated": "2024-05-06T14:26:07.703923Z"
+              }
+            ],
+            "grainy": "prefix.3.97",
+            "id": 97,
+            "status": "ok",
+            "created": "2024-05-06T14:08:57.163260Z",
+            "updated": "2024-05-09T13:49:01.562312Z"
+          }
+    ]
+}

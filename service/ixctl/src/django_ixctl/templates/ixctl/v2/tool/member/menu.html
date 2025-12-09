@@ -1,0 +1,25 @@
+{% load static i18n %}
+<div class="section row mb-5" data-template="menu">
+    <div class="col">
+      <h4><span class="member-name"></span></h4>
+      <h5><span class="member-asn"></span> <span class="ip4"></span></h5>
+    </div>
+    <div class="col-3">
+      <a href="#overview" type="button" class="primary btn" data-element="button_overview">
+        <div class="row align-items-center">
+          <div class="col label pe-0">{% trans "Members" %}</div>
+          <div class="col-auto">
+            <span class="icon icon-list"></span>
+          </div>
+        </div>
+      </a>
+      <a href="" type="button" class="secondary btn" target="_blank" data-element="button_api_view_member_detail">
+        <div class="row align-items-center">
+          <div class="col label pe-0">{% trans "API View" %}</div>
+          <div class="col-auto">
+            <span class="icon icon-api"></span>
+          </div>
+        </div>
+      </a>
+    </div>
+</div>

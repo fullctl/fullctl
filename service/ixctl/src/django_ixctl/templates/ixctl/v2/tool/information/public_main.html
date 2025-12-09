@@ -1,0 +1,137 @@
+{% load static i18n %}
+{% load helpers %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{% static "ixctl/v2/ixctl.css" %}" />
+    <link rel="stylesheet" type="text/css" href="{% static "common/v2/themes/light.css" %}" />
+
+    <title>{{org.name}} / {{select_ix.name}}</title>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButton = document.getElementById('theme-toggle');
+            const logo = document.querySelector('.app-logo');
+
+            if (localStorage.getItem('theme') === 'light') {
+                document.body.classList.add('light-theme');
+                if (logo.getAttribute('data-light')) {
+                    logo.src = logo.getAttribute('data-light');
+                }
+            } else {
+                if (logo.getAttribute('data-dark')) {
+                    logo.src = logo.getAttribute('data-dark');
+                }
+            }
+
+            toggleButton.addEventListener('click', function() {
+                document.body.classList.toggle('light-theme');
+
+                if (document.body.classList.contains('light-theme')) {
+                    localStorage.setItem('theme', 'light');
+                    if (logo.getAttribute('data-light')) {
+                        logo.src = logo.getAttribute('data-light');
+                    }
+                } else {
+                    localStorage.removeItem('theme');
+                    if (logo.getAttribute('data-dark')) {
+                        logo.src = logo.getAttribute('data-dark');
+                    }
+                }
+            });
+        });
+    </script>
+
+</head>
+<body class="body-public">
+    <div class="main_container">
+        <header class="container-fluid">
+            <div class="row header m-0" data-component="header">
+                <div>
+                    {% if org_branding.dark_logo_url %}
+                        <div class="app-logo-container">
+                            <img
+                                class="app-logo"
+                                src="{{ service_logo_dark}}"
+                                alt="{{ logo_alt_text }}"
+                                data-dark="{{ service_logo_dark }}"
+                                data-light="{{ service_logo_light }}"
+                            >
+                            <span class="ix-name">{{select_ix.name}}</span>
+                        </div>
+                    {% else %}
+                        <div class="app-logo-container">
+                            <img class="app-logo" src="{% static "ixctl/logo-darkbg.svg" %}" alt="ixctl" width="120" height="32">
+                            <span class="ix-name">{{select_ix.name}}</span>
+                        </div>
+                    {% endif %}
+
+                </div>
+            </div>
+        </header>
+        <div>
+            <div class="container">
+                <div class="row">
+                    <div>
+
+                        <br>
+                        <br>
+                        <h4>Participants</h4>
+                        <div class="shaded-box">
+                            <table>
+                                <tr>
+                                    <th class="logo-column"><b>Logo</b></th>
+                                    <th><b>Name</b></th>
+                                    <th><b>ASN</b></th>
+                                    <th><b>IPv4</b></th>
+                                    <th><b>IPv6</b></th>
+                                    <th><b>Speed</b></th>
+                                </tr>
+                                {% for member in members %}
+                                <tr>
+                                    {% if member.network_meta.logo_url %}
+                                        <td class="logo-column"><img class="image-responsive" src="{{member.network_meta.logo_url}}" alt="{{member.name}}"></td>
+                                    {% else %}
+                                        <td class="logo-column"></td>
+                                    {% endif %}
+                                    <td>{{member.name}}</td>
+                                    <td>{{member.asn}}</td>
+                                    <td>{{member.ipaddr4}}</td>
+                                    <td>{{member.ipaddr6}}</td>
+                                    <td>{{member.speed}}</td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                        <!-- {% block "app_content_main" %}{% endblock %} -->
+                        <div>
+                            {% for route_server in select_ix.rs_set.all %}
+                                <br>
+                                <br>
+                                {% if route_server.routeserverconfig.doc_md %}
+                                <h4>Route Server Markdown: {{route_server.name}}</h4>
+                                <div class="shaded-box">
+                                    {{ route_server.routeserverconfig.doc_md|render_markdown }}
+                                </div>
+                                {% endif %}
+                                <br>
+                                {% if route_server.ix.notes %}
+                                <div class="shaded-box">
+                                    <u><b><h3>Notes</h3></b></u>
+                                    {{ route_server.ix.notes|render_markdown }}
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer>
+            <span class="icon icon-lg icon-theme-switcher" id="theme-toggle"></span>
+        </footer>
+    </div>
+</body>
+</html>
