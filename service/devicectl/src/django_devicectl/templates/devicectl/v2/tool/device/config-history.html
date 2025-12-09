@@ -1,0 +1,22 @@
+{% load i18n static %}
+      <table class="table table-borderless list-table mt-3"
+             data-api-base="{% url "devicectl_api:device-config-history" org_tag=request.org.slug device_id=0 %}"
+             data-api-action=""
+             data-template="device_config_history">
+        <thead>
+          <tr>
+            <th>{% trans "Date" %}</th>
+            <th>{% trans "Status" %}</th>
+            <th>{% trans "Error" %}</th>
+          </tr>
+        </thead>
+        <tbody class="list-body">
+        </tbody>
+        <tbody class="templates">
+          <tr data-template="row">
+            <td data-field="created" class="highlight"></td>
+            <td data-field="status"></td>
+            <td data-field="error_message"></td>
+          </tr>
+        </tbody>
+      </table>

@@ -1,0 +1,60 @@
+[tool.poetry]
+name = "devicectl"
+repository = "https://github.com/fullctl/devicectl"
+version = "1.4.0-rc.103"
+description = "device control"
+authors = ["20C <code@20c.com>"]
+license = "Apache-2.0"
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development",
+]
+
+
+[tool.poetry.scripts]
+devicectl = "devicectl.cli:main"
+
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fullctl = { git = "https://github.com/fullctl/fullctl.git", branch = "prep-release" }
+pynetbox = "^7.5.0"
+pygments = "^2.14"
+
+# graphs & metrics
+matplotlib = "^3.7.2"
+pandas = "^2.0.3"
+cairosvg = "^2.7.0"
+flatten-json = "^0.1.14"
+pytimeparse2 = ">=1.7.1"
+
+[tool.poetry.dev-dependencies]
+# testing
+coverage = ">=5"
+pytest = ">=6"
+pytest-django = ">=3.8"
+pytest-cov = "*"
+
+# linting
+bandit = ">=1.6.2"
+black = ">=20"
+isort = ">=5.7"
+flake8 = ">=3.8"
+pre-commit = ">=2.13"
+pyupgrade = ">=2.19"
+
+# ctl
+ctl = "^1"
+jinja2 = "^3"
+tmpl = "^1"
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

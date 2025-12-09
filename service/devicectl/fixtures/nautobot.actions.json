@@ -1,0 +1,36 @@
+[
+{
+  "model": "django_fullctl.servicebridgeaction",
+  "pk": 3,
+  "fields": {
+    "created": "2022-09-06T14:39:30.657Z",
+    "updated": "2022-09-06T15:44:22.058Z",
+    "version": 0,
+    "status": "ok",
+    "name": "nautobot.push.site",
+    "reference": "nautobot.Site",
+    "target": "django_devicectl.facility",
+    "description": null,
+    "action": "push",
+    "function": null,
+    "data_map": {}
+  }
+},
+{
+  "model": "django_fullctl.servicebridgeaction",
+  "pk": 4,
+  "fields": {
+    "created": "2022-09-07T10:17:03.804Z",
+    "updated": "2022-09-07T13:10:25.108Z",
+    "version": 0,
+    "status": "ok",
+    "name": "nautobot.push.device_location",
+    "reference": "nautobot.Device",
+    "target": "django_devicectl.device",
+    "description": "pushes device -> facility/site allocation to nautobot",
+    "action": "push",
+    "function": "nautobot_push_device_loc",
+    "data_map": {}
+  }
+}
+]

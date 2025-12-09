@@ -1,0 +1,16 @@
+--2020-11-12 12:17:31--  https://www.online-convert.com/downloadfile/1785a95c-3078-4784-90c4-ccce95c792c3/973ea85b-8a13-4608-be66-157813e411d7
+Resolving www.online-convert.com (www.online-convert.com)... 5.9.114.35
+Connecting to www.online-convert.com (www.online-convert.com)|5.9.114.35|:443... connected.
+HTTP request sent, awaiting response... 302 Found
+Location: https://www7.online-convert.com/dl/web8/download-file/973ea85b-8a13-4608-be66-157813e411d7/devicectl-logo.svg [following]
+--2020-11-12 12:17:32--  https://www7.online-convert.com/dl/web8/download-file/973ea85b-8a13-4608-be66-157813e411d7/devicectl-logo.svg
+Resolving www7.online-convert.com (www7.online-convert.com)... 116.202.157.143
+Connecting to www7.online-convert.com (www7.online-convert.com)|116.202.157.143|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 521 [image/svg+xml]
+Saving to: ‘973ea85b-8a13-4608-be66-157813e411d7’
+
+     0K                                                       100% 65.6M=0s
+
+2020-11-12 12:17:32 (65.6 MB/s) - ‘973ea85b-8a13-4608-be66-157813e411d7’ saved [521/521]
+

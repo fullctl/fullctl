@@ -1,0 +1,121 @@
+{% load static i18n %}
+<form data-template="form_facility_page"
+  data-api-base="{% url "devicectl_api:facility-list" org_tag=request.org.slug  %}"
+  data-api-action=""
+  data-api-method="POST"
+  >
+  <div class="row controls" style="display:flex">
+    <div class="col-12">
+
+      <div class="row">
+        <div class="col-4">
+
+          <div class="row form-check">
+            <div class="col-12" data-api-submit="yes">
+              <input type="checkbox" class="form-check-input" id="reference-is-sot" name="reference_is_sot" />
+              <label for="reference-is-sot" class="form-check-label">{% trans "PeeringDB is source of truth" %}</label>
+            </div>
+          </div>
+
+        </div>
+        <div class="col-8">
+
+          <div class="row mb-3">
+            <div class="col-12" data-api-submit="yes" data-sot-toggled="yes">
+              <label for="reference" class="form-label">{% trans "PeeringDB ID" %}</label>
+              <input type="text" value="32" class="form-control" id="reference" name="reference" />
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-6">
+
+          <div class="row mb-3">
+            <div class="col-12" data-api-submit="yes" data-sot-toggled="yes">
+              <label for="name" class="form-label">{% trans "Name" %}</label>
+              <input type="text" class="form-control" id="name" name="name" />
+            </div>
+          </div>
+
+        </div>
+        <div class="col-6">
+
+          <div class="row mb-3">
+            <div class="col-12" data-api-submit="yes" data-sot-toggled="no">
+              <label for="slug" class="form-label">{% trans "Slug" %}</label>
+              <input type="text" class="form-control" id="slug" name="slug" />
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes" data-sot-toggled="yes">
+          <label for="address1" class="form-label">{% trans "Address" %}</label>
+          <input type="text" class="form-control" id="address1" name="address1" />
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes" data-sot-toggled="yes">
+          <label for="floor" class="form-label">{% trans "Floor" %}</label>
+          <input type="text" class="form-control" id="floor" name="floor" />
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes" data-sot-toggled="yes">
+          <label for="zipcode" class="form-label">{% trans "Postal code" %}</label>
+          <input type="text" value="32" class="form-control" id="zipcode" name="zipcode" />
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes" data-sot-toggled="yes">
+          <label for="city" class="form-label">{% trans "City" %}</label>
+          <input type="text" value="32" class="form-control" id="city" name="city" />
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes" data-sot-toggled="yes">
+          <label for="country" class="form-label">{% trans "Country" %}</label>
+          <input type="text" value="32" class="form-control" id="country" name="country" />
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row controls marg-top-lg">
+    <div class="col-6 left">
+      <button class="btn"
+        data-btn-type="delete"
+        data-element="rs_delete"
+        data-confirm="{% trans "Are you sure you want to delete this facility?" %}"
+        data-api-base="{% url "devicectl_api:facility-list" org_tag=request.org.slug  %}"
+        data-api-action=""
+        data-api-method="delete"
+      >
+        <div class="row align-items-center">
+          <div class="col label pe-0">{% trans "Delete" %}</div>
+          <div class="col-auto">
+            <span class="icon icon-delete"></span>
+          </div>
+        </div>
+    </button>
+
+    </div>
+    <div class="col-6 right">
+      <button class="submit primary btn">
+        <div class="row align-items-center">
+          <div class="col label pe-0">{% trans "Save" %}</div>
+          <div class="col-auto">
+            <span class="icon icon-edit"></span>
+          </div>
+        </div>
+      </button>
+    </div>
+  </div>
+</form>
+
+

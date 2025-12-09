@@ -1,0 +1,49 @@
+{% load static i18n %}
+<table
+  class="table table-borderless list-table"
+  data-api-base="{% url "devicectl_api:device-logical-ports" org_tag=request.org.slug device_id=0 %}"
+  data-api-action=""
+  data-api-delete-url="{% url "devicectl_api:logical_port-detail" org_tag=request.org.slug logical_port_id=0 %}"
+  data-template="list">
+  <thead>
+    <tr>
+      <th data-sort-target="name" class="sortable-button">{% trans "Name" %}</th>
+      <th data-sort-target="channel" class="sortable-button">{% trans "Channel" %}</th>
+      <th data-sort-target="trunk" class="sortable-button">{% trans "Trunk" %}</th>
+      <th data-sort-target="description" class="sortable-button">{% trans "Description" %}</th>
+      <th class="right">{% trans "Options" %}</th>
+    </tr>
+  </thead>
+  <tbody class="list-body">
+  </tbody>
+  <tbody class="templates">
+    <tr data-template="row">
+      <td data-field="display_name" class="highlight"></td>
+      <td data-field="channel"></td>
+      <td data-field="trunk"></td>
+      <td data-field="description"></td>
+      <td data-field="controls" class="right">
+        <a class="button btn" data-action="edit_logical_port" data-hover="show">
+          <span class="icon icon-edit"></span>
+        </a>
+        <a class="button btn delete" data-hover="show" data-element="delete_logical_port" data-api-method="DELETE" data-confirm="Delete logical port?" data-api-base="{% url "devicectl_api:logical_port-detail" org_tag=request.org.slug logical_port_id=0 %}">
+          <span class="icon icon-delete">
+        </a>
+        <button class="btn">
+          <span class="icon icon-options"></span>
+        </button>
+      </td>
+    </tr>
+    <!--
+    <tr data-template="row" class="secondary">
+      <td class="indent"></td>
+      <td class="property" colspan="5">
+        <div class="row">
+        </div>
+      </td>
+    </tr>
+    -->
+
+  </tbody>
+</table>
+

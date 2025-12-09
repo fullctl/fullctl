@@ -1,0 +1,46 @@
+{% load static i18n %}
+<table
+  class="table table-borderless"
+  data-api-base="{% url "devicectl_api:device-virtual-ports" org_tag=request.org.slug device_id=0 %}"
+  data-api-action=""
+  data-template="list">
+  <thead>
+    <tr>
+      <th data-sort-target="name" data-sort-initial="yes" class="sortable-button">{% trans "Name" %}</th>
+      <th data-sort-target="logical_port" class="sortable-button">{% trans "Logical Port" %}</th>
+      <th data-sort-target="vlan_id" class="sortable-button">{% trans "VLAN id" %}</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody class="list-body">
+  </tbody>
+  <tbody class="templates">
+    <tr data-template="row">
+      <td data-field="display_name" class="highlight"></td>
+      <td data-field="logical_port_name"></td>
+      <td data-field="vlan_id"></td>
+      <td data-field="controls" class="right">
+        <div class="row">
+          <div class="col-xs-12 col-lg-6">
+            <a data-action="edit_virtual_port"><span class="icon fullctl icon-edit"></span><span class="label fullctl">{% trans "Edit" %}</span></a>
+          </div>
+          <div class="col-xs-12 col-lg-6">
+
+        <a data-element="delete_virtual_port" data-api-method="DELETE" data-confirm="Delete virtual port?" data-api-base="{% url "devicectl_api:virtual_port-detail" org_tag=request.org.slug virtual_port_id=0 %}"><span class="icon fullctl icon-delete"></span><span class="fullctl label">{% trans "Delete" %}</span></a>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <!--
+    <tr data-template="row" class="secondary">
+      <td class="indent"></td>
+      <td class="property" colspan="5">
+        <div class="row">
+        </div>
+      </td>
+    </tr>
+    -->
+
+  </tbody>
+</table>
+

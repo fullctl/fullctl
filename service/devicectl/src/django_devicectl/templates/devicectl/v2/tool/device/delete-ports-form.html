@@ -1,0 +1,42 @@
+{% load static i18n %}
+<form 
+  data-api-base="{% url "devicectl_api:port-delete-bulk" org_tag=request.org.slug %}"
+  data-api-action=""
+  data-template="port_deletion">
+    <div class="container-fluid">
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    Confirm / Adjust the ports selected for deletion.
+                </div>
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-12 legend">
+                <span class="legend-label"><span class="icon icon-device"></span> Physical</span>
+                <span class="legend-label"><span class="icon icon-logical"></span> Logical</span>
+                <span class="legend-label"><span class="icon icon-processor"></span> Virtual</span>
+            </div>
+        </div>
+        <!-- port listing -->
+        <div class="row mb-3">
+            <div class="col-12 ports hierarchy" data-element="port_list">
+            </div>
+        </div>
+    </div>
+</form>
+<div data-template="virtual_port_deletion_row" class="item l1" data-api-submit="yes">
+    <input type="checkbox" />
+    <span class="icon icon-processor"></span>
+    <span data-field="display_name"></span>
+</div>
+<div data-template="physical_port_deletion_row" class="item l1" data-api-submit="yes">
+    <input type="checkbox" />
+    <span class="icon icon-device"></span>
+    <span data-field="display_name"></span>
+</div>
+<div data-template="logical_port_deletion_row" class="item 01" data-api-submit="yes">
+    <input type="checkbox" />
+    <span class="icon icon-logical"></span>
+    <span data-field="display_name"></span>
+</div>

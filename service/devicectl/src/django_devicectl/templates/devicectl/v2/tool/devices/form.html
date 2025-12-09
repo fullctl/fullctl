@@ -1,0 +1,31 @@
+{% load static i18n %}
+<form data-template="form_device"
+  data-api-base="{% url "devicectl_api:device-list" org_tag=request.org.slug %}"
+  data-api-action=""
+  data-api-method="POST"
+  >
+  <div class="container-fluid">
+    <div data-api-submit="yes">
+      <input type="hidden" name="facility" id="device-facility" />
+    </div>
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label for="device-name" class="form-label">{% trans "Name" %}</label>
+        <input type="text" class="form-control" id="device-name" name="name" />
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label for="device-type" class="form-label">{% trans "Type" %}</label>
+        <input type="text" class="form-control" id="device-type" name="type" />
+      </div>
+
+    </div>
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label for="device-description" class="form-label">{% trans "Description" %}</label>
+        <input type="text" class="form-control" id="device-description" name="description" />
+      </div>
+    </div>
+  </div>
+</form>

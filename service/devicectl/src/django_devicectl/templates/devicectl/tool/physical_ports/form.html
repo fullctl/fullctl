@@ -1,0 +1,38 @@
+{% load static i18n %}
+<form data-template="form_physical_port"
+  data-api-base="{% url "devicectl_api:physical_port-list" org_tag=request.org.slug %}"
+  data-api-action=""
+  data-api-method="POST"
+  >
+  <div class="row mb-3">
+    <div class="col-12" data-api-submit="yes">
+      <label for="physical_port-name" class="form-label">{% trans "Name" %}</label>
+      <input type="text" class="form-control" id="physical_port-name" name="name" />
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col-12" data-api-submit="yes">
+      <label for="physical_port-device" class="form-label">{% trans "Device" %}</label>
+      <span class="modal-control">
+        <input type="text" class="form-control" id="device-name" name="device_name" disabled />
+        <input type="hidden" name="device" id="device">
+      </span>
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col-12" data-api-submit="yes">
+      <label for="physical_port-logical_port" class="form-label">{% trans "Logical Port" %}</label>
+      <span class="modal-control">
+      <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+      <select data-null-option=";Create matching logical port" data-api-base="{% url "devicectl_api:device-logical-ports" org_tag=request.org.slug device_id=0 %}" data-api-action="" class="form-control" id="physical_port-logical_port" name="logical_port">
+      </select>
+      </span>
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col-12" data-api-submit="yes">
+      <label for="physical_port-description" class="form-label">{% trans "Description" %}</label>
+      <input type="text" class="form-control" id="physical_port-description" name="description" />
+    </div>
+  </div>
+</form>

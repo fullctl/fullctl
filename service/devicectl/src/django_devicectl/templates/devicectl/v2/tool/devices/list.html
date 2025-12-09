@@ -1,0 +1,102 @@
+{% load static i18n %}
+<table
+  class="table list-table"
+  data-api-base="{% url "devicectl_api:facility-detail" org_tag=request.org.slug facility_tag="facility_tag" %}"
+  data-api-action="devices"
+  data-api-delete-url="{% url "devicectl_api:facility-remove-device" org_tag=request.org.slug facility_tag="facility_tag" device_id=0 %}"
+  data-api-delete="/0/"
+  data-template="list">
+  <thead>
+    <tr>
+      <th data-sort-target="name" class="sortable-button" data-sort-initial="yes" data-sort-secondary="status">{% trans "Name" %}</th>
+      <th data-sort-target="type" class="sortable-button">{% trans "Type" %}</th>
+      <th>{% trans "IP" %}</th>
+      <th data-sort-target="status" class="sortable-button">{% trans "Status" %}</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody class="list-body">
+  </tbody>
+  <tbody class="templates">
+    <tr data-template="row">
+      <td data-field="display_name" class="highlight"></td>
+      <td data-field="type"></td>
+      <td>
+        <div data-field="management_ip_address_4"></div>
+        <div data-field="management_ip_address_6"></div>
+      </td>
+      <td data-field="status"></td>
+      <td data-field="controls" class="right">
+        <div class="row" style="display:none;" data-sot="external">
+          <div class="col-12 right">
+            <a
+              class="button btn delete"
+              data-hover="show"
+              data-api-action="remove_device/{id}"
+              data-api-callback="remove"
+              data-confirm="Remove device from this facility?"
+              data-api-method="DELETE"
+            >
+              <span class="icon icon-delete"></span>
+            </a>
+
+            <a class="button col btn" data-hover="show" data-btn-type="secondary" data-action="link_to_reference">
+              <div class="row align-items-center">
+                <div class="col-auto pe-0">
+                  <span class="icon fullctl icon-edit"></span>
+                </div>
+                <div class="col label">
+                  <span class="label fullctl">{% trans "Managed in" %} <span data-field="reference_source"></span></span>
+                </div>
+              </div>
+            </a>
+            <button class="btn">
+              <span class="icon icon-options"></span>
+            </button>
+          </div>
+        </div>
+
+        <div style="display:none;" data-sot="devicectl">
+          <a class="button btn" data-action="edit_device" data-hover="show" title="Edit Device">
+            <span class="icon icon-edit"></span>
+          </a>
+          <a
+            class="button btn delete"
+            title="Delete Device"
+            data-hover="show"
+            data-api-action="remove_device/{id}"
+            data-api-callback="remove"
+            data-confirm="Remove device?"
+            data-api-method="DELETE"
+          >
+            <span class="icon icon-delete"></span>
+          </a>
+          <a
+            class="button btn"
+            title="View API"
+            data-hover="show"
+            data-action="view_api"
+            data-api-url="{% url "devicectl_api:device-detail" org_tag=org.slug device_id=0 %}"
+          >
+            <span class="icon icon-api"></span>
+          </a>
+          <button class="btn">
+            <span class="icon icon-options"></span>
+          </button>
+        </div>
+
+      </td>
+    </tr>
+    <!--
+    <tr data-template="row" class="secondary">
+      <td class="indent"></td>
+      <td class="property" colspan="5">
+        <div class="row">
+        </div>
+      </td>
+    </tr>
+    -->
+
+  </tbody>
+</table>
+
