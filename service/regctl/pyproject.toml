@@ -1,0 +1,61 @@
+[tool.poetry]
+name = "regctl"
+version = "0.2.0-rc.52"
+description = "Regctl"
+authors = ["20C <code@20c.com>"]
+readme = "README.md"
+license = "Apache-2.0"
+
+repository = "https://github.com/fullctl/regctl"
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Internet",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries",
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+structlog = ">=24.4"
+fastapi = ">=0.111"
+uvicorn = ">=0.30.1"
+httpx = ">=0.27.0"
+phonenumbers = ">=8.13"
+googlemaps = ">=4.10"
+redis = {extras = ["hiredis"], version = "^5.1.0"}
+rdap = { git = "https://github.com/20c/rdap.git", branch = "main" }
+
+[tool.poetry.dev-dependencies]
+# testing
+coverage = ">=5"
+pytest = ">=6"
+pytest-django = ">=3.8"
+pytest-filedata = ">=0.4.0"
+pytest-cov = "*"
+tox = ">=3.20"
+tox-gh-actions = ">2.9.1"
+
+# linting
+bandit = ">=1.6.2"
+mypy = ">=0.950"
+pre-commit = ">=2.13"
+pyupgrade = ">=2.19"
+ruff = ">=0.1"
+
+# docs
+markdown = "*"
+markdown-include = ">=0.5,<1"
+mkdocs = ">=1.2.3"
+
+[tool.ruff]
+# Same as Black.
+line-length = 88
+indent-width = 4
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

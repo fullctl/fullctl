@@ -1,0 +1,33 @@
+version: "3"
+services:
+  
+  redis:
+    image: redis:alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    logging:
+      options:
+        max-size: 100m
+        max-file: "3"
+
+  fastapi:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    command: "fastapi"
+    env_file: .env
+    ports:
+      - "${FASTAPI_PORT:-8000}:8000"
+    logging:
+      options:
+        max-size: 100m
+        max-file: "3"
+    volumes:
+      - ../../src:/srv/service/main:Z
+      # uncomment to mount rdap dev code
+      # - ../../rdap/rdap:/srv/service/venv/lib/python3.11/site-packages/rdap:Z
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
