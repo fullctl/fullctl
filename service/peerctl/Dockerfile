@@ -12,6 +12,7 @@ ARG run_deps=" \
     "
 ARG uid=6300
 ARG user=fullctl
+ARG service_dir=service/peerctl
 
 FROM ${base_repo}:${base_tag} as base
 
@@ -28,19 +29,27 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 # build container
 FROM $builder_repo:$builder_tag as builder
 
-WORKDIR /build
+ARG service_dir
 
-# individual files here instead of COPY . . for caching
-COPY pyproject.toml poetry.lock ./
+# For monorepo: copy fullctl source for path dependency resolution
+COPY pyproject.toml poetry.lock README.md ./
+COPY src/ src/
+
+# Set workdir to service directory (path = "../.." resolves to builder workdir)
+WORKDIR ${service_dir}
+
+# Copy service files
+COPY ${service_dir}/pyproject.toml ${service_dir}/poetry.lock ./
 RUN poetry install --no-root
 
-COPY Ctl/VERSION Ctl/
+COPY ${service_dir}/Ctl/VERSION Ctl/
 
 
 #### final image
 
 FROM base as final
 
+ARG service_dir
 ARG run_deps
 ARG run_dirs="locale media static"
 ARG uid
@@ -59,8 +68,8 @@ WORKDIR $SERVICE_HOME
 COPY --from=builder "$VIRTUAL_ENV" "$VIRTUAL_ENV"
 
 RUN mkdir -p etc $run_dirs
-COPY Ctl/VERSION etc/
-COPY docs/ docs
+COPY ${service_dir}/Ctl/VERSION etc/
+COPY ${service_dir}/docs/ docs
 
 RUN chown -R $user:$user $run_dirs
 
@@ -68,14 +77,15 @@ RUN chown -R $user:$user $run_dirs
 FROM final
 
 ARG uid
+ARG service_dir
 
-COPY src/ main/
-COPY Ctl/docker/entrypoint.sh .
+COPY ${service_dir}/src/ main/
+COPY ${service_dir}/Ctl/docker/entrypoint.sh .
 RUN ln -s $SERVICE_HOME/entrypoint.sh /entrypoint
 RUN ln -s /venv $SERVICE_HOME/venv
 
-COPY Ctl/docker/django-uwsgi.ini etc/
-COPY Ctl/docker/manage.sh /usr/bin/manage
+COPY ${service_dir}/Ctl/docker/django-uwsgi.ini etc/
+COPY ${service_dir}/Ctl/docker/manage.sh /usr/bin/manage
 
 
 ENV UWSGI_SOCKET=127.0.0.1:6002
