@@ -41,7 +41,7 @@ pytest-cov = "*"
 
 # linting
 bandit = ">=1.6.2"
-mypy = ">=0.950"
+mypy = ">=0.950,<1.19"
 pre-commit = ">=2.13"
 pyupgrade = ">=2.19"
 ruff = ">=0.1"
