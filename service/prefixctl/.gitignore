@@ -1,0 +1,12 @@
+*.pyc
+*.swp
+*.swo
+*.sqlite3
+*.sql
+*.egg-info
+.env
+.log
+dev_append.py
+run_tests_append.py
+coverage.xml
+.coverage
