@@ -1,0 +1,76 @@
+[tool.poetry]
+name = "aaactl"
+repository = "https://github.com/fullctl/aaactl"
+version = "1.6.0-rc.97"
+description = "authentication, authorization, and accounting for fullctl"
+authors = ["20C <code@20c.com>"]
+license = "Apache-2.0"
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+[tool.poetry.scripts]
+aaactl = "aaactl.cli:main"
+
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fullctl = { git = "https://github.com/fullctl/fullctl.git", branch = "prep-release" }
+
+# not in fullctl
+python-dateutil = "*"
+django-countries = "*"
+django-oauth-toolkit = "*"
+
+# open-id support social auth
+python-jose = "^3.3"
+
+stripe = "^5.5.0"
+crispy-bootstrap5 = "^0.6"
+# 8 breaks something
+django-phonenumber-field = "^7.2.0"
+phonenumbers = ">=8.13.24"
+babel = ">=2.13.0"
+djangorestframework-simplejwt = ">=5.3.1"
+
+[tool.poetry.dev-dependencies]
+# testing
+coverage = ">=6.4"
+pytest = ">=6"
+pytest-django = ">=3.8"
+pytest-cov = "*"
+pytest-filedata = "<1"
+pytest-mock = ">=3.2"
+
+# linting
+bandit = ">=1.7"
+black = ">=20"
+isort = ">=5.7"
+flake8 = ">=3.8"
+mypy = ">=0.950,<1.19"
+pre-commit = ">=2.13"
+pyupgrade = ">=2.19"
+
+# ctl
+ctl = ">=1"
+tomlkit = ">=0.11"
+tmpl = ">=1"
+Jinja2 = ">=3"
+
+###
+
+[tool.bandit.assert_used]
+skips = ['*_test.py', '*/test_*.py']
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+

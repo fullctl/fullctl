@@ -1,0 +1,36 @@
+{% load i18n static aaactl %}
+{% if backend == "google-oauth2" %}
+    <img
+      alt="{% trans "login with google" %}"
+      title="{% trans "login with google" %}"
+      src="{% static "account/oauth/google.svg" %}"
+      class="img-fluid linked-auth-google"
+    >
+    {% if not associated %}
+    <span>{% trans "Sign in with Google" %}</span>
+    {% else %}
+    <span>Google</span>
+    {% endif %}
+{% elif backend == "okta-oauth2" or backend == "okta-openidconnect" %}
+    <img
+      alt="{% trans "login with okta" %}"
+      title="{% trans "login with ojta" %}"
+      src="{% static "account/oauth/okta.png" %}"
+      class="img-fluid linked-auth-okta"
+    >
+{% elif backend == "peeringdb" %}
+    <img
+      alt="{% trans "login with peeringdb" %}"
+      title="{% trans "login with peeringdb" %}"
+      src="{% static "account/oauth/peeringdb.png" %}"
+      class="img-light img-fluid login-peeringdb"
+    >
+    <img
+      alt="{% trans "login with peeringdb" %}"
+      title="{% trans "login with peeringdb" %}"
+      src="{% static "account/oauth/peeringdb-dark.png" %}"
+      class="img-dark img-fluid login-peeringdb"
+    >
+{% else %}
+    {{ backend }}
+{% endif %}

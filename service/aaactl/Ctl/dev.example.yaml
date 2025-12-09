@@ -1,0 +1,15 @@
+env:
+  name: dev
+  hosts:
+    - dev2.20c.com # CHANGE THIS
+  host_url: https://dev2.20c.com:7051 # CHANGE THIS
+  email:
+    default: aaactl@dev2.20c.com # CHANGE THIS
+
+db:
+  name: aaactl
+  user: aaactl
+  host: localhost
+
+peeringdb:
+  url: https://dev2.20c.com:7036 # CHANGE THIS (peeringdb dev instance)

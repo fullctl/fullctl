@@ -1,0 +1,17 @@
+validate:
+  password_length: 8
+billing:
+  default_currency: USD
+  processors:
+    - billing.payment_processors.stripe.Stripe
+    # Fuck you a million times
+    # - billing.payment_processors.paypal.PaypalProcessor
+  handlers:
+    - billing.product_handlers.fullctl.PrefixCtlPrefixes
+  components:
+    - fullctl.prefixctl
+api_keys:
+  internal:
+    perms:
+      aaactl: crud
+      fullctl: crud

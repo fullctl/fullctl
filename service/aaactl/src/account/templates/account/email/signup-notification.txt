@@ -1,0 +1,4 @@
+Username: {{ user.username }}
+Name: {{ user.first_name }} {{ user.last_name }}
+Email: {{ user.email }}
+Instance: {{ application_instance }}

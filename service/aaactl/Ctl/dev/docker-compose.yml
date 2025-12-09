@@ -1,0 +1,42 @@
+version: "3"
+services:
+  postgres:
+    image: "postgres:12"
+    environment:
+      POSTGRES_DB: aaactl
+      POSTGRES_USER: aaactl
+      POSTGRES_PASSWORD: devPASSWORD
+    logging:
+      options:
+        max-size: 100m
+        max-file: "3"
+    ports:
+      - "15432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  django:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    command: runserver 0.0.0.0:8000
+    env_file: .env
+    environment:
+      DATABASE_PASSWORD: devPASSWORD
+      DATABASE_HOST: postgres
+      # defaults
+      # DATABASE_USER: aaactl
+      # DATABASE_NAME: aaactl
+      # DATABASE_PORT: 5432
+    logging:
+      options:
+        max-size: 100m
+        max-file: "3"
+    ports:
+      # this needs to be set in the shell, compose env vars aren't read yet
+      - "${DJANGO_PORT:-8000}:8000"
+    volumes:
+      - ../../src:/srv/service/main:Z
+
+volumes:
+  postgres_data:

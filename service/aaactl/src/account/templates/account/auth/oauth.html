@@ -1,0 +1,51 @@
+{% load static i18n %}
+{% for backend in backends.backends %}
+{% if backend == "fullctl" and hide_fullctl_oauth %}
+  {# Skip rendering fullctl button when hidden flag is set #}
+{% else %}
+<div class="oauth-badges">
+  <div class="oauth-backend {{ backend }}" title="{{ backend }}">
+    <a href="{% url 'social:begin' backend %}?next={{ request.GET.next|urlencode }}" class="btn btn-light btn-oauth">
+    {% if backend == "google-oauth2" %}
+    <img
+      alt="{% trans "login with google" %}"
+      title="{% trans "login with google" %}"
+      src="{% static "account/oauth/google.svg" %}"
+      class="img-fluid login-google"
+    >
+    <span>{% trans "Sign in with Google" %}</span>
+    {% elif backend == "okta-oauth2" or backend == "okta-openidconnect" %}
+    <img
+      alt="{% trans "login with okta" %}"
+      title="{% trans "login with ojta" %}"
+      src="{% static "account/oauth/okta.png" %}"
+      class="img-fluid login-oauth-fix-height"
+    >
+    {% elif backend == "peeringdb" %}
+    <img
+      alt="{% trans "login with peeringdb" %}"
+      title="{% trans "login with peeringdb" %}"
+      src="{% static "account/oauth/peeringdb.png" %}"
+      class="img-light img-fluid login-peeringdb"
+    >
+    <img
+      alt="{% trans "login with peeringdb" %}"
+      title="{% trans "login with peeringdb" %}"
+      src="{% static "account/oauth/peeringdb-dark.png" %}"
+      class="img-dark img-fluid login-peeringdb"
+    >
+    {% elif backend == "fullctl" %}
+    <img
+    alt="{% trans "login with fullctl" %}"
+    title="{% trans "login with fullctl" %}"
+    src="{% static "common/fullctl.svg" %}"
+    class="img-fluid login-fullctl"
+    >
+    {% else %}
+    {{ backend }}
+    {% endif %}
+    </a>
+  </div>
+</div>
+{% endif %}
+{% endfor %}

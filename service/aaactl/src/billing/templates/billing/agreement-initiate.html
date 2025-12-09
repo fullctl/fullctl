@@ -1,0 +1,15 @@
+{% extends "account/base.html" %}
+{% load static i18n %}
+{% block content %}
+
+<form action="/billing/setup/" method="POST">
+{% csrf_token %}
+<input type="hidden" name="next" value="https://www.fullctl.com">
+<input type="text" name="product" value="fullctl.prefixctl">
+<input type="text" name="organization_id" value="1">
+<input type="text" name="organization_name" value="20C">
+<input type="text" name="subscription_cycle" value="month">
+<input type="submit" value="Test">
+</form>
+
+{% endblock %}

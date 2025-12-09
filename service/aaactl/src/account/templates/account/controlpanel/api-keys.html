@@ -1,0 +1,38 @@
+{% extends "account/controlpanel/base.html" %}
+{% load i18n static crispy_forms_tags %}
+
+
+{% block controlpanel %}
+
+<h5>{% trans "Personal API Keys" %}</h5>
+
+<table class="table table-sm">
+  <thead>
+    <tr>
+      <td scope="col">{% trans "Key" %}</td>
+      <td scope="col">{% trans "Created" %}</td>
+      <td scope="col">{% trans "Status" %}</td>
+      <td scope="col"></td>
+    </tr>
+  </thead>
+  <tbody>
+  {% for key in request.user.key_set.all %}
+    <tr>
+      <th scope="col">{{ key.key }}</th>
+      <td>{{ key.created|date:"Y-m-d" }}</td>
+      <td>{{ key.status }}</td>
+      <td></td>
+  {% endfor %}
+  </tbody>
+</table>
+
+<div class="alert alert-warning">
+API Key creation and permission management is currently not available. Please check back at a later time.
+</div>
+
+
+{% endblock %}
+
+{% block menu %}
+<p>No menu</p>
+{% endblock %}

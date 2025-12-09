@@ -1,0 +1,8 @@
+{
+  "client": "api_client_anon",
+  "data": {
+    "secret": "$",
+    "password_new": "newpassword",
+    "password_confirmation": "_newpassword"
+  }
+}

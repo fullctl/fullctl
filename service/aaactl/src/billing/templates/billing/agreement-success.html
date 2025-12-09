@@ -1,0 +1,15 @@
+{% extends "account/base.html" %}
+{% load static i18n %}
+{% block content %}
+{% if not error %}
+<h3>{% trans "Billing Agreement Finalized" %}</h3>
+<p>
+{% blocktrans %}
+The billing agreement has been set up and you will be redirected shortly.
+{% endblocktrans %}
+</p>
+{% else %}
+<h3>{% trans "Billing Agreement Error" %}</h3>
+{% endif %}
+<p><a href="/">{% trans "Return home" %}</a>
+{% endblock %}

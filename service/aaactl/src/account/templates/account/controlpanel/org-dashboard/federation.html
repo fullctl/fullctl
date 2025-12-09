@@ -1,0 +1,137 @@
+{% load i18n static %}
+<div
+  class="federated_service_urls-listing"
+  data-api-base="{% url "account_api:org-detail" pk=request.selected_org.slug %}"
+  data-api-action="federated_service_urls"
+  data-api-federated-auth="federated_auth"
+>
+  <div class="templates" style="display:none">
+    <table>
+    <tr data-template="row" class="large-table-row" data-api-submit="yes">
+      <td scope="col" class="name-column table-text-bold dark-grey">
+        <span data-field="service_name"></span>
+      </td>
+      <td scope="col" class="light-grey">
+        <div class="d-flex align-items-center" data-api-submit="yes">
+          <span data-field="url"></span>
+          {% if  permissions.update_org_org %}
+          <a class="button btn m-1" data-action="edit">
+            <span class="icon icon-edit">Edit</span>
+          </a>
+          {% endif %}
+        </div>
+      </td>
+      <td scope="col" class="manage-column right">
+        <button class="btn btn-slim btn-manage manage no-hover"  class="button btn" data-api-action="remove_federated_service_url" data-api-callback="remove" data-confirm="Remove service URL?" data-api-method="DELETE">
+          {% trans "Delete" %}
+        </button>
+      </td>
+    </tr>
+    </table>
+  </div>
+
+  <table class="table table-sm list-table">
+    <tbody class="list-body">
+    </tbody>
+  </table>
+</div>
+{% if permissions.update_org_org %}
+  <div data-element="federation_auth_setup" style="display: none;">
+    <div class="mb-2 text-center light-grey">
+      Allow your self-hosted fullctl services to use <code>{{ request.META.HTTP_HOST }}</code> for authentication.
+    </div>
+    <div class="mb-2 text-center">
+      To add a service URL you need to set-up the organization's OAuth first.
+    </div>
+    <div class="text-center">
+      <button type="button" class="btn btn-manage btn-slim" data-element="federation_auth_setup_btn">
+        {% trans "Set-up OAuth" %}
+      </button>
+    </div>
+  </div>
+
+  <div data-element="federation_client_id_container">
+    <div>
+      Client ID: <span data-element="federation_auth_client_id"></span>
+    </div>
+    <div>
+      Client Secret: <a class="btn btn-manage btn-slim" data-element="federation_generate_client_secret">Generate new</a>
+    </div>
+    <div class="light-grey small fst-italic">
+      *Please make sure to configure <code>OAUTH_TWENTYC_KEY</code> and <code>OAUTH_TWENTYC_SECRET</code> in the service.
+    </div>
+  </div>
+
+  <div class="text-center mt-2">
+    <button type="button" class="btn btn-manage btn-slim" data-element="add_service_url_btn" style="display: none;">
+      {% trans "+ Add Service URL" %}
+    </button>
+  </div>
+{% endif %}
+
+<div class="templates" style="display:none">
+  <div
+    data-template="federation_auth_step1_modal_content"
+  >
+    This will create an oauth client for the organization. In the next step you will be given an unhashed application secret. Make sure to copy it and store this secret securely as it will not be shown again.
+  </div>
+
+  <div
+    data-template="federation_auth_step1_modal_content_regenerate"
+  >
+    This will generate a new client secret for the organization. Make sure to copy it and store this secret securely as it will not be shown again. WARNING: your old secret will be invalidated.
+  </div>
+
+
+  <div
+    data-template="federation_auth_step2_modal_content"
+  >
+    <div
+      data-api-base="{% url "account_api:org-detail" pk=request.selected_org.slug %}"
+      data-api-action="create_federated_auth"
+      data-api-action-regenerate="regenerate_federated_auth"
+      data-element="oauth_code_container"
+      class="text-break"
+      style="min-height: 100px;"
+    >
+
+    </div>
+    <button type="button" class="btn btn-primary submit" data-element="copy_oauth_code_btn">
+      Copy
+    </button>
+  </div>
+
+  <form data-template="form_service_url"
+    data-api-base="{% url "account_api:org-detail" pk=request.selected_org.slug %}"
+    data-api-action="add_federated_service_url"
+    data-api-update="{% url "account_api:org-update-federated-service-url" pk=request.selected_org.slug url_pk=0 %}"
+    data-api-method="POST"
+    class="container-fluid"
+    >
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label for="logical_port-description" class="form-label">{% trans "Service URL" %}</label>
+        <span class="modal-control">
+        <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+        <select
+          class="form-control"
+          id="service_url_service"
+          name="service"
+          data-api-base="{% url "account_api:org-detail" pk=request.selected_org.slug %}/federated_services"
+        >
+        <select>
+        </span>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label for="service_url" class="form-label">{% trans "URL" %}</label>
+        <input type="text" class="form-control" id="service_url" name="url" />
+      </div>
+    </div>
+
+  </form>
+
+</div>
+

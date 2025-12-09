@@ -1,0 +1,44 @@
+{% load i18n static %}
+
+<h5 class="accordion-header" id="heading-services">
+  <button class="accordion-button fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-services" aria-expanded="true" aria-controls="collapseFive">
+    {% trans "Services" %}
+  </button>
+</h5>
+
+<div id="collapse-services" class="accordion-collapse collapse show" aria-labelledby="heading-services">
+
+  <div
+    class="service-apps-listing pt-3"
+    data-api-base="{% url "applications_api:service_application-list" %}"
+    data-api-action="">
+    <div class="templates" style="display:none">
+      <a  data-template="row" class="service-app redirect | row">
+        {% if org_branding.show_logo == "true" %}
+          <div class="col-4 align-items-center justify-content-center">
+            <img src="" class="logo img-dark" data-logo-url="{% static "common/logos/svc_slug-dark.svg" %}" />
+            <img src="" class="logo img-light" data-logo-url="{% static "common/logos/svc_slug-light.svg" %}" />
+          </div>
+        {% else %}
+          <div class="col-4 align-items-center justify-content-center">
+            <span class="name" data-field="name"></span>
+          </div>
+        {% endif %}
+        <div class="col-8">
+          <p class="description" data-field="description"></p>
+        </div>
+      </a>
+    </div>
+
+    <div class="service-apps-list list-body container-fluid">
+    </div>
+  </div>
+
+  <script>
+    $(document).ready(function() {
+      new account.Services();
+      new account.ServiceApplications();
+    });
+  </script>
+
+</div>

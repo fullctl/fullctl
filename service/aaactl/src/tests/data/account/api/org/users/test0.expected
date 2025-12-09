@@ -1,0 +1,119 @@
+{
+    "data": [
+        {
+            "id": 81,
+            "name": " ",
+            "email": "test_unperm@localhost",
+            "you": false,
+            "manageable": "crud",
+            "role_options": [
+                {
+                    "id": 1,
+                    "name": "Admin"
+                },
+                {
+                    "id": 2,
+                    "name": "Member"
+                },
+                {
+                    "id": 22,
+                    "name": "admin"
+                }
+            ],
+            "roles": [
+                {
+                    "id": 122,
+                    "role": 2,
+                    "name": "Member",
+                    "org": 79,
+                    "user": 40
+                }
+            ],
+            "permissions": {
+                "org.{org_id}": {
+                    "perms": "",
+                    "label": "",
+                    "override": null
+                },
+                "user.{org_id}": {
+                    "perms": "",
+                    "label": "",
+                    "override": null
+                },
+                "billing.{org_id}": {
+                    "perms": "",
+                    "label": "",
+                    "override": null
+                },
+                "service_bridge.*": {
+                    "perms": "",
+                    "label": "",
+                    "override": null
+                }
+            }
+        },
+        {
+            "id": 79,
+            "name": " ",
+            "email": "test@localhost",
+            "you": true,
+            "manageable": "crud",
+            "role_options": [
+                {
+                    "id": 1,
+                    "name": "Admin"
+                },
+                {
+                    "id": 2,
+                    "name": "Member"
+                },
+                {
+                    "id": 22,
+                    "name": "admin"
+                }
+            ],
+            "roles": [
+                {
+                    "id": 118,
+                    "role": 1,
+                    "name": "Admin",
+                    "org": 79,
+                    "user": 39
+                },
+                {
+                    "id": 119,
+                    "role": 22,
+                    "name": "admin",
+                    "org": 79,
+                    "user": 39
+                }
+            ],
+            "permissions": {
+                "org.{org_id}": {
+                    "perms": "crud",
+                    "label": "",
+                    "override": null
+                },
+                "user.{org_id}": {
+                    "perms": "crud",
+                    "label": "",
+                    "override": null
+                },
+                "billing.{org_id}": {
+                    "perms": "crud",
+                    "label": "",
+                    "override": null
+                },
+                "service_bridge.*": {
+                    "perms": "crud",
+                    "label": "",
+                    "override": null
+                }
+            }
+        }
+    ],
+    "errors": {},
+    "profiling": {
+        "queries": 0
+    }
+}

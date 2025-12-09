@@ -1,0 +1,20 @@
+{% extends "account/base.html" %}
+{% load static i18n crispy_forms_tags %}
+{% block content %}
+
+<h1>{% trans "Add a payment option to your account" %}</h1>
+
+{% if request.GET.billing_agreement %}
+<p>{% blocktrans %}Please follow the instructions to setup a payment option and billing agreement with us.{% endblocktrans %}</p>
+{% else %}
+<p>{% blocktrans %}Please follow the instructions to setup a payment option.{% endblocktrans %}</p>
+{% endif %}
+
+
+<form action="/billing/setup/payment-option/" method="POST">
+{% csrf_token %}
+{{ form|crispy }}
+<input type="submit" value="Test" name="submit_payment_method">
+</form>
+
+{% endblock %}

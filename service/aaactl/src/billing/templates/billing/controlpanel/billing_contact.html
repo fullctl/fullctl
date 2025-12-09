@@ -1,0 +1,117 @@
+{% extends "account/controlpanel/base.html" %}
+{% load i18n static crispy_forms_tags %}
+
+
+{% block controlpanel %}
+<h5>{{ request.selected_org.label }} - {% trans "Billing Contact: " %} {{ billing_contact.name }}</h5>
+
+<form
+  class="billing_contact"
+  data-api-base="{% url "billing_api:org-detail" pk=request.selected_org.slug %}"
+  data-api-action="billing_contact"
+  data-api-method="PUT">
+
+  <div style="display:hidden" data-api-submit="yes">
+    <input type="hidden" name="id" value="{{ billing_contact.id }}">
+  </div>
+
+
+  <div data-api-submit="yes">
+    <div class="col-6 input-container">
+    {{ form.name|as_crispy_field }}
+    </div>
+    <div class="col-6 input-container">
+    {{ form.email|as_crispy_field }}
+    </div>
+    <div class="col-12 input-container mb-3">
+      <label for="id_phone_number_1">Phone Number*</label>
+      <div class="phonenumber-container">
+        {{ form.phone_number }}
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-6">
+      <button type="button" class="btn btn-primary submit">{% trans "Save" %}</button>
+    </div>
+    <div class="col-6 right">
+      {% if permissions.delete_org_billing %}
+      <button
+        type="button"
+        data-api-method="DELETE"
+        data-api-redirect="{% url "billing:billing-contacts" %}"
+        class="btn btn-danger submit">{% trans "Delete" %}</button>
+      {% endif %}
+    </div>
+  </div>
+
+
+</form>
+
+<div class="space"></div>
+
+<h6>{% trans "Payment Methods" %}</h4>
+
+<div
+  class="payment_method-listing"
+  data-billing-contact-id="{{ billing_contact.id }}"
+  data-api-base="{% url "billing_api:org-detail" pk=request.selected_org.slug %}"
+  data-api-action="payment_methods">
+  <div style="display:none" data-api-submit="yes">
+    <input type="hidden" name="billing_contact" value="{{ billing_contact.id }}" >
+  </div>
+  <div class="templates" style="display:none">
+
+    <table>
+    <tr data-template="row">
+      <td scope="col"><span data-field="custom_name"></span> <span class="light-grey">(Last Updated: <span data-field="updated"></span>)</span></td>
+      <td scope="col" class="right">
+        {% if permissions.update_org_billing %}
+        <button
+          data-api-action="payment_method"
+          data-api-method="DELETE"
+          data-api-callback="remove"
+          data-confirm="Remove payment method?"
+          class="btn btn-sm btn-danger">{% trans "Remove" %}</button>
+        {% endif %}
+      </td>
+    </tr>
+    </table>
+  </div>
+
+  <table class="table table-sm">
+    <thead class="list-head">
+      <tr>
+        <th scope="col">{% trans "Name" %}</th>
+        <th scope="col"></th>
+      </tr>
+    </thead>
+    <tbody class="list-static-body">
+      <tr>
+        <td>{% trans "Add new payment method..." %}</td>
+        <td class="right"><a href="{% url "billing:setup" %}?billing_contact={{ billing_contact.id }}" class="btn btn-sm btn-primary">{% trans "Add" %}</a>
+        </td>
+      </tr>
+    </tbody>
+    <tbody class="list-body">
+    </tbody>
+  </table>
+</div>
+
+
+<script>
+$(document).ready(function() {
+window.billing_contact = new billing.BillingContact();
+});
+</script>
+{% endblock %}
+
+{% block menu %}
+<div class="row mt-4">
+  <div class="col text-center">
+    <a href="{% url "billing:billing-contacts" %}" class="btn btn-secondary">{% trans "Return to billing contacts" %}</a>
+  </div>
+</div>
+{% endblock%}
+

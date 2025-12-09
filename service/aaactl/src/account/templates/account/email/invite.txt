@@ -1,0 +1,7 @@
+{{ inviting_person }} has invited you to join their organization {{ org.label }} on {{ host }}
+
+To accept this invitation please follow the link below. If you do not wish to accept no further action is required on your part.
+
+{{ invite.url }}
+
+{{ signature }}

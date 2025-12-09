@@ -1,0 +1,30 @@
+{% load static i18n %}
+<form
+  data-template="form_org_api_key_details"
+  data-api-base="{% url "account_api:org-detail" pk=request.selected_org.slug %}"
+  data-api-action="set_key_details"
+  data-api-method="PUT"
+>
+  <div class="container-fluid">
+
+    <div style="display:none" data-api-submit="yes">
+      <input type="hidden" name="id" data-field="id" />
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label class="form-label" for="name">{% trans "Name" %}</label>
+        <input type="text" class="form-control" id="name" name="name" />
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label class="form-label" for="email">{% trans "Email" %}*</label>
+        <input type="text" class="form-control" id="email" name="email" />
+      </div>
+    </div>
+
+  </div>
+</form>
+

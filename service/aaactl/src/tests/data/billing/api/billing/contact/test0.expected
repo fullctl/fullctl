@@ -1,0 +1,23 @@
+{
+  "data": 
+    [
+      {
+        "billing_contact": 1, 
+        "custom_name": "Test Customer", 
+        "holder": "William Contact",
+        "country": "US", 
+        "city": "Chicago", 
+        "address1": "3400 Test Ave", 
+        "address2": null, 
+        "postal_code": "60600", 
+        "state": "IL", 
+        "id": 1, 
+        "name": "William Contact: Test Customer",
+        "status": "ok", 
+        "created": "2020-07-21T00:58:06.690750Z", 
+        "updated": "2020-07-21T00:58:06.690795Z"
+      }
+    ], 
+    "errors": {}, 
+    "profiling": {"queries": 0}
+}

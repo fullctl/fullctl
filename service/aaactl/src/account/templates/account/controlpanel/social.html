@@ -1,0 +1,47 @@
+{% extends "account/controlpanel/base.html" %}
+{% load i18n static crispy_forms_tags %}
+
+
+{% block controlpanel %}
+
+<h5>{% trans "Social Authentication" %}</h5>
+
+<div class="row">
+  <div class="col-xs-12 col-lg-3">
+  <h6>{% trans "Linked social apps" %}</h6>
+
+  {% for socialauth in backends.associated %}
+    <div class="space">
+    {% include "account/auth/oauth-badge.html" with backend=socialauth.provider associated=True %}
+    </div>
+  {% endfor %}
+
+  </div>
+  <div class="col-xs-12 col-lg-9">
+  <h6>{% trans "Available Social apps" %}</h6>
+
+  {% for backend in backends.not_associated %}
+  <div class="row">
+    <div class="col-xs-12 col-lg-5">
+      <div class="oauth-backend {{ backend }}" title="{{ backend }}">
+        <a href="{% url 'social:begin' backend %}?next={{ request.GET.next }}" class="btn btn-light btn-oauth">
+        {% include "account/auth/oauth-badge.html" with backend=backend %}
+        </a>
+      </div>
+    </div>
+    <div class="col-xs-12 col-lg-7">
+      <small>
+      {% include "account/controlpanel/social-info.html" with backend=backend %}
+      </small>
+    </div>
+  </div>
+
+  {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block menu %}
+<div></div>
+{% endblock %}
+

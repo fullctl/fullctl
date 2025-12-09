@@ -1,0 +1,136 @@
+{% load static i18n crispy_forms_tags %}
+{% block javascript %}
+
+<script src="https://js.stripe.com/v3/"></script>
+
+{% endblock %}
+
+<div data-api-submit="yes" id="processor-data">
+  <input type="hidden"  name="client_secret" id="client-secret" />
+  <input type="hidden"  name="setup_intent_id" id="setup_intent_id" />
+</div>
+
+{% if billing_env == "test" %}
+<div class="alert alert-warning">
+<p>TESTING MODE</p>
+<p>Credit card numbers for testing (any 3 digits for CVC)</p>
+<pre>
+4242424242424242  Visa
+4000056655665556  Visa (debit)
+5555555555554444  Mastercard
+2223003122003222  Mastercard
+</pre>
+</div>
+{% endif %}
+
+<form id="payment-form">
+  <div id="link-authentication-element">
+    <!--Stripe.js injects the Link Authentication Element-->
+  </div>
+  <div id="payment-element">
+    <!--Stripe.js injects the Payment Element-->
+  </div>
+  <div id="payment-message" class="hidden"></div>
+</form>
+
+
+
+<script>
+  const stripe = Stripe("{{ stripe.public_key }}");
+
+  let elements;
+  let setupIntent;
+  let paymentElement;
+  let clientSecret;
+  let setupIntentId;
+
+  {% if setup_intent and setup_intent_client_secret %} 
+  setupIntentId = "{{ setup_intent }}";
+  clientSecret = "{{ setup_intent_client_secret }}";
+  {% endif %}
+  initialize();
+
+  async function initialize() {
+    if(!setupIntentId) {
+      await createSetupIntent();
+    } else {
+      await checkStatus();
+    }
+
+    const appearance = {
+      theme: 'night',
+      labels: 'floating',
+      variables: {
+        colorPrimary: "#d1ff27"
+      }
+    };
+
+    elements = stripe.elements({ clientSecret, appearance });
+
+    paymentElement = elements.create('payment');
+    paymentElement.mount('#payment-element');
+
+    // Handle payment element events
+    paymentElement.addEventListener('change', function(event) {
+      // mark the setup as completed
+      if (event.complete) {
+        $('#processor-data').data('setup-completed', "yes");
+      }
+    });
+
+  }
+
+  async function createSetupIntent() {
+    const response = await fetch('/billing/create-setup-intent/', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}'
+      }
+    });
+
+    setupIntent = await response.json()
+    clientSecret = setupIntent.client_secret;
+    setupIntentId = setupIntent.id;
+    $('#client-secret').val(clientSecret);
+    $('#setup_intent_id').val(setupIntentId);
+
+    console.log("created", { setupIntent })
+
+  }
+
+  async function checkStatus() {
+    
+    const response = await fetch('/billing/check-setup-intent/'+setupIntentId+'/', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}'
+      }
+    });
+
+    setupIntent = await response.json()
+    clientSecret = setupIntent.client_secret;
+
+    $('#client-secret').val(setupIntent.client_secret);
+    $('#setup_intent_id').val(setupIntentId);
+
+    console.log("checked", { setupIntent })
+
+  }
+
+  async function processorHandleConfirm(payment_method_id) {
+    let return_url = '{{ request.scheme }}://{{ request.get_host }}{% url "billing:save_payment_method" payment_method_id=0 %}';
+
+    return_url = return_url.replace("/0/", `/${payment_method_id}/`);
+
+    console.log("processorHandleConfirm", { payment_method_id, return_url })
+
+    await stripe.confirmSetup({
+      elements,
+      confirmParams: {
+        return_url: return_url,
+      }
+    });
+  }
+
+
+</script>

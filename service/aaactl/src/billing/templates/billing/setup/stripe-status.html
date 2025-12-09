@@ -1,0 +1,38 @@
+{% extends "account/controlpanel/base.html" %}
+{% load static i18n crispy_forms_tags %}
+{% block controlpanel %}
+
+{% if setup_intent.status == "succeeded" %}
+<script>
+    window.location.href = "/"
+</script>
+{% else %}
+<div>
+    {% if setup_intent.status == "requires_payment_method" %}
+    <h4>Failed to setup payment method</h4>
+    <p>
+        {% blocktrans %}
+            We were unable to setup your payment method. <a href="/billing/setup/">Please try again</a>.
+        {% endblocktrans %}
+    </p>
+    {% elif setup_intent.status == "requires_confirmation" %}
+    {% include form_payopt_create.template with stripe=payment_processor setup_intent=request.GET.setup_intent setup_intent_client_secret=request.GET.setup_intent_client_secret %}    
+    {% elif setup_intent.status == "requires_action" %}
+    
+    {% elif setup_intent.status == "processing" %}
+
+    {% elif setup_intent.status == "canceled" %}
+    
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block menu %}
+<div class="row mt-4">
+  <div class="col text-center">
+    <a class="return-to-dashbaord | btn btn-secondary" href="/">{% trans "Return to Account Dashboard" %}
+    </a>
+  </div>
+</div>
+{% endblock%}

@@ -1,0 +1,3 @@
+include Ctl/VERSION
+graft src
+recursive-include src *.py
