@@ -20,7 +20,7 @@ aclctl = "aclctl.cli:main"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-fullctl = { git = "https://github.com/fullctl/fullctl.git", branch = "prep-release" }
+fullctl = { path = "../.." }
 
 [tool.poetry.dev-dependencies]
 # testing

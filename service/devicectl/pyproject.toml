@@ -20,7 +20,7 @@ devicectl = "devicectl.cli:main"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-fullctl = { git = "https://github.com/fullctl/fullctl.git", branch = "prep-release" }
+fullctl = { path = "../.." }
 pynetbox = "^7.5.0"
 pygments = "^2.14"
 

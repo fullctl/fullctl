@@ -1475,10 +1475,8 @@ social-auth-app-django = ">=5.2"
 whitenoise = ">=6"
 
 [package.source]
-type = "git"
-url = "https://github.com/fullctl/fullctl.git"
-reference = "prep-release"
-resolved_reference = "1412308ecf128678a295f907e527e17adea44ed2"
+type = "directory"
+url = "../.."
 
 [[package]]
 name = "future"
@@ -3927,4 +3925,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.9"
-content-hash = "99c2dc3f1963c7631f2bd575a582c0c989582dff2e3a266c1257753d0b88ab39"
+content-hash = "1f97f982d2c655c40289e2e6db8eb06b7ee8cddae4904a189f66925ab4ae08ba"
