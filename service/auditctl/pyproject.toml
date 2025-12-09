@@ -1,0 +1,64 @@
+[tool.poetry]
+name = "auditctl"
+repository = "https://github.com/fullctl/auditctl"
+version = "0.6.0-rc.65"
+description = "audit control"
+authors = ["20C <code@20c.com>"]
+license = "Apache-2.0"
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development",
+]
+
+[tool.poetry.scripts]
+auditctl = "auditctl.cli:main"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fullctl = { git = "https://github.com/fullctl/fullctl.git", branch = "prep-release" }
+pydantic = ">=2.7.4"
+
+# websockets
+websockets = "^11.0.2"
+channels = "^4.0.0"
+PyJWT = "^2.6.0"
+
+# redis
+redis = ">=5.2.1"
+
+[tool.poetry.dev-dependencies]
+# testing
+coverage = ">=5"
+pytest = ">=6"
+pytest-django = ">=3.8"
+pytest-cov = "*"
+
+# linting
+# bandit = ">=1.6.2"
+black = ">=20"
+isort = ">=5.7"
+flake8 = ">=3.8"
+mypy = ">=0.950,<1.19"
+pre-commit = ">=2.13"
+pyupgrade = ">=2.19"
+
+# docs
+markdown = "*"
+markdown-include = ">=0.5,<1"
+mkdocs = "^1.2.3"
+
+# ctl
+ctl = ">=1"
+jinja2 = ">=2"
+tmpl = ">=1"
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[build-system]
+requires = ["poetry-core>=1"]
+build-backend = "poetry.core.masonry.api"

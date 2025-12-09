@@ -1,0 +1,48 @@
+{% load static i18n %}
+<table
+  class="table table-borderless list-table"
+  data-api-base="{% url "auditctl_api:audit-list" version="version" org_tag="org_tag" ref_tag="ref_tag" ref_id="ref_id" %}"
+  data-api-action=""
+  data-template="list">
+  <thead>
+    <tr>
+      <th scope="col">{% trans "Object" %}</th>
+      <th scope="col" style="width:85px">{% trans "Status" %}</th>
+      <th scope="col">{% trans "Source" %}</th>
+      <th scope="col" style="width:200px; " class="right">{% trans "Time" %}</th>
+    </tr>
+  </thead>
+  <tbody class="list-body">
+  </tbody>
+  <tbody class="templates">
+    <tr data-template="row" class="event-viewer-row">
+      <td class="col action" data-element="toggle_info">
+        <a data-element="button_filter" class="component-link"><span class="icon fullctl icon-report"></span></a>
+        <span data-field="object_id"></span>
+      </td>
+      <td data-field="status" class="col center"></td>
+      <td data-field="source" class="col"></td>
+      <td data-field="created" class="col right nowrap"></td>
+      <!--
+      <td data-field="controls" class="right">
+        <button class="btn">
+          <span class="icon icon-options"></span>
+        </button>
+      </td>
+      -->
+    </tr>
+    <tr data-template="row" class="secondary" style="display:none;">
+      <td colspan="4">
+        <div data-field="data" class="event-data"></div>
+      </td>
+    </tr>
+    <!--
+    <tr data-template="row" class="secondary">
+      <td colspan="4">
+        <div data-field="url"></div>
+      </td>
+    </tr>
+    -->
+  </tbody>
+</table>
+

@@ -1,0 +1,72 @@
+{% extends "common/v2/app/base.html" %}
+{% load static i18n %}
+
+{% block "js" %}
+{{ block.super }}
+<script src="{% static "auditctl/v2/auditctl.js" %}" type="text/javascript"></script>
+<script src="{% static "auditctl/v2/auditctl.settings.js" %}" type="text/javascript"></script>
+{% endblock %}
+
+{% block "css" %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static "auditctl/v2/auditctl.css" %}" />
+{% endblock %}
+
+
+{% block "header_middle" %}
+<div class="app-pages-nav | nav h-100" data-component="pages">
+    <a class="nav-link active"
+      id="tab-events"
+      data-bs-toggle="tab"
+      role="tab"
+      aria-controls="events"
+      aria-selected="true"
+      href="#events">{% trans "Events" %}</a>
+</div>
+{% endblock %}
+
+
+{% block "header_right" %}
+{% with app_id="auditctl" %}
+{{ block.super }}
+{% endwith %}
+{% endblock %}
+
+{% block "header_account_panel" %}
+{% with app_id="auditctl" %}
+
+{{ block.super }}
+{% endwith %}
+{% endblock %}
+
+
+{% block "app_content_toolbar" %}
+
+<div class="tab-content" id="app-pages">
+  <div class="tab-pane show active" id="events" role="tabpanel" aria-labelledby="tab-events">
+    {% include "auditctl/v2/tool/viewer/search-form.html" %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block "app_content_menu" %}
+<div class="menu-deco-border"></div>
+{% endblock %}
+
+{% block "app_content_main" %}
+
+<div class="tab-content" id="app-pages">
+  <div class="tab-pane show active" id="events" role="tabpanel" aria-labelledby="tab-events">
+    {% include "auditctl/v2/tool/viewer/main.html" %}
+  </div>
+</div>
+
+
+
+{% endblock %}
+
+{% block "templates" %}
+{{ block.super }}
+
+{% endblock %}
