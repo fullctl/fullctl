@@ -43,7 +43,7 @@ WORKDIR ${service_dir}
 COPY ${service_dir}/pyproject.toml ${service_dir}/poetry.lock ./
 
 # Need to upgrade pip and wheel within Poetry for all its installs
-RUN poetry install --no-root
+RUN poetry install --no-root && pip install /build
 
 # gitignore is just a placeholder for if extra is empty
 COPY ${service_dir}/.gitignore $extra_pip_install_dir ./plugins/

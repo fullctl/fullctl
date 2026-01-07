@@ -52,7 +52,7 @@ WORKDIR ${service_dir}
 COPY ${service_dir}/pyproject.toml ${service_dir}/poetry.lock ./
 
 # Need to upgrade pip and wheel within Poetry for all its installs
-RUN poetry install --no-root
+RUN poetry install --no-root && pip install /build
 
 COPY ${service_dir}/Ctl/VERSION Ctl/
 

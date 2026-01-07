@@ -40,7 +40,7 @@ WORKDIR ${service_dir}
 
 # Copy service files
 COPY ${service_dir}/pyproject.toml ${service_dir}/poetry.lock ./
-RUN poetry install --no-root
+RUN poetry install --no-root && pip install /build
 
 COPY ${service_dir}/Ctl/VERSION Ctl/
 
