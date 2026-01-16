@@ -46,14 +46,14 @@ service/<name>/
 
 ## Service Lookup Order
 
-When building a service, fci0 looks for the service path in this order:
+When building, services are located in this priority order:
 
-1. **Explicit subdir** - `subdir` key in fci.yaml source config
-2. **Single repo** (legacy) - Service name matches repo name, `Ctl/VERSION` at root
-3. **Private overlay** - `{repo}/private/{service}/Ctl/VERSION`
-4. **Public service** - `{repo}/service/{service}/Ctl/VERSION`
+1. **Explicit subdir** - configured in build tool
+2. **Single repo** (legacy) - service name matches repo name, `Ctl/VERSION` at root
+3. **Private overlay** - `private/{service}/Ctl/VERSION`
+4. **Public service** - `service/{service}/Ctl/VERSION`
 
-The first match wins. This means private services take precedence over public ones.
+The first match wins. Private services take precedence over public ones.
 
 ## Private Overlay
 
@@ -62,7 +62,7 @@ The private overlay allows proprietary or customer-specific code to be layered o
 ### How It Works
 
 1. A separate private repo (e.g., `fullctl-private`) mirrors the `service/` structure
-2. During build, fci0 clones the private repo INTO `monorepo/private/`
+2. During build, the private repo is cloned INTO `monorepo/private/`
 3. Services in `private/` override those in `service/`
 
 ### Private Repo Structure
@@ -110,9 +110,6 @@ fullctl-private/
    [tool.uv.sources]
    fullctl = { workspace = true }
 
-   [tool.fci0]
-   run_deps = ["postgresql-libs"]
-
    [build-system]
    requires = ["hatchling"]
    build-backend = "hatchling.build"
@@ -129,14 +126,7 @@ fullctl-private/
 ### Adding a New Private Service
 
 1. In the private repo, create `<service>/` with the same structure as above
-
-2. Configure fci.yaml to use the private repo:
-   ```yaml
-   fci:
-     deploy_private: https://gitlab.fullctl.com/fullctl/fullctl-private
-     deploy_private_branch: main
-   ```
-
+2. Configure the build tool to use the private repo
 3. The private service will automatically override the public version during build
 
 ### Working with Dependencies
@@ -151,95 +141,6 @@ cd ../..
 uv lock  # Update workspace lockfile
 ```
 
-## fci0 Configuration
-
-### fci.yaml Reference
-
-```yaml
-fci:
-  # Public monorepo settings
-  deploy_monorepo: https://gitlab.fullctl.com/fullctl/fullctl
-  deploy_branch: monorepo
-
-  # Private overlay (optional)
-  deploy_private: https://gitlab.fullctl.com/fullctl/fullctl-private
-  deploy_private_branch: main
-
-  # Container registry
-  cluster_registry: r.gitlab.fullctl.com/fci/registry
-
-  # Kubernetes context
-  kubie_ctx: 20c-lonepine
-
-  # Overlay version tag
-  overlay_vtag: fl
-
-  # Services to build/deploy
-  services:
-  - aaactl
-  - aclctl
-  - devicectl
-  # ...
-
-# Per-service source overrides
-sources:
-  <service>:
-    # Override repo/branch for this service
-    repo_url: https://gitlab.fullctl.com/fullctl/fullctl
-    branch: monorepo
-    private_branch: main  # Branch for private overlay
-
-    # Explicit subdir (optional)
-    subdir: service/<name>
-
-    # External plugins
-    plugins:
-    - repo: git@gitlab.fullctl.com:fullctl/prefixctl-reputation
-      version: main
-
-# Version state tracking
-state:
-  <service>:
-    version: 1.0.0-rc.1
-    build_index: 0
-```
-
-### Service pyproject.toml [tool.fci0]
-
-Docker build configuration is stored in each service's `pyproject.toml`:
-
-```toml
-[tool.fci0]
-# Runtime dependencies (dnf packages)
-run_deps = ["postgresql-libs", "rrdtool"]
-
-# Build-time dependencies
-build_deps = ["rrdtool-devel"]
-
-# uv sync groups (e.g., "--no-group tasks")
-uv_groups = ""
-
-# Default entrypoint command
-default_cmd = "runserver"  # or "fastapi" for regctl
-```
-
-## Building with fci0
-
-```bash
-# Build a single service
-fci0 build <config_dir> <service>
-
-# Build with dependency lock and version bump
-fci0 build <config_dir> <service> --lock
-
-# Build all services
-fci0 build <config_dir>
-
-# Deploy a service
-fci0 deploy <config_dir> <service>
-```
-
 ## Related Documentation
 
-- [fctlops CLAUDE.md](https://gitlab.fullctl.com/fullctl/fctlops) - fci0 CLI reference
 - [uv Workspaces](https://docs.astral.sh/uv/concepts/projects/workspaces/) - Dependency management
