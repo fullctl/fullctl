@@ -1,0 +1,1 @@
+{"data": [{"id": 2, "name": "Foo Bar Org", "is_default": true, "label": "Foo Bar Org", "slug": "foobar", "selected": null, "personal": false, "is_admin": true, "roles": ["Admin", "admin"], "all_roles": ["Admin", "Member", "admin"]}], "errors": {}, "profiling": {"queries": 0}}

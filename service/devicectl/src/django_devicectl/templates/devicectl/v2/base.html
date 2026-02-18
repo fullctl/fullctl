@@ -1,0 +1,176 @@
+{% extends "common/v2/app/base.html" %}
+{% load static i18n %}
+{% block "title" %}fullctl / device{% endblock %}
+
+{% block "js" %}
+{{ block.super }}
+<script src="//cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<script src="{% static "devicectl/v2/devicectl.js" %}" type="text/javascript"></script>
+<script src="{% static "devicectl/v2/devicectl.settings.js" %}" type="text/javascript"></script>
+<script src="{% static "common/v2/graph.js" %}" type="text/javascript"></script>
+<script src="//cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>
+{% if select_facility %}
+$(fullctl.application).on("initialized", function(e, devicectl, id) {
+  devicectl.preselect_facility = {{ select_facility.id }};
+});
+{% endif %}
+$(document).ready(() => {
+  fullctl.devicectl.$t.devices.sot = {% if not sot.device %}true{% else %}false{% endif %};
+});
+</script>
+{% endblock %}
+
+{% block "css" %}
+{{ block.super }}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<link rel="stylesheet"
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark-reasonable.min.css">
+<link rel="stylesheet" type="text/css" href="{% static "devicectl/devicectl.css" %}" />
+{% endblock %}
+
+{% block "header_middle" %}
+<div class="app-pages-nav nav h-100" data-component="pages">
+
+  <a class="nav-link active"
+    id="dashboard-tab"
+    data-bs-toggle="tab"
+    role="tab"
+    aria-controls="dashboard"
+    aria-selected="true"
+    href="#dashboard">{% trans "Dashboard" %}</a>
+
+  <a class="nav-link"
+    id="tab-overview"
+    data-bs-toggle="tab"
+    role="tab"
+    aria-controls="overview"
+    aria-selected="false"
+    href="#overview">{% trans "Overview" %}</a>
+
+  <a class="nav-link"
+    data-bs-toggle="tab"
+    role="tab"
+    aria-controls="facilities"
+    aria-selected="false"
+    id="facilities-tab"
+    href="#facilities">{% trans "Facilities" %}</a>
+
+  <a class="nav-link"
+    data-bs-toggle="tab"
+    role="tab"
+    aria-controls="ports"
+    aria-selected="false"
+    id="ports-tab"
+    href="#ports">{% trans "Ports" %}</a>
+
+</div>
+{% endblock %}
+
+{% block "header_right" %}
+{% with app_id="devicectl" %}
+{{ block.super }}
+{% endwith %}
+{% endblock %}
+
+{% block "app_content_toolbar" %}
+
+<div class="row" id="facility-select-toolbar" style="display:none">
+  <div class="col-8 col-md-10">
+    <div class="toolbar-control-group">
+
+
+      <span class="inline-label">{% trans "Facility:" %}</span>
+      <span class="toolbar-control">
+        <div class="input-group">
+          <select
+            class="form-select"
+            data-api-load="yes"
+            data-name-field="slug"
+            data-api-base="{% url "devicectl_api:facility-list" org_tag=request.org.slug %}"
+            data-element="select_facility"></select>
+        </div>
+      </span>
+
+      <span style="display:none" data-element="select_device_toggle">
+        <span class="inline-label">{% trans "Device:" %}</span>
+        
+        <span class="toolbar-control">
+          <div class="input-group">
+
+            <select
+              class="form-select"
+              data-name-field="name"
+              data-api-base="{% url "devicectl_api:facility-devices" org_tag=request.org.slug facility_tag="facility_tag" %}"
+              data-element="select_device"></select>
+            <div class="input-group-text loading-indicator-container" style="display:none;">
+              <div class="loading-indicator"></div>
+            </div>
+          </div>
+        </span>
+
+        <span class="toolbar-control">
+            <button class="primary col-md-auto btn d-flex" data-element="return_to_dashboard">
+                <div class="row align-items-center">
+                    <div class="col label pe-0">{% trans "Dashboard" %}</div>
+                    <div class="col-auto">
+                        <span class="icon fullctl icon-as"></span>
+                    </div>
+                </div>
+            </button>
+        
+        </span>
+      </span>
+    </div>
+  </div>
+
+  <div class="col-4 col-md-2 right">
+      <button type="button" class="btn primary small" data-element="button_create_facility">
+        <div class="row align-items-center">
+          <div class="label col pe-0">{% trans "Create" %}</div>
+          <div class="col-auto ps-1">
+            <span class="icon fullctl icon-add"></span>
+          </div>
+        </div>
+      </button>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block "app_show_config" %}
+{% endblock %}
+
+{% block "app_content_menu" %}
+<div class="menu-deco-border"></div>
+{% endblock %}
+
+{% block "app_content_main" %}
+<div class="tab-content" id="app-pages">
+  <div class="tab-pane show active" id="dashboard" role="tabpanel" aria-labelledby="tab-dasboard">
+		{% include "devicectl/v2/tool/dashboard/main.html" %}
+  </div>
+  <div class="tab-pane" id="overview" role="tabpanel" aria-labelledby="tab-overview">
+		{% include "devicectl/v2/tool/devices/main.html" %}
+  </div>
+  <div class="tab-pane" id="facilities" role="tabpanel" aria-labelledby="tab-facilities">
+    {% include "devicectl/v2/tool/settings/main.html" %}
+  </div>
+  <div class="tab-pane" id="ports" role="tabpanel" aria-labelledby="tab-ports" style="position:relative">
+    <div class="no-devices" style="display:none">
+      <p class="alert alert-info">{% trans "No devices at this facility" %}</p>
+    </div>
+    <div class="device-container" style="display:none">
+      {% include "devicectl/v2/tool/device/main.html" %}
+      {% include "devicectl/v2/tool/device/ports.html" %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block "templates" %}
+{{ block.super }}
+{% endblock %}

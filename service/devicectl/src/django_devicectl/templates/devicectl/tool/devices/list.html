@@ -1,0 +1,80 @@
+{% load static i18n %}
+<table
+  class="table table-borderless"
+  data-api-base="{% url "devicectl_api:facility-detail" org_tag=request.org.slug facility_tag="facility_tag" %}"
+  data-api-action="devices"
+  data-template="list">
+  <thead>
+    <tr>
+      <th data-sort-target="name" class="sortable-button">{% trans "Name" %}</th>
+      <th data-sort-target="type" class="sortable-button">{% trans "Type" %}</th>
+      <th data-sort-target="type" class="sortable-button">{% trans "IP" %}</th>
+      <th>{% trans "Status" %}</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody class="list-body">
+  </tbody>
+  <tbody class="templates">
+    <tr data-template="row">
+      <td data-field="display_name" class="highlight"></td>
+      <td data-field="type"></td>
+      <td>
+        <div data-field="management_ip_address_4"></div>
+        <div data-field="management_ip_address_6"></div>
+      </td>
+      <td data-field="status"></td>
+      <td data-field="controls" class="right">
+        <div class="row" style="display:none;" data-sot="external">
+          <div class="right col-xs-12 col-lg-3">
+            <a
+            data-api-action="remove_device/{id}"
+            data-api-callback="remove"
+            data-confirm="Remove device from this facility?"
+            data-api-method="DELETE"><span class="icon fullctl icon-delete"></span><span class="fullctl label">{% trans "Remove" %}</span></a>
+
+          </div>
+          <div class="right col-xs-12 col-lg-6">
+
+
+            <a data-action="link_to_reference">
+              <span class="icon fullctl icon-edit"></span>
+              <span class="label fullctl">{% trans "Managed in" %} <span data-field="reference_source"></span></span>
+            </a>
+
+          </div>
+          <div class="right col-xs-12 col-lg-3">
+
+            <a data-element="load_device_ports"><span class="icon fullctl icon-list"></span><span class="label fullctl">{% trans "Ports" %}</span></a>
+          </div>
+        </div>
+        <div class="row" style="display:none;" data-sot="devicectl">
+          <div class="col-xs-12 col-lg-3">
+            <a data-action="edit_device"><span class="icon fullctl icon-edit"></span><span class="label fullctl">{% trans "Edit" %}</span></a>
+          </div>
+          <div class="col-xs-12 col-lg-6">
+            <a
+              data-api-action="remove_device/{id}"
+              data-api-callback="remove"
+              data-confirm="Remove device?"
+              data-api-method="DELETE"><span class="icon fullctl icon-delete"></span><span class="fullctl label">{% trans "Delete" %}</span></a>
+          </div>
+          <div class="col-xs-12 col-lg-3">
+            <a data-element="load_device_ports"><span class="icon fullctl icon-list"></span><span class="label fullctl">{% trans "Ports" %}</span></a>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <!--
+    <tr data-template="row" class="secondary">
+      <td class="indent"></td>
+      <td class="property" colspan="5">
+        <div class="row">
+        </div>
+      </td>
+    </tr>
+    -->
+
+  </tbody>
+</table>
+

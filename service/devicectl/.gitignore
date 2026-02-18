@@ -1,0 +1,6 @@
+**/*.pyc
+**/.*.sw*
+*.tar
+.env
+__pycache__
+Ctl/dev/postgres_data/.

@@ -1,0 +1,26 @@
+path.devicectl {
+  fill: #3f99ff;
+}
+
+span.icon.devicectl {
+  background-color: #3f99ff;
+}
+
+.devicectl {
+  color: #0099FF;
+}
+
+.devicectl.app_bg {
+  background-color: #0099FF;
+}
+
+.devicectl.app_bg.muted {
+  background-color: #0e3450;
+}
+
+a[data-action].devicectl,
+a[data-action].devicectl:hover,
+a.devicectl,
+.devicectl {
+  color: #0099FF;
+}

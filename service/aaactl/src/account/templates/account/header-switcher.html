@@ -1,0 +1,36 @@
+{% load static i18n %}
+{% block header %}
+<div class="row align-items-center">
+  <div
+    class="app-switcher col-auto"
+    data-element="app_switcher"
+    data-api-base="{% url "applications_api:service_application-list" %}"
+  >
+    <div class="selected d-flex align-items-center">
+      {% block switcher_logo %}
+      {% if org_branding.custom_org == "true" %}
+        <img class="app-logo" src="{{ org_branding.dark_logo_url }}" alt="{{ org_branding.name }}">
+      {% else %}
+        <img class="app-logo" src="{% static "common/fullctl.svg" %}" alt="{{ service_tag }}">
+      {% endif %}
+      {% endblock %}
+      <span class="icon {{ request.app_id }} icon-caret-y ms-4"></span>
+      <div class="others list-body" style="display:none">
+      </div>
+      <div class="templates" style="display:none">
+        <a class="list-item" data-template="row">
+            <img class="app-logo" alt="" data-logo-url="{% static "common/logos/svc_slug-dark.svg" %}">
+          <span class="icon-arrow | icon icon-lg"></span>
+        </a>
+      </div>
+    </div>
+  </div>
+  {% block secondary_logo %}
+  {% endblock %}
+</div>
+<script>
+  $(document).ready(function() {
+    new aaactl.Header({{ org_branding|safe }});
+  });
+</script>
+{% endblock %}

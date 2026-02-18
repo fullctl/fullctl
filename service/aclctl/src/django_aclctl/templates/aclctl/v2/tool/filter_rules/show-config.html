@@ -1,0 +1,27 @@
+{% load static i18n %}
+<div class="row mt-4">
+    <div class="col-md-auto toolbar-field py-0">
+        <span class="me-2">
+            {% trans "Template" %}
+        </span>
+        <select class="secondary h-100 form-select" data-element="filter_rule_config_template">
+          <option value="cisco-nexus">Cisco Nexus</option>
+        </select>
+    </div>
+    <a class="secondary col-md-auto btn ms-auto d-flex" data-element="button_api_view" type="button" role="button" target="_blank">
+        <div class="row align-items-center">
+            <div class="col label pe-0">{% trans "API View" %}</div>
+            <div class="col-auto">
+                <span class="icon icon-api"></span>
+            </div>
+        </div>
+    </a>
+    <button class="secondary col-md-auto btn ms-3" data-element="filter_rule_config" type="button">
+        <div class="row align-items-center">
+            <div class="col label pe-0">{% trans "Show config" %}</div>
+            <div class="col-auto">
+                <span class="icon icon-view-settings"></span>
+            </div>
+        </div>
+    </button>
+</div>

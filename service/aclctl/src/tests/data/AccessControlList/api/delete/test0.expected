@@ -1,0 +1,9 @@
+{
+    "status": 200,
+    "response": {
+        "data": [
+            {"instance": 2, "num_filters": 0, "name": "ACL-keep", "slug": "acl-keep", "id": 1, "grainy": "access_control_list.1.2", "status": "ok", "created": "2022-09-13T05:35:56.186315Z", "updated": "2022-09-13T05:35:56.197387Z"}
+        ],
+        "errors": {}, "profiling": {"queries": 0}
+    }
+}

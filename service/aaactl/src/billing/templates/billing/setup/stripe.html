@@ -1,0 +1,95 @@
+{% load static i18n crispy_forms_tags %}
+{% block javascript %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+const root = document.documentElement;
+const set_card_element_styles = () => {
+  let foreground_color = getComputedStyle(root).getPropertyValue('--foreground');
+  cardElement.update({
+    style : {
+      base : {
+        color: foreground_color,
+        iconColor: foreground_color,
+        "::placeholder": {
+          color: foreground_color
+        }
+      },
+    }
+  });
+}
+
+var stripe = Stripe("{{ stripe.public_key }}")
+var elements = stripe.elements();
+var cardElement = elements.create(
+  "card", {
+    hidePostalCode : true,
+    style : {
+      base : {
+        padding: "5px",
+        fontSize: "18px",
+      },
+    }
+  }
+);
+set_card_element_styles();
+
+// listen to attribute changes of data-theme in document.documentElement
+new MutationObserver((callback) => {
+  callback.forEach((mutation) => {
+    if(mutation.attributeName === 'data-theme') {
+      set_card_element_styles();
+    }
+  });
+}).observe(
+  document.documentElement,
+  {attributes: true}
+);
+
+cardElement.on('change', function(event) {
+  if(event.change) {
+  } else if(event.complete) {
+    stripe.createToken(cardElement).then(function(result) {
+      if(result.token) {
+        $('#stripe-token').val(result.token.id)
+        $('#billing-setup-submit').attr('disabled', false)
+      } else {
+        $('#billing-setup-submit').attr('disabled', true)
+      }
+
+      if(result.error) {
+        console.error(result.error)
+      }
+    });
+  }
+});
+
+</script>
+{% endblock %}
+
+<h5>{% trans "Credit Card" %}</h5>
+<div class="row" style="margin-top: 1rem; margin-bottom: 1rem;">
+  <div class="col-12">
+    <div class="form-control" id="card-element"></div>
+  </div>
+</div>
+
+{% if billing_env == "test" %}
+<div class="alert alert-warning">
+<p>TESTING MODE</p>
+<p>Credit card numbers for testing (any 3 digits for CVC)</p>
+<pre>
+4242424242424242  Visa
+4000056655665556  Visa (debit)
+5555555555554444  Mastercard
+2223003122003222  Mastercard
+</pre>
+</div>
+{% endif %}
+
+<div data-api-submit="yes">
+  <input type="hidden" placeholder="stripe token" name="stripe_token" id="stripe-token" />
+</div>
+
+<script>
+cardElement.mount('#card-element')
+</script>

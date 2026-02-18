@@ -1,0 +1,12 @@
+The payment for invoice {{ payment_charge.invoice_number }} could not be processed.
+
+Date: {{ payment_charge.created|date:"Y-m-d" }}
+Organization: {{ org.name }}
+Billing Contact: {{ billing_contact.name }} <{{ billing_contact.email }}>
+Payment method: {{ payment_method }}
+
+Invoice Details:
+
+{{ payment_charge.details }}
+
+Please reach out to us at {{ support_email }} for assistance.

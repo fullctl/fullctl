@@ -1,0 +1,52 @@
+{
+  "data": [
+    {
+      "id": 4,
+      "name": " ",
+      "email": "test_unperm@localhost",
+      "you": false,
+      "manageable": "r",
+      "role_options": [
+        {
+          "id": 1,
+          "name": "Admin"
+        },
+        {
+          "id": 2,
+          "name": "Member"
+        },
+        {
+          "id": 3,
+          "name": "admin"
+        }
+      ],
+      "roles": [],
+      "permissions": {
+        "org.{org_id}": {
+          "perms": "",
+          "label": "",
+          "override": null
+        },
+        "user.{org_id}": {
+          "perms": "",
+          "label": "",
+          "override": null
+        },
+        "billing.{org_id}": {
+          "perms": "",
+          "label": "",
+          "override": null
+        },
+        "service_bridge.*": {
+          "perms": "",
+          "label": "",
+          "override": null
+        }
+      }
+    }
+  ],
+  "errors": {},
+  "profiling": {
+    "queries": 0
+  }
+}

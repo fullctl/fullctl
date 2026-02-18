@@ -1,0 +1,74 @@
+{% load i18n static %}
+
+<div
+  class="personal-keys"
+  data-api-base="{% url "account_api:api-root" %}"
+  data-api-action="user/keys"
+>
+<div class="templates" style="display:none">
+      <div data-template="row">
+        <div class="container-fluid personal-key-card">
+          <div class="row">
+
+            <div style="display:none" data-api-submit="yes">
+              <input type="text" name="id" type="hidden">
+            </div>
+            <div class="col ps-0 pe-0">
+              <div class="small-label"><span data-field="name"></span> <strong data-field="readonly"></strong></div>
+              <div class="personal-key-container d-flex justify-content-between">
+                <textarea readonly rows="3" class="pkb personal-key-box-redacted">
+                </textarea>
+                <textarea readonly rows="3" class="pkb personal-key-box d-none">
+                </textarea>
+                <div class="d-flex flex-column justify-content-around me-1">
+                  <button class="btn btn-square show-button">
+                    <img
+                      alt="show icon"
+                      title="show icon"
+                      src="{% static "account/icons/show.svg" %}"/>
+                    <span class="ms-1"><u>Show</u></span>
+                  </button>
+                  <button class="btn btn-square copy-button">
+                    <img
+                    alt="copy icon"
+                    title="copy icon"
+                    src="{% static "account/icons/copy.svg" %}"/>
+                    <span class="ms-1"><u>Copy</u></span>
+                  </button>
+
+                  <button class="btn btn-square btn-danger" data-api-action="user/key" data-api-method="DELETE" data-api-callback="remove" data-confirm="{% trans "Remove personal key?" %}">
+                    <span class="ms-1">{% trans "Remove" %}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row mt-2 justify-content-between">
+            <div class="ps-0 col">
+              <span class="normal-label light-grey">Created: </span>
+              <strong><span data-field="created" class="table-text-normal dark-grey"></span></strong>
+            </div>
+            <div class="col-md-auto">
+              <span class="normal-label">Status: </span>
+              <span data-field="status"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+</div>
+
+<div class="list-body"></div>
+</div>
+
+<div class="center mt-3">
+  <button type="button" class="btn btn-manage btn-slim" data-bs-toggle="modal" data-bs-target="#personalApiKeyModal">
+  {% trans "+ Create API Key" %}
+  </button>
+</div>
+
+
+<script>
+$(document).ready(function() {
+  new account.PersonalAPIKeys();
+});
+</script>

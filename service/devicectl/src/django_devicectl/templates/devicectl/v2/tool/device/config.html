@@ -1,0 +1,71 @@
+{% load static i18n %}
+<div class="container">
+  <h2>Device Operational Status</h2>
+  <ul class="nav nav-tabs fullctl-inner-tabs" id="deviceStatusTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <a class="nav-link active" id="current-config-tab" data-bs-toggle="tab" href="#current-config" role="tab" aria-controls="current-config" aria-selected="true">Current Config</a>
+    </li>
+    <li class="nav-item" role="presentation">
+      <a class="nav-link" id="changes-tab" data-bs-toggle="tab" href="#changes" role="tab" aria-controls="changes" aria-selected="false">Changes</a>
+    </li>
+    <li class="nav-item" role="presentation">
+      <a class="nav-link" id="reference-config-tab" data-bs-toggle="tab" href="#reference-config" role="tab" aria-controls="reference-config" aria-selected="false">Reference Config</a>
+    </li>
+    <li class="nav-item" role="presentation">
+      <a class="nav-link" id="history-tab" data-bs-toggle="tab" href="#history" role="tab" aria-controls="history" aria-selected="false">History</a>
+    </li>
+  </ul>
+  <div class="tab-content" id="deviceStatusTabsContent">
+    <!-- Current Config Tab -->
+    <div class="tab-pane fade show active" id="current-config" role="tabpanel" aria-labelledby="current-config-tab">
+      <div class="config-content border mt-3 p-3">
+        {{ device_operational_status.config_current }}
+      </div>
+      {% if device_operational_status.url_current %}
+      <a href="{{ device_operational_status.url_current }}" class="link mt-2">Download Current Config</a>
+      {% endif %}
+    </div>
+    <!-- Changes Tab -->
+    <div class="tab-pane fade" id="changes" role="tabpanel" aria-labelledby="changes-tab">
+      <div class="config-content border mt-3 p-3">
+        {{ device_operational_status.diff }}
+      </div>
+    </div>
+    <!-- Reference Config Tab -->
+    <div class="tab-pane fade" id="reference-config" role="tabpanel" aria-labelledby="reference-config-tab">
+      <div class="config-content border mt-3 p-3">
+        {{ device_operational_status.config_reference }}
+      </div>
+      {% if device_operational_status.url_reference %}
+      <a href="{{ device_operational_status.url_reference }}" class="link mt-2">Download Reference Config</a>
+      {% endif %}
+    </div>
+    <!-- History Tab -->
+    <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
+      <table class="table table-borderless list-table mt-3"
+             data-api-base="{% url "devicectl_api:device-details" org_tag=request.org.slug device_id=0 %}"
+             data-api-action="" data-template="list">
+        <thead>
+          <tr>
+            <th>{% trans "Date" %}</th>
+            <th>{% trans "Status" %}</th>
+          </tr>
+        </thead>
+        <tbody class="list-body">
+          {% for history_entry in device_config_history %}
+          <tr>
+            <td data-field="date">{{ history_entry.date }}</td>
+            <td data-field="status">{{ history_entry.status }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tbody class="templates">
+          <tr data-template="row">
+            <td data-field="date" class="highlight"></td>
+            <td data-field="status"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

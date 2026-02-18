@@ -1,0 +1,4 @@
+{
+  "status": 403,
+  "response": {"data": [], "errors": {"detail": "Authentication credentials were not provided."}, "profiling": {"queries": 0}}
+}

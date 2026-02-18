@@ -1,0 +1,36 @@
+{% extends "account/controlpanel/base.html" %}
+{% load i18n static %}
+
+
+{% block controlpanel %}
+<h5>{% trans "Payment Methods" %}</h5>
+
+
+<div class="payment-methods">
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th scope="col">{% trans "Name" %}</th>
+        <th scope="col right">{% trans "Actions" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{% trans "Add a new payment method ..." %}</td>
+        <td class="right">
+          <a class="btn btn-primary btn-sm" href="{% url "billing:setup" %}">{% trans "Add" %}</a>
+        </td>
+      </tr>
+    {% for payment_method in payment_methods %}
+      <tr>
+        <td>{{ payment_method.name }}</td>
+        <td class="right">
+          <a href="{% url "billing:payment_method" payment_method.id %}" class="btn btn-secondary btn-sm">{% trans "Edit" %}</a>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

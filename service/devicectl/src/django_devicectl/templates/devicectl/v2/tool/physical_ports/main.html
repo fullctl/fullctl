@@ -1,0 +1,16 @@
+{% load static i18n %}
+<div class="tool shift-down" data-component="physical_ports">
+
+  {% include "common/v2/tool_base.html" %}
+
+  <div class="templates">
+
+    {% include "devicectl/v2/tool/physical_ports/form.html" %}
+    {% include "devicectl/v2/tool/physical_ports/menu.html" %}
+    {% include "devicectl/v2/tool/physical_ports/list.html" %}
+    {% include "devicectl/v2/tool/physical_ports/bottom-menu.html" %}
+    {% include "common/v2/app/delete_selected.html" %}
+
+  </div>
+</div>
+

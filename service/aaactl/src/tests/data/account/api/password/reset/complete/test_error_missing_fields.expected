@@ -1,0 +1,4 @@
+{
+  "status": 400,
+  "response": {"data": [], "errors": {"password_new": ["This field is required."], "password_confirmation": ["This field is required."], "secret": ["This field is required."]}, "profiling": {"queries": 0}}
+}

@@ -1,0 +1,28 @@
+{
+    "status": 200,
+    "response": {
+        "data": [
+            {
+                "priority": 5,
+                "src_type": "prefix",
+                "src_port": "3",
+                "src_prefix": "123.123.123.211/32",
+                "src_prefix_set": null,
+                "src_prefix_set_name": null,
+                "dest_type": "prefix",
+                "dest_port": "4",
+                "dest_prefix": "123.123.123.212/32",
+                "dest_prefix_set": null,
+                "dest_prefix_set_name": null,
+                "access_control_list": 1,
+                "grainy": "assert-field-exists",
+                "id": "assert-field-exists",
+                "status": "ok"
+            }
+        ],
+        "errors": {},
+        "profiling": {
+            "queries": 0
+        }
+    }
+}

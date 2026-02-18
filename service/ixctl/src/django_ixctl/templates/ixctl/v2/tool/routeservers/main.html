@@ -1,0 +1,13 @@
+{% load static i18n %}
+<div class="tool shift-down" data-component="routeservers" data-ixf-export-url="{% url "ixf export" org_tag=request.org.slug ix_tag="default" %}">
+
+  {% include "common/v2/tool_base.html" %}
+
+  <div class="templates">
+
+    {% include "ixctl/v2/tool/routeservers/menu.html" %}
+    {% include "ixctl/v2/tool/routeservers/list.html" %}
+    {% include "ixctl/v2/tool/routeservers/settings/routeserver-form.html" %}
+    {% include "ixctl/v2/tool/routeservers/settings/import-routeserver-form.html" %}
+  </div>
+</div>

@@ -1,0 +1,15 @@
+{% load i18n crispy_forms_tags %}
+
+          <form
+            class="user-settings"
+            data-api-base="{% url "account_api:user-user-settings" %}"
+            data-api-method="PUT"
+          >
+            <div data-api-submit="yes">
+            {{ form.opt_promotions | as_crispy_field }}
+            </div>
+            <div class="right">
+              <button type="button" class="btn btn-primary submit">{% trans "Save" %}</button>
+            </div>
+          </form>
+

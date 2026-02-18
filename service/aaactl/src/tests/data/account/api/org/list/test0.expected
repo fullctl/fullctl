@@ -1,0 +1,1 @@
+{"data": [{"id": 2, "name": "test", "label": "test", "slug": "test", "selected": true, "personal": false, "is_admin": true, "is_default": true, "roles": ["Admin", "admin"], "all_roles": ["Admin", "Member", "admin"]}], "errors": {}, "profiling": {"queries": 0}}

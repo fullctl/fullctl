@@ -1,0 +1,16 @@
+{% load static i18n %}
+<div 
+    data-template="list" 
+    data-api-base="{% url "devicectl_api:device-list" org_tag=request.org.slug %}">
+
+    <div class="list-body device-dashboard">
+    </div>
+
+    <div class="templates">
+        <div data-template="row" class="device">
+            <span class="icon icon-as"></span>
+            <span data-field="name" class="device-name"></span>
+        </div>
+    </div>
+
+</div>

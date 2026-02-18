@@ -1,0 +1,45 @@
+{% load i18n %}
+<div
+  class="pending-user-listing"
+  data-api-base="{% url "account_api:org-detail" pk=request.selected_org.slug %}"
+  data-api-action="invites">
+  <table class="templates" style="display:none">
+    <tr data-template="row" class="large-table-row">
+      <td scope="col" class="name-column table-text-bold dark-grey" data-field="user_name"></td>
+      <td scope="col" class="light-grey" data-field="email"></td>
+      <td scope="col" class="manage-column right small-links">
+        {% if permissions.create_org_user %}
+        <a
+          tabindex="0"
+          class="resend-invite"
+          href="javascript:void(0)"
+          data-bs-container="body"
+          data-bs-toggle="popover"
+          data-bs-placement="top" title="{% trans "Re-send invitation" %}"><span class="icon icon-refresh"></span></a>
+        <a tabindex="1" 
+          class="cancel-invite" 
+          title="{% trans "Cancel invitation" %}" 
+          data-api-base="{% url "account_api:org-detail" pk=request.selected_org.slug %}"
+          data-api-action="invite"
+          data-api-method="DELETE"
+          data-api-callback="remove"
+          data-confirm="{% trans "Cancel invitation?" %}">
+          <span class="icon icon-delete"></span>
+        </a>
+        {% endif %}
+      </td>
+    </tr>
+  </table>
+
+  <table table class="table table-sm mt-n2">
+    <tbody class="list-body"></tbody>
+  </table>
+</div>
+
+
+<script>
+$(document).ready(function() {
+  new account.PendingUsers();
+});
+</script>
+

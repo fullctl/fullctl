@@ -1,0 +1,56 @@
+{% load static i18n %}
+<table
+  class=" list-table | table"
+  data-api-base="{% url "aclctl_api:access_control_list-list" org_tag=request.org.slug %}"
+  data-template="list">
+  <thead>
+    <tr>
+      <th>{% trans "List Name" %}</th>
+      <th>{% trans "List Identifier" %}</th>
+      <th class="center">{% trans "Number of Filters" %}</th>
+      <th class="right">{% trans "Options" %}</th>
+    </tr>
+  </thead>
+
+  <tbody class="list-body">
+  </tbody>
+
+  <tbody class="templates">
+    <tr data-template="row">
+      <td data-field="name"></td>
+      <td data-field="slug"></td>
+      <td class="center" data-field="num_filters"></td>
+      <td class="options | right">
+        <a class="button col btn"
+          data-hover="show"
+          data-btn-type="secondary"
+          data-action="view_all_filter_rules"
+        >
+          {% trans "View all filters" %}
+        </a>
+        <a class="button col btn ms-3"
+          data-hover="show"
+          data-action="edit_access_control_list"
+        >
+          <span class="icon icon-edit"></span>
+        </a>
+        <a class="button col btn"
+          data-confirm="Remove Access Control List?"
+          data-hover="show"
+          data-api-callback="remove"
+          data-api-method="delete"
+          data-api-action="{slug}"
+        >
+          <span class="icon ixctl icon-delete"></span>
+        </a>
+        <button class="btn">
+          <span class="icon icon-options"></span>
+        </button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+{% block "access-control-list-addon-template" %}
+{% endblock %}

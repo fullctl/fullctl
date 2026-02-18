@@ -1,0 +1,31 @@
+{% load static i18n %}
+{% block header %}
+<script>
+  const primaryColorValue = "{{ org_branding.css.primary_color }}"; // color
+  const setHeaderColor = "{{ org_branding.css.set_header_color }}"; // bool
+  const buttonTextColor = "{{ org_branding.css.button_text_color }}"; // color
+  const defaultDataTheme = "{{ org_branding.css.default_data_theme }}"; // light / dark
+  applyColorBranding(primaryColorValue, setHeaderColor, buttonTextColor, defaultDataTheme);
+
+  document.addEventListener("DOMContentLoaded", function() {
+    var appLogo = document.querySelector('.fullctl.logo');
+    if (appLogo) {
+        logo_width = "{{ org_branding.css.logo_width }}"
+        if (logo_width) {
+          appLogo.setAttribute("width", logo_width);
+        }
+    };
+  });
+</script>
+<div class="col-xs-12">
+  <a class="logo-container" href="/">
+    {% block header_logo %}
+    {% if org_branding.custom_org %}
+      <img class="fullctl logo" src={{ org_branding.dark_logo_url }} alt="{{ org_branding.name }}">
+    {% else %}
+      <img class="fullctl logo" src="{% static "common/fullctl.svg" %}" alt="{{ service_tag }}">
+    {% endif %}
+    {% endblock %}
+  </a>
+</div>
+{% endblock %}

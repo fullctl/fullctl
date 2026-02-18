@@ -1,0 +1,141 @@
+{% load static i18n %}
+<form
+  class="controls"
+  data-template="form_traffic_alerts"
+  data-api-base="{% url "ixctl_api:traffic_alert_config-detail" org_tag=request.org.slug ix_tag="ix_tag" id="id" %}"
+  data-api-get-by-ix="{% url "ixctl_api:traffic_alert_config-get-by-ix" org_tag=request.org.slug ix_tag="ix_tag" %}"
+  data-api-method="PUT">
+
+
+  <div class="row controls">
+    <div class="col-12">
+      <div class="mb-3">
+        <label class="form-label" for="traffic_poll_time">{% trans "Polling Interval (minutes)" %}</label>
+        <div id="traffic_poll_time" data-field="traffic_poll_time"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row controls">
+    <div class="col-6">
+      <div class="mb-3">
+        <label class="form-label" for="edit_traffic_level">{% trans "Traffic Level (%)" %}</label>
+        <div class="controls" data-api-submit="yes">
+            <input
+                type="number"
+                name="traffic_level"
+                min="0"
+                max="100"
+                id="edit_traffic_level"
+                class="form-control">
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6">
+      <div class="mb-3">
+        <label class="form-label" for="edit_time_period">{% trans "Notification Frequency (minutes)" %}</label>
+        <div class="controls" data-api-submit="yes">
+            <input
+                type="number"
+                name="time_period"
+                min="1"
+                max="1440"
+                id="edit_time_period"
+                class="form-control">
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="row controls">
+    <div class="col-12">
+        <div class="mb-3">
+            {% trans "*Note: Alert will be triggered whenever Traffic Level is exceeded for Notification Frequency time period." %}
+        </div>
+    </div>
+  </div>
+
+  <div class="row controls">
+    <div class="col-6">
+        <div class="row">
+            <div class="col-6">
+                <div class="mb-3">
+                    <label class="form-label" for="edit_operator_emails">{% trans "Operator Email Alerts" %}</label>
+                    <div data-api-submit="yes">
+                        <input
+                            type="checkbox"
+                            name="operator_emails"
+                            id="edit_operator_emails">
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6">
+                <div class="operator_emails_config mb-3">
+                    <label class="form-label" for="edit_operator_emails_max_frequency">{% trans "Maximum Frequency (days)" %}</label>
+                    <div class="controls" data-api-submit="yes">
+                        <select class="form-control" name="operator_emails_max_frequency" id="edit_operator_emails_max_frequency">
+                            <option value="">Select</option>
+                            <option value="1">1</option>
+                            <option value="7">7</option>
+                            <option value="30">30</option>
+                            <option value="90">90</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="col-6">
+        <div class="row">
+            <div class="col-6">
+                <div class="mb-3">
+                    <label class="form-label" for="edit_member_emails">{% trans "Member Email Alerts" %}</label>
+                    <div data-api-submit="yes">
+                        <input
+                            type="checkbox"
+                            name="member_emails"
+                            id="edit_member_emails">
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6">
+                <div class="member_emails_config mb-3">
+                    <label class="form-label" for="edit_member_emails_max_frequency">{% trans "Maximum Frequency (days)" %}</label>
+                    <div class="controls" data-api-submit="yes">
+                        <select class="form-control" name="member_emails_max_frequency" id="edit_member_emails_max_frequency">
+                            <option value="">Select</option>
+                            <option value="1">1</option>
+                            <option value="7">7</option>
+                            <option value="30">30</option>
+                            <option value="90">90</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+  </div>
+
+  <div class="row controls marg-top-lg">
+    <div class="col-6 left">
+    </div>
+    <div class="col-6 right">
+      <button class="submit primary btn">
+        <div class="row align-items-center">
+          <div class="col label pe-0">{% trans "Save" %}</div>
+          <div class="col-auto">
+            <span class="icon icon-edit"></span>
+          </div>
+        </div>
+      </button>
+    </div>
+  </div>
+
+</form>

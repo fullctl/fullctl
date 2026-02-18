@@ -1,0 +1,7 @@
+We have received a {{ message.type }} message from {{ message.name }} <{{ message.email }}>
+{% if message.service %}
+This message was sent from {{ message.service.name }}
+{% endif %}
+{% for field, value in message.message.items %}
+{{ field }}: {{ value }}
+{% endfor %}

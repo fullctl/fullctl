@@ -1,0 +1,391 @@
+ctl:
+  plugins:
+
+    # command to see if jinja is installed
+
+    - type: command
+      name: printenv
+      config:
+        shell: true
+        command:
+          - "echo \"ctx.home: {{ ctx.home }}\""
+          - "echo \"ctx.tmpdir: {{ ctx.tmpdir }}\""
+          - "echo \"ctx.cachedir: {{ ctx.cachedir }}\""
+          - "echo \"ctx.userhome: {{ ctx.userhome }}\""
+          - "echo \"{{ input.plugin }}\""
+          - "echo \"{{ plugin.git_template }}\""
+          - "echo \"{{ plugin.copy }}\""
+          - "echo \"{{ ctx.config }}\""
+
+    # git repo for copying setup
+
+    - name: git_template
+      type: git
+      config:
+        repo_url: git@github.com:20c/ctl-tmpl-django
+        branch: origin/gh_1
+
+    # template for copying template assets
+
+    - name: django_template
+      type: template
+      config:
+        # template root directory (path)
+        source: "{{ ctx.cachedir }}/github.com/20c/ctl-tmpl-django"
+        # template output directory (path)
+        output: "{{ ctx.home }}/.."
+        walk_dirs:
+          - .
+        vars:
+          - Ctl/tmplvars.yaml
+        ignore:
+          - \.git/
+    
+    # command to remove temporary files
+
+    - name: clean
+      type: command
+      config:
+        shell: true
+        command:
+          - rm -rf Ctl/tmp
+
+    # chain plugin for entire template process
+
+    - name: chain_template
+      type: chain
+      config:
+        chain:
+          - stage: git_clone
+            plugin: git_template
+            action:
+              name: clone
+
+          - stage: git_pull
+            plugin: git_template
+            action:
+              name: pull
+
+          - stage: django_template
+            plugin: django_template
+
+
+    # git repo for versioning and deploying
+
+    # - type: git
+    #   name: git
+    #   config:
+    #     repo_url: git@git.20c.com:fullctl/aaactl
+
+    # version
+
+    - type: semver2
+      name: version
+      config:
+        repository: git
+
+    # manage virtualenv
+
+    - type: venv
+      name: venv
+      config:
+        python_version: "3.6"
+
+    # minify js
+
+    - name: minify
+      type: command
+      config:
+        arguments:
+          - name: source
+            type: str
+          - name: output
+            type: str
+        command:
+          - "java -jar ~/.local/google/compiler.jar --js {{ kwargs.source }} --js_output_file {{ kwargs.output }}"
+
+
+    # copy src to build stage
+
+    - name: copy_source
+      type: copy
+      config:
+        source: "{{ plugin.deploy_project.source_path }}"
+        output: "{{ plugin.deploy_project.build_path }}"
+        walk_dirs:
+          - "{{ plugin.deploy_project.django_project }}"
+        ignore:
+          - \.pyc$
+        process:
+        {% if plugin.deploy_project.minify == "yes" %}
+          - pattern: auth\/fullctl.*\.js$
+            plugin: minify
+            action: execute
+        {% endif %}
+
+
+    # template django setting files
+
+    - name: template_settings
+      type: template
+      config:
+        source: "{{ plugin.deploy_project.source_path }}/Ctl/tmpl"
+        output: "{{ plugin.deploy_project.build_path }}/{{ plugin.deploy_project.django_project }}/{{ plugin.deploy_project.django_project }}"
+        walk_dirs:
+          - settings.d
+        vars:
+          - "{{ plugin.deploy_project.source_path }}/Ctl/common.yaml"
+          - "{{ ctx.home }}/.state/{{ plugin.deploy_project.env }}/passwords.yaml"
+          - "{{ plugin.deploy_project.source_path }}/Ctl/{{ plugin.deploy_project.env }}.yaml"
+
+
+    # template op tools
+
+    - name: template_ops
+      type: template
+      config:
+        source: "{{ plugin.deploy_project.source_path }}/Ctl/tmpl"
+        output: "{{ plugin.deploy_project.build_path }}"
+        walk_dirs:
+          - ops
+        vars:
+          - "{{ plugin.deploy_project.source_path }}/Ctl/common.yaml"
+          - "{{ ctx.home }}/.state/{{ plugin.deploy_project.env }}/passwords.yaml"
+          - "{{ plugin.deploy_project.source_path }}/Ctl/{{ plugin.deploy_project.env }}.yaml"
+
+
+    # copy build to install location
+
+    - name: install
+      type: copy
+      config:
+        source: "{{ plugin.deploy_project.build_path }}"
+        output: "{{ plugin.deploy_project.install_path }}"
+        walk_dirs:
+          - "{{ plugin.deploy_project.django_project }}"
+          - ops
+
+    # set up developer instance symlinks
+
+    - name: dev_symlinks
+      type: command
+      description: "Creates symbolic links to allow running a dev instance out of source dir"
+      config:
+        shell: true
+        command:
+          - "rm {{ ctx.home }}/../{{ plugin.deploy_project.django_project }}/{{ plugin.deploy_project.django_project }}/settings.d"
+          - "rm {{ ctx.home }}/../ops"
+          - "ln -s {{ plugin.deploy_project.install_path }}/{{ plugin.deploy_project.django_project }}/{{ plugin.deploy_project.django_project }}/settings.d {{ ctx.home }}/../{{ plugin.deploy_project.django_project }}/{{ plugin.deploy_project.django_project }}/settings.d"
+          - "ln -s {{ plugin.deploy_project.install_path }}/ops {{ ctx.home }}/../ops"
+
+    # make initial directories
+
+    - name: mkdirs
+      type: command
+      description: "creates the initial directories in ~/srv"
+      config:
+        shell: true
+        command:
+          - "mkdir -p {{ ctx.user_home }}/srv/account.20c.com/{{ plugin.deploy_project.env }}"
+
+    # deploy project files
+
+    - name: deploy_project
+      type: chain
+      config:
+        arguments:
+          - name: env
+            help: deploy to this environment
+            choices:
+              - dev
+              - prod
+              - beta
+              - test
+          - name: tag
+            help: deploy this tag (e.g. 1.0.0). If you pass `.` to this it will deploy from working directory instead
+        vars:
+          env: "{{ input.plugin.env }}"
+          tag: "{{ input.plugin.tag }}"
+          django_project: "account__service"
+          {% if input.plugin.tag == "." %}
+          source_path: "{{ctx.home}}/.."
+          build_path: "{{ ctx.tmpdir }}/deploy/build/__src_dir__"
+          minify: "no"
+          {% else %}
+          source_path: "{{ ctx.tmpdir }}/deploy/src/{{ input.plugin.tag }}"
+          build_path: "{{ ctx.tmpdir }}/deploy/build/{{ input.plugin.tag }}"
+          minify: "yes"
+          {% endif %}
+          install_path: "{{ ctx.user_home }}/srv/account.20c.com/{{ input.plugin.env }}"
+        chain:
+          {% if input.plugin.tag != "." %}
+          - stage: clone
+            plugin: git
+            action:
+              arguments:
+                op: "clone"
+                checkout_path: "{{ plugin.deploy_project.source_path }}"
+          - stage: pull
+            plugin: git
+            action:
+              arguments:
+                op: "pull"
+          - stage: checkout
+            plugin: git
+            action:
+              arguments:
+                op: "checkout"
+                branch: tag
+          {% endif %}
+          - stage: mkdirs
+            plugin: mkdirs
+          - stage: copy
+            plugin: copy_source
+          - stage: template
+            plugin: template_settings
+          - stage: template_ops
+            plugin: template_ops
+          - stage: install
+            plugin: install
+          {% if input.plugin.env == "dev" or input.plugin.env == "test" %}
+          - stage: dev_symlinks
+            plugin: dev_symlinks
+          {% endif %}
+
+    # deploy: virtualenv
+
+    - name: deploy_venv
+      type: chain
+      config:
+        arguments:
+          - name: env
+            help: deploy virtualenv for the specified environment
+            choices:
+              - dev
+              - beta
+              - prod
+              - test
+          - name: tag
+            help: deploy this tag (e.g. 1.0.0). If you pass `.` to this it will deploy from working directory instead
+        vars:
+          env: "{{ input.plugin.env }}"
+          tag: "{{ input.plugin.tag }}"
+          django_project: "account__service"
+          {% if input.plugin.tag == "." %}
+          source_path: "{{ctx.home}}/.."
+          build_path: "{{ ctx.tmpdir }}/deploy/build/__src_dir__"
+          {% else %}
+          source_path: "{{ ctx.tmpdir }}/deploy/src/{{ input.plugin.tag }}"
+          build_path: "{{ ctx.tmpdir }}/deploy/build/{{ input.plugin.tag }}"
+          {% endif %}
+          install_path: "{{ ctx.user_home }}/srv/account.20c.com/{{ input.plugin.env }}"
+        chain:
+          {% if input.plugin.tag != "." %}
+          - stage: clone
+            plugin: git
+            action:
+              arguments:
+                op: "clone"
+                checkout_path: "{{ plugin.deploy_venv.source_path }}"
+          - stage: pull
+            plugin: git
+            action:
+              arguments:
+                op: "pull"
+          - stage: checkout
+            plugin: git
+            action:
+              arguments:
+                op: "checkout"
+                branch: tag
+          {% endif %}
+          - stage: mkdirs
+            plugin: mkdirs
+          - stage: build
+            plugin: venv
+            action:
+              arguments:
+                op: "build"
+                output: "{{ plugin.deploy_venv.build_path }}/venv"
+                pipfile: "{{ plugin.deploy_venv.source_path }}/Pipfile"
+          - stage: sync
+            plugin: venv
+            action:
+              arguments:
+                op: "sync"
+                output: "{{ plugin.deploy_venv.build_path }}/venv"
+                pipfile: "{{ plugin.deploy_venv.source_path }}/Pipfile"
+          - stage: install
+            plugin: venv
+            action:
+              arguments:
+                op: "copy"
+                output: "{{ plugin.deploy_venv.install_path }}/venv"
+                source: "{{ plugin.deploy_venv.build_path }}/venv"
+                pipfile: "{{ plugin.deploy_venv.source_path }}/Pipfile"
+
+    - name: build
+      type: command
+      config:
+        shell: true
+        command:
+          - "docker build -t $(basename $(pwd)):$(cat Ctl/VERSION) ."
+
+    - name: deploy
+      type: command
+      config:
+        shell: true
+        command:
+#          - "poetry lock"
+          - "docker build -t $(basename $(pwd)):$(cat Ctl/VERSION) ."
+          - "docker tag $(basename $(pwd)):$(cat Ctl/VERSION) $REGISTRY/fullctl/$(basename $(pwd)):$(cat Ctl/VERSION)"
+          - "docker push $REGISTRY/fullctl/$(basename $(pwd)):$(cat Ctl/VERSION)"
+
+    - name: show_version
+      type: command
+      config:
+        shell: true
+        command:
+          - "echo version $(cat Ctl/VERSION)"
+
+    - name: deploy_dev
+      type: chain
+      config:
+        chain:
+          - stage: build and deploy
+            plugin: deploy
+          - stage: complete
+            plugin: show_version
+
+  # PERMISSION CONFIG
+
+  permissions:
+    - namespace: "ctl"
+      permission: "crud"
+
+  # LOGGING CONFIG
+
+  log:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        level: DEBUG
+        formatter: simple
+        stream: ext://sys.stdout
+    loggers:
+      ctl:
+        handlers: [console]
+        level: DEBUG
+        propagate: no
+      ctl.plugins.git:
+        handlers: [console]
+        level: DEBUG
+        propagate: no
+      usage:
+        handlers: [console]
+        level: INFO
+        propagate: no

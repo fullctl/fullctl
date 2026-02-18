@@ -1,0 +1,32 @@
+{% load static i18n %}
+<table
+  class="table table-borderless list-table small"
+  data-api-base="{% url "devicectl_api:device-physical-ports" org_tag=request.org.slug device_id=0 %}"
+  data-api-action=""
+  data-api-delete-url="{% url "devicectl_api:physical_port-detail" org_tag=request.org.slug physical_port_id=0 %}"
+  data-template="list">
+  <thead>
+    <tr>
+      <th data-sort-target="name" class="sortable-button">{% trans "Name" %}</th>
+      <th data-sort-target="size" class="sortable-button">{% trans "Size (Gbit/s)" %}</th>
+      <th class="right">{% trans "Options" %}</th>
+    </tr>
+  </thead>
+  <tbody class="list-body">
+  </tbody>
+  <tbody class="templates">
+    <tr data-template="row">
+      <td data-field="display_name" class="highlight"></td>
+      <td data-field="size"></td>
+      <td data-field="controls" class="right">
+        <a class="button btn delete" data-hover="show" data-element="delete_physical_port" data-api-method="DELETE" data-confirm="Delete physical port?" data-api-base="{% url "devicectl_api:physical_port-detail" org_tag=request.org.slug physical_port_id=0 %}">
+          <span class="icon icon-delete">
+        </a>
+        <button class="btn">
+          <span class="icon icon-options"></span>
+        </button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+

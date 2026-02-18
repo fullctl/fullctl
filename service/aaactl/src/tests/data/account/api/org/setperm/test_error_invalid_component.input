@@ -1,0 +1,8 @@
+{
+  "client": "api_client",
+  "data": {
+    "id": 4,
+    "component": "unknown",
+    "permissions": "crud"
+  }
+}

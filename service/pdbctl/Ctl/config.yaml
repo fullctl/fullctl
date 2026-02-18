@@ -1,0 +1,151 @@
+ctl:
+  plugins:
+
+    # git repo for copying setup for django environment
+
+    - name: git_template
+      type: git
+      config:
+        repo_url: git@github.com:20c/ctl-tmpl-django
+        branch: main
+
+    # template for copying template assets
+
+    - name: django_template
+      type: template
+      config:
+        # template root directory (path)
+        source: "{{ ctx.cachedir }}/github.com/20c/ctl-tmpl-django"
+        # template output directory (path)
+        output: "{{ ctx.home }}/.."
+        walk_dirs:
+          - .
+        vars:
+          - Ctl/tmplvars.yaml
+        ignore:
+          - \.git/
+
+    # command to remove temporary files
+
+    - name: clean
+      type: command
+      config:
+        shell: true
+        command:
+          - rm -rf Ctl/tmp
+
+    # command to set executables
+
+    - name: executables
+      type: command
+      config:
+        shell: true
+        command:
+          - chmod u=rwx Ctl/dev/*.sh
+          - chmod g=rwx Ctl/dev/*.sh
+          - chmod u=rwx Ctl/docker/*.sh
+          - chmod g=rwx Ctl/docker/*.sh
+
+    # chain plugin for entire template process
+
+    - name: sync_django
+      type: chain
+      config:
+        chain:
+          - stage: git_clone
+            plugin: git_template
+            action:
+              name: clone
+
+          - stage: git_pull
+            plugin: git_template
+            action:
+              name: pull
+
+          - stage: django_template
+            plugin: django_template
+
+          - stage: executables
+            plugin: executables
+
+
+    # git repo for copying setup for python package
+
+    - name: git_python_template
+      type: git
+      config:
+        repo_url: git@github.com:20c/ctl-tmpl-python
+        branch: main
+
+    # template for copying template assets
+
+    - name: python_template
+      type: template
+      config:
+        # template root directory (path)
+        source: "{{ ctx.cachedir }}/github.com/20c/ctl-tmpl-python/base"
+        # template output directory (path)
+        output: "{{ ctx.home }}/.."
+        walk_dirs:
+          - .
+        vars:
+          - Ctl/tmplvars.yaml
+        ignore:
+          - \.git/
+          - \.github/
+          #- pyproject.toml
+
+    # chain plugin for entire template process
+
+    - name: sync_python
+      type: chain
+      config:
+        chain:
+          - stage: git_clone
+            plugin: git_python_template
+            action:
+              name: clone
+
+          - stage: git_pull
+            plugin: git_python_template
+            action:
+              name: pull
+
+          - stage:  python_template
+            plugin: python_template
+
+
+
+    # changelog plugin
+    - type: changelog
+      name: changelog
+
+  permissions:
+    - namespace: "ctl"
+      permission: "crud"
+
+  log:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        level: DEBUG
+        formatter: simple
+        stream: ext://sys.stdout
+    loggers:
+      ctl:
+        handlers: [console]
+        level: DEBUG
+        propagate: no
+      ctl.plugins.git:
+        handlers: [console]
+        level: DEBUG
+        propagate: no
+      usage:
+        handlers: [console]
+        level: INFO
+        propagate: no
+

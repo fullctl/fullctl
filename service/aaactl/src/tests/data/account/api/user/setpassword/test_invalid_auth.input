@@ -1,0 +1,5 @@
+{
+  "password": "wrongpassword",
+  "password_new": "updated_password",
+  "password_confirmation": "updated_password"
+}

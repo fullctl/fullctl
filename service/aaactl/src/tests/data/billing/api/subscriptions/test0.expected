@@ -1,0 +1,9 @@
+{
+  "data": 
+    [
+      {"name": "Test Group", "org": 1, "subscription_cycle_interval": "month", "subscription_cycle": null, "payment_method": null, "items": [], "id": 1, "status": "ok", "created": "2020-07-20T23:45:33.090268Z", "updated": "2020-07-20T23:45:33.090634Z"},
+      {"name": "Test Group", "org": 1, "subscription_cycle_interval": "year", "subscription_cycle": null, "payment_method": null, "items": [], "id": 2, "status": "ok", "created": "2020-07-20T23:45:33.099961Z", "updated": "2020-07-20T23:45:33.100129Z"}
+    ], 
+  "errors": {},
+  "profiling": {"queries": 0}
+}

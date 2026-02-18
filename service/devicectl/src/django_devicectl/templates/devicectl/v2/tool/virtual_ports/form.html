@@ -1,0 +1,75 @@
+{% load static i18n %}
+<form data-template="form_virtual_port"
+  data-api-base="{% url "devicectl_api:virtual_port-list" org_tag=request.org.slug %}"
+  data-api-action=""
+  data-api-method="POST"
+  >
+  <div class="container-fluid">
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label for="virtual_port-name" class="form-label">{% trans "Name" %}</label>
+        <input type="text" class="form-control" id="virtual_port-name" name="name" />
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label for="virtual_port-logical_port" class="form-label">{% trans "Logical Port" %}</label>
+        <span class="modal-control">
+        <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+        <select data-api-base="{% url "devicectl_api:device-logical-ports" org_tag=request.org.slug device_id=0 %}" data-api-action="" class="form-control" id="virtual_port-logical_port" name="logical_port">
+        </select>
+        </span>
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label for="virtual_port-vlan_id" class="form-label">{% trans "VLAN id" %}</label>
+        <input type="text" class="form-control" id="virtual_port-vlan_id" name="vlan_id" />
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label for="virtual_port-acl" class="form-label">{% trans "ACL" %}</label>
+        <input type="text" class="form-control" id="virtual_port-acl" name="acl_name" />
+      </div>
+    </div>
+    <div id="logical_port_form_container" 
+    data-validation-group="logical_ports_data" 
+    data-validation-group-field-prefix="logical_port_">
+      <h5 class="modal-title">Logical Port</h5>
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes">
+          <label for="logical_port-name" class="form-label">{% trans "Logical Port Name" %}</label>
+          <input type="text" class="form-control" id="logical_port-name" name="logical_port_name" />
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes">
+          <label for="logical_port-channel" class="form-label">{% trans "Channel" %}</label>
+          <input type="text" class="form-control" id="logical_port-channel" name="logical_port_channel" />
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes">
+          <label for="logical_port-trunk" class="form-label">{% trans "Trunk" %}</label>
+          <input type="text" class="form-control" id="logical_port-trunk" name="logical_port_trunk" />
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-12" data-api-submit="yes">
+          <label for="logical_port-description" class="form-label">{% trans "Description" %}</label>
+          <input type="text" class="form-control" id="logical_port-description" name="logical_port_description" />
+        </div>
+      </div>
+    </div>
+    <div id="physical_ports_form_container">
+      <h5 class="modal-title">Physical Ports</h5>
+      <div class="physical-ports-container">
+      </div>
+    </div>
+
+  </div>
+</form>

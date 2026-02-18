@@ -1,0 +1,29 @@
+{% load i18n %}
+<div class="text-center col-auto">
+  <button
+    type="button"
+    class="btn btn-slim d-flex align-items-center"
+    data-element="leave_org_button"
+    data-btn-type="danger"
+    data-api-base="{% url "account_api:org-leave-org" pk=request.selected_org.slug %}"
+    data-api-method="DELETE"
+    data-api-callback="remove"
+    data-confirm="{% trans "Leave this organization?" %}"
+  >
+    {% trans "Leave Organization" %}
+    <span class="icon icon-warning mx-1"></span>
+  </button>
+</div>
+{% if permissions.delete_org_org %} 
+<div class="text-center col-auto">
+  <button
+    type="button"
+    class="btn btn-slim d-flex align-items-center"
+    data-element="delete_org_button"
+    data-btn-type="danger"
+  >
+    {% trans "Delete Organization" %}
+    <span class="icon icon-warning mx-1"></span>
+  </button>
+</div>
+{% endif %}

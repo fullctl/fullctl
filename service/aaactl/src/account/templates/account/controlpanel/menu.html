@@ -1,0 +1,147 @@
+{% load i18n static crispy_forms_tags %}
+<div>
+  <div class="accordion  dashboard-cards user-info" id="accordion">
+    <div class="accordion-item">
+      <div class="accordion-header">
+
+        <button class="accordion-button collapsed" type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#userInfoCollapse"
+          aria-expanded="true"
+          aria-controls="userInfoCollapse"
+        >
+          <div>
+            <h5 class="mb-0">{{ request.user.get_full_name }}</h5>
+            <p class="mb-0">{{ request.user.email }}</p>
+          </div>
+        </button>
+
+      </div>
+      <div id="userInfoCollapse" class="accordion-collapse collapse" aria-labelledby="userInformation" data-parent="#accordion">
+        <div class="accordion-body">
+          <form
+            class="change-information"
+            data-api-base="{% url "account_api:api-root" %}"
+            data-api-action="user"
+            data-api-method="PUT"
+          >
+            <div data-api-submit="yes">
+            {{ change_user_info_form.email | as_crispy_field }}
+            <div class="form-row">
+              <div class="mb-3 col-6 mb-0">
+                {{ change_user_info_form.first_name | as_crispy_field }}
+              </div>
+              <div class="mb-3 col-6 mb-0">
+                {{ change_user_info_form.last_name | as_crispy_field }}
+              </div>
+            </div>
+            {{ change_user_info_form.username | as_crispy_field }}
+            {% if request.user.has_usable_password %}
+              {{ change_user_info_form.password | as_crispy_field }}
+            {% endif %}
+            </div>
+            <div class="right">
+              <button
+                class="btn btn-link cancel-collapse"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseOne"
+                aria-expanded="true"
+                aria-controls="collapseOne">
+              Cancel</button>
+              <button type="button" class="btn btn-primary submit">{% trans "Save" %}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <h5 class="accordion-header" id="headingSix">
+        <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix">
+          {% trans "Organization Invites" %} <span id="count-invites"></span>
+        </button>
+      </h5>
+      <div id="collapseSix" class="accordion-collapse collapse" aria-labelledby="headingSix">
+        <div class="accordion-body">
+          {% include "account/controlpanel/user-invites.html" with form=user_settings_form %}
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <h5 class="accordion-header" id="headingFive">
+        <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+          Preferences
+        </button>
+      </h5>
+      <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive">
+        <div class="accordion-body">
+          {% include "account/controlpanel/user-preferences.html" with form=user_settings_form %}
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <h5 class="accordion-header" id="linked-auth">
+        <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#linkedAuthCollapse" aria-expanded="false" aria-controls="linkedAuthCollapse">
+          Linked Authentication
+        </button>
+      </h5>
+      <div id="linkedAuthCollapse" class="accordion-collapse collapse" aria-labelledby="linked-auth">
+        <div class="accordion-body">
+          {% include "account/controlpanel/linked-authentication.html" %}
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <h5 class="accordion-header" id="headingThree">
+        <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+          Personal API Keys
+        </button>
+      </h5>
+      <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree">
+        <div class="accordion-body">
+          {% include "account/controlpanel/personal-keys.html" %}
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <h5 class="accordion-header" id="headingFour">
+        <span tabindex="0"
+          id="changePwdPopover"
+          data-bs-container="body"
+          data-bs-trigger="manual"
+          data-bs-toggle="popover"
+          data-bs-content="Password successfully changed"
+          data-bs-placement="top"></span>
+        <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+            {% if initial_password %}
+              Set Password
+            {% else %}
+              Change Password
+            {% endif %}
+        </button>
+      </h5>
+      <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour">
+        <div class="accordion-body">
+          {% include "account/controlpanel/change-password-card.html" %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="mt-4 ps-3">
+  <a href="{% url "account:auth-logout" %}" class="btn btn-secondary">{% trans "Logout" %}</a>
+  </div>
+</div>
+
+          {% include "account/controlpanel/personal-apikey-modal.html" %}
+<script>
+$(document).ready(function() {
+  new account.ChangeInformation();
+  new account.UserSettings();
+});
+</script>
+

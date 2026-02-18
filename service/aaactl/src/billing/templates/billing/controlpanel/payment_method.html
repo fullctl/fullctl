@@ -1,0 +1,15 @@
+{% extends "account/controlpanel/base.html" %}
+{% load i18n static crispy_forms_tags %}
+
+
+{% block controlpanel %}
+<h5>{% trans "Payment Method: " %} {{ payment_method.name }}</h5>
+
+<div class="alert alert-warning">
+<p>DEBUG MODE</p>
+<p>Managing existing payment methods not implemented yet</p>
+</div>
+
+<a href="{% url "billing:payment_methods" %}" class="btn btn-secondary">{% trans "Return to payment methods" %}</a>
+
+{% endblock %}

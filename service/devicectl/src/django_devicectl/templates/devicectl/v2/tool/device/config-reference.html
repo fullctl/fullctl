@@ -1,0 +1,28 @@
+<div class="device-reference-config" 
+    data-template="device_reference_config"
+    data-api-base="{% url "devicectl_api:device-reference-config" org_tag=request.org.slug device_id=0 %}">
+
+    <div class="section row mt-4">
+        <a class="secondary col-md-auto btn ms-2 d-flex" data-element="button_source" type="button" role="button" target="_blank" href="/api/facility/demo/DEN01/devices?pretty">
+            <div class="row align-items-center">
+            <div class="col label pe-0">Source</div>
+            <div class="col-auto">
+            <span class="icon icon-logout"></span>
+            </div>
+            </div>
+        </a>
+
+        <a class="secondary col-md-auto btn ms-2 d-flex" data-element="button_raw" type="button" role="button" target="_blank" href="/api/facility/demo/DEN01/devices?pretty">
+            <div class="row align-items-center">
+            <div class="col label pe-0">Raw</div>
+            <div class="col-auto">
+            <span class="icon icon-download"></span>
+            </div>
+            </div>
+        </a>
+    </div>
+
+
+    <div class="config-content border mt-3 p-3">
+    </div>
+</div>

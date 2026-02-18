@@ -1,0 +1,32 @@
+{% load static i18n %}
+<form data-template="form_access_control_lists"
+  data-api-base="{% url "aclctl_api:access_control_list-list" org_tag=request.org.slug %}"
+  data-api-method="POST"
+  >
+
+  <div class="container-fluid">
+    <div class="row mb-3" data-api-submit="yes">
+      <div id="tgl-src-prefix">
+        <label for="edit_ix_name" class="form-label">{% trans "List Name" %}</label>
+        <input id="edit_ix_name" type="text" class="form-control" name="name" />
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-12" data-api-submit="yes">
+        <label for="edit_ix_slug" class="form-label">{% trans "List Identifier" %}</label>
+        <input id="edit_ix_slug" type="text" class="form-control" name="slug" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12">
+        <div class="alert alert-info">
+        {% blocktrans %}
+          List Identifier also used as URL. Created automatically or specified manually.
+        {% endblocktrans %}
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+

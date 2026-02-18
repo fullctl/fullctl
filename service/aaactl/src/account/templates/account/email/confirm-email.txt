@@ -1,0 +1,3 @@
+Please click the link below to confirm this email address
+
+{{ instance.url }}

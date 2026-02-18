@@ -1,0 +1,173 @@
+{% extends "account/controlpanel/base.html" %}
+{% load static i18n crispy_forms_tags %}
+{% block controlpanel %}
+<h4>Billing Setup</h4>
+<p>
+  {% blocktrans %}
+    Entering your billing information does not automatically charge your credit
+    card. Charges are applied when FullCtl Administration turns on your paid
+    service subscription. Once your subscription is turned on you will be charged
+    monthly. Your current subscriptions and monthly costs appear at the bottom of
+    the Services list on the Account Dashboard page.
+  {% endblocktrans %}
+</p>
+<form
+  class="billing-setup"
+  data-api-base="{% url "billing_api:org-detail" pk=request.selected_org.slug %}"
+  data-api-action="billing_setup"
+  data-api-redirect="{{ request.GET.redirect }}"
+  data-api-method="POST">
+
+<div data-api-submit="yes">
+{% csrf_token %}
+{% if form_init %}
+{{ form_init|crispy }}
+{% if billing_env == "test" %}
+<div class="alert alert-warning">
+<p>TESTING MODE</p>
+<p>This form is currently auto-initialized to mimic a  billing setup process as it would be initiated from PrefixCTL</p>
+<p>This will also perform a test charge that you can review in your order history</p>
+{% if request.GET.verbose %}
+<ul>
+{% for k,v in test_init.items %}
+<li><strong>{{ k }}</strong>={{ v }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+</div>
+{% endif %}
+{% endif %}
+</div>
+
+<div class="row">
+  <div class="col-xs-12 col-lg-12">
+
+<!-- use existing payment method -->
+
+{% if form_payopt_select %}
+<div class="form-select-payopt collapse show" id="form-select-payopt" data-api-submit="yes">
+  <div>
+    <div>
+      <h4>
+        {% trans "Use saved payment method" %}
+        <small>or</small>
+        <button class="btn btn-sm btn-secondary toggle-create-payopt" type="button" id="btn-create-payopt">Create new payment method</button>
+      </h4>
+      <div>
+        {{ form_payopt_select.payment_method|as_crispy_field }}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- create new payment method -->
+
+<div class="form-create-payopt{% if form_payopt_select %} collapse{% endif %}" id="form-create-payopt" data-api-submit="yes">
+<h4>
+{% trans "Create new payment method" %}
+{% if form_payopt_select %}
+<small>or</small>
+<button class="btn btn-sm btn-secondary toggle-create-payopt" type="button" id="btn-create-payopt">Use saved payment method</button>
+{% endif %}
+</h4>
+<div>
+  <div>
+  {% with form=form_billing_address %}
+
+    <h5>{% trans "Billing Contact" %}</h5>
+
+    <div class="row">
+      <div class="col-6 input-container">
+      {{ form.holder|as_crispy_field }}
+      </div>
+      <div class="col-6 input-container">
+      {{ form.email|as_crispy_field }}
+      </div>
+      <div class="col-12 input-container mb-3">
+        <label for="id_phone_number_1">Phone Number*</label>
+        <div class="phonenumber-container">
+          {{ form.phone_number }}
+        </div>
+      </div>
+    </div>
+
+  {% endwith %}
+
+  <h5>{% trans "Billing Method" %}</h5>
+  {% include form_payopt_create.template with form=form_payopt_create stripe=payment_processor %}
+  </div>
+  <div class="col-6">
+  </div>
+</div>
+</div>
+
+</div>
+<div class="col-xs-12 col-lg-12">
+
+{% if recurring_product %}
+<div class="review-order">
+<h4>Review Order</h4>
+
+<div class="alert alert-info">
+  <div class="row">
+    <div class="col-6">{% trans "Organization" %}</div>
+    <div class="col-6">{{ request.selected_org.label_long }}</div>
+  </div>
+</div>
+
+<h6>{{ recurring_product.product.group }} Subscription</h6>
+<div class="row">
+  <div class="col-xs-12 col-md-4">{{ recurring_product.product.description }}</div>
+  <div class="col-xs-12 col-md-4">{{ recurring_product.type_description }}</div>
+  <div class="col-xs-12 col-md-4">${{ recurring_product.price }} USD / {{ recurring_product.unit }}</div>
+</div>
+</div>
+<div style="margin-bottom: 15px;"></div>
+{% endif %}
+
+<div data-api-submit="yes">
+  {{ form_agreements.agreement_tos.errors }}
+  {{ form_agreements.agreement_tos }}
+  <label for="{{ form_agreements.agreement_tos.id_for_label }}">I agree to the <a href="{{ terms_of_service_url}}" target="_blank">Terms of Service</a>*</label>
+</div>
+
+<div class="right">
+<button id="billing-setup-submit" type="button"  class="btn btn-primary submit">{% trans 'Continue' %}</button>
+</div>
+
+
+</div><!-- main col -->
+</div><!-- main row -->
+
+</form>
+{% endblock %}
+
+
+{% block menu %}
+<div class="row mt-4">
+  <div class="col text-center">
+    <a class="return-to-dashbaord | btn btn-secondary" href="/#page-billing">{% trans "Return to Account Dashboard" %}
+    </a>
+  </div>
+</div>
+{% endblock%}
+
+{% block javascript %}
+{{ block.super }}
+<script>
+$(document).ready(function() {
+  // prevent form submission if setup is not completed
+  $('#billing-setup-submit').click((e) => {
+    if($('#processor-data').data('setup-completed') !== "yes") {
+      // cancel event (this cancels the form submission)
+      e.stopImmediatePropagation();
+      alert("Please complete the payment form");
+    }
+  })
+  const billing_setup = new billing.BillingSetup();
+  window.billing.setup = billing_setup;
+});
+
+</script>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% load static i18n %}
+<div
+  class="section tabs"
+  data-template="menu">
+  <h4>{% trans "Templates" %}</h4>
+  <h5>{% trans "Filter Rule Config" %}</h5>
+
+  <div class="filter_rule_templates"></div>
+</div>
+<div
+  data-api-base="{% url "aclctl_api:filter_rule_template-list" org_tag=request.org.slug %}"
+  data-api-action=""
+  data-template="filter_rule_templates">
+
+  <div class="list-constant">
+     <button data-template="row" class="button" data-element="button_add_filter_rule_template">
+      <span class="icon fullctl icon-add"></span>
+      <span class="label">{% trans "Create" %}</span>
+    </button>
+  </div>
+  <div class="list-body"></div>
+  <div class="templates">
+    <button data-template="row" class="button">
+      <span class="icon fullctl icon-edit"></span>
+      <span class="label" data-field="name"></span>
+    </button>
+  </div>
+</div>
+

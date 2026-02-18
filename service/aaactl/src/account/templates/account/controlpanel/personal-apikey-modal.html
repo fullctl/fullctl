@@ -1,0 +1,30 @@
+{% load i18n static crispy_forms_tags %}
+<div class="modal fade" id="personalApiKeyModal" tabindex="-1" role="dialog" aria-labelledby="personalApiKeyModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="personalApiKeyModalLabel">{% trans "Create Personal API Key" %}</h5>
+        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form
+          class="create_key"
+          data-api-base="{% url "account_api:api-root" %}"
+          data-api-action="user/create_key"
+          data-api-method="POST"
+        >
+        <div data-api-submit="yes">
+        {{ create_key_form|crispy }}
+        </div>
+        <div class="right">
+          <button type="button" class="btn btn-manage submit">
+            {% trans "Create" %}
+          </button>
+        </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

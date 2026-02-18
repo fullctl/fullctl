@@ -1,0 +1,16 @@
+{% load static i18n %}
+<div class="tool shift-down" data-component="logical_ports">
+
+  {% include "common/v2/tool_base.html" %}
+
+  <div class="templates">
+
+    {% include "devicectl/v2/tool/logical_ports/form.html" %}
+    {% include "devicectl/v2/tool/logical_ports/menu.html" %}
+    {% include "devicectl/v2/tool/logical_ports/list.html" %}
+    {% include "devicectl/v2/tool/logical_ports/bottom-menu.html" %}
+    {% include "common/v2/app/delete_selected.html" %}
+
+  </div>
+</div>
+

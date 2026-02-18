@@ -1,0 +1,68 @@
+{% load i18n %}
+<div data-template="session_widget"
+     data-api-base="{% url "peerctl_api:sessions_summary-list" asn=selected_asn %}"
+     data-api-metric-base="{% url "peerctl_api:port-ix-metric-table" asn=selected_asn pk=0 %}"
+>
+  <div class="row controls">
+    <div class="col-12">
+      <div class="row mb-3">
+        <div class="col-6">
+          <label class="form-label">{% trans "Site" %}</label>
+          <p id="Site" data-field="facility_slug"></p>
+        </div>
+        <div class="col-6">
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-6">
+          <label class="form-label">{% trans "ASN" %}</label>
+          <p id="asn" data-field="peer_asn"></p>
+        </div>
+        <div class="col-6">
+          <label class="form-label">{% trans "Type" %}</label>
+          <p id="type" data-field="peer_session_type"></p>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-6">
+          <label class="form-label">{% trans "Port" %}</label>
+          <p id="port-display-name" data-field="port_display_name"></p>
+        </div>
+        <div class="col-6">
+          <label class="form-label">{% trans "Devices" %}</label>
+          <span id="device-name" />
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-6">
+          <label class="form-label">{% trans "IPv4" %}</label>
+          <p id="peer-ipv4" data-field="peer_ip4"></p>
+        </div>
+        <div class="col-6">
+          <label class="form-label">{% trans "IPv6" %}</label>
+          <p id="peer-ipv6" data-field="peer_ip6"></p>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-6">
+          <label class="form-label">{% trans "Policy4" %}</label>
+          <p id="policy4-name" data-field="policy4_name"></p>
+        </div>
+        <div class="col-6">
+          <label class="form-label">{% trans "Policy6" %}</label>
+          <p id="policy6-name" data-field="policy6_name"></p>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-6">
+          <label class="form-label">{% trans "Status4" %}</label>
+          <p id="status4" data-field="meta4"></p>
+        </div>
+        <div class="col-6">
+          <label class="form-label">{% trans "Status6" %}</label>
+          <p id="status6" data-field="meta6"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,23 @@
+.property .field,
+.property .field-empty,
+.table tr td.property div.field {
+  padding-top: 12px;
+  padding-bottom: 11px;
+  border-left: 1px transparent solid;
+  font-size: 16px;
+}
+
+div.list-body .property {
+  margin-left: -15px;
+}
+
+div.list-body .property .transparent-field,
+div.list-body .property .field {
+  padding: 8px;
+  min-height: 42px;
+  display: inline-block;
+}
+
+div.list-body .property [data-field] {
+  margin-left: 4px;
+}

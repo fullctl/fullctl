@@ -1,0 +1,34 @@
+{% load static i18n %}
+<form data-template="form_logical_port"
+  data-api-base="{% url "devicectl_api:logical_port-list" org_tag=request.org.slug %}"
+  data-api-action=""
+  data-api-method="POST"
+  >
+  <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+      <label for="logical_port-name">{% trans "Name" %}</label>
+      <input type="text" class="form-control" id="logical_port-name" name="name" />
+    </div>
+  </div>
+
+  <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+      <label for="logical_port-channel">{% trans "Channel" %}</label>
+      <input type="text" class="form-control" id="logical_port-channel" name="channel" />
+    </div>
+  </div>
+
+  <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+      <label for="logical_port-trunk">{% trans "Trunk" %}</label>
+      <input type="text" class="form-control" id="logical_port-trunk" name="trunk" />
+    </div>
+  </div>
+
+  <div class="row form-group">
+    <div class="col-12" data-api-submit="yes">
+      <label for="logical_port-description">{% trans "Description" %}</label>
+      <input type="text" class="form-control" id="logical_port-description" name="description" />
+    </div>
+  </div>
+</form>

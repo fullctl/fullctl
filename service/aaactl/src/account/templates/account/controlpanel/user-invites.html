@@ -1,0 +1,27 @@
+{% load i18n crispy_forms_tags %}
+
+<div class="personal-invites" data-api-base="{% url "account_api:user-invites" %}">
+
+  <div class="list-body invites-list-body"></div>
+  <div class="no-invites">{% trans "No invites pending." %}</div>
+
+  <div class="templates" style="display:none">
+    <div data-template="row" class="row marg-top">
+      <div class="col"><span data-field="org_name"></span></div>
+      <div class="col-auto">
+        <div class="row">
+          <div class="col-auto p-1">
+            <button class="btn btn-slim btn-manage manage accept-invite"
+              data-api-base="{% url "account_api:user-accept-invite" invite_id="invite_id" %}">
+              {% trans "Accept" %}
+            </button>
+          </div>
+          <div class="col-auto p-1">
+            <button class="btn btn-slim btn-manage danger reject-invite"
+              data-api-base="{% url "account_api:user-reject-invite" invite_id="invite_id" %}">{% trans "Reject" %}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

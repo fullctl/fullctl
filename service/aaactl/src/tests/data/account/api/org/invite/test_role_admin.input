@@ -1,0 +1,7 @@
+{
+  "client" : "api_client",
+  "data": {
+    "email": "invite@localhost",
+    "is_admin_invite" : true
+  }
+}

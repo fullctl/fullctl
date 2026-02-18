@@ -1,0 +1,46 @@
+{% extends "account/controlpanel/base.html" %}
+{% load i18n static %}
+
+
+{% block controlpanel %}
+<h4>{{ request.selected_org }}</h4>
+<h5>{{ order_history.description }} - <small>{{ order_history.processed|date:"Y-m-d" }}</small></h5>
+<h6>#{{ order_history.order_id }}</h6>
+<h6>{% trans "Billed to" %} {{ order_history.billed_to }}</h6>
+
+<div class="mt-large">
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th scope="col">{% trans "Description" %}</th>
+        <th scope="col">{% trans "Price" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for order_history_item in order_history.order_history_item_set.all %}
+      <tr>
+        <td>{{ order_history_item.description }}</td>
+        <td>${{ order_history_item.price }} USD</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if order_history.payment_charge.data.receipt_url %}
+<div class="row">
+  <div class="col-4">
+    <a href="{{ order_history.payment_charge.data.receipt_url }}">Download Receipt</a>
+  </div>
+  <div class="col">
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block menu %}
+<div class="row mt-4">
+  <div class="col text-center">
+    <a class="btn btn-secondary" href="/#page-billing">{% trans "Return to Account Dashboard" %}</a>
+  </div>
+</div>
+{% endblock %}

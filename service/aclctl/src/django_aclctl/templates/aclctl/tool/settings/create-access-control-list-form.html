@@ -1,0 +1,36 @@
+{% load static i18n %}
+<form
+  class="controls"
+  data-template="form_create_access_control_list"
+  data-api-base="{% url "aclctl_api:access_control_list-list" org_tag=request.org.slug %}"
+  data-api-method="POST">
+
+  <div class="row controls">
+    <div class="col-12">
+      <div class="mb-3" data-api-submit="yes">
+        <label for="edit_ix_name" class="form-label">{% trans "List Name" %}:</label>
+        <input
+          type="text"
+          class="form-control mb-3"
+          name="name"
+          id="edit_ix_name">
+        </input>
+        <label for="edit_ix_slug" class="form-label">{% trans "List Identifier (also used as URL slug)" %}:</label>
+        <input
+          type="text"
+          class="form-control mb-3"
+          name="slug"
+          id="edit_ix_slug">
+        </input>
+      </div>
+    </div>
+  </div>
+  <div class="row controls marg-top-lg">
+    <div class="col-6 left">
+    </div>
+    <div class="col-6 right">
+      <button class="submit"><span class="icon fullctl icon-edit"></span><span class="label">{% trans "Save" %}</span></a>
+    </div>
+  </div>
+
+</form>

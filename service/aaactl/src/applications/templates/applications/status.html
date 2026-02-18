@@ -1,0 +1,41 @@
+{% extends "account/base.html" %}
+
+{% block content %}
+<div class="svc-status">
+
+  <div class="row">
+    <div class="col-4"></div>
+    <div class="col-4"><h3>Service Status</h3></div>
+    <div class="col-4"></div>
+  </div>
+
+
+  {% for svc, checks in services.items %}
+  <div class="row">
+    <div class="col-4"></div>
+    <div class="col-4"><h5>{{ svc }}</h5></div>
+    <div class="col-4"></div>
+  </div>
+
+  <div class="row">
+    <div class="col-4"></div>
+    <div class="col-4">
+      <table class="table table-sm">
+        {% for check, status in checks.items %}
+        <tr>
+          <td scope="col" class="dark-grey">{{ check }}</td>
+          <td scope="col" class="col-4 ligh-grey center status status-{{ status.status }}" title="{{ status.details }}">{{ status.status }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    <div class="col-4"></div>
+  </div>
+  {% endfor %}
+
+  {% if all_good %}
+  <!-- ALL SERVICES OK -->
+  {% endif %}
+
+</div>
+{% endblock %}

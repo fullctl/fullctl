@@ -1,0 +1,40 @@
+{% extends "account/controlpanel/base.html" %}
+{% load i18n static %}
+
+
+{% block controlpanel %}
+<h5>{{ request.selected_org }} - {% trans "Order History" %}</h5>
+
+
+{% if not order_history %}
+<div class="alert alert-secondary">
+{% blocktrans %}
+You have not made any payments
+{% endblocktrans %}
+</div>
+{% else %}
+<div class="order-history">
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th scope="col">{% trans "Description" %}</th>
+        <th scope="col">{% trans "Price" %}</th>
+        <th scope="col">{% trans "Date" %}</th>
+        <th scope="col">{% trans "Details" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for order in order_history %}
+      <tr>
+        <td>{{ order.description }}</td>
+        <td>${{ order.price }} USD</td>
+        <td>{{ order.processed|date:"Y-m-d" }}</td>
+        <td><a href="{% url "billing:order-history-details" id=order.order_id %}">{{ order.order_history_item_set.count }} {% trans "items" %}</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endblock %}

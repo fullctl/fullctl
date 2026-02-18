@@ -1,0 +1,74 @@
+{% extends "account/controlpanel/base.html" %}
+{% load i18n static %}
+
+
+{% block controlpanel %}
+<h5>{% trans "Currently active services" %}</h5>
+
+<div class="alert alert-info">
+{% blocktrans %}
+This is a list of services that you are currently using and the costs associated with them.
+{% endblocktrans %}
+</div>
+
+{% if not billing_is_setup %}
+{% url "billing:setup" as billing_setup_url %}
+<div class="alert alert-warning">
+{% blocktrans %}
+You have not setup a payment method yet, you can do so <a href="{{ billing_setup_url }}">here</a>.
+{% endblocktrans %}
+</div>
+{% endif %}
+
+{% if not services %}
+<div class="alert alert-secondary">
+{% blocktrans %}
+You have not used any services
+{% endblocktrans %}
+</div>
+{% else %}
+<div class="services">
+{% for subscription in services %}
+  <div class="row">
+    <div class="col-6">
+      <h6 class="organization">{{ subscription.group.name }} - {{ subscription.organization_name }}<small>{{ subscription.subscription_cycle.start }} to {{ subscription.subscription_cycle.end }}</small></h6>
+    </div>
+    <div class="col-6 right">
+    {% if permissions.read_org_billing %}
+      <h6>{% trans "Billed to " %} <small>{{ subscription.payment_method.name }}</small></h6>
+    {% endif %}
+    </div>
+  </div>
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th scope="col">{% trans "Service" %}</th>
+        <th scope="col">{% trans "Type" %}</th>
+        <th scope="col">{% trans "Usage" %}</th>
+        <th scope="col">{% trans "Cost" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for subscription_product in subscription.subscription_product_set.all %}
+      <tr>
+        <td>{{ subscription_product.product.description }}</td>
+        <td>{{ subscription_product.product.recurring_product.type_description }}</td>
+        <td>{{ subscription_product.subscription_cycle_usage }} {{ subscription_product.product.recurring_product.unit_plural }}</td>
+        <td>${{ subscription_product.subscription_cycle_cost }} USD</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+{% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block menu %}
+<div class="row mt-4">
+  <div class="col text-center">
+    <a class="btn btn-secondary" href="/">{% trans "Return to Account Dashboard" %}</a>
+  </div>
+</div>
+{% endblock %}
+

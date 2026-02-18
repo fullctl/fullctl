@@ -1,0 +1,9 @@
+{% load i18n %}
+<div class="container-fluid" data-template="error_only_admin_message">
+  <div class="row">
+    <div class="col p-0">
+      {% trans "You are the only admin for the organization." %}<br>
+      {%trans " You must" %} <a href="{{ docs_url }}/aaaCtl/User-Privileges/" target="_blank">{% trans "assign a new Administrator" %}</a> {% trans "for your organization before leaving." %}
+    </div>
+  </div>
+</div>

@@ -1,0 +1,12 @@
+{
+    "priority": "5",
+    "src_type": "prefix",
+    "src_prefix": "123.123.123.211",
+    "src_prefix_set": null,
+    "src_port": 3,
+    "dest_type": "prefix",
+    "dest_prefix": "123.123.123.212",
+    "dest_prefix_set": null,
+    "dest_port": 4,
+    "access_control_list": "1"
+}

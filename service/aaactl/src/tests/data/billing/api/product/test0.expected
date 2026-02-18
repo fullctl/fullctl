@@ -1,0 +1,9 @@
+{
+  "data": [
+    {"name": "test", "component": null, "description": "test product", "group": 1, "price": "10.00", "id": 1, "status": "ok"}, 
+    {"name": "test.subscription.fixed", "component": null, "description": "test product: fixed subscription", "group": 1, "price": "0.00", "id": 2, "status": "ok"}, 
+    {"name": "test.subscription.metered", "component": null, "description": "test product: metered subscription", "group": 1, "price": "0.00", "id": 3, "status": "ok"}
+    ], 
+  "errors": {}, 
+  "profiling": {"queries": 0}
+}
