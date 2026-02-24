@@ -1,23 +1,23 @@
-import re
 import ipaddress
-
-from django_prefixctl.rest.decorators import grainy_endpoint
-from django_prefixctl.rest.route.prefixctl import route
-from django_prefixctl.models import PrefixSet
-from fullctl.django.rest.core import BadRequest
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from django.conf import settings
+import re
 
 import prefix_meta.models as models
+from django.conf import settings
+from django_prefixctl.models import PrefixSet
+from django_prefixctl.rest.decorators import grainy_endpoint
+from django_prefixctl.rest.route.prefixctl import route
 from prefix_meta.rest.serializers import Serializers
 from prefix_meta.sources.prefixmetad.models import (
-    PrefixMetaSourceConfig,
     OrganizationPrefixMetaSource,
+    PrefixMetaSourceConfig,
     PrefixSetPrefixMetaSource,
 )
 from prefix_meta.tasks import LocationUpdateTask
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+from fullctl.django.rest.core import BadRequest
 
 
 def build_sources_map():
@@ -64,7 +64,6 @@ def get_global_default(source_name):
 
 @route
 class PrefixMeta(viewsets.GenericViewSet):
-
     """
     This is the main viewset for the prefix_meta app. It provides the following
     endpoints:
@@ -255,7 +254,7 @@ class PrefixSetPrefixMetaSourceViewSet(viewsets.GenericViewSet):
             return BadRequest({"non_field_errors": ["Prefix set not found"]})
 
         data = request.data.copy()
-        data['prefix_set_id'] = prefix_set_id
+        data["prefix_set_id"] = prefix_set_id
 
         serializer = self.serializer_class(data=data)
         if not serializer.is_valid():
@@ -288,7 +287,10 @@ class PrefixSetPrefixMetaSourceViewSet(viewsets.GenericViewSet):
             prefix_set=prefix_set
         ).delete()
 
-        return Response({
-            "message": f"Removed {deleted_count} custom source configurations. Prefix set will now use organization defaults.",
-            "deleted_count": deleted_count
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "message": f"Removed {deleted_count} custom source configurations. Prefix set will now use organization defaults.",
+                "deleted_count": deleted_count,
+            },
+            status=status.HTTP_200_OK,
+        )

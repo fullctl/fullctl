@@ -223,14 +223,14 @@ class Command(CommandInterface):
                     self.heartbeat_cleanup = False
                 except Exception as exc:
                     log.exception("Error cleaning up heartbeat", exc=exc)
-            
+
             # Log database connection statistics once per minute
             if current_time - last_db_stats_update >= DB_STATS_INTERVAL_SECONDS:
                 try:
                     context = {}
                     if current_task_id:
                         context = {"task_id": current_task_id}
-                    
+
                     log_db_connection_stats(context)
                     last_db_stats_update = current_time
                 except Exception as exc:

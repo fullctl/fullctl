@@ -1,16 +1,16 @@
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from fullctl.django.rest.decorators import serializer_registry
-from fullctl.django.rest.serializers import ModelSerializer
-from oauth2_provider.models import AccessToken
-from rest_framework import serializers
-
 import account.models as account_models
 import applications.models as application_models
 import billing.models as billing_models
 import whitelabel_fullctl.models as branding_models
 from account.rest.serializers import Serializers as AccountSerializers
 from common.util import format_logo_url
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from oauth2_provider.models import AccessToken
+from rest_framework import serializers
+
+from fullctl.django.rest.decorators import serializer_registry
+from fullctl.django.rest.serializers import ModelSerializer
 
 Serializers, register = serializer_registry()
 
@@ -152,6 +152,7 @@ class OrganizationCanTrialForObject(serializers.Serializer):
 
         return trial_product.can_add_to_org(org, component_object_id=obj["object_id"])
 
+
 @register
 class Organization(ModelSerializer):
     ref_tag = "organization"
@@ -159,6 +160,7 @@ class Organization(ModelSerializer):
     class Meta:
         model = account_models.Organization
         fields = ["id", "name", "slug", "created", "updated"]
+
 
 @register
 class User(ModelSerializer):

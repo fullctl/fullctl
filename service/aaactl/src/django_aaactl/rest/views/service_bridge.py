@@ -1,5 +1,15 @@
+import account.models as account_models
+import applications.models as application_models
+import billing.models as billing_models
+import whitelabel_fullctl.models as branding_models
+from common.rest.decorators import grainy_endpoint
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django_aaactl.rest.serializers.service_bridge import Serializers
+from oauth2_provider.models import AccessToken
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
 from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.route.service_bridge import route
 from fullctl.django.rest.views.service_bridge import (
@@ -7,16 +17,6 @@ from fullctl.django.rest.views.service_bridge import (
     MethodFilter,
     SystemViewSet,
 )
-from oauth2_provider.models import AccessToken
-from rest_framework.decorators import action
-from rest_framework.response import Response
-
-import account.models as account_models
-import applications.models as application_models
-import billing.models as billing_models
-import whitelabel_fullctl.models as branding_models
-from common.rest.decorators import grainy_endpoint
-from django_aaactl.rest.serializers.service_bridge import Serializers
 
 
 class AaactlDataViewSet(DataViewSet):
@@ -92,9 +92,9 @@ class Service(AaactlDataViewSet):
             for fed_svc_url in account_models.FederatedServiceURL.objects.filter(
                 auth__org=context["org"]
             ):
-                services[
-                    fed_svc_url.service.slug
-                ] = application_models.Service.from_federated_service_url(fed_svc_url)
+                services[fed_svc_url.service.slug] = (
+                    application_models.Service.from_federated_service_url(fed_svc_url)
+                )
 
         services = list(services.values())
         serializer = self.serializer_class(services, many=True, context=context)
@@ -171,6 +171,7 @@ class OrganizationProduct(AaactlDataViewSet):
     )
     serializer_class = Serializers.org_product
 
+
 @route
 class Organization(AaactlDataViewSet):
     path_prefix = "/data"
@@ -186,7 +187,6 @@ class Organization(AaactlDataViewSet):
 
     queryset = account_models.Organization.objects.all()
     serializer_class = Serializers.organization
-
 
 
 @route

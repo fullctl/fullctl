@@ -1,9 +1,8 @@
 import json
 
+import django_devicectl.models as models
 import pytest
 from django.urls import reverse
-
-import django_devicectl.models as models
 
 
 def test_create_vlan(db, account_objects):

@@ -1,6 +1,7 @@
+import django_devicectl.mrtg as mrtg
+
 from fullctl.django.models import Task
 from fullctl.django.tasks import register
-import django_devicectl.mrtg as mrtg
 
 
 @register
@@ -23,7 +24,5 @@ class InsertMetric(Task):
     def run(self, *args, **kwargs):
         data = self.metric_data
         mrtg.write_switch_to_switch(
-            org_id=self.org.id,
-            org_slug=self.org.slug,
-            data=data
+            org_id=self.org.id, org_slug=self.org.slug, data=data
         )

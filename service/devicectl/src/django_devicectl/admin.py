@@ -1,17 +1,10 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
-
-# from django.utils.translation import gettext as _
-from django_handleref.admin import VersionAdmin
-from pygments import highlight
-from pygments.formatters import HtmlFormatter
-from pygments.lexers import DiffLexer
-
 from django_devicectl.models import (
     Device,
     DeviceConfigHistory,
-    DeviceOperationalStatus,
     DeviceMetric,
+    DeviceOperationalStatus,
     DeviceRefereeReport,
     Facility,
     IPAddress,
@@ -26,12 +19,19 @@ from django_devicectl.models import (
     Vlan,
 )
 
+# from django.utils.translation import gettext as _
+from django_handleref.admin import VersionAdmin
+from pygments import highlight
+from pygments.formatters import HtmlFormatter
+from pygments.lexers import DiffLexer
+
 
 @admin.register(OrganizationConfig)
 class OrganizationConfigAdmin(VersionAdmin):
     list_display = ("id", "org")
     search_fields = ("org__name", "org__slug")
     autocomplete_fields = ("org",)
+
 
 @admin.register(Facility)
 class FacilityAdmin(VersionAdmin):
@@ -44,6 +44,7 @@ class DeviceMetricAdmin(VersionAdmin):
     list_display = ("id", "device")
 
     autocomplete_fields = ("device",)
+
 
 class DeviceOperationalStatusInline(admin.TabularInline):
     model = DeviceOperationalStatus

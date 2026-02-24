@@ -4,11 +4,11 @@ import django.db.models.deletion
 import django.db.models.manager
 import django_handleref.models
 import django_inet.models
-import fullctl.django.inet.validators
+import django_ixctl.models.ixctl
 from django.conf import settings
 from django.db import migrations, models
 
-import django_ixctl.models.ixctl
+import fullctl.django.inet.validators
 
 
 class Migration(migrations.Migration):

@@ -72,10 +72,10 @@ Set interval 2592000 to represent monthly (30 days)
 - subdivision_2_iso_code
 
 ### Country:
-- geoname_id  
+- geoname_id
 - locale_code
-- continent_code  
-- continent_name  
-- country_iso_code  
-- country_name  
+- continent_code
+- continent_name
+- country_iso_code
+- country_name
 - is_in_european_union

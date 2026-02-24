@@ -304,7 +304,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
           var limit = Number(form.element.find('#member-macaddr-limit').val());
           var messageDiv = form.element.find('.macaddr-limit-info');
           var countSpan = form.element.find('.macaddr-limit-count');
-          
+
           if (limit > 1) {
             countSpan.text(limit);
             messageDiv.show();
@@ -312,9 +312,9 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
             messageDiv.hide();
           }
         }
-        
+
         form.element.find('#member-macaddr-limit').change(updateMacLimitMessage);
-        
+
         if (member && member.macaddr_limit) {
           form.element.find('#member-macaddr-limit').val(member.macaddr_limit);
           updateMacLimitMessage();
@@ -523,11 +523,11 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       const port_set_container = this.form.element.find('[data-element="port_set_container"]');
       const virtual_port_display = this.form.element.find('[data-element="virtual_port_display"]');
       const btn_clear_port_assignment = this.form.element.find('[data-element="btn_clear_port_assignment"]');
-      
+
       // Handle tooltips - hide both by default
       this.form.element.find('.changing-virtual-port-name').hide();
       this.form.element.find('.creating-virtual-port-name').hide();
-      
+
       // Only show clear button if port is already set on an existing member
       if (this.member && this.member.port) {
         btn_clear_port_assignment.show();
@@ -538,7 +538,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
       if(!this.member) {
         $(".port-config-intent").hide();
         port_set_container.show();
-        
+
         // For new members, show virtual port field if ports are selected
         const selected_ports = this.form.element.find('#port_set option:selected').length;
         if (selected_ports > 0) {
@@ -548,7 +548,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
         } else {
           virtual_port_display.hide();
         }
-        
+
         return "create";
       }
 
@@ -569,7 +569,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
 
       // Check if any ports are selected for an existing member without a port
       const selected_ports = this.form.element.find('#port_set option:selected').length;
-      
+
       if(!port && selected_ports > 0) {
         // Existing member without a port, but with ports selected
         virtual_port_display.show();
@@ -587,7 +587,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
         virtual_port_display.show();
         // Show the changing tooltip for existing port
         this.form.element.find('.changing-virtual-port-name').show();
-        
+
         port_set_container.show();
         $(".port-config-intent").hide().filter('.intent-augment').show();
         if(port_quantity > member.port_quantity) {
@@ -610,7 +610,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
         current_ports_container.hide();
         port_set_container.show();
         $(".port-config-intent").hide().filter('.intent-resize').show();
-        
+
         // Check if ports are selected for resize operation
         const selected_ports = this.form.element.find('#port_set option:selected').length;
         if (selected_ports > 0) {
@@ -621,7 +621,7 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
         } else {
           virtual_port_display.hide();
         }
-        
+
         return "resize";
       }
 
@@ -714,11 +714,11 @@ $ctl.application.Ixctl.ModalMember = $tc.extend(
           // Provide feedback to the user
           alert('You can only select up to ' + selection_limit + ' options at once. Review the "Quantity" parameter.');
         }
-        
+
         // Update virtual port display based on selection
         if (selected_options.length > 0) {
           modal.form.element.find('[data-element="virtual_port_display"]').show();
-          
+
           // Determine which tooltip to show
           if (modal.member && modal.member.port) {
             // Existing member with existing port - show changing tooltip

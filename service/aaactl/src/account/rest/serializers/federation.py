@@ -1,7 +1,6 @@
-from rest_framework import serializers
-
 import account.models.federation as federation_models
 from account.rest.serializers import Serializers, register  # noqa F401
+from rest_framework import serializers
 
 
 @register

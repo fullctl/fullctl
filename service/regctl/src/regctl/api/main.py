@@ -4,16 +4,21 @@
 
 from __future__ import annotations
 
-import json
-from typing import Union
-from pydantic import ValidationError
+import datetime
 import ipaddress
-from fastapi import FastAPI, Query, HTTPException
+import json
+import re
+from typing import Union
+
+import rdap
+import structlog
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-import datetime
-
-import structlog
+from pydantic import ValidationError
+from rdap.context import RdapRequestContext, rdap_request
+from rdap.exceptions import RdapHTTPError, RdapNotFoundError
+from regctl.api.cache import cache_result
 from regctl.api.models import (
     Domain,
     Entity,
@@ -21,24 +26,16 @@ from regctl.api.models import (
     ListAsnPrefixGetResponse,
     ListPrefixAsnGetResponse,
     Network,
-    Source,
     RdapAutNum,
     RdapDomain,
     RdapEntity,
     RdapIPNetwork,
+    Source,
 )
-
 from regctl.irrexplorer import get_asn_routing_data, get_prefix_routing_data
-from regctl.api.cache import cache_result
-
-import rdap
-import re
-
-from rdap.exceptions import RdapNotFoundError, RdapHTTPError
-from rdap.context import RdapRequestContext, rdap_request
-
 
 log = structlog.get_logger()
+
 
 class PrettyJSONResponse(JSONResponse):
     """
@@ -46,6 +43,7 @@ class PrettyJSONResponse(JSONResponse):
 
     TODO: do we want a toggle for this?
     """
+
     def render(self, content: any) -> bytes:
         return json.dumps(
             content,
@@ -55,12 +53,14 @@ class PrettyJSONResponse(JSONResponse):
             separators=(", ", ": "),
         ).encode("utf-8")
 
+
 app = FastAPI(
-    title='regctl',
-    description='Standardized output of registration data',
-    version='0.1',
-    default_response_class=PrettyJSONResponse
+    title="regctl",
+    description="Standardized output of registration data",
+    version="0.1",
+    default_response_class=PrettyJSONResponse,
 )
+
 
 def validate_asn(asn: str | int) -> int:
     """
@@ -81,6 +81,7 @@ def validate_asn(asn: str | int) -> int:
         raise ValueError
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid ASN")
+
 
 def validate_prefix(prefix: str) -> str:
     """
@@ -112,50 +113,59 @@ def error_response(exc: Exception) -> JSONResponse:
     code = None
     message = None
     data = {}
-    sources = [Source(**source.model_dump()) for source in request.sources if source.urls]
+    sources = [
+        Source(**source.model_dump()) for source in request.sources if source.urls
+    ]
 
     try:
         raise
     except RdapNotFoundError:
         code = 404
-        message = 'RDAP not found'
+        message = "RDAP not found"
     except RdapHTTPError as rdap_exc:
-        code = int(re.match(r'.+ returned (\d+)', str(rdap_exc)).group(1))
+        code = int(re.match(r".+ returned (\d+)", str(rdap_exc)).group(1))
         message = str(rdap_exc)
     except ValidationError as pydantic_exc:
         code = 400
-        message = str("Object validation failed - this is likely an issue to be remedied on our end. The error has been logged and will be investigated.")
+        message = "Object validation failed - this is likely an issue to be remedied on our end. The error has been logged and will be investigated."
         data = pydantic_exc.errors()
 
         log.error(
-            'Validation error',
+            "Validation error",
             errors=data,
             sources=sources,
         )
         log.exception(pydantic_exc)
     except Exception as exc:
         code = 500
-        message = 'Internal server error - this is likely an issue to be remedied on our end. The error has been logged and will be investigated.'
+        message = "Internal server error - this is likely an issue to be remedied on our end. The error has been logged and will be investigated."
         log.exception(exc)
 
     return JSONResponse(
         status_code=code,
-        content=jsonable_encoder({
-            'error': message,
-            'data': data,
-            'sources': sources,
-        })
+        content=jsonable_encoder(
+            {
+                "error": message,
+                "data": data,
+                "sources": sources,
+            }
+        ),
     )
+
 
 def rdap_client():
     return rdap.RdapClient()
 
-PASSTHROUGH = Query(description='Pass through response from the RDAP server and deliver without normalization.', default=False)
 
-@app.get('/autnum/{asn}', response_model=Union[Network, RdapAutNum])
-@cache_result('autnum')
+PASSTHROUGH = Query(
+    description="Pass through response from the RDAP server and deliver without normalization.",
+    default=False,
+)
+
+
+@app.get("/autnum/{asn}", response_model=Union[Network, RdapAutNum])
+@cache_result("autnum")
 async def get_autnum_asn(asn: int, passthrough=PASSTHROUGH) -> Network:
-
     """
     Retrieve information about an Autonomous System Number (ASN).
 
@@ -178,10 +188,10 @@ async def get_autnum_asn(asn: int, passthrough=PASSTHROUGH) -> Network:
         except Exception as exc:
             return error_response(exc)
 
-@app.get('/domain/{domain}', response_model=Union[Domain, RdapDomain])
-@cache_result('domain')
-async def get_domain_domain(domain: str, passthrough=PASSTHROUGH) -> Domain:
 
+@app.get("/domain/{domain}", response_model=Union[Domain, RdapDomain])
+@cache_result("domain")
+async def get_domain_domain(domain: str, passthrough=PASSTHROUGH) -> Domain:
     """
     Retrieve information about a domain.
 
@@ -205,13 +215,12 @@ async def get_domain_domain(domain: str, passthrough=PASSTHROUGH) -> Domain:
             return error_response(exc)
 
 
-@app.get('/entity/{entity}', response_model=Union[Entity, RdapEntity])
-@cache_result('entity')
+@app.get("/entity/{entity}", response_model=Union[Entity, RdapEntity])
+@cache_result("entity")
 async def get_entity_entity(entity: str, passthrough=PASSTHROUGH) -> Entity:
-
     """
     Retrieve information about an entity.
-    
+
     Path Arguments:
 
     - `entity` (str): The entity to look up. e.g., `ABC123-ARIN`.
@@ -232,9 +241,9 @@ async def get_entity_entity(entity: str, passthrough=PASSTHROUGH) -> Entity:
             return error_response(exc)
 
 
-@app.get('/ip/{ip}', response_model=Union[IPNetwork, RdapIPNetwork])
-@cache_result('ip')
-async def get_ip_address(ip:str, passthrough=PASSTHROUGH) -> IPNetwork:
+@app.get("/ip/{ip}", response_model=Union[IPNetwork, RdapIPNetwork])
+@cache_result("ip")
+async def get_ip_address(ip: str, passthrough=PASSTHROUGH) -> IPNetwork:
     """
     Retrieve information about an IP address without providing a prefix length.
 
@@ -246,7 +255,7 @@ async def get_ip_address(ip:str, passthrough=PASSTHROUGH) -> IPNetwork:
 
     - `passthrough` (bool): Pass through response from the RDAP server and deliver without normalization. Default is `False`.
     """
-    
+
     client = rdap_client()
     with RdapRequestContext(client=client):
         try:
@@ -256,11 +265,11 @@ async def get_ip_address(ip:str, passthrough=PASSTHROUGH) -> IPNetwork:
             return IPNetwork(**obj.normalized)
         except Exception as exc:
             return error_response(exc)
-            
 
-@app.get('/ip/{ip}/{mask}', response_model=Union[IPNetwork, RdapIPNetwork])
-@cache_result('prefix')
-async def get_ip_network(ip:str, mask:int, passthrough=PASSTHROUGH) -> IPNetwork:
+
+@app.get("/ip/{ip}/{mask}", response_model=Union[IPNetwork, RdapIPNetwork])
+@cache_result("prefix")
+async def get_ip_network(ip: str, mask: int, passthrough=PASSTHROUGH) -> IPNetwork:
     """
     Retrieve information about an IP network.
 
@@ -273,7 +282,7 @@ async def get_ip_network(ip:str, mask:int, passthrough=PASSTHROUGH) -> IPNetwork
 
     - `passthrough` (bool): Pass through response from the RDAP server and deliver without normalization. Default is `False`.
     """
-    
+
     client = rdap_client()
     with RdapRequestContext(client=client):
         try:
@@ -285,8 +294,8 @@ async def get_ip_network(ip:str, mask:int, passthrough=PASSTHROUGH) -> IPNetwork
             return error_response(exc)
 
 
-@app.get('/list/asn/{ip}/{mask}', response_model=ListAsnPrefixGetResponse)
-@cache_result('prefix_asns')
+@app.get("/list/asn/{ip}/{mask}", response_model=ListAsnPrefixGetResponse)
+@cache_result("prefix_asns")
 async def get_list_asn_prefix(ip: str, mask: int) -> ListAsnPrefixGetResponse:
     """
     List all ASNs that announce a given prefix.
@@ -298,7 +307,7 @@ async def get_list_asn_prefix(ip: str, mask: int) -> ListAsnPrefixGetResponse:
     - `ip` (str): The IP address to look up
     - `mask` (int): The prefix length
     """
-    
+
     validated_prefix = validate_prefix(f"{ip}/{mask}")
     try:
         routing_data = await get_prefix_routing_data(validated_prefix)
@@ -311,8 +320,8 @@ async def get_list_asn_prefix(ip: str, mask: int) -> ListAsnPrefixGetResponse:
         raise HTTPException(status_code=500, detail=f"Error fetching data: {str(e)}")
 
 
-@app.get('/list/prefix/{asn}', response_model=ListPrefixAsnGetResponse)
-@cache_result('asn_prefixes')
+@app.get("/list/prefix/{asn}", response_model=ListPrefixAsnGetResponse)
+@cache_result("asn_prefixes")
 async def get_list_prefix_asn(asn: int) -> ListPrefixAsnGetResponse:
     """
     List all prefixes announced by a given ASN.
@@ -333,15 +342,15 @@ async def get_list_prefix_asn(asn: int) -> ListPrefixAsnGetResponse:
             if validated_asn in prefix_info.bgpOrigins:
                 prefixes.add(prefix_info.prefix)
         return ListPrefixAsnGetResponse(
-            prefixes=sorted(list(prefixes)), 
+            prefixes=sorted(list(prefixes)),
             sources=[
                 Source(
                     urls=[routing_data.source.url],
                     handle=f"AS{validated_asn}",
                     created=now,
-                    updated=now
+                    updated=now,
                 )
-            ]
+            ],
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching data: {str(e)}")

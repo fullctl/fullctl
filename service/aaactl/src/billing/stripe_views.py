@@ -1,13 +1,12 @@
 import stripe
+from billing.models import BillingContact, PaymentMethod
+from billing.payment_processors.stripe import Stripe, payment_method_name
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-
-from billing.models import BillingContact, PaymentMethod
-from billing.payment_processors.stripe import Stripe, payment_method_name
 
 # Set your Stripe secret key here
 stripe.api_key = settings.STRIPE_SECRET_KEY

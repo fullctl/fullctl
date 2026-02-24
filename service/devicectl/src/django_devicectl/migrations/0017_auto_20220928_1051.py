@@ -3,9 +3,10 @@
 import django.db.models.deletion
 import django.db.models.manager
 import django_handleref.models
-import fullctl.django.fields.service_bridge
 import netfields.fields
 from django.db import migrations, models
+
+import fullctl.django.fields.service_bridge
 
 
 def migrate_ips(apps, schema_editor):

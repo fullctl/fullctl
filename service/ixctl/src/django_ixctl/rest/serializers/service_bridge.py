@@ -1,9 +1,9 @@
-from fullctl.django.rest.decorators import serializer_registry
-from fullctl.django.rest.serializers import ModelSerializer
-from rest_framework import serializers
-
 import django_ixctl.models.ixctl as models
 from django_ixctl.enum import PORT_STATE
+from rest_framework import serializers
+
+from fullctl.django.rest.decorators import serializer_registry
+from fullctl.django.rest.serializers import ModelSerializer
 
 Serializers, register = serializer_registry()
 
@@ -170,7 +170,6 @@ class InternetExchangeMember(ModelSerializer):
 
 @register
 class InternetExchangeMemberAssignPort(ModelSerializer):
-
     """
     Assigns a devicectl Port to a member and allows updating
     of port configuration of the member at the same time.

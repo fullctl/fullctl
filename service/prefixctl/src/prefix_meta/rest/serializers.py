@@ -1,17 +1,17 @@
 import ipaddress
 
+import prefix_meta.models as models
+from prefix_meta.sources.prefixmetad.models import (
+    OrganizationPrefixMetaSource,
+    PrefixMetaSourceConfig,
+    PrefixSetPrefixMetaSource,
+)
+from rest_framework import serializers
+
 from fullctl.django.rest.decorators import serializer_registry
 
 # from fullctl.django.rest.serializers import ModelSerializer
 from fullctl.django.rest.serializers.meta import Data
-from rest_framework import serializers
-from prefix_meta.sources.prefixmetad.models import (
-    PrefixMetaSourceConfig,
-    OrganizationPrefixMetaSource,
-    PrefixSetPrefixMetaSource,
-)
-
-import prefix_meta.models as models
 
 Serializers, register = serializer_registry()
 
@@ -169,10 +169,10 @@ class PrefixSetPrefixMetaSourceSerializer(serializers.Serializer):
 
     def to_internal_value(self, data):
         """Override to handle dynamic dictionary input"""
-        if 'prefix_set_id' not in data:
+        if "prefix_set_id" not in data:
             raise serializers.ValidationError("prefix_set_id is required")
 
-        self.prefix_set_id = data.pop('prefix_set_id')
+        self.prefix_set_id = data.pop("prefix_set_id")
 
         return data
 

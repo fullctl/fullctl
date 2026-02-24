@@ -1,15 +1,14 @@
 import logging
 import re
 
+import account.forms as forms
+import account.models as models
+from common.rest import HANDLEREF_FIELDS
 from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.utils.translation import gettext as _
 from django_grainy.helpers import int_flags
 from django_grainy.util import Permissions
 from rest_framework import serializers
-
-import account.forms as forms
-import account.models as models
-from common.rest import HANDLEREF_FIELDS
 
 
 class Serializers:

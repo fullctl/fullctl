@@ -1,6 +1,7 @@
 import structlog
-from .models import PrefixmetadData
 from prefix_meta.models import Request
+
+from .models import PrefixmetadData
 
 log = structlog.get_logger("django")
 

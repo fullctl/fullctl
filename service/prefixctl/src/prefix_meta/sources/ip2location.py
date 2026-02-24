@@ -1,7 +1,6 @@
 import copy
 
 from django.conf import settings
-
 from prefix_meta.models import Request
 
 __all__ = [

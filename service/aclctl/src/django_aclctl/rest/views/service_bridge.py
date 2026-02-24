@@ -4,7 +4,6 @@ from fullctl.django.rest.views.service_bridge import HeartbeatViewSet, StatusVie
 
 @route
 class Status(StatusViewSet):
-
     """
     Returns service bridge status for all the bridges in use by this service
     """

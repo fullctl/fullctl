@@ -1,11 +1,11 @@
 import django.http
+import django_ixctl.models as models
 from django.conf import settings
 from django.shortcuts import redirect
 from django.urls import reverse
+
 from fullctl.django.models import Instance, Organization
 from fullctl.django.rest.decorators import grainy_endpoint as _grainy_endpoint
-
-import django_ixctl.models as models
 
 
 class grainy_endpoint(_grainy_endpoint):
@@ -37,7 +37,6 @@ def validate_public_view_ix_and_instance(request, kwargs):
 
 
 class require_auth_ix:
-
     """
     decorate a view to require auth
     """
@@ -79,7 +78,6 @@ class require_auth_ix:
 
 
 class load_instance_ix:
-
     """
     decorator that loads the instance for the selected
     org for ixctl.

@@ -1,14 +1,14 @@
 import os
 from typing import List
 
-import fullctl.service_bridge.ixctl as ixctl
 import rrdtool
 from django.conf import settings
+from django_devicectl.models.devicectl import VirtualPort
+
+import fullctl.service_bridge.ixctl as ixctl
 from fullctl.django.management.commands.base import CommandInterface
 from fullctl.metrics import Metrics
 from fullctl.metrics.schema import Point
-
-from django_devicectl.models.devicectl import VirtualPort
 
 
 class Command(CommandInterface):
@@ -87,11 +87,11 @@ class Command(CommandInterface):
             virtual_port.meta["migrated"] = True
             virtual_port.save()
 
-    def find_ports_with_graphs(self) -> List[VirtualPort]:
+    def find_ports_with_graphs(self) -> list[VirtualPort]:
         qset = VirtualPort.objects.filter(meta__graph__isnull=False)
         return qset
 
-    def get_rra_info(self, rrd_file: str) -> List[tuple]:
+    def get_rra_info(self, rrd_file: str) -> list[tuple]:
         """Get information about RRAs in the RRD file."""
         info = rrdtool.info(rrd_file)
         rras = []
@@ -104,7 +104,7 @@ class Command(CommandInterface):
         return sorted(rras, key=lambda x: x[0])  # Sort by step
 
     def import_mrtg_rrd_to_victoriametrics(
-        self, metrics: Metrics, rrd_files: List[str], tags: dict, batch_size: int = 1000
+        self, metrics: Metrics, rrd_files: list[str], tags: dict, batch_size: int = 1000
     ):
         """
         Import all data from MRTG RRD files into VictoriaMetrics, maintaining original resolution.

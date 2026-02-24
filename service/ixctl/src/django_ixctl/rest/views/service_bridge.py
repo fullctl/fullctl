@@ -1,8 +1,14 @@
 from uuid import UUID
 
-import fullctl.service_bridge.devicectl as devicectl
+import django_ixctl.models.ixctl as models
 import structlog
 from django.db.models import Q
+from django_ixctl.rest.serializers.service_bridge import Serializers
+from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
+from rest_framework.response import Response
+
+import fullctl.service_bridge.devicectl as devicectl
 from fullctl.django.rest.decorators import grainy_endpoint
 from fullctl.django.rest.route.service_bridge import route
 from fullctl.django.rest.views.service_bridge import (
@@ -11,12 +17,6 @@ from fullctl.django.rest.views.service_bridge import (
     MethodFilter,
     StatusViewSet,
 )
-from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound
-from rest_framework.response import Response
-
-import django_ixctl.models.ixctl as models
-from django_ixctl.rest.serializers.service_bridge import Serializers
 
 logger = structlog.getLogger("django_structlog")
 
@@ -278,7 +278,7 @@ class InternetExchangeMember(DataViewSet):
 
         if not member.port or not member.port.object:
             return Response({})
-        
+
         virtual_port_id = member.port.object.virtual_port
 
         start_time = request.query_params.get("start_time")

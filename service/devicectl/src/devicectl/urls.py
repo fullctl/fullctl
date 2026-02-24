@@ -1,6 +1,7 @@
-import fullctl.django.views as views
 from django.contrib import admin
 from django.urls import include, path
+
+import fullctl.django.views as views
 
 # import django_devicectl.urls
 

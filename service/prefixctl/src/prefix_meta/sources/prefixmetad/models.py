@@ -1,5 +1,5 @@
-from prefix_meta.models import Data
 from django.db import models
+from prefix_meta.models import Data
 
 
 class PrefixmetadData(Data):
@@ -82,7 +82,7 @@ class PrefixMetaSourceConfig(models.Model):
 
     def __str__(self):
         return f"{self.source} ({self.namespace})"
-    
+
     def get_namespace_for_org(self, org):
         """Generate the actual namespace for a specific org"""
         return self.namespace.format(org_id=org.id)
@@ -133,6 +133,7 @@ class OrganizationPrefixMetaSource(models.Model):
     def namespace(self):
         """Get the formatted namespace for this org's source"""
         return self.source.get_namespace_for_org(self.org)
+
 
 class PrefixSetPrefixMetaSource(models.Model):
     """

@@ -13,8 +13,8 @@ services:
   # main django web service
   django:
     build:
-      context: ../..
-      dockerfile: Ctl/docker/Dockerfile
+      context: ../../../..
+      dockerfile: service/prefixctl/Dockerfile
     command: "runserver 0.0.0.0:8000"
     env_file: .env
     ports:
@@ -31,8 +31,8 @@ services:
   # separate django task service
   tasks:
     build:
-      context: ../..
-      dockerfile: Ctl/docker/Dockerfile.tasks
+      context: ../../../..
+      dockerfile: service/prefixctl/Ctl/docker/Dockerfile.tasks
     command: "fullctl_poll_tasks --workers 4"
     env_file: .env
     logging:

@@ -1,7 +1,7 @@
 import json
-from django.urls import reverse
 
 import django_prefixctl.models.prefixctl as models
+from django.urls import reverse
 
 
 def test_list_monitors(db, account_objects):

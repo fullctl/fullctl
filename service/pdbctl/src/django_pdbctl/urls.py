@@ -1,7 +1,7 @@
-import fullctl.django.rest.urls.service_bridge_proxy as service_bridge
+import django_pdbctl.views as views
 from django.urls import path
 
-import django_pdbctl.views as views
+import fullctl.django.rest.urls.service_bridge_proxy as service_bridge
 
 urlpatterns = service_bridge.urlpatterns(["aaactl", "devicectl"])
 

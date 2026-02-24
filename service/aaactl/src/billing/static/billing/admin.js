@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get the table that contains the product and component_object_id fields
     var first_product_feld = document.querySelector('select[name$="-product"]');
     var table = first_product_feld.closest('table');
-    
+
 
     // Attach an event listener to the table
     table.addEventListener('change', function(event) {

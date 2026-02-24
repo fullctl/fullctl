@@ -4,19 +4,19 @@ import re
 from datetime import timedelta
 from functools import wraps
 
-import fullctl.service_bridge.devicectl as devicectl
-import fullctl.service_bridge.ixctl as ixctl
-import structlog
-from django.conf import settings
-from fullctl.django.mail import send_plain
-from fullctl.metrics import Metrics
-from fullctl.service_bridge.client import url_join
-
 import django_auditctl.models.auditctl as models
 import django_auditctl.schema as schema
+import structlog
+from django.conf import settings
 from django_auditctl.metrics import Metric
 from django_auditctl.rest.serializers.auditctl import Serializers
 from django_auditctl.util import object_id_to_parts
+
+import fullctl.service_bridge.devicectl as devicectl
+import fullctl.service_bridge.ixctl as ixctl
+from fullctl.django.mail import send_plain
+from fullctl.metrics import Metrics
+from fullctl.service_bridge.client import url_join
 
 __all__ = [
     "register_handler",
@@ -246,7 +246,9 @@ class DeviceOperationalStatus(ForwardToService):
             if kind == "device":
                 if self.event.status == "error":
                     if component.get("error") != error_message:
-                        device_error_message = f"{error_message}\n\n{component['error']}"
+                        device_error_message = (
+                            f"{error_message}\n\n{component['error']}"
+                        )
                     else:
                         device_error_message = error_message
                 else:
@@ -316,6 +318,7 @@ class ConfigLivenessDataHandler(BaseHandler):
     def __call__(self):
         self.heartbeat()
 
+
 @register_handler(r"^v0.1\/[^\/]+\/bgp\/stat\/[0-9\.]+\/[0-9]+$")
 class BGPSessionStateDataHandler(BaseHandler):
     """
@@ -349,7 +352,6 @@ class BGPSessionStateDataHandler(BaseHandler):
 
             members.update(list(member_bridge.objects(**filters)))
 
-
         physical_ports = []
         port_ids = []
         port_to_ip = {}
@@ -364,7 +366,7 @@ class BGPSessionStateDataHandler(BaseHandler):
             port_ids.append(member.port)
             port_to_ip[member.port] = (
                 ipaddress.ip_address(member.ipaddr4) if member.ipaddr4 else None,
-                ipaddress.ip_address(member.ipaddr6) if member.ipaddr6 else None
+                ipaddress.ip_address(member.ipaddr6) if member.ipaddr6 else None,
             )
 
         if not port_ids:
@@ -376,16 +378,20 @@ class BGPSessionStateDataHandler(BaseHandler):
             for p in port.physical_ports:
                 ipaddr4, ipaddr6 = port_to_ip[port.id]
                 physical_port_to_ip[p["id"]] = (ipaddr4, ipaddr6)
-    
+
         for physical_port in physical_ports:
 
             # filter components by ip address
             filtered_components = []
             for component in components:
                 ipaddr4, ipaddr6 = physical_port_to_ip[physical_port]
-                if ipaddr4 and ipaddr4 == ipaddress.ip_address(component.get("address")):
+                if ipaddr4 and ipaddr4 == ipaddress.ip_address(
+                    component.get("address")
+                ):
                     filtered_components.append(component)
-                elif ipaddr6 and ipaddr6 == ipaddress.ip_address(component.get("address")):
+                elif ipaddr6 and ipaddr6 == ipaddress.ip_address(
+                    component.get("address")
+                ):
                     filtered_components.append(component)
 
             physical_port_stats_bridge.save_physical_port_stats(
@@ -394,6 +400,7 @@ class BGPSessionStateDataHandler(BaseHandler):
                 physical_port=physical_port,
                 stat_type="bgp_stats",
             )
+
 
 @register_handler(r"^v0.2\/[^\/]+\/bgp\/stat\/[0-9\.]+$")
 class BatchedBGPSessionStateDataHandler(BaseHandler):
@@ -476,8 +483,12 @@ class BatchedBGPSessionStateDataHandler(BaseHandler):
 
                 component_asn = int(component.get("asn"))
                 component_address = ipaddress.ip_address(component.get("address"))
-                member_ipaddr4 = ipaddress.ip_address(member.ipaddr4) if member.ipaddr4 else None
-                member_ipaddr6 = ipaddress.ip_address(member.ipaddr6) if member.ipaddr6 else None
+                member_ipaddr4 = (
+                    ipaddress.ip_address(member.ipaddr4) if member.ipaddr4 else None
+                )
+                member_ipaddr6 = (
+                    ipaddress.ip_address(member.ipaddr6) if member.ipaddr6 else None
+                )
 
                 if component_asn != member.asn:
                     continue

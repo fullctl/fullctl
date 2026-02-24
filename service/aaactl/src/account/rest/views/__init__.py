@@ -1,5 +1,14 @@
-import fullctl.django.rest.throttle as throttle
+import account.models as models
+import account.models.federation as federation_models
+import account.rest.serializers.federation
+import applications.rest.serializers as application_serializers
 import reversion
+from account.rest.decorators import disable_api_key, set_org
+from account.rest.route import route
+from account.rest.serializers import Serializers
+from account.session import set_selected_org
+from applications.models import Service
+from common.rest.decorators import grainy_endpoint, user_endpoint
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
@@ -7,24 +16,15 @@ from django.utils.translation import gettext as _
 from django.views.decorators.csrf import csrf_exempt
 from django_grainy.helpers import str_flags
 from django_grainy.util import get_permissions
-from fullctl.django.auditlog import auditlog
-from fullctl.django.decorators import origin_allowed
-from fullctl.django.rest.core import BadRequest
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-import account.models as models
-import account.models.federation as federation_models
-import account.rest.serializers.federation
-import applications.rest.serializers as application_serializers
-from account.rest.decorators import disable_api_key, set_org
-from account.rest.route import route
-from account.rest.serializers import Serializers
-from account.session import set_selected_org
-from applications.models import Service
-from common.rest.decorators import grainy_endpoint, user_endpoint
+import fullctl.django.rest.throttle as throttle
+from fullctl.django.auditlog import auditlog
+from fullctl.django.decorators import origin_allowed
+from fullctl.django.rest.core import BadRequest
 
 
 @route

@@ -1,7 +1,4 @@
 from django.core.exceptions import FieldError
-from rest_framework import status, viewsets
-from rest_framework.response import Response
-
 from django_prefixctl.rest.api_schema import MonitorSchema
 from django_prefixctl.rest.decorators import grainy_endpoint
 from django_prefixctl.rest.route.prefixctl import route
@@ -10,6 +7,8 @@ from django_prefixctl.rest.serializers.monitor import (
     Serializers,
     get_monitor_class,
 )
+from rest_framework import status, viewsets
+from rest_framework.response import Response
 
 
 def remove_monitor(request, instance, data: dict) -> Response:

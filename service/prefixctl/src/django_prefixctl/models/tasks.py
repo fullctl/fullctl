@@ -1,10 +1,10 @@
 import json
 
-from fullctl.django.models import Task
-from fullctl.django.tasks import register
-
 from django_prefixctl.irr import perform_irr_import
 from django_prefixctl.models.prefixctl import PrefixSet
+
+from fullctl.django.models import Task
+from fullctl.django.tasks import register
 
 __all__ = [
     "IRRImportTask",

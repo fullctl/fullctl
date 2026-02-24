@@ -762,24 +762,24 @@ $ctl.application.Devicectl.ModalPortDeletion = $tc.extend(
       var modal = this;
       var title = "Confirm Port Deletion";
       this.selected_ports = new Set();
-      
+
       // Create the content element
       var content = $('<div>').addClass('port-deletion-content');
-      
+
       // Add warning message
       content.append(
         $('<div>')
           .addClass('alert alert-warning mb-4')
           .text('Select the ports you want to delete:')
       );
-      
+
       // Initialize modal
       this.Modal("confirm", title, content);
-      
+
       // Update button text
       this.$e.button_submit.text('Delete Selected Ports');
       this.$e.button_submit.addClass('btn-danger');
-      
+
       // Wire up confirmation
       this.$e.button_submit.click(() => {
         // Here you would handle the deletion of selected ports

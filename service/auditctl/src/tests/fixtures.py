@@ -1,9 +1,11 @@
-import fullctl.django.testutil as testutil
 import pytest
 from django.test import Client
 
+import fullctl.django.testutil as testutil
+
 # lazy init for translations
 _ = lambda s: s  # noqa: E731
+
 
 class AccountObjects(testutil.AccountObjects):
     @property
@@ -15,16 +17,20 @@ class AccountObjects(testutil.AccountObjects):
 
         return self._auditctl_instance
 
+
 def make_account_objects(handle="test"):
     return AccountObjects(handle)
+
 
 @pytest.fixture
 def client_anon():
     return Client()
 
+
 @pytest.fixture
 def account_objects():
     return make_account_objects()
+
 
 @pytest.fixture
 def account_objects_b():

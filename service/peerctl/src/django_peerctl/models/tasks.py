@@ -1,17 +1,16 @@
-import fullctl.service_bridge.ixctl as ixctl
-import fullctl.service_bridge.devicectl as devicectl
-from fullctl.django.models.concrete import Task, Organization
-from fullctl.django.tasks import register
 import django_peerctl.utils as utils
-
-
 import structlog
+
+import fullctl.service_bridge.devicectl as devicectl
+import fullctl.service_bridge.ixctl as ixctl
+from fullctl.django.models.concrete import Organization, Task
+from fullctl.django.tasks import register
+
 logger = structlog.getLogger("django_structlog")
 
 
 @register
 class SyncMacAddress(Task):
-
     """
     Sync the port mac address to ixctl
     """
@@ -22,7 +21,7 @@ class SyncMacAddress(Task):
     class HandleRef:
         tag = "task_sync_mac_address"
 
-    def run(self, asn:int, ip4:str, mac_addresses: list[str], *args, **kwargs):
+    def run(self, asn: int, ip4: str, mac_addresses: list[str], *args, **kwargs):
         ixctl.InternetExchangeMember().set_mac_address(
             asn, ip4, mac_addresses, source="peerctl"
         )
@@ -30,7 +29,6 @@ class SyncMacAddress(Task):
 
 @register
 class SyncASSet(Task):
-
     """
     Sync the network as-set to ixctl
     """
@@ -49,7 +47,6 @@ class SyncASSet(Task):
 
 @register
 class SyncRouteServerMD5(Task):
-
     """
     Sync the network's route server md5 to ixctl
     """
@@ -68,7 +65,6 @@ class SyncRouteServerMD5(Task):
 
 @register
 class SyncIsRsPeer(Task):
-
     """
     Syncs the network's route server peer status to ixctl for a member port
     """
@@ -99,7 +95,6 @@ class SyncIsRsPeer(Task):
 
 @register
 class SyncStatus(Task):
-
     """
     Syncs the network's port status to ixctl for a member port
     """
@@ -133,7 +128,6 @@ class SyncStatus(Task):
 
 @register
 class SyncDevicePorts(Task):
-
     """
     Sync devices and ports from devicectl to port info objects in peerctl
 
@@ -162,7 +156,6 @@ class SyncDevicePorts(Task):
 
 @register
 class RequestDummyPorts(Task):
-
     """
     Request dummy ports from devicectl
     """
@@ -177,10 +170,9 @@ class RequestDummyPorts(Task):
 
     class HandleRef:
         tag = "task_request_dummy_ports"
-    
 
     @classmethod
-    def create_task(cls, org:Organization, asns:list[int], **kwargs):
+    def create_task(cls, org: Organization, asns: list[int], **kwargs):
         kwargs.pop("org", None)
         return super().create_task(org=org, asns=asns, **kwargs)
 
@@ -190,7 +182,7 @@ class RequestDummyPorts(Task):
 
     def run(self, *args, **kwargs):
 
-        asns:list[int] = kwargs.get("asns", [])
+        asns: list[int] = kwargs.get("asns", [])
 
         for asn in asns:
             self.claim_asn(asn)
@@ -200,9 +192,8 @@ class RequestDummyPorts(Task):
         # missing, so we can just call it with the asns
         utils.devicectl_create_devices(self.org, asns)
 
+    def claim_asn(self, asn: int):
 
-    def claim_asn(self, asn:int):
-        
         org = self.org
 
         # this will raise an ASNClaimed exception if the asn is already claimed
@@ -211,6 +202,3 @@ class RequestDummyPorts(Task):
         # claim issues need to be manually followed up, so the error is raised
         # as is and the task will fail
         utils.get_network(asn, org)
-
-
-

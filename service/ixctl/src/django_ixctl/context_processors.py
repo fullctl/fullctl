@@ -1,7 +1,7 @@
-import fullctl.service_bridge.aaactl as aaactl
 from django.conf import settings
-
 from django_ixctl.models.ixctl import InternetExchange
+
+import fullctl.service_bridge.aaactl as aaactl
 
 
 def check_trial_available(org_slug, ix_slug):

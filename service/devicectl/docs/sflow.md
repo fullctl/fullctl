@@ -761,13 +761,13 @@ step = "1h"
 #
 # if steps are identical for avg() and max() their values
 # will be the same
-step_max = "5m" 
+step_max = "5m"
 
 # start offset (1 hour ago)
 start = "-24h"
 
 # we filter by org_id and port_id_src and port_id_dst (note the `ctl_` prefix)
-# 
+#
 # its important to provide both to ensure we are staying
 # within the scope of the organization and IX
 tags_in = f"ctl_org_id=\"{org_id}\", ctl_port_id_dst=\"{port_id}\""
@@ -896,13 +896,13 @@ step = "1h"
 #
 # if steps are identical for avg() and max() their values
 # will be the same
-step_max = "5m" 
+step_max = "5m"
 
 # start offset (1 hour ago)
 start = "-24h"
 
 # we filter by org_id and ix_id (note the `ctl_` prefix)
-# 
+#
 # its important to provide both to ensure we are staying
 # within the scope of the organization and IX
 tags_in = f"ctl_org_id=\"{org_id}\", ctl_ix_id=\"{ix_id}\", ctl_port_id_dst!=\"\""

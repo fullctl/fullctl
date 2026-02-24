@@ -1,8 +1,5 @@
 from django.contrib import admin
 from django_handleref.admin import VersionAdmin
-from reversion.admin import VersionAdmin as ReversionAdmin
-
-
 from django_prefixctl.models import (
     AlertGroup,
     AlertLog,
@@ -15,6 +12,7 @@ from django_prefixctl.models import (
     PrefixSet,
     PrefixSetIRRImporter,
 )
+from reversion.admin import VersionAdmin as ReversionAdmin
 
 # Register your models here.
 

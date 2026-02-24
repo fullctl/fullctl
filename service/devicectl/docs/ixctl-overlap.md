@@ -1,6 +1,6 @@
 Track code overlap between ixctl and devicectl
 
-## complete 
+## complete
 - src/django_devicectl/api_schema.py: api schema for api doc purposes
 - src/django_devicectl/auth.py: remote grainy permission setup
 - src/django_devicectl/decorators.py

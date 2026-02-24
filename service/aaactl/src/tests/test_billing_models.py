@@ -2,9 +2,6 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from django.contrib.contenttypes.models import ContentType
-from django.db.models import ProtectedError
-
 from billing.models import (
     InvoiceLine,
     Ledger,
@@ -16,6 +13,8 @@ from billing.models import (
     SubscriptionProduct,
     Withdrawal,
 )
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import ProtectedError
 
 
 def test_product_group(db, billing_objects):
@@ -168,13 +167,13 @@ def test_subscription_cycle_charge_exists(db, billing_objects, mocker):
     # Now we set status of payment charge from ok to pending
     subscription_cycle_charge = subscription_cycle.subscription_cycle_charge_set.first()
     payment_charge = subscription_cycle_charge.payment_charge
-    
+
     # Verify initial status
     assert subscription_cycle_charge.status == "pending"
-    
+
     payment_charge.status = "ok"
     payment_charge.save()
-    
+
     subscription_cycle.refresh_from_db()
 
     # Raises error if we retry an "ok" charge
@@ -392,17 +391,20 @@ def test_invoice_number_from_payment_charge(db, billing_objects, mocker):
     subscription_cycle = subscription.subscription_cycle_set.first()
 
     subscription_cycle.update_usage(subscription.subscription_product_set.first(), 1)
-    
+
     # Charge the subscription cycle which creates orders and invoice
     subscription_cycle.charge()
-    
+
     # Get the subscription cycle charge
     subscription_cycle_charge = subscription_cycle.subscription_cycle_charge_set.first()
     payment_charge = subscription_cycle_charge.payment_charge
-    
+
     # Verify invoice number is retrieved from payment charge's invoice
     assert subscription_cycle_charge.invoice_number is not None
-    assert subscription_cycle_charge.invoice_number == payment_charge.invoice.invoice_number
+    assert (
+        subscription_cycle_charge.invoice_number
+        == payment_charge.invoice.invoice_number
+    )
 
 
 @pytest.mark.django_db
@@ -415,23 +417,27 @@ def test_recurring_product_reset_price_after_billing(db, billing_objects, mocker
         "billing.payment_processors.stripe.stripe.PaymentIntent.create",
         return_value={"id": 1234, "receipt_url": "https://example.com"},
     )
-    
+
     # Set up subscription with payment method
     subscription = billing_objects.monthly_subscription
     subscription.payment_method = billing_objects.payment_method
     subscription.save()
-    
+
     # Get the recurring product and enable reset_price
-    recurring_product_fixed = billing_objects.product_subscription_fixed.recurring_product
+    recurring_product_fixed = (
+        billing_objects.product_subscription_fixed.recurring_product
+    )
     initial_price = recurring_product_fixed.price
     assert float(initial_price) == 125.99  # Verify initial price
-    
+
     # Enable reset_price but verify price hasn't changed yet
     recurring_product_fixed.reset_price = True
     recurring_product_fixed.save()
-    
+
     recurring_product_fixed.refresh_from_db()
-    assert float(recurring_product_fixed.price) == float(initial_price)  # Price should still be original
+    assert float(recurring_product_fixed.price) == float(
+        initial_price
+    )  # Price should still be original
 
     # Include the fixed product in the subscription so it is part of the billing cycle
     subscription.add_product(billing_objects.product_subscription_fixed)
@@ -442,10 +448,10 @@ def test_recurring_product_reset_price_after_billing(db, billing_objects, mocker
         product=billing_objects.product_subscription_fixed
     )
     subscription_cycle.update_usage(subscription_product_fixed, 1)
-    
+
     # Charge the subscription cycle - this should trigger the price reset
     subscription_cycle.charge()
-    
+
     charge = subscription_cycle.subscription_cycle_charge_set.first()
     if charge:
         # Set payment status to ok to simulate successful payment
@@ -453,32 +459,34 @@ def test_recurring_product_reset_price_after_billing(db, billing_objects, mocker
         charge.payment_charge.save()
         # Call sync_status to trigger the reset logic
         charge.payment_charge.sync_status()
-    
+
     # Verify the price was reset to 0.0 after successful billing
     recurring_product_fixed.refresh_from_db()
     assert float(recurring_product_fixed.price) == 0.0
 
 
-@pytest.mark.django_db 
+@pytest.mark.django_db
 def test_recurring_product_reset_price_no_reset_without_billing(db, billing_objects):
     """
     Test that price reset only happens after billing, not when reset_price is set to True
     """
-    recurring_product_fixed = billing_objects.product_subscription_fixed.recurring_product
+    recurring_product_fixed = (
+        billing_objects.product_subscription_fixed.recurring_product
+    )
     initial_price = recurring_product_fixed.price
-    
+
     # Enable reset_price
     recurring_product_fixed.reset_price = True
     recurring_product_fixed.save()
-    
+
     # Price should NOT be reset yet (no billing has occurred)
     recurring_product_fixed.refresh_from_db()
     assert float(recurring_product_fixed.price) == float(initial_price)
-    
+
     # Change reset_price back to False
     recurring_product_fixed.reset_price = False
     recurring_product_fixed.save()
-    
+
     # Price should still be unchanged
     recurring_product_fixed.refresh_from_db()
     assert float(recurring_product_fixed.price) == float(initial_price)
@@ -489,15 +497,21 @@ def test_recurring_product_reset_price_default_value(db, billing_objects):
     """
     Test that reset_price defaults to False on RecurringProduct
     """
-    recurring_product_fixed = billing_objects.product_subscription_fixed.recurring_product
+    recurring_product_fixed = (
+        billing_objects.product_subscription_fixed.recurring_product
+    )
     assert recurring_product_fixed.reset_price is False
 
-    recurring_product_metered = billing_objects.product_subscription_metered.recurring_product
+    recurring_product_metered = (
+        billing_objects.product_subscription_metered.recurring_product
+    )
     assert recurring_product_metered.reset_price is False
 
 
 @pytest.mark.django_db
-def test_recurring_product_reset_price_no_reset_on_failed_billing(db, billing_objects, mocker):
+def test_recurring_product_reset_price_no_reset_on_failed_billing(
+    db, billing_objects, mocker
+):
     """
     Test that price is NOT reset if billing fails
     """
@@ -506,29 +520,33 @@ def test_recurring_product_reset_price_no_reset_on_failed_billing(db, billing_ob
         "billing.payment_processors.stripe.stripe.PaymentIntent.create",
         return_value={"id": 1234, "receipt_url": "https://example.com"},
     )
-    
+
     # Set up subscription with payment method
     subscription = billing_objects.monthly_subscription
     subscription.payment_method = billing_objects.payment_method
     subscription.save()
-    
+
     # Get the recurring product and enable reset_price
-    recurring_product_fixed = billing_objects.product_subscription_fixed.recurring_product
+    recurring_product_fixed = (
+        billing_objects.product_subscription_fixed.recurring_product
+    )
     initial_price = recurring_product_fixed.price
     recurring_product_fixed.reset_price = True
     recurring_product_fixed.save()
-    
+
     # Create and charge a subscription cycle
     subscription_cycle = subscription.start_subscription_cycle()
     subscription_cycle.update_usage(subscription.subscription_product_set.first(), 1)
-    
+
     # Mock the payment charge to fail
     def mock_charge_failure(*args, **kwargs):
-        subscription_cycle.subscription_cycle_charge_set.first().payment_charge.status = "failed"
-    
+        subscription_cycle.subscription_cycle_charge_set.first().payment_charge.status = (
+            "failed"
+        )
+
     # Charge the subscription cycle with failed payment
     subscription_cycle.charge()
-    
+
     # Manually set the payment status to failed to simulate failure
     charge = subscription_cycle.subscription_cycle_charge_set.first()
     if charge:
@@ -536,7 +554,9 @@ def test_recurring_product_reset_price_no_reset_on_failed_billing(db, billing_ob
         charge.payment_charge.save()
         # Call sync_status to trigger the failure logic (but not reset)
         charge.payment_charge.sync_status()
-    
+
     # Verify the price was NOT reset since billing failed
     recurring_product_fixed.refresh_from_db()
-    assert float(recurring_product_fixed.price) == float(initial_price)  # Should still be original price
+    assert float(recurring_product_fixed.price) == float(
+        initial_price
+    )  # Should still be original price

@@ -1,8 +1,9 @@
 import os.path
 
-import fullctl.service_bridge.pdbctl as pdbctl
 import pytest
 from django.test import Client
+
+import fullctl.service_bridge.pdbctl as pdbctl
 
 # lazy init for translations
 _ = lambda s: s  # noqa: E731
@@ -25,9 +26,10 @@ class AccountObjects:
     def __init__(self, handle):
         from django.contrib.auth import get_user_model
         from django_ixctl.models import Organization
+        from rest_framework.test import APIClient
+
         from fullctl.django.auth import permissions
         from fullctl.django.models.concrete import OrganizationUser
-        from rest_framework.test import APIClient
 
         reset_auto_fields()
 

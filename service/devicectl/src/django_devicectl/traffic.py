@@ -1,8 +1,9 @@
 import os
 import time
 
-import fullctl.graph.mrtg.rrd as mrtg_rrd
 from django.conf import settings
+
+import fullctl.graph.mrtg.rrd as mrtg_rrd
 
 
 def start_time_and_duration(start_time: int, duration: int):

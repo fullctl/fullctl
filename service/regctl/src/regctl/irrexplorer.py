@@ -2,20 +2,23 @@
 Functions to fetch and parse data from IRRexplorer
 """
 
-import pydantic
 import httpx
+import pydantic
 
 URL_ASN = "https://irrexplorer.nlnog.net/api/prefixes/asn/{asn}"
 URL_PREFIX = "https://irrexplorer.nlnog.net/api/prefixes/prefix/{prefix}"
 
 # Schema
 
+
 class Source(pydantic.BaseModel):
     url: str
+
 
 class Message(pydantic.BaseModel):
     text: str
     category: str
+
 
 class Route(pydantic.BaseModel):
     rpslText: str
@@ -23,6 +26,7 @@ class Route(pydantic.BaseModel):
     rpkiStatus: str
     rpkiMaxLength: int | None = None
     rpslPk: str
+
 
 class PrefixInfo(pydantic.BaseModel):
     prefixSortKey: str
@@ -35,19 +39,22 @@ class PrefixInfo(pydantic.BaseModel):
     messages: list[Message] = pydantic.Field(default_factory=list)
     irrRoutes: dict[str, list[Route]] = pydantic.Field(default_factory=dict)
 
+
 class ASNRoutingData(pydantic.BaseModel):
     directOrigin: list[PrefixInfo] = pydantic.Field(default_factory=list)
     overlaps: list[PrefixInfo] = pydantic.Field(default_factory=list)
     source: Source | None = None
 
+
 class PrefixRoutingData(pydantic.BaseModel):
     prefixes: list[PrefixInfo]
     source: Source | None = None
 
+
 # fetchers
 
-async def get_asn_routing_data(asn: int | str) -> ASNRoutingData:
 
+async def get_asn_routing_data(asn: int | str) -> ASNRoutingData:
     """
     Requests routing data for a given ASN from IRRexplorer
 
@@ -66,8 +73,8 @@ async def get_asn_routing_data(asn: int | str) -> ASNRoutingData:
         response.raise_for_status()
         return ASNRoutingData(source=Source(url=url), **response.json())
 
-async def get_prefix_routing_data(prefix: str) -> PrefixRoutingData:
 
+async def get_prefix_routing_data(prefix: str) -> PrefixRoutingData:
     """
     Requests routing data for a given prefix from IRRexplorer
 
@@ -84,4 +91,7 @@ async def get_prefix_routing_data(prefix: str) -> PrefixRoutingData:
         url = URL_PREFIX.format(prefix=prefix)
         response = await client.get(url)
         response.raise_for_status()
-        return PrefixRoutingData(source=Source(url=url), prefixes=[PrefixInfo(**item) for item in response.json()])
+        return PrefixRoutingData(
+            source=Source(url=url),
+            prefixes=[PrefixInfo(**item) for item in response.json()],
+        )

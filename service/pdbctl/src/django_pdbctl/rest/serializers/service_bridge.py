@@ -1,10 +1,10 @@
 import django_peeringdb.models.concrete as models
+from rest_framework import serializers
 
 # from django.utils.translation import gettext_lazy as _
 # from django_inet.rest import IPAddressField
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
-from rest_framework import serializers
 
 # from rest_framework.exceptions import ValidationError
 

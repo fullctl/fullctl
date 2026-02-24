@@ -11,7 +11,7 @@ Peerctl is containerized with Docker. First we want to copy the example environm
 ```sh
 cp Ctl/dev/example.env Ctl/dev/.env
 ```
-Any of the env variables can be changed, and you should set your own secret key. 
+Any of the env variables can be changed, and you should set your own secret key.
 
 ### Authentication and accounts
 
@@ -36,7 +36,7 @@ Note you will need to give users permissions (in aaactl) to the following namesp
 
 ### Building and starting
 
-You can launch the app via: 
+You can launch the app via:
 ```sh
 Ctl/dev/compose.sh build
 Ctl/dev/compose.sh up

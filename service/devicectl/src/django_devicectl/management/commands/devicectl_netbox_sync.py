@@ -1,9 +1,9 @@
+import django_devicectl.netbox as netbox
 from django.core.management.base import CommandError
+
 from fullctl.django.management.commands.base import CommandInterface
 from fullctl.django.models.concrete import Organization
 from fullctl.service_bridge.context import ServiceBridgeContext
-
-import django_devicectl.netbox as netbox
 
 
 class Command(CommandInterface):

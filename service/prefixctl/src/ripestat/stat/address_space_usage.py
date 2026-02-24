@@ -1,4 +1,5 @@
 """Provides the Address Space Usage Status endpoint."""
+
 from collections import namedtuple
 from datetime import datetime
 from ipaddress import IPv4Network

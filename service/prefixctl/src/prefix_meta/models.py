@@ -1,14 +1,14 @@
 import ipaddress
 
-import fullctl.django.models.abstract.meta as meta
 from django.contrib.postgres.indexes import GistIndex
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from netfields import CidrAddressField, NetManager
 
+import fullctl.django.models.abstract.meta as meta
+
 
 class Data(meta.Data):
-
     """
     Normalized prefix meta data storage
     """
@@ -78,7 +78,6 @@ class Data(meta.Data):
 
 
 class DataSubnet(models.Model):
-
     """
     Indicates that a specific subnet has a match
     in the parent prefix meta data
@@ -105,7 +104,6 @@ class DataSubnet(models.Model):
 
 
 class Response(meta.Response):
-
     """
     Maintains a cache for third party data responses
     """
@@ -129,7 +127,6 @@ class Response(meta.Response):
 
 
 class Request(meta.Request):
-
     """
     Handles logic for requesting and rate-throttling
     third party meta data for a prefix

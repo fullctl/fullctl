@@ -2,14 +2,14 @@ import dataclasses
 import traceback
 
 import reversion
+from billing.models import Invoice, OrganizationProduct, Subscription, SubscriptionCycle
+from billing.payment_processors.processor import InternalProcessorError
 from django.core.management.base import CommandError
 from django.db.models import QuerySet
 from django.utils import timezone
+
 from fullctl.django.auditlog import auditlog
 from fullctl.django.management.commands.base import CommandInterface
-
-from billing.models import Invoice, OrganizationProduct, Subscription, SubscriptionCycle
-from billing.payment_processors.processor import InternalProcessorError
 
 
 @dataclasses.dataclass
@@ -139,11 +139,8 @@ class Command(CommandInterface):
                 self.collect(subscription_product, subscription.subscription_cycle)
 
             if subscription.billing_paused:
-                self.log_info(
-                    f"-- billing paused, unpaid cycles will not be charged"
-                )
+                self.log_info(f"-- billing paused, unpaid cycles will not be charged")
                 continue
-
 
             for subscription_cycle in subscription.subscription_cycle_set.filter(
                 status__in=["open", "failed"]
@@ -266,13 +263,13 @@ class Command(CommandInterface):
             self.log_info(f"syncing open invoice {invoice}")
             invoice.sync_status(commit=self.commit)
 
-    def _filter_by_group(self, queryset:QuerySet, lookup_prefix:str) -> QuerySet:
+    def _filter_by_group(self, queryset: QuerySet, lookup_prefix: str) -> QuerySet:
         """
         Return the queryset filtered down to the selected ProductGroup.
 
         The lookup_prefix argument is the relation path to the ProductGroup field
-        on the supplied queryset model. 
-        
+        on the supplied queryset model.
+
         For instance:
             * "group" for Subscription
             * "product__group" for OrganizationProduct

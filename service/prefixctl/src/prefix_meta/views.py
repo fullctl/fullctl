@@ -2,9 +2,9 @@ import csv
 import ipaddress
 
 from django.http import HttpResponse
-from fullctl.django.decorators import load_instance, require_auth
-
 from prefix_meta.models import Data
+
+from fullctl.django.decorators import load_instance, require_auth
 
 
 @require_auth()

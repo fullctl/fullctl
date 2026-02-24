@@ -12,8 +12,8 @@ services:
 
   django:
     build:
-      context: ../..
-      dockerfile: Dockerfile
+      context: ../../../..
+      dockerfile: service/aclctl/Dockerfile
     command: "runserver 0.0.0.0:8000"
     user: root
     env_file: .env

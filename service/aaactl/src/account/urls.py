@@ -1,8 +1,7 @@
-from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView
-
 import account.views.auth
 import account.views.controlpanel
+from django.urls import path
+from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     path("auth/o/profile/", account.views.auth.oauth_profile, name="oauth-profile"),

@@ -1,8 +1,4 @@
 import pytest
-from django.contrib.auth import get_user_model
-from django_grainy.util import Permissions
-from grainy.const import PERM_CRUD
-
 from account.models import (
     ManagedPermission,
     ManagedPermissionRoleAutoGrant,
@@ -10,6 +6,9 @@ from account.models import (
     OrganizationRole,
     Role,
 )
+from django.contrib.auth import get_user_model
+from django_grainy.util import Permissions
+from grainy.const import PERM_CRUD
 
 
 @pytest.mark.django_db

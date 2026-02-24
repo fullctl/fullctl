@@ -18,7 +18,11 @@ from fullctl.django.models import (
     TaskSchedule,
     WorkerUnqualified,
 )
-from fullctl.django.models.concrete.tasks import TaskClaim, TaskLimitError, TaskScheduleClaimed
+from fullctl.django.models.concrete.tasks import (
+    TaskClaim,
+    TaskLimitError,
+    TaskScheduleClaimed,
+)
 from fullctl.django.tasks import requeue as requeue_task
 from fullctl.django.tasks import specify_task
 from fullctl.django.tasks.util import worker_id
@@ -97,18 +101,17 @@ def cleanup_orphaned_running_tasks():
     """
     Marks running tasks as failed if their TaskHeartbeat has stopped
     for longer than the configured threshold.
-    
+
     This handles edge cases where tasks crash due to DB connection loss
     or other failures and remain stuck in 'running' status indefinitely.
     """
     heartbeat_timeout = getattr(settings, "TASK_ORPHANED_HEARTBEAT_TIMEOUT", 30)
-    
+
     cutoff_time = timezone.now() - timedelta(seconds=heartbeat_timeout)
 
     running_tasks = Task.objects.filter(status="running", updated__lt=cutoff_time)
     stale_heartbeats = TaskHeartbeat.objects.filter(
-        timestamp__lt=cutoff_time,
-        task__in=running_tasks
+        timestamp__lt=cutoff_time, task__in=running_tasks
     ).select_related("task")
 
     if not stale_heartbeats.exists():

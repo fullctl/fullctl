@@ -1,6 +1,5 @@
-import pytest
-
 import account.validators as validators
+import pytest
 
 
 def test_validate_password():

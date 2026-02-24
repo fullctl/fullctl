@@ -1,24 +1,24 @@
 import ipaddress
 import re
 
+import django_peerctl.autopeer.tasks as autopeer_tasks
+import django_peerctl.models as models
+import structlog
+from django.db.models import Count, Q
+from django.utils.translation import gettext_lazy as _
+from django_peerctl.autopeer import autopeer_url
+from django_peerctl.helpers import get_best_policy
+from rest_framework import serializers
+from rest_framework.exceptions import ValidationError  # noqa
+
 import fullctl.service_bridge.aaactl as aaactl
 import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.pdbctl as pdbctl
 import fullctl.service_bridge.sot as sot
-import structlog
-from django.db.models import Count, Q
-from django.utils.translation import gettext_lazy as _
 from fullctl.django.inet.validators import validate_mac_address, validate_mac_addresses
 from fullctl.django.models.concrete.tasks import TaskLimitError
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
-from rest_framework import serializers
-from rest_framework.exceptions import ValidationError  # noqa
-
-import django_peerctl.autopeer.tasks as autopeer_tasks
-import django_peerctl.models as models
-from django_peerctl.autopeer import autopeer_url
-from django_peerctl.helpers import get_best_policy
 
 logger = structlog.getLogger(__name__)
 
@@ -34,6 +34,7 @@ def is_dummy(name):
         or name.startswith("ixctl:")
         or name.startswith("peerctl:")
     )
+
 
 @register
 class NetworkCompact(serializers.Serializer):
@@ -52,6 +53,7 @@ class NetworkCompact(serializers.Serializer):
     @models.ref_fallback(lambda s, o: f"AS{o.asn}")
     def get_name(self, instance):
         return instance.ref.name
+
 
 @register
 class Network(ModelSerializer):
@@ -632,7 +634,7 @@ class PortUpdate(serializers.Serializer):
         )
         port.port_info_object.save()
 
-    def validate(self, data:dict) -> dict:
+    def validate(self, data: dict) -> dict:
         """
         Final validation
         """
@@ -642,7 +644,9 @@ class PortUpdate(serializers.Serializer):
 
         if data.get("md5") and not data.get("is_route_server_peer"):
             raise ValidationError(
-                {"md5":"MD5 can only be set on route server peers, please enable 'Peer with Route Server' or remove the MD5 password"}
+                {
+                    "md5": "MD5 can only be set on route server peers, please enable 'Peer with Route Server' or remove the MD5 password"
+                }
             )
 
         return data

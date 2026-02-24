@@ -1,9 +1,9 @@
-import fullctl.service_bridge.nautobot as nautobot
+import django_devicectl.models.devicectl as models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from fullctl.django.models.concrete.service_bridge import service_bridge_action
 
-import django_devicectl.models.devicectl as models
+import fullctl.service_bridge.nautobot as nautobot
+from fullctl.django.models.concrete.service_bridge import service_bridge_action
 
 # TODO: work around to deal with pagination for now
 # Needs to be fixed in fullctl service bridge client to naturally

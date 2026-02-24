@@ -1,10 +1,10 @@
-from fullctl.django.rest.api_schema import BaseSchema
-
 from django_prefixctl.rest.serializers.monitor import (
     ASN_MONITOR_CLASSES,
     MONITOR_CLASSES,
     PREFIX_MONITOR_CLASSES,
 )
+
+from fullctl.django.rest.api_schema import BaseSchema
 
 
 def monitor_response(cls_list=None):
@@ -55,14 +55,14 @@ class ASNSetSchema(BaseSchema):
         # list array of monitors (array of oneOf mixed typing)
 
         if method == "GET" and path == "/api/asn_set/{org_tag}/{id}/monitors/":
-            schema["200"]["content"]["application/json"][
-                "schema"
-            ] = monitor_array_response(ASN_MONITOR_CLASSES)
+            schema["200"]["content"]["application/json"]["schema"] = (
+                monitor_array_response(ASN_MONITOR_CLASSES)
+            )
 
         elif method == "POST" and path == "/api/asn_set/{org_tag}/{id}/add_monitor/":
-            schema["201"]["content"]["application/json"][
-                "schema"
-            ] = monitor_array_response(ASN_MONITOR_CLASSES)
+            schema["201"]["content"]["application/json"]["schema"] = (
+                monitor_array_response(ASN_MONITOR_CLASSES)
+            )
 
         return schema
 
@@ -111,20 +111,19 @@ class PrefixSetSchema(BaseSchema):
         # list array of monitors (array of oneOf mixed typing)
 
         if method == "GET" and path == "/api/prefix_set/{org_tag}/{id}/monitors/":
-            schema["200"]["content"]["application/json"][
-                "schema"
-            ] = monitor_array_response(PREFIX_MONITOR_CLASSES)
+            schema["200"]["content"]["application/json"]["schema"] = (
+                monitor_array_response(PREFIX_MONITOR_CLASSES)
+            )
 
         elif method == "POST" and path == "/api/prefix_set/{org_tag}/{id}/add_monitor/":
-            schema["201"]["content"]["application/json"][
-                "schema"
-            ] = monitor_array_response(PREFIX_MONITOR_CLASSES)
+            schema["201"]["content"]["application/json"]["schema"] = (
+                monitor_array_response(PREFIX_MONITOR_CLASSES)
+            )
 
         return schema
 
 
 class MonitorSchema(BaseSchema):
-
     """
     Customized OpenAPI Schema for Monitor end point so we can show
     OneOf for each MONITOR_CLASSES as the payload

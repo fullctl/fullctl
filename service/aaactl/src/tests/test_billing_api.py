@@ -1,7 +1,7 @@
+import billing.models as models
 import pytest
 from django.urls import reverse
 
-import billing.models as models
 from tests.helpers import strip_api_fields
 
 

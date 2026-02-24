@@ -1,13 +1,13 @@
 import asyncio
+import time
 import uuid
 
 import django.db
 import psycopg
 import reversion
 import structlog
-import time
-from django.conf import settings
 from asgiref.sync import sync_to_async
+from django.conf import settings
 
 from fullctl.django.management.commands.base import CommandInterface
 from fullctl.django.tasks.orm import (
@@ -191,7 +191,7 @@ class Command(CommandInterface):
         """
         Performs cleanup of tasks that have reached their max time or are orphaned.
 
-        This is rate limited to prevent excessive database queries. 
+        This is rate limited to prevent excessive database queries.
 
         The period can be configured with the `TASK_CLEANUP_INTERVAL_SECONDS` setting.
         """
@@ -263,7 +263,7 @@ class Command(CommandInterface):
                     self.all_workers_busy = False
 
                 await self.perform_cleanup()
-                
+
                 task = await sync_to_async(fetch_task)()
 
                 if not task or task.queue_id:

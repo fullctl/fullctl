@@ -1,10 +1,10 @@
 import json
 
-from fullctl.django.models.concrete import Task
-from fullctl.django.tasks import register
-
 import django_peerctl.models.peerctl as models
 from django_peerctl.autopeer.workflow import AutopeerWorkflow
+
+from fullctl.django.models.concrete import Task
+from fullctl.django.tasks import register
 
 __all__ = [
     "AutopeerRequest",
@@ -13,7 +13,6 @@ __all__ = [
 
 @register
 class AutopeerRequest(Task):
-
     """
     Autopeer request from one network to another
 

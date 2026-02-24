@@ -1,6 +1,7 @@
-import os
-import json
 import datetime
+import json
+import os
+
 import prefix_meta.sources.ripestat.routing_status as routing_status
 from django.utils import timezone
 

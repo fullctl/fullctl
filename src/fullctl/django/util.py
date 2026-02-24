@@ -122,7 +122,7 @@ def verified_asns(perms):
 def get_db_connection_stats():
     """
     Get PostgreSQL connection statistics for the current database.
-    
+
     Returns a dictionary with:
     - total_connections: Total number of connections to the database
     - active_connections: Number of active connections (state = 'active')
@@ -130,41 +130,49 @@ def get_db_connection_stats():
     - per_application: Dictionary of connection counts per application
     """
     try:
-        db_name = connection.settings_dict['NAME']
+        db_name = connection.settings_dict["NAME"]
         stats = {
             "total_connections": 0,
             "active_connections": 0,
             "idle_connections": 0,
-            "per_application": {}
+            "per_application": {},
         }
-        
+
         with connection.cursor() as cursor:
             # Get total connections
-            cursor.execute("SELECT count(*) FROM pg_stat_activity WHERE datname = %s", 
-                          [db_name])
+            cursor.execute(
+                "SELECT count(*) FROM pg_stat_activity WHERE datname = %s", [db_name]
+            )
             stats["total_connections"] = cursor.fetchone()[0]
-            
+
             # Get active connections
-            cursor.execute("SELECT count(*) FROM pg_stat_activity WHERE datname = %s AND state = 'active'", 
-                          [db_name])
+            cursor.execute(
+                "SELECT count(*) FROM pg_stat_activity WHERE datname = %s AND state = 'active'",
+                [db_name],
+            )
             stats["active_connections"] = cursor.fetchone()[0]
-            
+
             # Get idle connections
-            cursor.execute("SELECT count(*) FROM pg_stat_activity WHERE datname = %s AND state = 'idle'", 
-                          [db_name])
+            cursor.execute(
+                "SELECT count(*) FROM pg_stat_activity WHERE datname = %s AND state = 'idle'",
+                [db_name],
+            )
             stats["idle_connections"] = cursor.fetchone()[0]
-            
+
             # Get connections per application
-            cursor.execute("""
-                SELECT application_name, count(*) 
-                FROM pg_stat_activity 
-                WHERE datname = %s 
+            cursor.execute(
+                """
+                SELECT application_name, count(*)
+                FROM pg_stat_activity
+                WHERE datname = %s
                 GROUP BY application_name
-            """, [db_name])
-            
+            """,
+                [db_name],
+            )
+
             for app_name, count in cursor.fetchall():
                 stats["per_application"][app_name or "unknown"] = count
-            
+
         return stats
     except Exception as exc:
         log.warning("Failed to get database connection statistics", exc=exc)
@@ -174,7 +182,7 @@ def get_db_connection_stats():
 def log_db_connection_stats(context=None):
     """
     Log database connection statistics.
-    
+
     Args:
         context: Optional context information to include in the log message
     """
@@ -183,10 +191,10 @@ def log_db_connection_stats(context=None):
         "total": db_stats.get("total_connections"),
         "active": db_stats.get("active_connections"),
         "idle": db_stats.get("idle_connections"),
-        "per_app": db_stats.get("per_application")
+        "per_app": db_stats.get("per_application"),
     }
-    
+
     if context:
         log_data.update(context)
-    
+
     log.debug("Database connections", **log_data)

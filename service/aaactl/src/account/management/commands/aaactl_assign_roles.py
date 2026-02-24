@@ -1,12 +1,11 @@
+from account.models import Organization, OrganizationRole, Role
 from django.contrib.auth import get_user_model
 from django_grainy.util import check_permissions
-from fullctl.django.management.commands.base import CommandInterface
 
-from account.models import Organization, OrganizationRole, Role
+from fullctl.django.management.commands.base import CommandInterface
 
 
 class Command(CommandInterface):
-
     """
     Assigns users default oragnization roles as needed
     """

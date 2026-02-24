@@ -1,4 +1,5 @@
 from django.conf import settings
+
 from fullctl.metrics import Metrics
 from fullctl.metrics.schema import QueryResult
 

@@ -2,14 +2,13 @@
 
 import uuid
 
+import billing.models
 import django.db.models.deletion
 import django.db.models.manager
 import django.utils.timezone
 import django_handleref.models
 from django.conf import settings
 from django.db import migrations, models
-
-import billing.models
 
 
 class Migration(migrations.Migration):

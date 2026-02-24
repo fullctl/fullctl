@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-
 from django_peerctl.exceptions import ReferenceNotFoundError
 from django_peerctl.models import InternetExchange, PeerNetwork, PeerSession
 

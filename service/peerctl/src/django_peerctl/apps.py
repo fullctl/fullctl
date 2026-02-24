@@ -9,9 +9,8 @@ class DjangoPeerctlConfig(AppConfig):
     name = "django_peerctl"
 
     def ready(self):
-        from django.conf import settings
-
         import django_peerctl.signals  # noqa
+        from django.conf import settings
 
         # Does this peerctl instance want to use pdbctl as a source
         # of truth for peers and exchanges?

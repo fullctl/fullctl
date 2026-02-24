@@ -1,6 +1,6 @@
 # aaactl_import_users Command Usage Documentation
 
-The `aaactl_import_users` command is a utility command that allows you to import users from a CSV file into the system. 
+The `aaactl_import_users` command is a utility command that allows you to import users from a CSV file into the system.
 
 ## Command Syntax
 

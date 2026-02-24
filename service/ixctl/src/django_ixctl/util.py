@@ -1,7 +1,7 @@
+from django_ixctl.models import Network
+
 import fullctl.service_bridge.pdbctl as pdbctl
 from fullctl.django.auth import permissions
-
-from django_ixctl.models import Network
 
 
 def create_networks_from_verified_asns(user):

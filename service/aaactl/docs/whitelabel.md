@@ -4,7 +4,7 @@ All white-labeling for aaactl is done through template and static file overrides
 
 This django application should be started with the `django-admin startapp` command and can either live in the `src` directory of your aaactl installation, or be installed as a python module in your virtual environment.
 
-## Create application 
+## Create application
 
 ```
 cd src
@@ -31,7 +31,7 @@ INSTALLED_APPS.insert(app_index, "whitelabel")
 ```
 cd whitelabel
 mkdir -p templates/account
-mkdir -p static/account 
+mkdir -p static/account
 ```
 
 **note** - aaactl needs to be restarted in order to recognize these directories.
@@ -82,7 +82,7 @@ vim templates/account/footer.html
 {% load static i18n %}
 {% block developer %}{% endblock %}
 {% block contactus %}<a href="mailto:contact@whitelabel">Contact us</a>{% endblock %}
-{% block copyright %}2020-{% now "Y" %} Whitelabel, LLC{% endblock %}  
+{% block copyright %}2020-{% now "Y" %} Whitelabel, LLC{% endblock %}
 {% block legal %}<a href="legal.pdf">Legal</a>{% endblock %}
 ```
 

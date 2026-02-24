@@ -9,11 +9,11 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from fullctl.django.auth import permissions
-from jwt.exceptions import InvalidTokenError
-
 from django_auditctl.models.auditctl import Event
 from django_auditctl.rest.serializers.auditctl import Serializers
+from jwt.exceptions import InvalidTokenError
+
+from fullctl.django.auth import permissions
 
 CONNECTIONS = set()
 
@@ -50,7 +50,6 @@ async def get_qualified_websockets(event):
 
 
 class Connection:
-
     """
     Wraps a websocket with some extra options and the authenticated user with permissions
     loaded.

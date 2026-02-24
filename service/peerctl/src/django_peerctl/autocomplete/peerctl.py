@@ -4,15 +4,15 @@ Then we cannot use pdb to autocomplete network searches.
 
 A dynamic switch needs to happen if settings.PDBCTL_SOT_IX = False
 """
-from django.conf import settings
+
 from dal import autocomplete
+from django.conf import settings
 
 import fullctl.service_bridge.ixctl as ixctl
-
 from fullctl.django.autocomplete.pdb import peeringdb_net
 
-class ixctl_net(autocomplete.Select2QuerySetView):
 
+class ixctl_net(autocomplete.Select2QuerySetView):
     """
     Network autocompletion from ixctl
 
@@ -21,11 +21,9 @@ class ixctl_net(autocomplete.Select2QuerySetView):
     """
 
     def get_queryset(self):
-        qs = list(ixctl.InternetExchangeMember().objects(
-            q=self.q,
-            distinct="asn",
-            sot=True
-        ))
+        qs = list(
+            ixctl.InternetExchangeMember().objects(q=self.q, distinct="asn", sot=True)
+        )
         return qs
 
     def get_result_label(self, item):

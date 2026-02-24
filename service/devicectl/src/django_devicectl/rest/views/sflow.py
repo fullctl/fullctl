@@ -1,19 +1,19 @@
 import base64
 
-import fullctl.service_bridge.ixctl as ixctl
+import django_devicectl.models as models
+import django_devicectl.sflow as sflow
 import structlog
-from fullctl.django.rest.core import BadRequest
-from fullctl.django.rest.mixins import CachedObjectMixin
-from fullctl.django.rest.serializers.metric import Serializers as MetricSerializers
+from django_devicectl.rest.decorators import grainy_endpoint
+from django_devicectl.rest.route.devicectl import route
+from django_devicectl.rest.serializers.sflow import Serializers
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-import django_devicectl.models as models
-import django_devicectl.sflow as sflow
-from django_devicectl.rest.decorators import grainy_endpoint
-from django_devicectl.rest.route.devicectl import route
-from django_devicectl.rest.serializers.sflow import Serializers
+import fullctl.service_bridge.ixctl as ixctl
+from fullctl.django.rest.core import BadRequest
+from fullctl.django.rest.mixins import CachedObjectMixin
+from fullctl.django.rest.serializers.metric import Serializers as MetricSerializers
 
 logger = structlog.get_logger("django_structlog")
 

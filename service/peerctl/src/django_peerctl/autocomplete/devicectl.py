@@ -1,11 +1,10 @@
-import fullctl.django.autocomplete.devicectl as devicectl_autocomplete
 from django.utils import html
-
 from django_peerctl.models import InternetExchange, Network, Port, PortInfo
+
+import fullctl.django.autocomplete.devicectl as devicectl_autocomplete
 
 
 class devicectl_ixi_port(devicectl_autocomplete.devicectl_port):
-
     """
     Devicectl port autocomplete that only returns IXI ports with IPs set
 

@@ -29,7 +29,7 @@ After saving changes here an `UpdatePermissions` job will be spawned that will s
 This means that an aaactl task worker needs to be running to pickup and process the job.
 
 ```sh
-python manage.py fullctl_poll_tasks --workers 1 
+python manage.py fullctl_poll_tasks --workers 1
 ```
 
 # Controlpanel (user-facing)

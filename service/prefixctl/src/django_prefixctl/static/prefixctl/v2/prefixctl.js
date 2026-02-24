@@ -388,12 +388,12 @@ $ctl.application.Prefixctl.PrefixSets = $tc.extend(
 
     /**
      * Opens organization-level source configuration modal
-     * 
+     *
      * @returns {ModalSourceConfig} Configured modal instance for current org
      */
     prompt_org_source_config: function() {
       const org = fullctl.org.slug;
-      
+
       return new $ctl.application.Prefixctl.ModalSourceConfig({
         level: 'org',
         org: org,
@@ -850,14 +850,14 @@ $ctl.application.Prefixctl.PrefixSetList = $tc.extend(
     /**
      * Refresh the custom source selection indicator for a specific prefix set
      * Makes an API call to get updated prefix set data and updates the indicator
-     * 
+     *
      * @method refresh_custom_source_indicator
      * @param {number} prefix_set_id - The ID of the prefix set to refresh
      */
     refresh_custom_source_indicator: function(prefix_set_id) {
       var self = this;
       var row = this.find_row(prefix_set_id);
-      
+
       if (!row.length) {
         return;
       }
@@ -869,14 +869,14 @@ $ctl.application.Prefixctl.PrefixSetList = $tc.extend(
           if (response.data && response.data.length > 0) {
             var updated_data = response.data[0];
             var indicator = row.find('[data-field="has_custom_source_selection"]');
-            
+
             // Update the data attribute on the row for consistency
             var current_data = row.data('apiobject');
             if (current_data) {
               current_data.has_custom_source_selection = updated_data.has_custom_source_selection;
               row.data('apiobject', current_data);
             }
-            
+
             // Update the indicator visibility
             if (updated_data.has_custom_source_selection) {
               indicator.find('[data-true]').show();
@@ -1256,8 +1256,8 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
       this.original_data = {};
       this.current_data = {};
 
-      var title = this.level === 'org' 
-        ? "Organization Source Configuration" 
+      var title = this.level === 'org'
+        ? "Organization Source Configuration"
         : "Prefix Set Source Configuration";
 
       var element = $('<div>');
@@ -1291,7 +1291,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
     /**
      * Closes the modal dialog
      * Finds the closest modal container and triggers the Bootstrap modal hide event
-     * 
+     *
      * @method close
      */
     close: function() {
@@ -1303,7 +1303,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
      * Sets up event handlers for modal interactions
      * Binds click handlers for save/cancel buttons and checkbox change events
      * Includes fallback logic for element availability
-     * 
+     *
      * @method setup_event_handlers
      * @private
      */
@@ -1313,7 +1313,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
 
       // Use the modal's element or fallback to content element
       var element = this.element || this.content_element;
-      
+
       if (!element || !element.find) {
         console.error("Element not available for event handlers");
         return;
@@ -1337,20 +1337,20 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
         var enabled = $(this).is(':checked');
 
         self.current_data[source_name].status = enabled ? "ok" : "disabled";
-        self.update_save_button_state();        
+        self.update_save_button_state();
       });
     },
 
     /**
      * Creates and shows a loading indicator in the source list
-     * 
+     *
      * @method show_loading
      * @private
      */
     show_loading: function() {
       var element = this.element || this.content_element;
       var source_list = element.find('[data-field="source_list"]');
-      
+
       source_list.html(
         '<div class="text-center py-4">' +
           '<div class="spinner-border" role="status">' +
@@ -1364,13 +1364,13 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
      * Loads source configuration data from the API
      * Makes AJAX request to appropriate endpoint based on level (org/prefixset)
      * Updates the modal with loading state and handles success/error responses
-     * 
+     *
      * @method load_sources
      * @private
      */
     load_sources: function() {
       var self = this;
-      
+
       // Show loading indicator
       this.show_loading();
 
@@ -1387,7 +1387,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
         success: function(response) {
           // Extract source data from the response
           var sources_data = self.extract_sources_data(response);
-          
+
           if (!sources_data || Object.keys(sources_data).length === 0) {
             self.show_error('No source configuration data found');
             self.update_reset_button_visibility(false);
@@ -1407,7 +1407,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
     /**
      * Extracts and cleans source data from API response
      * Handles various response formats and removes default/empty properties
-     * 
+     *
      * @method extract_sources_data
      * @param {Object} response - Raw API response containing source data
      * @returns {Object} Cleaned source data object with default values removed
@@ -1415,7 +1415,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
      */
     extract_sources_data: function(response) {
       var sources = {};
-      
+
       if (response.data && Array.isArray(response.data) && response.data.length > 0) {
         response.data.forEach(function(source_group) {
           Object.assign(sources, source_group);
@@ -1431,24 +1431,24 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
         console.warn('Unexpected API response format:', response);
         return {};
       }
-      
+
       // Remove 'default' properties from each source
       var cleaned_sources = {};
       Object.keys(sources).forEach(function(source_name) {
         var source_data = sources[source_name];
-        
+
         if (source_name === 'default') {
           return;
         }
-        
+
         if (source_data && typeof source_data === 'object') {
-          cleaned_sources[source_name] = {};          
+          cleaned_sources[source_name] = {};
           Object.keys(source_data).forEach(function(prop) {
             if (prop !== 'default') {
               cleaned_sources[source_name][prop] = source_data[prop];
             }
           });
-          
+
           // Only include sources that have actual configuration (not just default values)
           if (Object.keys(cleaned_sources[source_name]).length === 0) {
             delete cleaned_sources[source_name];
@@ -1462,7 +1462,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
      * Renders source configuration items in the modal
      * Creates DOM elements for each source using appropriate templates
      * Sets up checkboxes and labels based on source status
-     * 
+     *
      * @method render_sources
      * @param {Object} sources_data - Source configuration data to render
      * @private
@@ -1481,21 +1481,21 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
 
       var source_names = Object.keys(sources_data);
       var has_custom_configs = false;
-      
+
       // Iterate sources and lists elements
       source_names.forEach(function(source_name) {
         var source_data = sources_data[source_name];
-        
+
         // Skip if source_data is not a valid object
         if (!source_data || typeof source_data !== 'object') {
           return;
         }
-        
+
         // Skip default value,
         if (source_name === 'default') {
           return;
         }
-        
+
         if (Object.keys(source_data).length === 1 && source_data.hasOwnProperty('default')) {
           return;
         }
@@ -1504,27 +1504,27 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
         if (source_data.has_prefix_set_override) {
           has_custom_configs = true;
         }
-        
+
         // Get the template
         var template_name = self.level === 'org' ? 'source_item_org' : 'source_item_prefixset';
-        var template_element = $ctl.template(template_name).first();        
+        var template_element = $ctl.template(template_name).first();
         var source_item = template_element.clone();
-        
+
         source_item.data('source-name', source_name);
-        
+
         source_item.find('[data-field="source_name"]').text(self.format_source_name(source_name));
-        
+
         // Add warning message for specific sources
         self.add_source_warning(source_item, source_name);
-        
+
         var checkbox = source_item.find('[data-field="enabled_checkbox"]');
         var is_enabled = source_data.status === "ok";
         checkbox.prop('checked', is_enabled);
         checkbox.attr('id', 'source_' + source_name + '_' + self.level);
-        
+
         var label = source_item.find('.form-check-label');
         label.attr('for', 'source_' + source_name + '_' + self.level);
-        
+
         source_list.append(source_item);
       });
 
@@ -1534,7 +1534,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
 
     /**
      * Adds warning messages for specific sources
-     * 
+     *
      * @method add_source_warning
      * @param {jQuery} source_item - The source item element
      * @param {string} source_name - Raw source name from API
@@ -1546,10 +1546,10 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
         'spamcop': 'Excess time needed for report',
         'pbl': 'Block will have issues'
       };
-      
+
       var source_name_lower = source_name.toLowerCase();
       var warning_text = warning_messages[source_name_lower];
-      
+
       if (warning_text) {
         var warning_element = source_item.find('[data-field="source_warning"]');
         warning_element.find('[data-field="warning_text"]').text('Warn: ' + warning_text);
@@ -1560,7 +1560,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
     /**
      * Formats source names for display
      * Converts underscores/hyphens to spaces and applies title case
-     * 
+     *
      * @method format_source_name
      * @param {string} source_name - Raw source name from API
      * @returns {string} Formatted source name for display
@@ -1577,7 +1577,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
      * Compares current data with original data to identify changes
      * Makes POST request with only modified source statuses
      * Handles success/error responses and updates UI accordingly
-     * 
+     *
      * @method save_changes
      * @private
      */
@@ -1615,17 +1615,17 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
         success: function(response) {
           // Update original data to reflect saved state
           self.original_data = $.extend(true, {}, self.current_data);
-          
+
           // Call callback
           self.on_save(response);
-          
+
           // Close modal
           self.close();
         },
         error: function(xhr, status, error) {
           // Re-enable save button
           save_btn.prop('disabled', false).text('Save Changes');
-          
+
           var error_msg = 'Failed to save configuration';
           if (xhr.responseJSON && xhr.responseJSON.error) {
             error_msg += ': ' + xhr.responseJSON.error;
@@ -1639,7 +1639,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
      * Updates the save button state based on data changes
      * Compares current configuration with original data
      * Enables/disables save button based on whether changes exist
-     * 
+     *
      * @method update_save_button_state
      * @private
      */
@@ -1649,7 +1649,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
 
       // Check if current data differs from original
       Object.keys(this.current_data).forEach(function(source_name) {
-        if (self.original_data[source_name] && 
+        if (self.original_data[source_name] &&
             self.current_data[source_name].status !== self.original_data[source_name].status) {
           has_changes = true;
         }
@@ -1663,7 +1663,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
     /**
      * Updates the visibility of the reset button based on whether custom configurations exist
      * Only shows reset button for prefix-set level configurations
-     * 
+     *
      * @method update_reset_button_visibility
      * @param {boolean} has_custom_configs
      * @private
@@ -1671,7 +1671,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
     update_reset_button_visibility: function(has_custom_configs) {
       var element = this.element || this.content_element;
       var reset_btn = element.find('[data-action="reset_to_defaults"]');
-      
+
       if (this.level === 'prefix-set' && has_custom_configs) {
         reset_btn.show();
       } else {
@@ -1683,20 +1683,20 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
      * Resets prefix-set source configuration to organization defaults
      * Shows confirmation dialog before making DELETE request
      * Refreshes the modal data on success
-     * 
+     *
      * @method reset_to_defaults
      * @private
      */
     reset_to_defaults: function() {
       var self = this;
-      
+
       // Only show reset option for prefix-set level configurations
       if (this.level !== 'prefix-set') {
         return;
       }
 
       var confirmation_msg = 'This will remove the custom source selection for this prefix-set and the organization default configuration will be used the next time a report is generated. Continue?';
-      
+
       if (!confirm(confirmation_msg)) {
         return;
       }
@@ -1716,10 +1716,10 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
         success: function(response) {
           // Re-enable reset button
           reset_btn.prop('disabled', false).text('Reset to Organization Defaults');
-          
+
           // Show success message and reload data
           self.show_success(response.message || 'Successfully reset to organization defaults');
-          
+
           // Reload the source data to reflect changes
           setTimeout(function() {
             self.load_sources();
@@ -1732,7 +1732,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
         error: function(xhr, status, error) {
           // Re-enable reset button
           reset_btn.prop('disabled', false).text('Reset to Organization Defaults');
-          
+
           var error_msg = 'Failed to reset configuration';
           if (xhr.responseJSON && xhr.responseJSON.message) {
             error_msg += ': ' + xhr.responseJSON.message;
@@ -1745,7 +1745,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
     /**
      * Displays error messages in the modal
      * Auto-hides error message after 5 seconds
-     * 
+     *
      * @method show_error
      * @param {string} message - Error message
      * @private
@@ -1753,13 +1753,13 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
     show_error: function(message) {
       var element = this.element || this.content_element;
       var source_list = element.find('[data-field="source_list"]');
-      
+
       source_list.html(
         '<div class="alert alert-danger" role="alert">' +
           '<strong>Error:</strong> ' + $('<div>').text(message).html() +
         '</div>'
       );
-      
+
       // Auto-hide after 5 seconds and try to reload
       setTimeout(function() {
         source_list.find('.alert').fadeOut(function() {
@@ -1771,7 +1771,7 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
     /**
      * Displays success messages in the modal
      * Auto-hides success message after 3 seconds
-     * 
+     *
      * @method show_success
      * @param {string} message - Success message
      * @private
@@ -1779,13 +1779,13 @@ $ctl.application.Prefixctl.ModalSourceConfig = $tc.extend(
     show_success: function(message) {
       var element = this.element || this.content_element;
       var source_list = element.find('[data-field="source_list"]');
-      
+
       source_list.html(
         '<div class="alert alert-success" role="alert">' +
           '<strong>Success:</strong> ' + $('<div>').text(message).html() +
         '</div>'
       );
-      
+
       // Auto-hide after 3 seconds
       setTimeout(function() {
         source_list.find('.alert').fadeOut();

@@ -1,13 +1,12 @@
 import reversion
 import stripe
-from django import forms
-from django.conf import settings
-from django.utils.translation import gettext as _
-
 from billing.payment_processors.processor import (
     InternalProcessorError,
     PaymentProcessor,
 )
+from django import forms
+from django.conf import settings
+from django.utils.translation import gettext as _
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -260,9 +259,9 @@ class Stripe(PaymentProcessor):
             days_until_due=30,
             api_key=self.api_key,
             description="FullCtl Invoice",
-            collection_method="charge_automatically"
-            if charge_automatically
-            else "send_invoice",
+            collection_method=(
+                "charge_automatically" if charge_automatically else "send_invoice"
+            ),
         )
 
         stripe.Invoice.finalize_invoice(

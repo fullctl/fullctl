@@ -1,5 +1,4 @@
 import pydantic
-
 from django_auditctl.models.auditctl import Event
 
 __all__ = [
@@ -132,7 +131,6 @@ class MetricsMixin:
 
 
 class MetricsSelectiveComponentMixin(MetricsMixin):
-
     """
     Used for event data that stores a list of distinct components, where each component
     describes a different part of the same event.
@@ -160,7 +158,6 @@ class MetricsSelectiveComponentMixin(MetricsMixin):
 
 
 class MetricsMultiComponentMixin(MetricsMixin):
-
     """
     Used for event data that stores a list of distinct components, where each component
     is its own metric.

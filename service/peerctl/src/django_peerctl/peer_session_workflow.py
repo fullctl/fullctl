@@ -2,10 +2,8 @@
 Classes describing the workflow of setting up a peering session
 """
 
-import fullctl.service_bridge.pdbctl as pdbctl
 import reversion
 from django.conf import settings
-
 from django_peerctl.email import send_mail
 from django_peerctl.models import (
     AuditLog,
@@ -17,6 +15,8 @@ from django_peerctl.models import (
     PeerSession,
     PortInfo,
 )
+
+import fullctl.service_bridge.pdbctl as pdbctl
 
 
 class PeerSessionWorkflow:
@@ -199,7 +199,6 @@ class PeerSessionWorkflow:
 
 
 class PeerSessionEmailWorkflow(PeerSessionWorkflow):
-
     """
     Peer Session setup workflow with email
     notifications to the other party
@@ -386,7 +385,6 @@ class PeerSessionEmailWorkflow(PeerSessionWorkflow):
 
 
 class PeerRequestToAsnWorkflow(PeerSessionEmailWorkflow):
-
     """
     Peer Session setup workflow with email
     notifications to the other party

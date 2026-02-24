@@ -44,7 +44,7 @@
   let clientSecret;
   let setupIntentId;
 
-  {% if setup_intent and setup_intent_client_secret %} 
+  {% if setup_intent and setup_intent_client_secret %}
   setupIntentId = "{{ setup_intent }}";
   clientSecret = "{{ setup_intent_client_secret }}";
   {% endif %}
@@ -99,7 +99,7 @@
   }
 
   async function checkStatus() {
-    
+
     const response = await fetch('/billing/check-setup-intent/'+setupIntentId+'/', {
       method: 'POST',
       headers: {

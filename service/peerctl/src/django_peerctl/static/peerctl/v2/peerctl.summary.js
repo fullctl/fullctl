@@ -92,7 +92,7 @@ $ctl.application.Peerctl.SessionsSummary = $tc.extend(
           // common/v2/metric.js
           try {
             // metrics come in as an array of objects with a metric property
-            // the parent object contains device name and status and will be the 
+            // the parent object contains device name and status and will be the
             // same for all metrics.
             //
             // show_metric_list expects a single object with metric properties

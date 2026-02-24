@@ -1,31 +1,30 @@
 from datetime import timedelta
-from typing import Any, Tuple, Dict
-
-from fullctl.django.rest.core import BadRequest
-from fullctl.django.rest.decorators import load_object
-from fullctl.django.rest.mixins import CachedObjectMixin, SlugObjectMixin
-from fullctl.django.models import Instance, Organization
-from rest_framework import viewsets
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework import status
-from django.utils import timezone
-from django.http import HttpRequest
+from typing import Any, Dict, Tuple
 
 import django_prefixctl.models as models
+from django.http import HttpRequest
+from django.utils import timezone
 from django_prefixctl.rest.api_schema import ASNSetSchema, PrefixSetSchema
 from django_prefixctl.rest.decorators import grainy_endpoint
 from django_prefixctl.rest.route.prefixctl import route
 from django_prefixctl.rest.serializers.monitor import Serializers as MonitorSerializers
 from django_prefixctl.rest.serializers.prefixctl import (
-    Serializers,
     DeletePrefixSetsSerializer,
+    Serializers,
 )
 from django_prefixctl.rest.views.monitor import (
     add_monitor,
     list_monitors,
     remove_monitor,
 )
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+from fullctl.django.models import Instance, Organization
+from fullctl.django.rest.core import BadRequest
+from fullctl.django.rest.decorators import load_object
+from fullctl.django.rest.mixins import CachedObjectMixin, SlugObjectMixin
 
 
 @route
@@ -339,8 +338,8 @@ class PrefixSet(CachedObjectMixin, SlugObjectMixin, viewsets.GenericViewSet):
         request: HttpRequest,
         org: Organization,
         instance: Instance,
-        *args: Tuple[Any, ...],
-        **kwargs: Dict[str, Any],
+        *args: tuple[Any, ...],
+        **kwargs: dict[str, Any],
     ) -> Response:
         """
         Delete all prefixSets older than the given days.

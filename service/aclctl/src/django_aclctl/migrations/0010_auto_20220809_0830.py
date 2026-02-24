@@ -3,10 +3,11 @@
 import django.db.models.deletion
 import django.db.models.manager
 import django_handleref.models
-import fullctl.django.fields.service_bridge.prefixctl
-import fullctl.service_bridge.prefixctl
 import netfields.fields
 from django.db import migrations, models
+
+import fullctl.django.fields.service_bridge.prefixctl
+import fullctl.service_bridge.prefixctl
 
 
 def create_initial_lists(apps, schema_editor):

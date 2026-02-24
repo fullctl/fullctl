@@ -1,7 +1,3 @@
-from django.db.models.signals import post_delete, post_save
-from django.dispatch import receiver
-from fullctl.django import auditlog
-
 from billing.models import (
     Deposit,
     InvoiceLine,
@@ -13,6 +9,10 @@ from billing.models import (
     SubscriptionProduct,
     Withdrawal,
 )
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
+
+from fullctl.django import auditlog
 
 
 @receiver(post_save, sender=OrganizationProduct)

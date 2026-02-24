@@ -1,7 +1,7 @@
+import django_peerctl.models as models
+
 from fullctl.django.rest.decorators import base
 from fullctl.django.rest.decorators import grainy_endpoint as _grainy_endpoint
-
-import django_peerctl.models as models
 
 
 def load_org_instance_from_asn(self, request, data):

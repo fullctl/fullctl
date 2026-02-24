@@ -1,7 +1,7 @@
 ARG base_repo=python
 ARG base_tag=3.11-alpine
 ARG builder_repo=ghcr.io/fullctl/fullctl-builder-alpine
-ARG builder_tag=prep-release
+ARG builder_tag=main
 
 ARG virtual_env=/venv
 ARG install_to=/srv/service

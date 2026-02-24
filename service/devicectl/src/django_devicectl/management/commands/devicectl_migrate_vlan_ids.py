@@ -1,6 +1,6 @@
-from fullctl.django.management.commands.base import CommandInterface
-
 from django_devicectl.models.devicectl import VirtualPort, Vlan
+
+from fullctl.django.management.commands.base import CommandInterface
 
 
 class Command(CommandInterface):

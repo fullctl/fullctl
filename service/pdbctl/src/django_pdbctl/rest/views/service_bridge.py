@@ -1,6 +1,9 @@
 import django_peeringdb.models.concrete as models
 from django.db.models import Q
 
+# from django_pdbctl.rest.decorators import grainy_endpoint
+from django_pdbctl.rest.serializers.service_bridge import Serializers
+
 # from django.utils.translation import gettext_lazy as _
 # from fullctl.django.rest.core import BadRequest
 # from fullctl.django.rest.decorators import load_object
@@ -12,9 +15,6 @@ from fullctl.django.rest.views.service_bridge import (
     MethodFilter,
     StatusViewSet,
 )
-
-# from django_pdbctl.rest.decorators import grainy_endpoint
-from django_pdbctl.rest.serializers.service_bridge import Serializers
 
 # from rest_framework import viewsets
 # from rest_framework.decorators import action

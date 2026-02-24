@@ -3,12 +3,13 @@ Rate limit incoming events based on matching the event object id.
 Supports rate limits specified as "N/second", "N/minute", or "N/hour".
 """
 
-from django.utils import timezone
-import re
-from django.core.cache import caches
-from django.conf import settings
 import json
+import re
 import time
+
+from django.conf import settings
+from django.core.cache import caches
+from django.utils import timezone
 
 __all__ = [
     "get_rate_limit",

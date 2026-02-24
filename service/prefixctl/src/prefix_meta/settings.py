@@ -1,4 +1,5 @@
 from django.conf import settings
+
 from fullctl.django.settings import SettingsManager
 
 settings_manager = SettingsManager(settings.__dict__)

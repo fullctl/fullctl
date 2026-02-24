@@ -1,9 +1,9 @@
 import json
 
+import account.models as models
 from django.contrib.auth import authenticate
 from django.urls import reverse
 
-import account.models as models
 from tests.helpers import assert_expected, strip_api_fields
 
 

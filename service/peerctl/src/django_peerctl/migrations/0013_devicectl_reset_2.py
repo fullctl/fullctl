@@ -2,9 +2,10 @@
 
 import django.core.validators
 import django_inet.models
+from django.db import migrations
+
 import fullctl.django.fields.service_bridge
 import fullctl.service_bridge.devicectl
-from django.db import migrations
 
 
 class Migration(migrations.Migration):

@@ -1,4 +1,5 @@
 """Provides the Historical Whois endpoint."""
+
 from collections import namedtuple
 from datetime import datetime
 

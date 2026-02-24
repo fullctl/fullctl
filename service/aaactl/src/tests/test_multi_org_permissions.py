@@ -1,9 +1,6 @@
-import pytest
 from collections import namedtuple
 
-from django_grainy.util import Permissions
-from grainy.const import PERM_CRUD
-
+import pytest
 from account.models import (
     ManagedPermission,
     ManagedPermissionRoleAutoGrant,
@@ -13,6 +10,8 @@ from account.models import (
     OrganizationUser,
     Role,
 )
+from django_grainy.util import Permissions
+from grainy.const import PERM_CRUD
 
 
 @pytest.fixture
@@ -222,13 +221,17 @@ def test_org_agnostic_namespace_permission(multi_org_user):
     assert not Permissions(u.user).check(perm_agnostic, "r")
 
     # assign role_a in org_a -> user gets permission
-    org_role_a = OrganizationRole.objects.create(org=u.org_a, user=u.user, role=u.role_a)
+    org_role_a = OrganizationRole.objects.create(
+        org=u.org_a, user=u.user, role=u.role_a
+    )
     ManagedPermission.apply_roles(u.org_a, u.user)
 
     assert Permissions(u.user).check(perm_agnostic, "r")
 
     # assign role_a in org_b as well
-    org_role_b = OrganizationRole.objects.create(org=u.org_b, user=u.user, role=u.role_a)
+    org_role_b = OrganizationRole.objects.create(
+        org=u.org_b, user=u.user, role=u.role_a
+    )
     ManagedPermission.apply_roles(u.org_b, u.user)
 
     assert Permissions(u.user).check(perm_agnostic, "r")
@@ -243,4 +246,4 @@ def test_org_agnostic_namespace_permission(multi_org_user):
     org_role_b.delete()
     ManagedPermission.apply_roles(u.org_b, u.user)
 
-    assert not Permissions(u.user).check(perm_agnostic, "r") 
+    assert not Permissions(u.user).check(perm_agnostic, "r")

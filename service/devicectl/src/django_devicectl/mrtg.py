@@ -1,6 +1,7 @@
 import pydantic
 import pytimeparse2
 from django.conf import settings
+
 from fullctl.metrics import Metrics, Point, make_metrics
 from fullctl.metrics.schema import QueryResult
 
@@ -96,7 +97,9 @@ def query_graph_ix_total(
 
     tags = f'ctl_org_id="{org_id}", ctl_ix_id="{ix_id}"'
     grace = pytimeparse2.parse(step) * GRACE_MULTIPLIER
-    query = TRAFFIC_GRAPH_QUERY_BASE.format(tags_in=tags, tags_out=tags, step=step, grace=grace)
+    query = TRAFFIC_GRAPH_QUERY_BASE.format(
+        tags_in=tags, tags_out=tags, step=step, grace=grace
+    )
 
     return metrics.query_range(query, start=start, end=end, step=step)
 

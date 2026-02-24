@@ -5,10 +5,6 @@ import json
 import logging
 import os.path
 
-import fullctl.service_bridge.devicectl as devicectl
-import fullctl.service_bridge.ixctl as ixctl
-import fullctl.service_bridge.pdbctl as pdbctl
-import fullctl.service_bridge.sot as sot
 import reversion
 import structlog
 from django.conf import settings
@@ -21,15 +17,6 @@ from django.utils.translation import gettext as _
 from django_countries.fields import CountryField
 from django_grainy.decorators import grainy_model
 from django_inet.models import ASNField
-from fullctl.django.fields.service_bridge import ReferencedObjectField
-from fullctl.django.models.abstract import HandleRefModel, meta
-from fullctl.django.models.concrete import Instance, Organization, Task  # noqa
-from fullctl.django.validators import ip_address_string
-from fullctl.service_bridge.client import url_join
-from fullctl.service_bridge.data import Relationships
-from jinja2 import DictLoader, Environment, FileSystemLoader
-from netfields import InetAddressField, MACAddressField, NetManager
-
 from django_peerctl import const
 from django_peerctl.email import send_mail_from_default
 from django_peerctl.exceptions import (
@@ -47,6 +34,19 @@ from django_peerctl.models.tasks import (
     SyncStatus,
 )
 from django_peerctl.templating import ip_version, make_variable_name
+from jinja2 import DictLoader, Environment, FileSystemLoader
+from netfields import InetAddressField, MACAddressField, NetManager
+
+import fullctl.service_bridge.devicectl as devicectl
+import fullctl.service_bridge.ixctl as ixctl
+import fullctl.service_bridge.pdbctl as pdbctl
+import fullctl.service_bridge.sot as sot
+from fullctl.django.fields.service_bridge import ReferencedObjectField
+from fullctl.django.models.abstract import HandleRefModel, meta
+from fullctl.django.models.concrete import Instance, Organization, Task  # noqa
+from fullctl.django.validators import ip_address_string
+from fullctl.service_bridge.client import url_join
+from fullctl.service_bridge.data import Relationships
 
 # naming::
 # handleref tag $model_$model
@@ -867,7 +867,7 @@ class PeerNetwork(PolicyHolderMixin, Base):
                     continue
 
                 # not ixctl, skip
-                src, ix_id = port_info.ref_ix_id.split(":",1)
+                src, ix_id = port_info.ref_ix_id.split(":", 1)
                 if src != "ixctl":
                     continue
 
@@ -878,6 +878,7 @@ class PeerNetwork(PolicyHolderMixin, Base):
                 SyncRouteServerMD5.create_task(*task)
         except Exception as e:
             logger.exception("Error syncing route server md5", error=e)
+
 
 @reversion.register
 class InternetExchange(sot.ReferenceMixin, Base):
@@ -1287,11 +1288,10 @@ class PortObject(devicectl.DeviceCtlEntity, PolicyHolderMixin):
             # Port ASN
             self.asn,
             # MD5 Password
-            md5, 
+            md5,
             # ix id
-            ix_id
+            ix_id,
         )
-
 
     def set_is_route_server_peer(self, is_route_server_peer):
         self.port_info_object.is_route_server_peer = is_route_server_peer
@@ -1885,7 +1885,9 @@ class PortInfo(sot.ReferenceMixin, Base):
                 try:
                     obj._ref = pdbctl_members[int(obj.ref_id.split(":")[1])]
                 except KeyError:
-                    logger.error(f"Referencing non-existent pdbctl netixlan {obj.ref_id}")
+                    logger.error(
+                        f"Referencing non-existent pdbctl netixlan {obj.ref_id}"
+                    )
                     obj._ref = None
 
             elif obj.ref_source == "ixctl":
@@ -2003,7 +2005,11 @@ class PortInfo(sot.ReferenceMixin, Base):
         Returns whether MAC addresses are limited for this port's exchange.
         Only relevant for ixctl references.
         """
-        if self.ref_source == "ixctl" and hasattr(self.ref, "ix") and hasattr(self.ref.ix, "limit_mac_addresses"):
+        if (
+            self.ref_source == "ixctl"
+            and hasattr(self.ref, "ix")
+            and hasattr(self.ref.ix, "limit_mac_addresses")
+        ):
             ix = InternetExchange.ref_bridge(self.ref_source).object(self.ref.ix_id)
             return ix.limit_mac_addresses
         return False

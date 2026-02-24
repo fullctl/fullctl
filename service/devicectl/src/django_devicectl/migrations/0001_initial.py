@@ -3,8 +3,9 @@
 import django.db.models.deletion
 import django.db.models.manager
 import django_handleref.models
-import fullctl.django.inet.fields
 from django.db import migrations, models
+
+import fullctl.django.inet.fields
 
 
 class Migration(migrations.Migration):

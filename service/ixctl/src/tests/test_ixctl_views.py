@@ -147,13 +147,16 @@ def test_view_ixp_manager_export(db, pdb_data, account_objects):
     """Ensure the members JSON export (IXP Manager format) works."""
     ix = account_objects.ix
 
-    url = reverse(
-        "ixp_manager_export",
-        args=(
-            account_objects.org.slug,
-            ix.slug,
-        ),
-    ) + "?pretty"
+    url = (
+        reverse(
+            "ixp_manager_export",
+            args=(
+                account_objects.org.slug,
+                ix.slug,
+            ),
+        )
+        + "?pretty"
+    )
 
     response = account_objects.client.get(url)
 

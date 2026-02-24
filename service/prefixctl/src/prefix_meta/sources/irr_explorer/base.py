@@ -1,5 +1,6 @@
-import prefix_meta.models as prefix_meta
 import ipaddress
+
+import prefix_meta.models as prefix_meta
 
 __all__ = [
     "IRRExplorerData",
@@ -34,7 +35,7 @@ class IRRExplorerData(prefix_meta.Data):
             ipaddress.ip_network("0.0.0.0/0"),
             ipaddress.ip_network("::/0"),
         ]
-        
+
         return (
             super()
             .get_prefix_queryset(prefix)

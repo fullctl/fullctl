@@ -1,13 +1,14 @@
-import pytest
 import time
 from unittest.mock import MagicMock, patch
+
+import pytest
 from django_auditctl.limit import (
-    parse_rate_limit,
-    get_rate_limit,
+    TIME_WINDOWS,
     clean_old_timestamps,
+    get_rate_limit,
     is_limited,
+    parse_rate_limit,
     set_limited,
-    TIME_WINDOWS
 )
 
 
@@ -83,7 +84,9 @@ def test_clean_old_timestamps(timestamps, window_seconds, current_time, expected
 def test_is_limited(object_id, rate_limit_result, cache_result, expected):
     """Test checking if an object ID is rate-limited."""
     with patch("django_auditctl.limit.get_rate_limit", return_value=rate_limit_result):
-        with patch("django_auditctl.limit.ratelimit_cache.get", return_value=cache_result):
+        with patch(
+            "django_auditctl.limit.ratelimit_cache.get", return_value=cache_result
+        ):
             with patch("django_auditctl.limit.ratelimit_cache.set") as mock_cache_set:
                 result = is_limited(object_id)
                 assert result == expected
@@ -98,17 +101,21 @@ def test_is_limited(object_id, rate_limit_result, cache_result, expected):
         ("v0.1/demo/bgp/stat/", (2, 60), [100], True, True),
     ],
 )
-def test_set_limited(object_id, rate_limit_result, cache_result, expected_return, expected_timestamps):
+def test_set_limited(
+    object_id, rate_limit_result, cache_result, expected_return, expected_timestamps
+):
     """Test recording an event for rate limiting purposes."""
     current_time = time.time()
-    
+
     with patch("django_auditctl.limit.get_rate_limit", return_value=rate_limit_result):
-        with patch("django_auditctl.limit.ratelimit_cache.get", return_value=cache_result):
+        with patch(
+            "django_auditctl.limit.ratelimit_cache.get", return_value=cache_result
+        ):
             with patch("django_auditctl.limit.ratelimit_cache.set") as mock_cache_set:
                 with patch("time.time", return_value=current_time):
                     result = set_limited(object_id)
                     assert result == expected_return
-                    
+
                     if expected_timestamps:
                         # Check cache was updated with our new timestamp
                         mock_cache_set.assert_called_once()
@@ -129,37 +136,53 @@ def test_set_limited(object_id, rate_limit_result, cache_result, expected_return
         # Test with a limit of 2/minute, no initial timestamps
         ("v0.1/demo/bgp/stat/test1", [], (2, 60), False, True),
         # Test with a limit of 3/hour, already has 2 timestamps
-        ("v0.1/demo/bgp/stat/test2", [time.time() - 100, time.time() - 50], (3, 3600), False, True),
+        (
+            "v0.1/demo/bgp/stat/test2",
+            [time.time() - 100, time.time() - 50],
+            (3, 3600),
+            False,
+            True,
+        ),
     ],
 )
-def test_rate_limiting_workflow(object_id, initial_timestamps, limit, should_be_limited_first, should_be_limited_after_more):
+def test_rate_limiting_workflow(
+    object_id,
+    initial_timestamps,
+    limit,
+    should_be_limited_first,
+    should_be_limited_after_more,
+):
     """Integration test for a complete rate limiting workflow."""
     mock_cache = {}
-    
+
     def mock_cache_get(key, default=None):
         return mock_cache.get(key, default)
-    
+
     def mock_cache_set(key, value, timeout=None):
         mock_cache[key] = value
-    
+
     # Set up initial state
     cache_key = f"ratelimit:{object_id}"
     if initial_timestamps:
         mock_cache[cache_key] = initial_timestamps
-    
+
     with patch("django_auditctl.limit.get_rate_limit", return_value=limit):
-        with patch("django_auditctl.limit.ratelimit_cache.get", side_effect=mock_cache_get):
-            with patch("django_auditctl.limit.ratelimit_cache.set", side_effect=mock_cache_set):
+        with patch(
+            "django_auditctl.limit.ratelimit_cache.get", side_effect=mock_cache_get
+        ):
+            with patch(
+                "django_auditctl.limit.ratelimit_cache.set", side_effect=mock_cache_set
+            ):
                 # First check if limited
                 assert is_limited(object_id) == should_be_limited_first
-                
+
                 # Record first event
                 set_limited(object_id)
                 # Record second event
                 set_limited(object_id)
                 # Record third event
                 set_limited(object_id)
-                
+
                 # Now should be limited based on our parameterization
                 assert is_limited(object_id) == should_be_limited_after_more
 
@@ -167,54 +190,58 @@ def test_rate_limiting_workflow(object_id, initial_timestamps, limit, should_be_
 def test_rate_limiting_different_object_ids():
     """Test that rate limiting for different object IDs don't interfere with each other."""
     mock_cache = {}
-    
+
     def mock_cache_get(key, default=None):
         return mock_cache.get(key, default)
-    
+
     def mock_cache_set(key, value, timeout=None):
         mock_cache[key] = value
-    
+
     # Define two different object IDs
     object_id_1 = "v0.1/demo/bgp/stat/test1"
     object_id_2 = "v0.1/demo/bgp/stat/test2"
-    
+
     # Set the same rate limit for both: 2 requests per minute
     rate_limit = (2, 60)
-    
+
     with patch("django_auditctl.limit.get_rate_limit", return_value=rate_limit):
-        with patch("django_auditctl.limit.ratelimit_cache.get", side_effect=mock_cache_get):
-            with patch("django_auditctl.limit.ratelimit_cache.set", side_effect=mock_cache_set):
+        with patch(
+            "django_auditctl.limit.ratelimit_cache.get", side_effect=mock_cache_get
+        ):
+            with patch(
+                "django_auditctl.limit.ratelimit_cache.set", side_effect=mock_cache_set
+            ):
                 # Initially neither should be limited
                 assert not is_limited(object_id_1)
                 assert not is_limited(object_id_2)
-                
+
                 # Record events for first object ID until it's limited
                 # First event
                 set_limited(object_id_1)
                 assert not is_limited(object_id_1)
-                
+
                 # Second event
                 set_limited(object_id_1)
                 # After 2 events we've reached the limit (2 per minute)
                 assert is_limited(object_id_1)
-                
+
                 # The second object ID should still not be limited
                 assert not is_limited(object_id_2)
-                
+
                 # Record one event for the second object ID
                 # First event
                 set_limited(object_id_2)
                 assert not is_limited(object_id_2)
-                
+
                 # First object ID should still be limited
                 assert is_limited(object_id_1)
-                
+
                 # Check cache contents to verify separate storage
                 cache_key_1 = f"ratelimit:{object_id_1}"
                 cache_key_2 = f"ratelimit:{object_id_2}"
-                
+
                 # First object should have 2 timestamps
                 assert len(mock_cache[cache_key_1]) == 2
-                
+
                 # Second object should have 1 timestamp
-                assert len(mock_cache[cache_key_2]) == 1 
+                assert len(mock_cache[cache_key_2]) == 1

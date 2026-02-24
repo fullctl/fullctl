@@ -2,7 +2,6 @@ import os
 
 from django.conf import settings as dj_settings
 from django.http import HttpResponse
-
 from django_peerctl import const, models
 
 base_env = {}

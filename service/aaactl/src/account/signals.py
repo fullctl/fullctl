@@ -1,14 +1,3 @@
-import fullctl.django.models.concrete.tasks as task_models
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.contrib.auth.signals import user_logged_out
-from django.db.models.signals import post_delete, post_save, pre_delete
-from django.dispatch import receiver
-from django.shortcuts import render
-from django.utils.translation import gettext as _
-from oauth2_provider.models import AccessToken
-from reversion.signals import post_revision_commit
-
 from account.models import (
     APIKey,
     EmailConfirmation,
@@ -24,6 +13,17 @@ from account.models import (
     UserSettings,
 )
 from common.email import email_noreply
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth.signals import user_logged_out
+from django.db.models.signals import post_delete, post_save, pre_delete
+from django.dispatch import receiver
+from django.shortcuts import render
+from django.utils.translation import gettext as _
+from oauth2_provider.models import AccessToken
+from reversion.signals import post_revision_commit
+
+import fullctl.django.models.concrete.tasks as task_models
 
 
 @receiver(post_save, sender=Organization)

@@ -1,6 +1,5 @@
-from django.urls import include, path
-
 import django_devicectl.views as views
+from django.urls import include, path
 
 # from django.views.generic import TemplateView
 

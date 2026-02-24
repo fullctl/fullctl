@@ -86,56 +86,56 @@ class RIPEstat:
         return get(path, params)
 
     @property
-    def address_space_usage(self) -> Type[AddressSpaceUsage]:
+    def address_space_usage(self) -> type[AddressSpaceUsage]:
         """Lazy alias to :class:`.stat.AddressSpaceUsage`."""
         return partial(AddressSpaceUsage, self)
 
     @property
-    def announced_prefixes(self) -> Type[AnnouncedPrefixes]:
+    def announced_prefixes(self) -> type[AnnouncedPrefixes]:
         """Lazy alias to :class:`.stat.AnnouncedPrefixes`."""
         return partial(AnnouncedPrefixes, self)
 
     @property
-    def prefix_routing_consistency(self) -> Type[PrefixRoutingConsistency]:
+    def prefix_routing_consistency(self) -> type[PrefixRoutingConsistency]:
         """Lazy alias to :class:`.stat.PrefixRoutingConsistency`."""
         return partial(PrefixRoutingConsistency, self)
 
     @property
-    def bgp_updates(self) -> Type[BGPUpdates]:
+    def bgp_updates(self) -> type[BGPUpdates]:
         """Lazy alias to :class:`.stat.BGPUpdates`."""
         return partial(BGPUpdates, self)
 
     @property
-    def blocklist(self) -> Type[Blocklist]:
+    def blocklist(self) -> type[Blocklist]:
         """Lazy alias to :class:`.stat.Blocklist`."""
         return partial(Blocklist, self)
 
     @property
-    def historical_whois(self) -> Type[HistoricalWhois]:
+    def historical_whois(self) -> type[HistoricalWhois]:
         """Lazy alias to :class:`.stat.HistoricalWhois`."""
         return partial(HistoricalWhois, self)
 
     @property
-    def prefix_overview(self) -> Type[PrefixOverview]:
+    def prefix_overview(self) -> type[PrefixOverview]:
         """Lazy alias to :class:`.stat.PrefixOverview`."""
         return partial(PrefixOverview, self)
 
     @property
-    def rir(self) -> Type[RIR]:
+    def rir(self) -> type[RIR]:
         """Lazy alias to :class:`.stat.RIR`."""
         return partial(RIR, self)
 
     @property
-    def rir_stats_country(self) -> Type[RIRStatsCountry]:
+    def rir_stats_country(self) -> type[RIRStatsCountry]:
         """Lazy alias to :class:`.stat.RIRStatsCountry`."""
         return partial(RIRStatsCountry, self)
 
     @property
-    def rpki_validation_status(self) -> Type[RPKIValidationStatus]:
+    def rpki_validation_status(self) -> type[RPKIValidationStatus]:
         """Lazy alias to :class:`.stat.RPKIValidationStatus`."""
         return partial(RPKIValidationStatus, self)
 
     @property
-    def routing_status(self) -> Type[RoutingStatus]:
+    def routing_status(self) -> type[RoutingStatus]:
         """Lazy alias to :class:`.stat.RouteStatus`."""
         return partial(RoutingStatus, self)

@@ -1,10 +1,10 @@
 import json
 
+import account.models as models
+import account.models.federation as federation_models
 from django.contrib.auth import authenticate
 from django.urls import reverse
 
-import account.models as models
-import account.models.federation as federation_models
 from tests.helpers import assert_expected, strip_api_fields
 
 

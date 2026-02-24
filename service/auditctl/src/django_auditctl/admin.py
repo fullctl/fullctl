@@ -1,12 +1,12 @@
 from django.contrib import admin
-from fullctl.django.admin import BaseAdmin, BaseTabularAdmin
-
 from django_auditctl.models.auditctl import (
     Event,
     EventTask,
     Heartbeat,
     OrganizationEmailAlert,
 )
+
+from fullctl.django.admin import BaseAdmin, BaseTabularAdmin
 
 
 class EventTaskInline(BaseTabularAdmin):

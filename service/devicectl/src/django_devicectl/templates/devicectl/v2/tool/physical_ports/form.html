@@ -25,8 +25,8 @@
         <label for="physical_port-logical_port" class="form-label">{% trans "Logical Port" %}</label>
         <span class="modal-control">
         <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
-        <select 
-          data-null-option=";Create matching logical port" 
+        <select
+          data-null-option=";Create matching logical port"
           data-api-base="{% url "devicectl_api:facility-logical-ports" org_tag=request.org.slug facility_tag="fac_tag" %}" data-api-action="" class="form-control" id="physical_port-logical_port" name="logical_port">
         </select>
         </span>
@@ -43,7 +43,7 @@
       <div class="col-12" data-api-submit="yes">
         <label for="physical_port-size" class="form-label">{% trans "Size (Gbit/s)" %}</label>
         <input type="text" class="form-control" id="physical_port-size" name="size" />
-      </div>  
+      </div>
     </div>
   </div>
 </form>

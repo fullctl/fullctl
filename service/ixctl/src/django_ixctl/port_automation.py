@@ -3,13 +3,13 @@ Functions to help facilitate validation during port provisioning
 process and port automation.
 """
 
-import fullctl.service_bridge.devicectl as devicectl
-import fullctl.service_bridge.pdbctl as pdbctl
-import structlog
-
 import django_ixctl.models.port_automation_tasks as port_automation_tasks
+import structlog
 from django_ixctl.models.ixctl import InternetExchange, InternetExchangeMember
 from django_ixctl.schema import IXLanConfig
+
+import fullctl.service_bridge.devicectl as devicectl
+import fullctl.service_bridge.pdbctl as pdbctl
 
 logger = structlog.get_logger(__name__)
 
@@ -37,7 +37,7 @@ def handle_port_assignment(
     if not intent:
         # no intent, no port configuration changes
         return
-        
+
     # For unassign, we don't need a port_set
     if intent != "unassign" and not port_set:
         # no port set for non-unassign intents, no port configuration changes

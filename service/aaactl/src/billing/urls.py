@@ -1,7 +1,6 @@
-from django.urls import path
-
 import billing.stripe_views as stripe_views
 import billing.views
+from django.urls import path
 
 urlpatterns = [
     # path("setup/test/", billing.views.setup_test, name="setup-test"),

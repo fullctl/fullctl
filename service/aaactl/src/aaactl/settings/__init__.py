@@ -2,6 +2,7 @@ import os
 import sys  # noqa
 
 from django.utils.translation import gettext_lazy as _  # noqa
+
 from fullctl.django import settings
 
 SERVICE_TAG = "aaactl"

@@ -2,6 +2,8 @@ import difflib
 import ipaddress
 import time
 
+import django_devicectl.referee as referee_util
+import django_devicectl.schema as schema
 import reversion
 import structlog
 from django.conf import settings
@@ -10,7 +12,14 @@ from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
+from django_devicectl.enum import PORT_STATE
+from django_devicectl.validators import validate_org_config
 from django_grainy.decorators import grainy_model
+from netfields.fields import InetAddressField, MACAddressField
+from pydantic import BaseModel
+from pydantic import Field as PydanticField
+from pydantic import ValidationError as PydanticValidationError
+
 from fullctl.django.fields.service_bridge import ReferencedObjectCharField
 from fullctl.django.inet.fields import DeviceDescriptionField
 from fullctl.django.models.abstract import (
@@ -21,20 +30,11 @@ from fullctl.django.models.abstract import (
 )
 from fullctl.django.models.concrete import Instance, Organization
 from fullctl.service_bridge import nautobot, netbox
-from netfields.fields import InetAddressField, MACAddressField
-from pydantic import BaseModel
-from pydantic import Field as PydanticField
-from pydantic import ValidationError as PydanticValidationError
-
-import django_devicectl.referee as referee_util
-import django_devicectl.schema as schema
-from django_devicectl.enum import PORT_STATE
-from django_devicectl.validators import validate_org_config
 
 logger = structlog.getLogger("django_structlog")
 
-class OrganizationConfig(models.Model):
 
+class OrganizationConfig(models.Model):
     """
     A model to store organization specific configuration.
     """
@@ -45,8 +45,13 @@ class OrganizationConfig(models.Model):
         related_name="config",
     )
 
-    config = models.JSONField(default=dict, help_text=_("Organization config"), validators=[validate_org_config], blank=True)
-    
+    config = models.JSONField(
+        default=dict,
+        help_text=_("Organization config"),
+        validators=[validate_org_config],
+        blank=True,
+    )
+
     class Meta:
         db_table = "devicectl_organization_config"
         verbose_name = _("Organization Config")
@@ -62,6 +67,7 @@ class OrganizationConfig(models.Model):
     @property
     def traffic_periods(self) -> list[tuple[int, int, str]]:
         return self.config_object.traffic_periods_as_tuples
+
 
 @reversion.register()
 @grainy_model(
@@ -1708,19 +1714,19 @@ class PhysicalPortStats(HandleRefModel):
         Remove stale BGP stats entries based on the `updated` timestamp.
 
         If no `updated` timestamp is present, keep the entry and add a `updated` timestamp of now.
-        
+
         Arguments:
         - bgp_stats (list[dict]): List of BGP stats to filter
-        
+
         Returns:
         - list[dict]: Filtered list with stale entries removed
         """
         if not hasattr(settings, "PHYSICAL_PORT_STATS_BGP_STALE_AFTER"):
             return bgp_stats
-            
+
         stale_seconds = settings.PHYSICAL_PORT_STATS_BGP_STALE_AFTER
         now = time.time()
-        
+
         # Filter out stale entries
         filtered_stats = []
         for stat in bgp_stats:
@@ -1728,7 +1734,7 @@ class PhysicalPortStats(HandleRefModel):
                 updated = stat["updated"]
                 # Calculate time difference in seconds
                 diff_seconds = now - updated
-                
+
                 # Keep if not stale
                 if diff_seconds <= stale_seconds:
                     filtered_stats.append(stat)
@@ -1736,17 +1742,19 @@ class PhysicalPortStats(HandleRefModel):
                 # If there's no updated field, add an updated timestamp of now
                 stat["updated"] = now
                 filtered_stats.append(stat)
-                
+
         return filtered_stats
 
-    def merge_update_bgp_stats(self, bgp_stats: list[dict], remove_stale: bool = True, save:bool = True):
+    def merge_update_bgp_stats(
+        self, bgp_stats: list[dict], remove_stale: bool = True, save: bool = True
+    ):
         """
         Find matching entries by address and routeserver_router_id and replace those
 
         If no matching entries are found, append the new data.
 
         Remove any entries with `updated` older than settings.PHYSICAL_PORT_STATS_BGP_STALE_AFTER (seconds)
-        
+
         Arguments:
 
         - bgp_stats (list[dict]): list of bgp stats to merge
@@ -1756,35 +1764,35 @@ class PhysicalPortStats(HandleRefModel):
         # Initialize data if needed
         if not self.data:
             self.data = {}
-        
+
         # Initialize bgp_stats if needed
         if "bgp_stats" not in self.data:
             self.data["bgp_stats"] = []
-        
+
         # Get current stats
         current_stats = self.data["bgp_stats"]
-        
+
         # Dictionary to track by (address, routeserver_router_id) - using this as a unique identifier
         tracker = {}
         for i, stat in enumerate(current_stats):
             key = (stat.get("address"), stat.get("routeserver_router_id"))
             tracker[key] = i
-        
+
         # Process new stats
         for new_stat in bgp_stats:
             key = (new_stat.get("address"), new_stat.get("routeserver_router_id"))
-            
+
             if key in tracker:
                 # Update existing entry
                 current_stats[tracker[key]] = new_stat
             else:
                 # Add new entry
                 current_stats.append(new_stat)
-        
+
         # Remove stale entries if flag is set
         if remove_stale:
             self.data["bgp_stats"] = self.remove_stale_bgp_stats(current_stats)
-        
+
         # Save changes
         if save:
             self.save()

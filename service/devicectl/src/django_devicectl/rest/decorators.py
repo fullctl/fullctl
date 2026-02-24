@@ -1,6 +1,6 @@
-from fullctl.django.rest.decorators import grainy_endpoint as _grainy_endpoint
-
 import django_devicectl.models as models
+
+from fullctl.django.rest.decorators import grainy_endpoint as _grainy_endpoint
 
 
 class grainy_endpoint(_grainy_endpoint):

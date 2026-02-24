@@ -1,15 +1,15 @@
 import pytest
-from django.contrib.auth import get_user_model
-from django.core import management
-from django.http import HttpRequest
-from django.urls import reverse
-
 from account.impersonate import (
     allowed_to_impersonate,
     is_impersonating,
     start_impersonation,
 )
 from account.models import Impersonation
+from django.contrib.auth import get_user_model
+from django.core import management
+from django.http import HttpRequest
+from django.urls import reverse
+
 from tests.helpers import mock_csrf_session
 
 

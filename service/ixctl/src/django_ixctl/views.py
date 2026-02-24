@@ -1,13 +1,18 @@
+import django_ixctl.exporters.ixf
 from django.conf import settings
 from django.db.models import Prefetch
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
-from fullctl.django.decorators import load_instance, require_auth
-
-import django_ixctl.exporters.ixf
 from django_ixctl.context_processors import check_trial_available
-from django_ixctl.models import InternetExchange, InternetExchangeMember, NetworkMeta, Routeserver
+from django_ixctl.models import (
+    InternetExchange,
+    InternetExchangeMember,
+    NetworkMeta,
+    Routeserver,
+)
 from django_ixctl.rest.decorators import load_instance_ix, require_auth_ix
+
+from fullctl.django.decorators import load_instance, require_auth
 
 # Create your views here.
 
@@ -133,11 +138,15 @@ def export_ixp_manager(request, instance, ix_tag, **kwargs):
     """
 
     try:
-        ix = InternetExchange.objects.select_related("instance").prefetch_related(
-            "member_set",
-            "member_set__ix",
-            "member_set__mac_addresses",
-        ).get(instance=instance, slug=ix_tag)
+        ix = (
+            InternetExchange.objects.select_related("instance")
+            .prefetch_related(
+                "member_set",
+                "member_set__ix",
+                "member_set__mac_addresses",
+            )
+            .get(instance=instance, slug=ix_tag)
+        )
     except InternetExchange.DoesNotExist:
         raise Http404
 

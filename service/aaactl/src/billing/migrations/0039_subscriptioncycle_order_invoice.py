@@ -30,4 +30,4 @@ class Migration(migrations.Migration):
                 to="billing.invoice",
             ),
         ),
-    ] 
+    ]

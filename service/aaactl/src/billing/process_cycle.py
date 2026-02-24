@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
+
 import structlog
 
 if TYPE_CHECKING:
@@ -9,9 +11,9 @@ log = structlog.get_logger(__name__)
 
 
 def handle_existing_cycle_charge(
-    cycle: "SubscriptionCycle",
-    existing_cycle_charge: "SubscriptionCycleCharge",
-) -> "SubscriptionCycleCharge | None":
+    cycle: SubscriptionCycle,
+    existing_cycle_charge: SubscriptionCycleCharge,
+) -> SubscriptionCycleCharge | None:
     """Handle a pre-existing SubscriptionCycleCharge.
 
     Returns a charge ready for processing, or `None` if no further work is
@@ -37,9 +39,9 @@ def handle_existing_cycle_charge(
 
 
 def retry_failed_cycle_charge(
-    cycle: "SubscriptionCycle",
-    cycle_charge: "SubscriptionCycleCharge",
-) -> "SubscriptionCycleCharge | None":
+    cycle: SubscriptionCycle,
+    cycle_charge: SubscriptionCycleCharge,
+) -> SubscriptionCycleCharge | None:
     """Prepare a new PaymentCharge for a previously-failed attempt."""
 
     # Delay heavy imports until runtime to avoid circular-import issues.
@@ -84,12 +86,12 @@ def retry_failed_cycle_charge(
 
 
 def initial_cycle_charge(
-    cycle: "SubscriptionCycle",
-) -> "SubscriptionCycleCharge | None":
+    cycle: SubscriptionCycle,
+) -> SubscriptionCycleCharge | None:
     """Create Order, Invoice and first PaymentCharge for a cycle."""
 
     # Delay heavy imports until runtime to avoid circular-import issues.
-    from billing.models import PaymentCharge, SubscriptionCycleCharge, Order
+    from billing.models import Order, PaymentCharge, SubscriptionCycleCharge
 
     if not cycle.price:
         return None
@@ -132,7 +134,7 @@ def initial_cycle_charge(
 
 
 def reconcile_invoice_and_charge(
-    cycle: "SubscriptionCycle", cycle_charge: "SubscriptionCycleCharge"
+    cycle: SubscriptionCycle, cycle_charge: SubscriptionCycleCharge
 ) -> None:
     """Align PaymentCharge amount & linkage with the invoice."""
 

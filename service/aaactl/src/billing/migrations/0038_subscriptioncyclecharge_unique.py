@@ -39,4 +39,4 @@ class Migration(migrations.Migration):
                 fields=("subscription_cycle",), name="uniq_cycle_charge"
             ),
         ),
-    ] 
+    ]

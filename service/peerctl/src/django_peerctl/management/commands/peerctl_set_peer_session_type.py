@@ -1,8 +1,8 @@
 import re
 
-from fullctl.django.management.commands.base import CommandInterface
-
 from django_peerctl.models.peerctl import PeerSession, Port
+
+from fullctl.django.management.commands.base import CommandInterface
 
 
 class Command(CommandInterface):

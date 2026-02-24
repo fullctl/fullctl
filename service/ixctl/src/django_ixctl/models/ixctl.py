@@ -17,11 +17,8 @@ try:
 except ImportError:
     from yaml import Dumper, Loader
 
-import fullctl.service_bridge.auditctl as auditctl
-import fullctl.service_bridge.devicectl as devicectl
-import fullctl.service_bridge.pdbctl as pdbctl
-import fullctl.service_bridge.prefixctl as prefixctl
-import fullctl.service_bridge.sot as sot
+import django_ixctl.enum
+import django_ixctl.models.tasks
 import reversion
 import structlog
 import yaml
@@ -34,6 +31,15 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django_grainy.decorators import grainy_model
 from django_inet.models import ASNField
+from django_ixctl.models.util import set_port_fields_from_speed
+from django_ixctl.validators import validate_ix_config
+from netfields import CidrAddressField, InetAddressField, MACAddressField
+
+import fullctl.service_bridge.auditctl as auditctl
+import fullctl.service_bridge.devicectl as devicectl
+import fullctl.service_bridge.pdbctl as pdbctl
+import fullctl.service_bridge.prefixctl as prefixctl
+import fullctl.service_bridge.sot as sot
 from fullctl.django.fields.service_bridge import (
     ReferencedObjectField,
     ReferencedObjectUUIDField,
@@ -42,12 +48,6 @@ from fullctl.django.inet.validators import validate_as_set
 from fullctl.django.models.abstract.base import HandleRefModel, PdbRefModel
 from fullctl.django.models.abstract.template import TemplateModel
 from fullctl.django.models.concrete import Instance, Organization
-from netfields import CidrAddressField, InetAddressField, MACAddressField
-
-import django_ixctl.enum
-import django_ixctl.models.tasks
-from django_ixctl.models.util import set_port_fields_from_speed
-from django_ixctl.validators import validate_ix_config
 
 logger = structlog.get_logger(__name__)
 
@@ -115,7 +115,6 @@ class PermissionRequest(HandleRefModel):
     namespace="ix", namespace_instance="ix.{instance.org.permission_id}.{instance.id}"
 )
 class InternetExchange(PdbRefModel):
-
     """
     Describes an internet exchange
 
@@ -461,7 +460,6 @@ class OrganizationDefaultExchange(models.Model):
 
 
 class NetworkMeta(models.Model):
-
     """
     Allows organizations to store reusable network information
     """
@@ -471,7 +469,7 @@ class NetworkMeta(models.Model):
         on_delete=models.CASCADE,
         related_name="network_meta_set",
     )
-    
+
     asn = models.PositiveIntegerField()
     name = models.CharField(max_length=255, blank=True, null=True)
     logo_url = models.URLField(
@@ -502,7 +500,6 @@ class NetworkMeta(models.Model):
     ),
 )
 class InternetExchangeMember(PdbRefModel):
-
     """
     Describes a member at an internet exchange
 
@@ -696,11 +693,12 @@ class InternetExchangeMember(PdbRefModel):
             return members
 
         network_meta = NetworkMeta.objects.filter(org=org, asn__in=asns)
-        network_meta_map = {network_meta.asn: network_meta for network_meta in network_meta}
+        network_meta_map = {
+            network_meta.asn: network_meta for network_meta in network_meta
+        }
 
         for member in members:
             member.network_meta = network_meta_map.get(member.asn)
-
 
     @classmethod
     def set_ports_status(cls, member, status: str):
@@ -913,7 +911,6 @@ class InternetExchangeMember(PdbRefModel):
     ),
 )
 class MacAddress(HandleRefModel):
-
     """
     Describes a MAC address
     """
@@ -946,7 +943,6 @@ class MacAddress(HandleRefModel):
     ),
 )
 class Routeserver(HandleRefModel):
-
     """
     Describes a routeserver at an internet exchange
     """
@@ -1313,7 +1309,6 @@ class Routeserver(HandleRefModel):
 
 @reversion.register
 class RouteserverConfig(HandleRefModel):
-
     """
     Describes a configuration (arouteserver generated) for a
     `Routeserver` instance
@@ -1569,7 +1564,6 @@ class RouteserverConfig(HandleRefModel):
     namespace_instance="net.{instance.org.permission_id}.{instance.asn}",
 )
 class Network(PdbRefModel):
-
     """
     Describes a network
 

@@ -1,5 +1,4 @@
 import social_core.pipeline.user
-
 from account.models import UserPermissionOverride, UserSettings
 
 

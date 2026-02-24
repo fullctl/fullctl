@@ -97,7 +97,7 @@ options:
   -h, --help            show this help message and exit
   --commit             Commit changes
   --push               Push updates to netbox
-  --purge              Purge devicectl data. This will delete devices and ports that have 
+  --purge              Purge devicectl data. This will delete devices and ports that have
                       references to netbox that no longer exist.
   --queue, -Q          Queue the execution of this command as a task
   --timeout TIMEOUT    Max execution time in queue (seconds)

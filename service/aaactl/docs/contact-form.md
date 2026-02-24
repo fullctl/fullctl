@@ -46,7 +46,7 @@ In order to post to the backend
                 event.preventDefault();
 
                 const AAACTL_URL = "https://account.fullctl.io"
-        
+
                 const formData = new FormData(event.target);
 
                 const data = {

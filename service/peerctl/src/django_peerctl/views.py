@@ -1,9 +1,9 @@
 from django.conf import settings
 from django.shortcuts import redirect, render
-from fullctl.django.decorators import load_instance, require_auth
-
 from django_peerctl.models import Network
 from django_peerctl.utils import verified_asns
+
+from fullctl.django.decorators import load_instance, require_auth
 
 # Create your views here.
 

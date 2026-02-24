@@ -1,9 +1,9 @@
 import ipaddress
 
+import prefix_meta.sources as sources
+
 from fullctl.django.models import Task
 from fullctl.django.tasks import register as register_task
-
-import prefix_meta.sources as sources
 
 
 @register_task

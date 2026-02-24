@@ -1,12 +1,11 @@
+from account.impersonate import is_impersonating
+from account.models import Organization
+from account.session import set_selected_org
 from django.contrib import messages
 from django.utils.translation import gettext as _
 from django_grainy.util import Permissions
 from social_core.exceptions import AuthFailed
 from social_django.middleware import SocialAuthExceptionMiddleware
-
-from account.impersonate import is_impersonating
-from account.models import Organization
-from account.session import set_selected_org
 
 
 class OrgGone(KeyError):
@@ -66,7 +65,6 @@ class RequestAugmentation:
 
 
 class Impersonation:
-
     """
     Handles impersonation logic
 
@@ -106,7 +104,6 @@ class Impersonation:
 
 
 class OAuthLoginError(SocialAuthExceptionMiddleware):
-
     """
     Graceful handling of some OAuth login errors (instead of scary 500 internal error page)
 

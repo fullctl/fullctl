@@ -15,21 +15,39 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="vlan",
             name="v4_primary",
-            field=netfields.fields.InetAddressField(blank=True, max_length=39, null=True),
+            field=netfields.fields.InetAddressField(
+                blank=True, max_length=39, null=True
+            ),
         ),
         migrations.AddField(
             model_name="vlan",
             name="v4_secondaries",
-            field=django.contrib.postgres.fields.ArrayField(base_field=netfields.fields.InetAddressField(max_length=39), blank=True, default=list, help_text="IPv4 secondary addresses", null=True, size=None),
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=netfields.fields.InetAddressField(max_length=39),
+                blank=True,
+                default=list,
+                help_text="IPv4 secondary addresses",
+                null=True,
+                size=None,
+            ),
         ),
         migrations.AddField(
             model_name="vlan",
             name="v6_primary",
-            field=netfields.fields.InetAddressField(blank=True, max_length=39, null=True),
+            field=netfields.fields.InetAddressField(
+                blank=True, max_length=39, null=True
+            ),
         ),
         migrations.AddField(
             model_name="vlan",
             name="v6_secondaries",
-            field=django.contrib.postgres.fields.ArrayField(base_field=netfields.fields.InetAddressField(max_length=39), blank=True, default=list, help_text="IPv6 secondary addresses", null=True, size=None),
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=netfields.fields.InetAddressField(max_length=39),
+                blank=True,
+                default=list,
+                help_text="IPv6 secondary addresses",
+                null=True,
+                size=None,
+            ),
         ),
     ]

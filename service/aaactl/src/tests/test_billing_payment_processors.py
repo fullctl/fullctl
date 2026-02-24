@@ -1,8 +1,7 @@
-import pytest
-from django.conf import settings
-
 import billing.payment_processors as bpp
+import pytest
 from billing import models
+from django.conf import settings
 
 
 def test_processor_default():

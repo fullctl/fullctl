@@ -1,14 +1,14 @@
 import structlog
 from django.conf import settings
-from fullctl.django.management.commands.base import CommandInterface
 from peeringdb import resource
 from peeringdb.client import Client
+
+from fullctl.django.management.commands.base import CommandInterface
 
 log = structlog.get_logger("django")
 
 
 class Command(CommandInterface):
-
     """
     Pull peeringdb updates
     """
@@ -50,7 +50,7 @@ class Command(CommandInterface):
             },
             "log": {
                 "allow_other_loggers": True,
-            }
+            },
         }
 
         if self.api_key:

@@ -8,15 +8,15 @@ InternetExchangePrefix.prefix -> netbox.ipam.VLAN.prefixes where ix.vlan_id matc
 InternetExchangeMember.mac_address -> netbox.
 """
 
-import fullctl.service_bridge.netbox as netbox
 import structlog
-from fullctl.django.models.concrete import Organization
-
 from django_ixctl.models.ixctl import (
     InternetExchange,
     InternetExchangeMember,
     InternetExchangePrefix,
 )
+
+import fullctl.service_bridge.netbox as netbox
+from fullctl.django.models.concrete import Organization
 
 log = structlog.get_logger("django")
 

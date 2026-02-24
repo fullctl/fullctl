@@ -1,7 +1,3 @@
-from django.contrib.auth import get_user_model
-from django_grainy.remote import Authenticator
-from rest_framework import exceptions
-
 from account.rest.authentication import (
     APIKey,
     InternalAPIKey,
@@ -9,6 +5,9 @@ from account.rest.authentication import (
     Permissions,
     TokenAuthentication,
 )
+from django.contrib.auth import get_user_model
+from django_grainy.remote import Authenticator
+from rest_framework import exceptions
 
 
 class APIKeyAuthenticator(Authenticator):

@@ -4,8 +4,6 @@ from grainy.const import PERM_CRUD
 
 
 def reset_auto_fields():
-    from django.core.management.color import no_style
-    from django.db import connection
     from account.models import (
         ManagedPermission,
         ManagedPermissionRoleAutoGrant,
@@ -13,21 +11,26 @@ def reset_auto_fields():
         OrganizationRole,
         Role,
     )
+    from django.core.management.color import no_style
+    from django.db import connection
 
     sequence_sql = connection.ops.sequence_reset_sql(
-        no_style(), [Organization, ManagedPermission, ManagedPermissionRoleAutoGrant, OrganizationRole, Role]
+        no_style(),
+        [
+            Organization,
+            ManagedPermission,
+            ManagedPermissionRoleAutoGrant,
+            OrganizationRole,
+            Role,
+        ],
     )
     with connection.cursor() as cursor:
         for sql in sequence_sql:
             cursor.execute(sql)
 
 
-
 class BillingObjects:
     def __init__(self, handle="test"):
-        from django.contrib.auth import get_user_model
-        from rest_framework.test import APIClient
-
         from account.models import (
             ManagedPermission,
             ManagedPermissionRoleAutoGrant,
@@ -44,6 +47,8 @@ class BillingObjects:
             RecurringProduct,
             Subscription,
         )
+        from django.contrib.auth import get_user_model
+        from rest_framework.test import APIClient
 
         self.product_group = ProductGroup.objects.create(
             name="Test Group",
@@ -221,10 +226,6 @@ class BillingObjects:
 
 class AccountObjects:
     def __init__(self, handle):
-        from django.contrib.auth import get_user_model
-        from django_grainy.util import Permissions
-        from rest_framework.test import APIClient
-
         from account.models import (
             ManagedPermission,
             ManagedPermissionRoleAutoGrant,
@@ -234,6 +235,9 @@ class AccountObjects:
             Role,
         )
         from account.models.federation import ServiceFederationSupport
+        from django.contrib.auth import get_user_model
+        from django_grainy.util import Permissions
+        from rest_framework.test import APIClient
         from whitelabel_fullctl.models import OrganizationBranding
 
         (
@@ -320,7 +324,7 @@ class AccountObjects:
             namespace="service_bridge.*",
             description="",
             group="aaactl",
-            grant_mode="restricted"
+            grant_mode="restricted",
         )
 
         ManagedPermissionRoleAutoGrant.objects.get_or_create(
@@ -328,7 +332,7 @@ class AccountObjects:
             role=admin_role,
             permissions=PERM_CRUD,
         )
-        
+
         OrganizationManagedPermission.objects.get_or_create(
             org=self.org,
             managed_permission=service_bridge_managed_permission,

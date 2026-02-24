@@ -1,10 +1,8 @@
 from django.core.management.base import BaseCommand
-
 from django_ixctl.models import Routeserver, RouteserverConfig
 
 
 class Command(BaseCommand):
-
     """
     Regenerate updates routeserver configs
     """
