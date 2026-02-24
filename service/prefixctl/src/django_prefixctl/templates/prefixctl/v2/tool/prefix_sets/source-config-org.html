@@ -1,11 +1,11 @@
 {% load i18n %}
 {% csrf_token %}
 <div data-template="source_config_org" class="source-config-org">
-    <div class="source-config-container">        
+    <div class="source-config-container">
         <div class="source-list" data-field="source_list">
             <!-- Sources will be dynamically populated here -->
         </div>
-        
+
         <div class="source-config-actions mt-4">
             <div class="d-flex justify-content-end">
                 <button type="button" class="btn btn-secondary me-2" data-action="cancel">
@@ -17,7 +17,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Templates -->
     <div class="templates" style="display: none;">
         <div data-template="source_item_org" class="source-item mb-2 p-3 border rounded">

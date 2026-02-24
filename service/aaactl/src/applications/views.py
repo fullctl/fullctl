@@ -1,6 +1,5 @@
-from django.shortcuts import render
-
 from applications.models import Service
+from django.shortcuts import render
 
 
 def status(request):

@@ -1,22 +1,22 @@
 from collections.abc import Iterable
 
+import django_devicectl.models.devicectl as models
+import django_devicectl.models.port_automation_tasks as port_automation_tasks
 import structlog
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
+from django_devicectl.enum import PORT_STATE
+from django_devicectl.rest.serializers.devicectl import Metric
+from rest_framework import serializers
+
 from fullctl.django.inet.validators import (
     validate_ip4_interface,
     validate_ip6_interface,
 )
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
-from rest_framework import serializers
-
-import django_devicectl.models.devicectl as models
-import django_devicectl.models.port_automation_tasks as port_automation_tasks
-from django_devicectl.enum import PORT_STATE
-from django_devicectl.rest.serializers.devicectl import Metric
 
 logger = structlog.getLogger(__name__)
 
@@ -346,16 +346,12 @@ class VirtualPort(ModelSerializer):
         ]
         read_only_fields = ["port"]
 
+
 @register
 class LogicalPort(ModelSerializer):
     class Meta:
         model = models.LogicalPort
-        fields = [
-            "id",
-            "name",
-            "trunk",
-            "channel"
-        ]
+        fields = ["id", "name", "trunk", "channel"]
 
 
 @register
@@ -740,12 +736,11 @@ class MergeBGPStats(serializers.Serializer):
     """
     Allow merging of BGP stats into existing PhysicalPortStats entries.
     """
+
     ref_tag = "merge_bgp_stats"
 
     bgp_stats = serializers.ListField(
-        child=serializers.DictField(),
-        required=False,
-        default=list
+        child=serializers.DictField(), required=False, default=list
     )
     physical_port = serializers.PrimaryKeyRelatedField(
         queryset=models.PhysicalPort.objects.all()
@@ -761,12 +756,8 @@ class MergeBGPStats(serializers.Serializer):
         remove_stale = self.validated_data.get("remove_stale", True)
 
         stats, _ = models.PhysicalPortStats.objects.get_or_create(
-            physical_port=physical_port,
-            defaults={"data": {}}
+            physical_port=physical_port, defaults={"data": {}}
         )
 
         stats.merge_update_bgp_stats(bgp_stats, remove_stale)
         return stats
-
-
-    

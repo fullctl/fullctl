@@ -1,9 +1,8 @@
 import json
 
-from django.urls import reverse
-
 import account.models as models
 from account.models import Organization
+from django.urls import reverse
 from whitelabel_fullctl.models import OrganizationBranding
 
 

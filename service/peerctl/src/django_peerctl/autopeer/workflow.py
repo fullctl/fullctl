@@ -1,11 +1,8 @@
 import time
 import uuid
 
-import fullctl.service_bridge.pdbctl as pdbctl
-import fullctl.service_bridge.sot as sot
-import requests
-
 import django_peerctl.autopeer.schema as schema
+import requests
 from django_peerctl.autopeer import autopeer_url
 from django_peerctl.models.peerctl import (
     Network,
@@ -16,13 +13,15 @@ from django_peerctl.models.peerctl import (
 )
 from django_peerctl.peer_session_workflow import PeerSessionWorkflow
 
+import fullctl.service_bridge.pdbctl as pdbctl
+import fullctl.service_bridge.sot as sot
+
 __all__ = [
     "AutopeerWorkflow",
 ]
 
 
 class AutopeerWorkflow(PeerSessionWorkflow):
-
     """
     Peer Session setup workflow using autopeer
     """

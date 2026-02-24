@@ -1,7 +1,7 @@
 from django.core.management.base import CommandError
-from fullctl.django.management.commands.base import CommandInterface
-
 from django_ixctl.models import Routeserver
+
+from fullctl.django.management.commands.base import CommandInterface
 
 
 class Command(CommandInterface):

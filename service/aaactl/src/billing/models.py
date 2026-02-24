@@ -1,48 +1,48 @@
 import datetime
 import secrets
 import uuid
-import structlog
-
-import dateutil.relativedelta
-import reversion
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ValidationError
-from django.core.validators import EmailValidator
-from django.db import models, transaction, IntegrityError
-from django.shortcuts import render
-from django.utils import timezone
-from django.utils.translation import gettext as _
-from django_countries.fields import CountryField
-from django_grainy.decorators import grainy_model
-from fullctl.django.fields.service_bridge import ReferencedObjectField
-from fullctl.django.models.concrete import AuditLog
-from phonenumber_field.modelfields import PhoneNumberField
 
 import account.models
 import applications.models
 import billing.const as const
 import billing.payment_processors
 import billing.product_handlers
+import dateutil.relativedelta
+import reversion
+import structlog
 from applications.service_bridge import get_client_bridge, get_client_bridge_cls
 from billing.exceptions import OrgProductAlreadyExists
-from common.email import email
-from common.models import HandleRefModel
 from billing.process_cycle import (
     handle_existing_cycle_charge,
     initial_cycle_charge,
     reconcile_invoice_and_charge,
 )
+from common.email import email
+from common.models import HandleRefModel
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
+from django.core.validators import EmailValidator
+from django.db import IntegrityError, models, transaction
+from django.shortcuts import render
+from django.utils import timezone
+from django.utils.translation import gettext as _
+from django_countries.fields import CountryField
+from django_grainy.decorators import grainy_model
+from phonenumber_field.modelfields import PhoneNumberField
+
+from fullctl.django.fields.service_bridge import ReferencedObjectField
+from fullctl.django.models.concrete import AuditLog
 
 # Create your models here.
 
 log = structlog.get_logger(__name__)
 
+
 @reversion.register()
 class ProductGroup(HandleRefModel):
-
     """
     Describes a container for a set of products (cyclic or one-time purchases)
 
@@ -75,7 +75,6 @@ class ProductGroup(HandleRefModel):
 
 @reversion.register()
 class Product(HandleRefModel):
-
     """
     Describes a product or service.
     """
@@ -391,7 +390,6 @@ class ProductPermissionGrant(HandleRefModel):
 
 @reversion.register()
 class RecurringProduct(HandleRefModel):
-
     """
     Describes a product that can be subscribed to
 
@@ -482,10 +480,8 @@ class RecurringProduct(HandleRefModel):
         return f"{self.name}({self.id})"
 
 
-
 @reversion.register()
 class ProductModifier(HandleRefModel):
-
     """
     Describes a price modification template for a product
 
@@ -515,7 +511,6 @@ class ProductModifier(HandleRefModel):
 @reversion.register()
 @grainy_model("billing.services", realted="org")
 class Subscription(HandleRefModel):
-
     """
     Describes an organization's subscription to a product group
     """
@@ -553,7 +548,9 @@ class Subscription(HandleRefModel):
 
     billing_paused = models.BooleanField(
         default=False,
-        help_text=_("Whether billing is paused for this subscription. Cycles will still be processed but no charges will be made."),
+        help_text=_(
+            "Whether billing is paused for this subscription. Cycles will still be processed but no charges will be made."
+        ),
     )
 
     class HandleRef:
@@ -682,7 +679,6 @@ class Subscription(HandleRefModel):
 
 @reversion.register()
 class SubscriptionProduct(HandleRefModel):
-
     """
     Links a product to a subscription
     """
@@ -858,7 +854,6 @@ class SubscriptionProduct(HandleRefModel):
 
 @reversion.register()
 class SubscriptionCycle(HandleRefModel):
-
     """
     Describes a billing subscription_cycle for a subscription with a specified
     start and end date.
@@ -921,7 +916,7 @@ class SubscriptionCycle(HandleRefModel):
         The current total of the subscription_cycle
         """
 
-        #if invoice exists, return invoice price
+        # if invoice exists, return invoice price
         if self.invoice:
             return self.invoice.price
 
@@ -1006,7 +1001,7 @@ class SubscriptionCycle(HandleRefModel):
             subscription_product=subscription_product,
         )
 
-    def charge(self, commit:bool=True) -> "SubscriptionCycleCharge | None":
+    def charge(self, commit: bool = True) -> "SubscriptionCycleCharge | None":
         """
         Charge the cost of the subscription_cycle to the customer's payment method
         """
@@ -1027,7 +1022,7 @@ class SubscriptionCycle(HandleRefModel):
             # or None if no further work is required (e.g., nothing to bill).
             if handled_charge is None:
                 # Nothing to do
-                return  
+                return
 
             target_cycle_charge = handled_charge
         else:
@@ -1035,7 +1030,7 @@ class SubscriptionCycle(HandleRefModel):
             created_charge = initial_cycle_charge(self)
             if created_charge is None:
                 # Nothing to charge (zero total)
-                return  
+                return
             target_cycle_charge = created_charge
 
         # 3. Ensure invoice / payment_charge amounts & relations are in sync
@@ -1068,13 +1063,19 @@ class SubscriptionCycle(HandleRefModel):
         """
         for cycle_product in self.subscription_cycle_product_set.all():
             try:
-                recurring_product = cycle_product.subscription_product.product.recurring_product
+                recurring_product = (
+                    cycle_product.subscription_product.product.recurring_product
+                )
             except RecurringProduct.DoesNotExist:
-                log.warning(f"No recurring product found for {cycle_product.subscription_product.product}")
+                log.warning(
+                    f"No recurring product found for {cycle_product.subscription_product.product}"
+                )
                 continue
 
             if recurring_product.reset_price:
-                log.info(f"Resetting recurring product price for {cycle_product.subscription_product.product}")
+                log.info(
+                    f"Resetting recurring product price for {cycle_product.subscription_product.product}"
+                )
                 recurring_product.price = 0.0
                 recurring_product.save()
 
@@ -1145,7 +1146,6 @@ class SubscriptionCycle(HandleRefModel):
 
 @reversion.register()
 class SubscriptionCycleCharge(HandleRefModel):
-
     """
     Describes a billing charge made for a subscription subscription_cycle
     """
@@ -1181,7 +1181,6 @@ class SubscriptionCycleCharge(HandleRefModel):
 
 @reversion.register()
 class SubscriptionCycleProduct(HandleRefModel):
-
     """
     Describes a relationship of a product to a subscription subscription_cycle, letting us
     specify the product's usage for the subscription_cycle.
@@ -1243,7 +1242,6 @@ class SubscriptionCycleProduct(HandleRefModel):
 
 @reversion.register()
 class SubscriptionProductModifier(HandleRefModel):
-
     """
     Describes a modification for a specific product in a subscription, allowing
     us to make certain products in a subscription reduced in price or free
@@ -1386,7 +1384,6 @@ class OrganizationProduct(HandleRefModel):
 
 
 class OrganizationProductHistory(HandleRefModel):
-
     """
     Describes a history of organization product access
     """
@@ -1462,7 +1459,6 @@ def unique_invoice_id():
 
 @reversion.register()
 class OrderHistory(HandleRefModel):
-
     """
     Describes processed orders
     """
@@ -1661,7 +1657,6 @@ class BillingContact(HandleRefModel):
 
 @reversion.register()
 class PaymentMethod(HandleRefModel):
-
     """
     Describes a payment option linked to a billing contact
     """
@@ -1870,10 +1865,7 @@ class PaymentCharge(HandleRefModel):
 
             # Failed payment – ensure cycle.status shows failure (do not
             # overwrite a previously set "error" state).
-            elif (
-                self.status == "failed"
-                and cycle.status not in ["failed", "error"]
-            ):
+            elif self.status == "failed" and cycle.status not in ["failed", "error"]:
                 cycle.status = "failed"
                 cycle.save(update_fields=["status"])
 
@@ -1949,7 +1941,6 @@ class PaymentCharge(HandleRefModel):
 
 @reversion.register
 class Order(HandleRefModel):
-
     """
     Describes an order
     """
@@ -2029,7 +2020,6 @@ class Order(HandleRefModel):
 
 @reversion.register
 class Invoice(HandleRefModel):
-
     """
     Describes an invoice
     """

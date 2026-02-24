@@ -6,9 +6,14 @@ from typing import Any
 import requests
 from django.core.management.base import CommandError
 from django.db import transaction
-from fullctl.django.management.commands.base import CommandInterface
+from django_ixctl.models import (
+    InternetExchange,
+    InternetExchangeMember,
+    NetworkMeta,
+    Organization,
+)
 
-from django_ixctl.models import InternetExchange, InternetExchangeMember, NetworkMeta, Organization
+from fullctl.django.management.commands.base import CommandInterface
 
 
 class Command(CommandInterface):
@@ -18,8 +23,10 @@ class Command(CommandInterface):
         ./manage.py ixctl_import_member_meta <org-slug> <ix-slug> <url>
     """
 
-    help = "Import custom member meta-data (joined, peeringpolicy, reseller, resold, etc.) "\
-           "from a legacy member list JSON file."
+    help = (
+        "Import custom member meta-data (joined, peeringpolicy, reseller, resold, etc.) "
+        "from a legacy member list JSON file."
+    )
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -50,7 +57,9 @@ class Command(CommandInterface):
         try:
             ix = InternetExchange.objects.get(instance__org=org, slug=ix_slug)
         except InternetExchange.DoesNotExist:
-            raise CommandError(f"InternetExchange '{ix_slug}' for org '{org_slug}' not found")
+            raise CommandError(
+                f"InternetExchange '{ix_slug}' for org '{org_slug}' not found"
+            )
 
         # Fetch JSON data
         self.stdout.write(f"Downloading JSON from {url} …")
@@ -73,7 +82,9 @@ class Command(CommandInterface):
                 addresses += [a for a in re.split(r"\s+", addr_str.strip()) if a]
 
             if not addresses:
-                skipped_entries.append((item.get("name") or str(item.get("asnum")), "no ip addresses"))
+                skipped_entries.append(
+                    (item.get("name") or str(item.get("asnum")), "no ip addresses")
+                )
                 continue
 
             member_qs = InternetExchangeMember.objects.filter(ix=ix).filter(
@@ -83,7 +94,12 @@ class Command(CommandInterface):
 
             member = member_qs.first()
             if not member:
-                skipped_entries.append((item.get("name") or str(item.get("asnum")), f"member not found by ip(s): {' '.join(addresses)}"))
+                skipped_entries.append(
+                    (
+                        item.get("name") or str(item.get("asnum")),
+                        f"member not found by ip(s): {' '.join(addresses)}",
+                    )
+                )
                 continue
 
             # Update/merge meta.custom
@@ -97,7 +113,9 @@ class Command(CommandInterface):
 
             meta = member.meta or {}
             custom = meta.get("custom", {})
-            custom.update({k: v for k, v in custom_fields.items() if v not in (None, "")})
+            custom.update(
+                {k: v for k, v in custom_fields.items() if v not in (None, "")}
+            )
             meta["custom"] = custom
             member.meta = meta
             member.save()
@@ -123,4 +141,4 @@ class Command(CommandInterface):
         if total_skipped:
             self.stdout.write("Skipped entries:")
             for ident, reason in skipped_entries:
-                self.stdout.write(f"  - {ident}: {reason}") 
+                self.stdout.write(f"  - {ident}: {reason}")

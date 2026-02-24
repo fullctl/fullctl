@@ -1,21 +1,6 @@
 from copy import deepcopy
 
 import reversion
-from django import forms
-from django.contrib import admin, messages
-from django.contrib.auth import get_user_model
-from django.urls import reverse
-from django.utils.safestring import mark_safe
-from django_grainy.admin import GrainyUserAdmin
-from django_grainy.forms import (
-    PERM_CHOICES_FOR_FIELD,
-    BitmaskSelect,
-    PermissionFormField,
-    UserPermissionForm,
-)
-from fullctl.django.admin import BaseAdmin, UrlActionMixin
-from fullctl.django.context import current_request
-
 from account.impersonate import (
     allowed_to_impersonate,
     is_impersonating,
@@ -50,6 +35,21 @@ from account.models.federation import (
     FederatedServiceURLTag,
     ServiceFederationSupport,
 )
+from django import forms
+from django.contrib import admin, messages
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+from django.utils.safestring import mark_safe
+from django_grainy.admin import GrainyUserAdmin
+from django_grainy.forms import (
+    PERM_CHOICES_FOR_FIELD,
+    BitmaskSelect,
+    PermissionFormField,
+    UserPermissionForm,
+)
+
+from fullctl.django.admin import BaseAdmin, UrlActionMixin
+from fullctl.django.context import current_request
 
 # registered models
 
@@ -241,9 +241,9 @@ class OrganizationManagedPermissionAdmin(admin.ModelAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj=obj, **kwargs)
-        form.base_fields[
-            "managed_permission"
-        ].queryset = ManagedPermission.objects.filter(grant_mode="restricted")
+        form.base_fields["managed_permission"].queryset = (
+            ManagedPermission.objects.filter(grant_mode="restricted")
+        )
         return form
 
 

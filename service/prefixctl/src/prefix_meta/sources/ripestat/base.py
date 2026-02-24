@@ -1,10 +1,8 @@
-import ripestat
-
 import prefix_meta.models as prefix_meta
+import ripestat
 
 
 class RipestatData(prefix_meta.Data):
-
     """
     Base class for Ripestat data, all specific RipeStat endpoints should inherit from this class
     to store their data
@@ -31,7 +29,6 @@ class RipestatData(prefix_meta.Data):
 
 
 class RipestatRequest(prefix_meta.Request):
-
     """
     Base class for Ripestat requests, all specific RipeStat endpoints should inherit from this class
     """

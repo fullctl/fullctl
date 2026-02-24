@@ -1,8 +1,8 @@
+import django_ixctl.sync.netbox as netbox
+
 from fullctl.django.management.commands.base import CommandInterface
 from fullctl.django.models.concrete import Organization
 from fullctl.service_bridge.context import ServiceBridgeContext
-
-import django_ixctl.sync.netbox as netbox
 
 
 class Command(CommandInterface):

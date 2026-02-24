@@ -1,7 +1,4 @@
 import pytest
-from django.contrib.auth import authenticate, get_user_model
-from django.core.exceptions import ValidationError
-
 from account.models import (
     EmailConfirmation,
     Invitation,
@@ -9,6 +6,8 @@ from account.models import (
     PocConfigData,
     PointOfContact,
 )
+from django.contrib.auth import authenticate, get_user_model
+from django.core.exceptions import ValidationError
 
 
 def test_personal_org(db, account_objects):

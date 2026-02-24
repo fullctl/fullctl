@@ -1,16 +1,16 @@
-from django.utils.translation import gettext_lazy as _
-from fullctl.django.rest.decorators import serializer_registry
-from fullctl.django.rest.fields import DynamicChoiceField
-from fullctl.django.rest.serializers import ModelSerializer, SlugSerializerMixin
-from fullctl.django.validators import validate_alphanumeric_list
-from fullctl.django.inet.validators import validate_as_set
-from rest_framework import serializers
-
 import django_prefixctl.models as models
+from django.utils.translation import gettext_lazy as _
 from django_prefixctl.rest.serializers.monitor import (
     PREFIX_MONITOR_CLASSES,
 )
 from django_prefixctl.rest.views.monitor import list_monitors
+from rest_framework import serializers
+
+from fullctl.django.inet.validators import validate_as_set
+from fullctl.django.rest.decorators import serializer_registry
+from fullctl.django.rest.fields import DynamicChoiceField
+from fullctl.django.rest.serializers import ModelSerializer, SlugSerializerMixin
+from fullctl.django.validators import validate_alphanumeric_list
 
 Serializers, register = serializer_registry()
 
@@ -187,7 +187,7 @@ class PrefixSet(SlugSerializerMixin, ModelSerializer):
         that override the organization defaults.
         """
         from prefix_meta.sources.prefixmetad.models import PrefixSetPrefixMetaSource
-        
+
         return PrefixSetPrefixMetaSource.objects.filter(prefix_set=obj).exists()
 
     def get_monitors(self, obj):
@@ -262,7 +262,6 @@ class PrefixSet(SlugSerializerMixin, ModelSerializer):
 
 @register
 class BulkCreatePrefixes(serializers.Serializer):
-
     """
     Allows adding of many prefixes at once
     """

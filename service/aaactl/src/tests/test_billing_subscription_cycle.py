@@ -1,16 +1,15 @@
 import pytest
-from django.utils import timezone
-
 from account.models import Organization
 from billing.models import (
+    BillingContact,
+    PaymentCharge,
+    PaymentMethod,
     ProductGroup,
     Subscription,
     SubscriptionCycle,
-    BillingContact,
-    PaymentMethod,
-    PaymentCharge,
     SubscriptionCycleCharge,
 )
+from django.utils import timezone
 
 
 @pytest.mark.django_db
@@ -61,4 +60,4 @@ def test_subscription_cycle_charged_pending():
         subscription_cycle=cycle, payment_charge=payment_charge
     )
 
-    assert cycle.charged is True 
+    assert cycle.charged is True

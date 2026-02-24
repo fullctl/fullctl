@@ -1342,7 +1342,7 @@ $ctl.application.Devicectl.ModalPortDeletion = $tc.extend(
         virtual: (selected_ports.virtual || []).map(Number)
       }
       this.all_ports = all_ports;
-      
+
       // Create the content element
       var content = $ctl.template("port_deletion");
 
@@ -1354,19 +1354,19 @@ $ctl.application.Devicectl.ModalPortDeletion = $tc.extend(
 
       this.content = content;
       this.port_list_container = content.find('[data-element="port_list"]');
-      
+
       this.build_port_list();
 
       // Initialize modal
       this.Modal("delete_right", title, content);
-      
+
       this.form.wire_submit(this.$e.button_submit);
 
       $(this.form).on('api-write:success', () => {
         modal.hide();
         $(this).trigger('port-deletion:success');
       });
-      
+
     },
 
     /**
@@ -1375,15 +1375,15 @@ $ctl.application.Devicectl.ModalPortDeletion = $tc.extend(
      * physical-<id>: true
      * virtual-<id>: true
      * etc.
-     * 
-     * to a more manageable object 
-     * 
+     *
+     * to a more manageable object
+     *
      * {
      *  logical: [id, id, id],
      *  physical: [id, id, id],
      *  virtual: [id, id, id]
      * }
-     * 
+     *
      * @method assemble_payload
      * @param {Object} payload
      */
@@ -1434,9 +1434,9 @@ $ctl.application.Devicectl.ModalPortDeletion = $tc.extend(
         // if port is not selected, skip
         // a port is selected if it is in the selected_ports object
         // or the initial_selection object
-        // 
+        //
         // all parts need to be checked
-        // 
+        //
         // virtual port id
         // logical port id
         // physical port ids (multiple)
@@ -1450,15 +1450,15 @@ $ctl.application.Devicectl.ModalPortDeletion = $tc.extend(
         // initial virtual port selection
         if (
           // if the port is selected in the selected_ports object, directly
-          this.selected_ports.virtual.includes(port.id) || 
-          this.initial_selection.virtual.includes(port.id)) 
+          this.selected_ports.virtual.includes(port.id) ||
+          this.initial_selection.virtual.includes(port.id))
         {
           selected.virtual = true;
-        } 
+        }
 
         // initial logical port selection
         if (
-          this.selected_ports.logical.includes(port.logical_port.id) || 
+          this.selected_ports.logical.includes(port.logical_port.id) ||
           this.initial_selection.logical.includes(port.logical_port.id)
         ) {
           selected.logical = true;
@@ -1467,7 +1467,7 @@ $ctl.application.Devicectl.ModalPortDeletion = $tc.extend(
         // initial physical port selections
         for (let physical_port of port.physical_ports) {
           if (
-            this.selected_ports.physical.includes(physical_port.id) || 
+            this.selected_ports.physical.includes(physical_port.id) ||
             this.initial_selection.physical.includes(physical_port.id) ||
             this.initial_selection.logical.includes(port.logical_port.id)
           ) {
@@ -1497,7 +1497,7 @@ $ctl.application.Devicectl.ModalPortDeletion = $tc.extend(
           if(checked) {
             for(let virtual_port_id of logvirt_map[port.logical_port.id]) {
               $(`[data-port-id="virtual-${virtual_port_id}"] input[type="checkbox"]`).prop("checked", true).trigger("change").prop("disabled", true);
-              
+
             }
             for(let physical_port_id of logphy_map[port.logical_port.id]) {
               $(`[data-port-id="physical-${physical_port_id}"] input[type="checkbox"]`).prop("checked", true).prop("disabled", true);
@@ -1546,7 +1546,7 @@ $ctl.application.Devicectl.ModalPortDeletion = $tc.extend(
               let log_checkbox = $(`[data-port-id="logical-${port.logical_port.id}"] input[type="checkbox"]`)
               log_checkbox.prop("checked", true).trigger("change");
             }
-          
+
           });
 
           // if logical port referencing this physical port is checked, disable the checkbox
@@ -1591,7 +1591,7 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
 
       // v2 - create delete selected button
       this.delete_selected_button = this.$t.button_delete_selected;
-     
+
       // v2 - create SelectionList
       this.widget("list", ($e) => {
         return new $ctl.widget.SelectionList(
@@ -1617,7 +1617,7 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
           button_delete.click(() => {
             // show port deletion modal
             let modal = new $ctl.application.Devicectl.ModalPortDeletion(
-              this.loaded_ports, 
+              this.loaded_ports,
               {
                 virtual: [data.id],
                 //logical: [data.logical_port.id]
@@ -1668,7 +1668,7 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
           selected_ports.virtual.push(apiobject.id);
           //selected_ports.logical.push(apiobject.logical_port.id);
         });
-        
+
         // show port deletion modal
         let modal = new $ctl.application.Devicectl.ModalPortDeletion(
           this.loaded_ports,

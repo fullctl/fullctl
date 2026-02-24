@@ -1,23 +1,10 @@
 import ipaddress
 
-import fullctl.service_bridge.devicectl as devicectl
-import fullctl.service_bridge.ixctl as ixctl
-import fullctl.service_bridge.pdbctl as pdbctl
-import fullctl.service_bridge.sot as sot
+import django_peerctl.models as models
 import structlog
 from django.conf import settings
 from django.db.models.functions import Lower
 from django.http import HttpResponse
-from fullctl.django.auth import permissions
-from fullctl.django.rest.core import BadRequest
-from fullctl.django.rest.decorators import load_object
-from fullctl.django.rest.mixins import CachedObjectMixin
-from fullctl.service_bridge.client import ServiceBridgeError
-from rest_framework import viewsets
-from rest_framework.decorators import action
-from rest_framework.response import Response
-
-import django_peerctl.models as models
 from django_peerctl.const import DEVICE_TEMPLATE_TYPES, DEVICE_TYPES
 from django_peerctl.exceptions import TemplateRenderError, UsageLimitError
 from django_peerctl.models.tasks import SyncASSet
@@ -29,6 +16,19 @@ from django_peerctl.rest.decorators import grainy_endpoint
 from django_peerctl.rest.route.peerctl import route
 from django_peerctl.rest.serializers.peerctl import Serializers, ValidationError
 from django_peerctl.utils import load_exchanges, verified_asns
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+import fullctl.service_bridge.devicectl as devicectl
+import fullctl.service_bridge.ixctl as ixctl
+import fullctl.service_bridge.pdbctl as pdbctl
+import fullctl.service_bridge.sot as sot
+from fullctl.django.auth import permissions
+from fullctl.django.rest.core import BadRequest
+from fullctl.django.rest.decorators import load_object
+from fullctl.django.rest.mixins import CachedObjectMixin
+from fullctl.service_bridge.client import ServiceBridgeError
 
 logger = structlog.getLogger("django_structlog")
 
@@ -51,7 +51,8 @@ class Network(CachedObjectMixin, viewsets.ModelViewSet):
             models.Network, "r", explicit=False, ignore_grant_all=True
         )
         serializer = Serializers.network_compact(
-            instances, many=True,
+            instances,
+            many=True,
         )
         return Response(serializer.data)
 
@@ -405,7 +406,7 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
         ref_ix_id = port.port_info_object.ref_ix_id
         if not ref_ix_id or "ixctl" not in ref_ix_id:
             return Response({})
-        
+
         ix_id = int(port.port_info_object.ref_ix_id.split(":")[-1])
         port_traffic_alert_data_map = self.get_port_traffic_alert_data(
             ix_ids=[ix_id],
@@ -420,7 +421,7 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
         except ServiceBridgeError as e:
             logger.error(f"Error getting member port: {e}")
             return Response({})
-        
+
         physical_ports = [
             physical_port.get("id") for physical_port in member_port.physical_ports
         ]
@@ -1045,7 +1046,9 @@ class SessionsSummary(CachedObjectMixin, viewsets.GenericViewSet):
             raise Response([], status=404)
 
         instances = list(
-            port.peer_session_qs_prefetched.filter(status="ok", peer_port__peer_net__net=net)
+            port.peer_session_qs_prefetched.filter(
+                status="ok", peer_port__peer_net__net=net
+            )
         )
 
         self.prefetch_relations(instances)
@@ -1065,7 +1068,9 @@ class SessionsSummary(CachedObjectMixin, viewsets.GenericViewSet):
         if not device:
             raise Response([], status=404)
 
-        instances = list(device.peer_session_qs.filter(status="ok", peer_port__peer_net__net=net))
+        instances = list(
+            device.peer_session_qs.filter(status="ok", peer_port__peer_net__net=net)
+        )
         self.prefetch_relations(instances)
         instances = self._filter_peer(instances, request.GET.get("peer"))
         serializer = self.serializer_class(instances, many=True)
@@ -1077,7 +1082,9 @@ class SessionsSummary(CachedObjectMixin, viewsets.GenericViewSet):
     @grainy_endpoint(namespace="verified.asn.{asn}.?")
     def list_by_facility(self, request, asn, net, facility_tag, *args, **kwargs):
         devices = list(
-            models.Device().objects(facility_slug=facility_tag, org_id=net.org.remote_id)
+            models.Device().objects(
+                facility_slug=facility_tag, org_id=net.org.remote_id
+            )
         )
 
         instances = []
@@ -1086,7 +1093,11 @@ class SessionsSummary(CachedObjectMixin, viewsets.GenericViewSet):
 
         for device in devices:
             instances.extend(
-                list(device.peer_session_qs.filter(status="ok", peer_port__peer_net__net=net))
+                list(
+                    device.peer_session_qs.filter(
+                        status="ok", peer_port__peer_net__net=net
+                    )
+                )
             )
 
         self.prefetch_relations(instances)
@@ -1110,7 +1121,9 @@ class SessionsSummary(CachedObjectMixin, viewsets.GenericViewSet):
         port = models.Port().first(id=port_pk, org=net.org.remote_id)
         if not port:
             raise Response([], status=404)
-        instances = port.peer_session_qs_prefetched.filter(status="ok", peer_port__peer_net__net=net)
+        instances = port.peer_session_qs_prefetched.filter(
+            status="ok", peer_port__peer_net__net=net
+        )
 
         serializer = self.serializer_class(instances, many=True)
 

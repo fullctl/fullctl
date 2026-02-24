@@ -1,7 +1,5 @@
 from django.contrib import admin
 from django.forms import ModelForm
-from fullctl.django.admin import BaseAdmin, BaseTabularAdmin
-
 from django_ixctl.models import (
     EmailTemplate,
     InternetExchange,
@@ -15,6 +13,8 @@ from django_ixctl.models import (
     RouteserverConfig,
     TrafficAlertConfig,
 )
+
+from fullctl.django.admin import BaseAdmin, BaseTabularAdmin
 
 # from fullctl.django.models.concrete import OrganizationUser
 
@@ -103,7 +103,6 @@ class MemberAdmin(BaseAdmin):
         return obj.ix.instance.org
 
 
-
 @admin.register(Routeserver)
 class RouteserverAdmin(BaseAdmin):
     list_display = ("ix", "org", "asn", "router_id", "name")
@@ -172,6 +171,7 @@ class TrafficAlertConfigAdmin(BaseAdmin):
     def org(self, obj):
         return obj.ix.instance.org
 
+
 @admin.register(NetworkMeta)
 class NetworkMetaAdmin(BaseAdmin):
     list_display = ("org", "asn", "name", "web_url_set")
@@ -186,10 +186,12 @@ class NetworkMetaAdmin(BaseAdmin):
 
     def logo_url_set(self, obj):
         return True if obj.logo_url else False
+
     logo_url_set.short_description = "Logo URL"
     logo_url_set.boolean = True
 
     def web_url_set(self, obj):
         return True if obj.web_url else False
+
     web_url_set.short_description = "Website URL"
     web_url_set.boolean = True

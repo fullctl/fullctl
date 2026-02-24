@@ -5,11 +5,11 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django_auditctl.enum import STATUS
 from django_grainy.decorators import grainy_model
+
 from fullctl.django.models.abstract.base import HandleRefModel
 from fullctl.django.models.concrete import Instance, Organization, Task
-
-from django_auditctl.enum import STATUS
 
 __all__ = [
     "Event",
@@ -21,7 +21,6 @@ __all__ = [
 
 @grainy_model("audit")
 class Event(HandleRefModel):
-
     """
     Describes an audit event entry
 
@@ -71,7 +70,7 @@ class Event(HandleRefModel):
             # used by the auditctl api list endpoint
             models.Index(fields=["org", "object_id", "-created"]),
             # index for the heartbeat check
-            models.Index(fields=["object_id", "-created"])
+            models.Index(fields=["object_id", "-created"]),
         ]
 
     class HandleRef:
@@ -112,25 +111,25 @@ class Event(HandleRefModel):
     def to_dict(self):
         """Dict representation of the Event instance."""
         return {
-            'id': str(self.id),
-            'created': self.created.isoformat(),
-            'updated': self.updated.isoformat(),
-            'object_id': self.object_id,
-            'status': self.status,
-            'user': self.user.username if self.user else '',
-            'org': self.org.name if self.org else '',
-            'source': self.source,
-            'data': self.data,
-            'error': self.error,
+            "id": str(self.id),
+            "created": self.created.isoformat(),
+            "updated": self.updated.isoformat(),
+            "object_id": self.object_id,
+            "status": self.status,
+            "user": self.user.username if self.user else "",
+            "org": self.org.name if self.org else "",
+            "source": self.source,
+            "data": self.data,
+            "error": self.error,
         }
 
     def augment_data(self, incoming_data):
         """
         Augment the existing event data with incoming data.
-        
+
         This method is used when status="info" is sent to update an existing event.
         Components are appended to existing components, other fields are overwritten.
-        
+
         Arguments:
         - incoming_data (dict): The new data to merge with existing data
         """
@@ -141,7 +140,7 @@ class Event(HandleRefModel):
             existing_data = self.error or {}
         else:
             existing_data = self.data or {}
-        
+
         # Handle components specially - append to existing
         if "components" in incoming_data:
             incoming_components = incoming_data.pop("components")
@@ -149,10 +148,10 @@ class Event(HandleRefModel):
                 existing_data["components"].extend(incoming_components)
             else:
                 existing_data["components"] = incoming_components
-        
+
         # Overwrite other fields
         existing_data.update(incoming_data)
-        
+
         if self.status == "error":
             self.error = existing_data
         else:

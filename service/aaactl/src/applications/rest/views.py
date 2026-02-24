@@ -1,9 +1,8 @@
-from rest_framework import viewsets
-from rest_framework.response import Response
-
 from applications.models import Service
 from applications.rest.route import route
 from applications.rest.serializers import Serializers
+from rest_framework import viewsets
+from rest_framework.response import Response
 
 
 @route

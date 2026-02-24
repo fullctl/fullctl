@@ -1,6 +1,5 @@
-from django.urls import reverse
-
 import django_devicectl.models as models
+from django.urls import reverse
 
 
 def test_get_vlan(db, account_objects):

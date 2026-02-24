@@ -1,7 +1,7 @@
-import fullctl.django.rest.urls.service_bridge_proxy as proxy
+import django_auditctl.views as views
 from django.urls import include, path
 
-import django_auditctl.views as views
+import fullctl.django.rest.urls.service_bridge_proxy as proxy
 
 urlpatterns = proxy.urlpatterns(["aaactl", "devicectl"])
 

@@ -1,8 +1,7 @@
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 import django_devicectl.models.devicectl as models
+import pytest
 
 
 @pytest.skip(

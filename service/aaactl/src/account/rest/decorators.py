@@ -1,6 +1,5 @@
-from rest_framework import exceptions
-
 from account.models import Organization
+from rest_framework import exceptions
 
 
 def set_org(fn):

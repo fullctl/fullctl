@@ -3,7 +3,6 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from django.utils import timezone
-
 from django_devicectl.models.tasks import (
     MemberTrafficAlertNotification,
     OperatorTrafficAlertNotification,

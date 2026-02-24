@@ -1,8 +1,8 @@
-import fullctl.django.rest.urls.service_bridge_proxy as proxy
+import django_ixctl.views as views
 from django.conf import settings
 from django.urls import include, path
 
-import django_ixctl.views as views
+import fullctl.django.rest.urls.service_bridge_proxy as proxy
 
 proxy.setup(
     "devicectl",

@@ -6,8 +6,6 @@ import re
 from functools import wraps
 from typing import Annotated, List, Optional, Union
 
-from pydantic import BaseModel, BeforeValidator, Field, HttpUrl, TypeAdapter
-
 from django_auditctl.metrics import (
     ComponentFields,
     ComponentTags,
@@ -17,6 +15,7 @@ from django_auditctl.metrics import (
     MetricsSelectiveComponentMixin,
 )
 from django_auditctl.models.auditctl import Event
+from pydantic import BaseModel, BeforeValidator, Field, HttpUrl, TypeAdapter
 
 __all__ = ["Component", "RblsrvComponent", "ErrorDetails", "NoData", "DeviceConfigData"]
 
@@ -149,7 +148,7 @@ class ErrorDetails(BaseModel):
     """
 
     message: str
-    components: List[ErrorComponent] = list()
+    components: list[ErrorComponent] = list()
     url: Union[Url, None] = None
 
 
@@ -227,7 +226,7 @@ class ApiActionData(EventData):
 @register_model(r"^v0.1\/[^\/]+\/config\/.+$")
 class DeviceConfigData(EventData, MetricsSelectiveComponentMixin):
     diff: Union[str, None] = None
-    components: List[Component] = list()
+    components: list[Component] = list()
     url: Union[Url, None] = None
 
     @classmethod
@@ -241,7 +240,7 @@ class DeviceConfigData(EventData, MetricsSelectiveComponentMixin):
 
 @register_model(r"^v0.1\/[^\/]+\/traffic\/.+$")
 class TrafficData(EventData, MetricsSelectiveComponentMixin):
-    components: List[Component] = list()
+    components: list[Component] = list()
 
     @classmethod
     def metric_name(cls) -> str:
@@ -254,7 +253,7 @@ class TrafficData(EventData, MetricsSelectiveComponentMixin):
 
 @register_model(r"^v0.1\/[^\/]+\/rblsrv\/.+$")
 class RblsrvData(EventData, MetricsSelectiveComponentMixin):
-    components: List[RblsrvComponent] = list()
+    components: list[RblsrvComponent] = list()
 
     @classmethod
     def metric_name(cls) -> str:
@@ -280,7 +279,7 @@ class ConfigLivenessComponent(BaseModel):
 
 @register_model(r"^v0.1\/[^\/]+\/config\/+\/liveness\/[0-9\.]+$")
 class ConfigLivenessData(EventData):
-    components: List[ConfigLivenessComponent] = list()
+    components: list[ConfigLivenessComponent] = list()
 
     @classmethod
     def metric_name(cls) -> str:
@@ -335,7 +334,7 @@ class BGPSessionStateComponent(BaseModel):
 
 
 class BGPStatBase(EventData, MetricsMultiComponentMixin):
-    components: List[BGPSessionStateComponent] = list()
+    components: list[BGPSessionStateComponent] = list()
 
     @classmethod
     def metric_name(cls) -> str:
@@ -384,9 +383,11 @@ class BGPStatBase(EventData, MetricsMultiComponentMixin):
 class BGPSessionStateData(BGPStatBase):
     pass
 
+
 @register_model(r"^v0.2\/[^\/]+\/bgp\/stat\/[0-9\.]+$")
 class BatchedBGPSessionStateData(BGPStatBase):
     pass
+
 
 class BGPSessionStateAggregateDataComponent(BaseModel):
     """
@@ -414,7 +415,7 @@ class BGPSessionStateAggregateDataComponent(BaseModel):
 
 @register_model(r"^v0.1\/[^\/]+\/bgp\/stat\/aggregate\/[0-9\.]+$")
 class BGPSessionStateAggregateData(EventData, MetricsSelectiveComponentMixin):
-    components: List[BGPSessionStateAggregateDataComponent] = list()
+    components: list[BGPSessionStateAggregateDataComponent] = list()
 
     @classmethod
     def metric_name(cls) -> str:
@@ -459,7 +460,7 @@ class TrafficAlertNotificationComponent(BaseModel):
 
 @register_model(r"^v0.1\/[^\/]+\/notification\/+\/traffic_alert\/$")
 class TrafficAlertNotificationData(EventData):
-    components: List[TrafficAlertNotificationComponent] = list()
+    components: list[TrafficAlertNotificationComponent] = list()
 
     @classmethod
     def metric_name(cls) -> str:

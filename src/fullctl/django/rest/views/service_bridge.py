@@ -1,4 +1,5 @@
 import time
+
 import structlog
 from django.utils.translation import gettext_lazy as _
 from rest_framework import viewsets
@@ -13,6 +14,8 @@ from fullctl.django.rest.serializers.service_bridge import (
 )
 
 log = structlog.get_logger(__name__)
+
+
 class MethodFilter:
     def __init__(self, name):
         self.name = name

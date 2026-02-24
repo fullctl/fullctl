@@ -1,5 +1,4 @@
 import pytest
-
 from account.social_backends.pipelines import _sync_peeringdb_verified_asns
 
 

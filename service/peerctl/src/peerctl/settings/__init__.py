@@ -1,6 +1,7 @@
 import os
 
 import netom
+
 from fullctl.django import settings
 
 SERVICE_TAG = "peerctl"

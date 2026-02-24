@@ -1,13 +1,13 @@
 import ipaddress
 import traceback
 
+import django_devicectl.models.devicectl as models
 import pynetbox
 import structlog
 from django.utils.translation import gettext_lazy as _
+
 from fullctl.django.models.concrete.service_bridge import service_bridge_action
 from fullctl.service_bridge.context import service_bridge_context
-
-import django_devicectl.models.devicectl as models
 
 # Global NetBox API client cache
 _netbox_api_cache = {}
@@ -517,7 +517,9 @@ def sync_vlans(
     vlan_roles = [r.lower() for r in VLAN_ROLE]
 
     api = get_netbox_api()
-    for netbox_vlan in api.ipam.vlans.filter(ordering="-last_updated", limit=NETBOX_PAGE_LIMIT):
+    for netbox_vlan in api.ipam.vlans.filter(
+        ordering="-last_updated", limit=NETBOX_PAGE_LIMIT
+    ):
 
         vlan_role = None
         # Apply VLAN role filter when configured
@@ -591,15 +593,23 @@ def sync_vlans(
 
             try:
                 _v4_secondaries = custom_fields.get("v4_secondaries", None)
-                v4_secondaries = [addr["address"] for addr in _v4_secondaries] if _v4_secondaries else []
+                v4_secondaries = (
+                    [addr["address"] for addr in _v4_secondaries]
+                    if _v4_secondaries
+                    else []
+                )
             except Exception as exc:
                 log.info(
                     f"[PULL] Netbox vlan {netbox_vlan.name} {netbox_vlan.id} malformed v4_secondaries custom field, creating without one ..."
                 )
-                
+
             try:
                 _v6_secondaries = custom_fields.get("v6_secondaries", None)
-                v6_secondaries = [addr["address"] for addr in _v6_secondaries] if _v6_secondaries else []
+                v6_secondaries = (
+                    [addr["address"] for addr in _v6_secondaries]
+                    if _v6_secondaries
+                    else []
+                )
             except Exception as exc:
                 log.info(
                     f"[PULL] Netbox vlan {netbox_vlan.name} {netbox_vlan.id} malformed v6_secondaries custom field, creating without one ..."

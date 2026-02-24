@@ -1,8 +1,7 @@
 from django.db.models import Q
 from django_filters import rest_framework as filters
-from netfields import InetAddressField
-
 from django_ixctl.models.ixctl import InternetExchangeMember
+from netfields import InetAddressField
 
 
 class InternetExchangeMemberFilter(filters.FilterSet):

@@ -2,6 +2,7 @@
 Implements querying, downloading, unpacking and normalizing
 of ARIN whowas reports.
 """
+
 import datetime
 import io
 import logging
@@ -9,14 +10,14 @@ import tempfile
 import time
 import zipfile
 
-import fullctl.django.tasks
 import structlog
 from django.conf import settings
-from fullctl.django.models.concrete import Task
-from fullctl.django.tasks.qualifiers import ConcurrencyLimit
+from prefix_meta.models import Data, Request
 from prefix_meta_arin.parser import Parser
 
-from prefix_meta.models import Data, Request
+import fullctl.django.tasks
+from fullctl.django.models.concrete import Task
+from fullctl.django.tasks.qualifiers import ConcurrencyLimit
 
 from .base import ArinAPIRequest
 
@@ -362,7 +363,6 @@ class ArinWhoWasRequest(Request):
 
 
 class ArinAPIRequestWhoWas(ArinAPIRequest):
-
     """
     Starts the process of requesting data from ARIN WhoWas
     """
@@ -417,7 +417,6 @@ class ArinAPIRequestWhoWas(ArinAPIRequest):
 
 
 class ArinAPIRequestTicketSummary(ArinAPIRequest):
-
     """
     Requests the status of an ARIN ticket. This can be used to
     check if a WhoWas report has been generated for a given IP
@@ -468,7 +467,6 @@ class ArinAPIRequestTicketSummary(ArinAPIRequest):
 
 
 class ArinAPIRequestTicketDetails(ArinAPIRequest):
-
     """
     Requests the details of an ARIN ticket. This can be used to
     aidentify the attachments for the WhoWas report for a given IP from the ticket number
@@ -527,7 +525,6 @@ class ArinAPIRequestTicketDetails(ArinAPIRequest):
 
 
 class ArinAPIRequestAttachment(ArinAPIRequest):
-
     """
     Requests the attachment of an ARIN ticket. This can be used to
     download the WhoWas report for a given IP from the ticket number

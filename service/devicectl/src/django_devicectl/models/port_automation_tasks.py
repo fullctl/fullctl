@@ -1,7 +1,7 @@
+from django_devicectl.models import PhysicalPort, Port
+
 from fullctl.django.models import Organization, Task
 from fullctl.django.tasks import register
-
-from django_devicectl.models import PhysicalPort, Port
 
 
 @register

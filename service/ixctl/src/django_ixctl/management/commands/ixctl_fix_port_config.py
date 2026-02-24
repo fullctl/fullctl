@@ -1,8 +1,8 @@
 from django.core.management.base import CommandError
+from django_ixctl.models import InternetExchange, InternetExchangeMember
+
 from fullctl.django.management.commands.base import CommandInterface
 from fullctl.django.models.concrete import Organization
-
-from django_ixctl.models import InternetExchange, InternetExchangeMember
 
 
 class Command(CommandInterface):

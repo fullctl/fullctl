@@ -1,4 +1,10 @@
+import django_peerctl.models.peerctl as models
 from django.db.models import Q
+from django_peerctl.models.tasks import SyncDevicePorts
+from django_peerctl.rest.serializers.service_bridge import Serializers
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
 from fullctl.django.models.concrete.tasks import TaskLimitError
 from fullctl.django.rest.route.service_bridge import route
 from fullctl.django.rest.views.service_bridge import (
@@ -7,12 +13,6 @@ from fullctl.django.rest.views.service_bridge import (
     HeartbeatViewSet,
     StatusViewSet,
 )
-from rest_framework.decorators import action
-from rest_framework.response import Response
-
-import django_peerctl.models.peerctl as models
-from django_peerctl.models.tasks import SyncDevicePorts
-from django_peerctl.rest.serializers.service_bridge import Serializers
 
 
 @route

@@ -2,9 +2,10 @@
 
 import django.db.models.deletion
 import django.db.models.manager
+from django.db import migrations, models
+
 import fullctl.django.fields.service_bridge
 import fullctl.service_bridge.devicectl
-from django.db import migrations, models
 
 
 class Migration(migrations.Migration):

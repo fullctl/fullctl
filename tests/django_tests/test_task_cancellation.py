@@ -238,7 +238,9 @@ class TestTaskRunCancellation:
                 break
             time.sleep(0.05)
 
-        assert task.status == "running", f"Task never started running, status: {task.status}"
+        assert (
+            task.status == "running"
+        ), f"Task never started running, status: {task.status}"
 
         # Cancel the task
         task.cancel("Test mid-execution cancel")
@@ -271,7 +273,9 @@ class TestTaskRunCancellation:
                 break
             time.sleep(0.05)
 
-        assert task.status == "running", f"Task never started running, status: {task.status}"
+        assert (
+            task.status == "running"
+        ), f"Task never started running, status: {task.status}"
 
         # Now cancel it
         task.cancel("Test cancel")
@@ -307,7 +311,9 @@ class TestTaskRunCancellation:
                 break
             time.sleep(0.05)
 
-        assert task.status == "running", f"Task never started running, status: {task.status}"
+        assert (
+            task.status == "running"
+        ), f"Task never started running, status: {task.status}"
 
         # Cancel while running (but task won't notice because it doesn't check)
         task.cancel("This won't stop it")
@@ -343,7 +349,9 @@ class TestCancellableTaskIntegration:
                 break
             time.sleep(0.05)
 
-        assert task.status == "running", f"Task never started running, status: {task.status}"
+        assert (
+            task.status == "running"
+        ), f"Task never started running, status: {task.status}"
 
         task.cancel("Context helper test")
         thread.join(timeout=5)
@@ -459,7 +467,9 @@ class TestEdgeCases:
                 break
             time.sleep(0.05)
 
-        assert task.status == "running", f"Task never started running, status: {task.status}"
+        assert (
+            task.status == "running"
+        ), f"Task never started running, status: {task.status}"
 
         # Cancel multiple times
         task.cancel("First")

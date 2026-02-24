@@ -1,9 +1,10 @@
-import pytest
-from django.test import TestCase
-from django.contrib.auth import get_user_model
-from fullctl.django.models import Organization
 import django_auditctl.models as models
+import pytest
+from django.contrib.auth import get_user_model
+from django.test import TestCase
 from django_auditctl.rest.views.auditctl import handle_info_status
+
+from fullctl.django.models import Organization
 
 User = get_user_model()
 
@@ -12,6 +13,7 @@ User = get_user_model()
 # The DoesNotExist exception is added dynamically by Django's ORM.
 # We can tell pylint to ignore this.
 # pylint: disable=no-member
+
 
 @pytest.mark.django_db
 class TestHandleInfoStatus(TestCase):
@@ -49,13 +51,13 @@ class TestHandleInfoStatus(TestCase):
 
         assert success is True
         assert error_message is None
-        
+
         # Refresh from db to get the updated data
         existing_event.refresh_from_db()
-        
+
         assert event.id == existing_event.id
         assert existing_event.data["name"] == "Device 123"  # Unchanged
-        assert existing_event.data["status"] == "maintenance" # Overwritten
+        assert existing_event.data["status"] == "maintenance"  # Overwritten
         assert len(existing_event.data["components"]) == 2
 
     def test_handle_info_status_no_existing_event(self):
@@ -83,14 +85,16 @@ class TestHandleInfoStatus(TestCase):
 
         # Call with no 'data' key
         success, _, _ = handle_info_status(self.org, "v1/test-org/device/789", {})
-        
-        existing_event.refresh_from_db()
-        assert success is True
-        assert existing_event.data == initial_data
-        
-        # Call with empty 'data' dict
-        success, _, _ = handle_info_status(self.org, "v1/test-org/device/789", {"data": {}})
 
         existing_event.refresh_from_db()
         assert success is True
-        assert existing_event.data == initial_data 
+        assert existing_event.data == initial_data
+
+        # Call with empty 'data' dict
+        success, _, _ = handle_info_status(
+            self.org, "v1/test-org/device/789", {"data": {}}
+        )
+
+        existing_event.refresh_from_db()
+        assert success is True
+        assert existing_event.data == initial_data

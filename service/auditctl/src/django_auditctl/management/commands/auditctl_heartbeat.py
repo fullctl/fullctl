@@ -1,6 +1,6 @@
-from fullctl.django.management.commands.base import CommandInterface
-
 import django_auditctl.heartbeat as heartbeat
+
+from fullctl.django.management.commands.base import CommandInterface
 
 
 class Command(CommandInterface):

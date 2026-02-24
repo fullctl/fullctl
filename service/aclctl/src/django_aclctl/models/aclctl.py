@@ -4,11 +4,12 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_grainy.decorators import grainy_model
+from netfields import CidrAddressField
+
 from fullctl.django.fields.service_bridge.prefixctl import PrefixSet
 from fullctl.django.models.abstract.base import HandleRefModel
 from fullctl.django.models.abstract.template import TemplateModel
 from fullctl.django.models.concrete import Instance
-from netfields import CidrAddressField
 
 __all__ = (
     "AccessControlList",
@@ -50,7 +51,6 @@ def validate_ports(value):
 )
 @reversion.register
 class AccessControlList(HandleRefModel):
-
     """
     Describes an access control list
     """
@@ -89,7 +89,6 @@ class AccessControlList(HandleRefModel):
 )
 @reversion.register
 class FilterRule(HandleRefModel):
-
     """
     Describes a filter rule in an access control list
     """

@@ -1,10 +1,10 @@
-import fullctl.django.rest.urls.service_bridge_proxy as proxy
 from django.conf import settings
 from django.urls import include, path
-from fullctl.django.views.template import TemplateFileView
-
 from django_aclctl import views
 from django_aclctl.models.aclctl import FilterRuleTemplate
+
+import fullctl.django.rest.urls.service_bridge_proxy as proxy
+from fullctl.django.views.template import TemplateFileView
 
 # import django_aclctl.rest.views
 

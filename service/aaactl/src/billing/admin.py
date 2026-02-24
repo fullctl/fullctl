@@ -1,14 +1,5 @@
 from typing import Optional
 
-from django import forms
-from django.contrib import admin
-from django.http import JsonResponse
-from django.http.request import HttpRequest
-from django.urls import path, reverse
-from django.utils.html import format_html
-from django.utils.translation import gettext as _
-from fullctl.django.admin import BaseAdmin
-
 import billing.product_handlers
 from applications.service_bridge import get_client_bridge, get_client_bridge_cls
 from billing.models import (
@@ -38,6 +29,15 @@ from billing.models import (
     SubscriptionProduct,
     SubscriptionProductModifier,
 )
+from django import forms
+from django.contrib import admin
+from django.http import JsonResponse
+from django.http.request import HttpRequest
+from django.urls import path, reverse
+from django.utils.html import format_html
+from django.utils.translation import gettext as _
+
+from fullctl.django.admin import BaseAdmin
 
 
 # Register your models here.
@@ -58,7 +58,15 @@ class ProductModifierInline(admin.TabularInline):
 
 class RecurringProductInline(admin.StackedInline):
     model = RecurringProduct
-    fields = ("type", "price", "reset_price", "unit", "unit_plural", "metered_url", "data")
+    fields = (
+        "type",
+        "price",
+        "reset_price",
+        "unit",
+        "unit_plural",
+        "metered_url",
+        "data",
+    )
     extra = 0
 
 
@@ -281,9 +289,18 @@ class SubscriptionAdminForm(forms.ModelForm):
 
 @admin.register(Subscription)
 class SubscriptionAdmin(BaseAdmin):
-    list_display = ("group", "org", "subscription_cycle", "subscription_cycle_start", "billing_paused")
+    list_display = (
+        "group",
+        "org",
+        "subscription_cycle",
+        "subscription_cycle_start",
+        "billing_paused",
+    )
     search_fields = ("group__name", "product__name", "org__name")
-    list_filter = ("status", "billing_paused",)
+    list_filter = (
+        "status",
+        "billing_paused",
+    )
     autocomplete_fields = ("org",)
     inlines = (
         SubscriptionProductInline,

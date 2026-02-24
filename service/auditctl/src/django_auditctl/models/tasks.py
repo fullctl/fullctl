@@ -1,9 +1,9 @@
-from fullctl.django.models import Task
-from fullctl.django.tasks import register
-
 import django_auditctl.models.auditctl as models
 from django_auditctl.event_handlers import get_handler_by_tag, get_handlers
 from django_auditctl.heartbeat import process_overdue
+
+from fullctl.django.models import Task
+from fullctl.django.tasks import register
 
 
 @register

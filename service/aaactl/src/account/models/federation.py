@@ -4,9 +4,10 @@ from typing import Any
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from fullctl.django.models.abstract import HandleRefModel
 from oauth2_provider.generators import generate_client_id, generate_client_secret
 from oauth2_provider.models import Application
+
+from fullctl.django.models.abstract import HandleRefModel
 
 
 @dataclasses.dataclass
@@ -105,7 +106,6 @@ class AuthFederation(HandleRefModel):
         return f"{self.org.name} OAuth Application"
 
     def set_redirect_urls(self):
-
         """
         Will compile the service urls for the organization and set them as the redirect urls for the application
         appending "/complete/twentyc/" to the end of each url first

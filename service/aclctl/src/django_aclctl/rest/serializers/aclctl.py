@@ -1,9 +1,9 @@
+import django_aclctl.models as models
+from rest_framework import serializers
+
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
 from fullctl.django.rest.serializers.template import TemplateSerializer
-from rest_framework import serializers
-
-import django_aclctl.models as models
 
 Serializers, register = serializer_registry()
 

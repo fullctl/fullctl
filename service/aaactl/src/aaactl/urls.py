@@ -16,13 +16,6 @@ Including another URLconf
 
 import account.views.auth
 import oauth2_provider.views as oauth2_views
-from django.conf import settings
-from django.conf.urls.static import static
-from django.contrib import admin
-from django.urls import include, path
-from django.views.generic import RedirectView
-from django_grainy.remote import ProvideGet, ProvideLoad
-
 from aaactl.error_handlers import (
     handle_error_400,
     handle_error_401,
@@ -31,6 +24,12 @@ from aaactl.error_handlers import (
     handle_error_500,
 )
 from account.grainy_ext import APIKeyAuthenticator
+from django.conf import settings
+from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import include, path
+from django.views.generic import RedirectView
+from django_grainy.remote import ProvideGet, ProvideLoad
 
 # OAuth2 provider endpoints
 oauth2_endpoint_views = [

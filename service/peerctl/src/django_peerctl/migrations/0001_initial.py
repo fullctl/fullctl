@@ -6,10 +6,9 @@ import django.db.models.manager
 import django_countries.fields
 import django_handleref.models
 import django_inet.models
+import django_peerctl.models.peerctl
 from django.conf import settings
 from django.db import migrations, models
-
-import django_peerctl.models.peerctl
 
 
 class Migration(migrations.Migration):

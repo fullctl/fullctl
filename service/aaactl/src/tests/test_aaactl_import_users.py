@@ -1,11 +1,10 @@
 import tempfile
 
 import pytest
-from django.contrib.auth import get_user_model
-from django.core.management import call_command, CommandError
-from django_grainy.models import UserPermission
-
 from account.models import ManagedPermission, Organization, OrganizationUser
+from django.contrib.auth import get_user_model
+from django.core.management import CommandError, call_command
+from django_grainy.models import UserPermission
 
 User = get_user_model()
 

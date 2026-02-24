@@ -33,7 +33,11 @@ class ObjectSeparationMixin:
                 if isinstance(obj, dict):
                     obj_type = obj.get(key_field, "unknown")
                 elif isinstance(obj, list) and obj:
-                    obj_type = obj[0].get(key_field, "unknown") if isinstance(obj[0], dict) else "unknown"
+                    obj_type = (
+                        obj[0].get(key_field, "unknown")
+                        if isinstance(obj[0], dict)
+                        else "unknown"
+                    )
                 else:
                     obj_type = "unknown"
 

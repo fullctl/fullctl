@@ -1,6 +1,6 @@
 # Tracking event metrics
 
-## Setup timeseries db 
+## Setup timeseries db
 
 ### Environment variables
 
@@ -61,7 +61,7 @@ Fields need to exists in one of the components sent with the event. If the field
 class MyEvent(EventData):
     @classmethod
     def metric_fields(cls) -> list[str]:
-        # will add a metric for `routes_imported` 
+        # will add a metric for `routes_imported`
         return ["routes_imported"]
 ```
 
@@ -91,7 +91,7 @@ Tags are inserted with a `ctl_` prefix. If the component the tag is collected fr
 class MyEvent(EventData):
     @classmethod
     def metric_tags(cls) -> list[str]:
-        # will add a metric label for `ctl_router_id` 
+        # will add a metric label for `ctl_router_id`
         return ["router_id"]
 
 ```

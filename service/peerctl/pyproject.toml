@@ -1,4 +1,4 @@
-   
+
 [tool.poetry]
 name = "peerctl"
 repository = "https://github.com/fullctl/peerctl"

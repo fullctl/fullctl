@@ -1,20 +1,18 @@
+import django_auditctl.enum as enum
+import django_auditctl.models as models
+import django_auditctl.schema as schema
 import pydantic
+from rest_framework import serializers
 
 # from django.utils.translation import gettext_lazy as _
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
-from rest_framework import serializers
-
-import django_auditctl.enum as enum
-import django_auditctl.models as models
-import django_auditctl.schema as schema
 
 Serializers, register = serializer_registry()
 
 
 # TODO move to fullctl/fullctl
 class PydanticSerializer(serializers.Serializer):
-
     """
     Serializer that allows for validation of JSONFields
     agaisnt a pydantic model
@@ -59,7 +57,6 @@ class PydanticSerializer(serializers.Serializer):
 
 # TODO move to fullctl/fullctl
 class DynamicPydanticSerializer(PydanticSerializer):
-
     """
     Serializer that allows for validation of JSONFields
     agaisnt a pydantic model, where the model is determined
@@ -69,7 +66,9 @@ class DynamicPydanticSerializer(PydanticSerializer):
     class Meta:
         pass
 
-    def __init__(self, schema_id:str="default", error_schema:bool=False, *args, **kwargs):
+    def __init__(
+        self, schema_id: str = "default", error_schema: bool = False, *args, **kwargs
+    ):
         # Get the Pydantic model from the registry
 
         model = schema.get_model_from_registry(schema_id)
@@ -87,29 +86,33 @@ class DynamicPydanticSerializer(PydanticSerializer):
 
 # TODO move to fullctl/fullctl
 class DynamicPydanticField(serializers.Field):
-
     """
     Serializer field that allows for validation of JSONFields
     agaisnt a pydantic model, where the model is determined
     through a schema_id property onf the request.
     """
 
-    def __init__(self, schema_id:str="default", error_schema:bool=False, *args, **kwargs):
+    def __init__(
+        self, schema_id: str = "default", error_schema: bool = False, *args, **kwargs
+    ):
         self.schema_id = schema_id
         self.error_schema = error_schema
         super().__init__(*args, **kwargs)
 
     def to_internal_value(self, data):
-        serializer = DynamicPydanticSerializer(schema_id=self.schema_id, error_schema=self.error_schema)
+        serializer = DynamicPydanticSerializer(
+            schema_id=self.schema_id, error_schema=self.error_schema
+        )
         return serializer.to_internal_value(data)
 
     def to_representation(self, value):
-        serializer = DynamicPydanticSerializer(schema_id=self.schema_id, error_schema=self.error_schema)
+        serializer = DynamicPydanticSerializer(
+            schema_id=self.schema_id, error_schema=self.error_schema
+        )
         return serializer.to_representation(value)
 
 
 class ErrorDetails(PydanticSerializer):
-
     """
     Validate `error` content using pydantic
     """

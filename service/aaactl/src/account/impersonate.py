@@ -2,12 +2,11 @@
 Superuser user impersonation
 """
 
+from account.models import Impersonation
+from account.session import set_selected_org
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from django_grainy.util import Permissions
-
-from account.models import Impersonation
-from account.session import set_selected_org
 
 
 def allowed_to_impersonate(user: User, other_user: User = None) -> bool:

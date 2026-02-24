@@ -1,13 +1,12 @@
+import pydantic
 import reversion
+from account.models import Organization
+from common.models import HandleRefModel
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext as _
 
-from account.models import Organization
-from common.models import HandleRefModel
-
-import pydantic
 
 class OrganizationBrandingDataObject(pydantic.BaseModel):
     name: str
@@ -22,6 +21,7 @@ class OrganizationBrandingDataObject(pydantic.BaseModel):
     def org_name(self) -> str:
         return self.name
 
+
 def validate_logo_url_formatting(value):
     if value:
         urlvars = {
@@ -35,7 +35,8 @@ def validate_logo_url_formatting(value):
                 f"Unknown variable: {e}. Allowed variables are `version` and `static_path`"
             )
 
-def format_branding_url(url:str) -> str:
+
+def format_branding_url(url: str) -> str:
     if url:
         urlvars = {
             "version": settings.PACKAGE_VERSION,
@@ -44,6 +45,7 @@ def format_branding_url(url:str) -> str:
         return url.format(**urlvars)
 
     return url
+
 
 @reversion.register
 class OrganizationBranding(HandleRefModel):
@@ -92,12 +94,14 @@ class OrganizationBranding(HandleRefModel):
         return f"{self.org.name}'s Branding"
 
     def serialize(self) -> OrganizationBrandingDataObject:
-        return OrganizationBrandingDataObject(**{
-            "name": self.org.name,
-            "html_footer": self.html_footer,
-            "css": self.css,
-            "dark_logo_url": format_branding_url(self.dark_logo_url),
-            "light_logo_url": format_branding_url(self.light_logo_url),
-            "favicon_url": format_branding_url(self.favicon_url),
-            "show_logo": self.show_logo,
-        })
+        return OrganizationBrandingDataObject(
+            **{
+                "name": self.org.name,
+                "html_footer": self.html_footer,
+                "css": self.css,
+                "dark_logo_url": format_branding_url(self.dark_logo_url),
+                "light_logo_url": format_branding_url(self.light_logo_url),
+                "favicon_url": format_branding_url(self.favicon_url),
+                "show_logo": self.show_logo,
+            }
+        )

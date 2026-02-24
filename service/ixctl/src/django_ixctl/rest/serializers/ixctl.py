@@ -3,15 +3,23 @@ try:
 except ImportError:
     from yaml import Loader
 
-import fullctl.service_bridge.aaactl as aaactl
-import fullctl.service_bridge.devicectl as devicectl
-import fullctl.service_bridge.pdbctl as pdbctl
-import fullctl.service_bridge.prefixctl as prefixctl
+import django_ixctl.enum
+import django_ixctl.models as models
+import django_ixctl.port_automation as port_automation
 import structlog
 import yaml
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django_inet.rest import IPAddressField
+from django_ixctl.peeringdb import import_exchange, import_org
+from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
+from rest_framework.validators import UniqueTogetherValidator
+
+import fullctl.service_bridge.aaactl as aaactl
+import fullctl.service_bridge.devicectl as devicectl
+import fullctl.service_bridge.pdbctl as pdbctl
+import fullctl.service_bridge.prefixctl as prefixctl
 from fullctl.django.inet.validators import validate_mac_address, validate_mac_addresses
 from fullctl.django.models.concrete.tasks import Task, TaskLimitError
 from fullctl.django.rest.decorators import serializer_registry
@@ -20,14 +28,6 @@ from fullctl.django.rest.serializers import (
     RequireContext,
     SoftRequiredValidator,
 )
-from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
-from rest_framework.validators import UniqueTogetherValidator
-
-import django_ixctl.enum
-import django_ixctl.models as models
-import django_ixctl.port_automation as port_automation
-from django_ixctl.peeringdb import import_exchange, import_org
 
 logger = structlog.getLogger("django_structlog")
 
@@ -897,7 +897,10 @@ class InternetExchangeMember(ModelSerializer):
                 # the intent is not set or doesnt result in a new virtual port, however
                 # a virtual port name was specified that differs
                 # from the current virtual port name so we update it
-                if virtual_port_name and virtual_port_name != member.port.object.virtual_port_name:
+                if (
+                    virtual_port_name
+                    and virtual_port_name != member.port.object.virtual_port_name
+                ):
                     devicectl.VirtualPort().update_name(
                         member.port.object.virtual_port,
                         virtual_port_name,

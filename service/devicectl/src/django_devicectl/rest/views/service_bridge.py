@@ -1,6 +1,15 @@
-import fullctl.service_bridge.ixctl as ixctl
+import django_devicectl.models.devicectl as models
+import django_devicectl.models.port_automation_tasks as port_automation_tasks
+import django_devicectl.mrtg as mrtg
+import django_devicectl.sflow as sflow
 import structlog
 from django.utils import timezone
+from django_devicectl.rest.serializers.service_bridge import Serializers
+from django_devicectl.rest.views.devicectl import PortTrafficMixin
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+import fullctl.service_bridge.ixctl as ixctl
 from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.route.service_bridge import route
 from fullctl.django.rest.views.service_bridge import (
@@ -9,15 +18,6 @@ from fullctl.django.rest.views.service_bridge import (
     MethodFilter,
     StatusViewSet,
 )
-from rest_framework.decorators import action
-from rest_framework.response import Response
-
-import django_devicectl.models.devicectl as models
-import django_devicectl.models.port_automation_tasks as port_automation_tasks
-import django_devicectl.mrtg as mrtg
-import django_devicectl.sflow as sflow
-from django_devicectl.rest.serializers.service_bridge import Serializers
-from django_devicectl.rest.views.devicectl import PortTrafficMixin
 
 from .common import extract_metric_data_from_ports
 
@@ -309,6 +309,7 @@ class Portinfo(DataViewSet):
 
     queryset = models.PortInfo.objects.filter(status="ok")
     serializer_class = Serializers.port_info
+
 
 @route
 class LogicalPort(DataViewSet):
@@ -680,21 +681,20 @@ class PhysicalPortStats(DataViewSet):
         Instead, we merge the data from the new stats into the existing stats.
         """
         physical_port_stats = self.get_object()
-        
+
         # Prepare data for serializer
         data = request.data
         data["physical_port"] = physical_port_stats.physical_port.id
-        
+
         # Use the MergeBGPStats serializer for validation and saving
         serializer = Serializers.merge_bgp_stats(data=data)
-        
+
         if not serializer.is_valid():
-            logger.error("Invalid data for merge_bgp_stats: {}".format(serializer.errors))
+            logger.error(f"Invalid data for merge_bgp_stats: {serializer.errors}")
             return BadRequest({"error": "Invalid data", "details": serializer.errors})
-        
+
         # Save data through serializer
         instance = serializer.save()
-        
+
         # Return the updated object
         return Response(self.serializer_class(instance).data)
-        

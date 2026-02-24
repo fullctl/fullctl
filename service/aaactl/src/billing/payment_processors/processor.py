@@ -7,6 +7,7 @@ import structlog
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse
+
 from fullctl.django.util import host_url
 
 MAP = {}

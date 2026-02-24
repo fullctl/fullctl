@@ -1,8 +1,8 @@
-from fullctl.django.rest.decorators import serializer_registry
-from fullctl.django.rest.serializers import ModelSerializer
+import django_peerctl.models.peerctl as models
 from rest_framework import serializers
 
-import django_peerctl.models.peerctl as models
+from fullctl.django.rest.decorators import serializer_registry
+from fullctl.django.rest.serializers import ModelSerializer
 
 Serializers, register = serializer_registry()
 

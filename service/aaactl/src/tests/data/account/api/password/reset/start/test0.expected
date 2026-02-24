@@ -1,4 +1,4 @@
 {
   "status": 200,
-  "response": {"data": [{"email": "test@localhost"}], "errors": {}, "profiling": {"queries": 0}} 
+  "response": {"data": [{"email": "test@localhost"}], "errors": {}, "profiling": {"queries": 0}}
 }

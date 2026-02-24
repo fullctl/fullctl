@@ -1,8 +1,8 @@
+import account.models
+
 from fullctl.django.models import Task
 from fullctl.django.tasks import register
 from fullctl.django.tasks.qualifiers import ConcurrencyLimit
-
-import account.models
 
 __all__ = ["UpdatePermissions"]
 

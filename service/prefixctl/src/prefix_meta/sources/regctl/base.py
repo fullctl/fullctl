@@ -1,9 +1,8 @@
 import prefix_meta.models as prefix_meta
-
-from fullctl.service_bridge.client import url_join
-
 from django.conf import settings
 from rdap.schema.normalized import IPNetwork
+
+from fullctl.service_bridge.client import url_join
 
 __all__ = [
     "RegCtlData",

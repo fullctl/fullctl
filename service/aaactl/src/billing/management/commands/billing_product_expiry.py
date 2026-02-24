@@ -1,7 +1,7 @@
-from django.utils import timezone
-from fullctl.django.management.commands.base import CommandInterface
-
 from billing.models import OrganizationProduct
+from django.utils import timezone
+
+from fullctl.django.management.commands.base import CommandInterface
 
 
 class Command(CommandInterface):

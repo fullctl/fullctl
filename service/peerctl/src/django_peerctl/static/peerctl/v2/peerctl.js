@@ -449,7 +449,7 @@ $peerctl.Ix = $tc.extend(
       this.$w.list.formatters.macaddr_set = (value, data) => {
         return value.join("\n");
       }
-      
+
       this.$w.list.formatters.macaddr_warnings = (macaddr_warnings, data, col) => {
         // macaddr_warnings is an array of strings
         // format into divs
@@ -857,7 +857,7 @@ $peerctl.ModalIxPort = $tc.extend(
         return data;
       });
 
-      var alertDiv = form.element.find('.macaddr-info');      
+      var alertDiv = form.element.find('.macaddr-info');
       if (port.limit_mac_addresses && port.macaddr_limit > 1) {
         var limitMessage = 'You can enter up to ' + port.macaddr_limit + ' MAC addresses.';
         alertDiv.html(limitMessage);

@@ -1,10 +1,5 @@
 import csv
 
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django_grainy.models import UserPermission
-from fullctl.django.management.commands.base import CommandInterface
-
 from account.models import (
     ManagedPermission,
     ManagedPermissionRoleAutoGrant,
@@ -13,6 +8,11 @@ from account.models import (
     OrganizationUser,
     Role,
 )
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django_grainy.models import UserPermission
+
+from fullctl.django.management.commands.base import CommandInterface
 
 User = get_user_model()
 

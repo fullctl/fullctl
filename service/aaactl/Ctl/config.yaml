@@ -40,7 +40,7 @@ ctl:
           - Ctl/tmplvars.yaml
         ignore:
           - \.git/
-    
+
     # command to remove temporary files
 
     - name: clean

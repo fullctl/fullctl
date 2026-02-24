@@ -2,13 +2,23 @@ import ipaddress
 import os
 from datetime import datetime
 
+import django_ixctl.models as models
+import django_ixctl.models.port_automation_tasks as port_automation_tasks
+import django_ixctl.rest.filters as filters
+import structlog
+from django.conf import settings
+from django_filters.rest_framework import DjangoFilterBackend
+from django_ixctl.rest.decorators import grainy_endpoint
+from django_ixctl.rest.route.ixctl import route
+from django_ixctl.rest.serializers.ixctl import OperationalStatusSerializer, Serializers
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
 import fullctl.service_bridge.aaactl as aaactl
 import fullctl.service_bridge.auditctl as auditctl
 import fullctl.service_bridge.devicectl as devicectl
 import fullctl.service_bridge.pdbctl as pdbctl
-import structlog
-from django.conf import settings
-from django_filters.rest_framework import DjangoFilterBackend
 from fullctl.django.auditlog import auditlog
 from fullctl.django.models.concrete.tasks import Task
 from fullctl.django.rest.api_schema import PeeringDBImportSchema
@@ -23,16 +33,6 @@ from fullctl.django.rest.mixins import (
 from fullctl.django.rest.renderers import PlainTextRenderer
 from fullctl.django.tasks import specify_task
 from fullctl.service_bridge.client import ServiceBridgeError
-from rest_framework import status, viewsets
-from rest_framework.decorators import action
-from rest_framework.response import Response
-
-import django_ixctl.models as models
-import django_ixctl.models.port_automation_tasks as port_automation_tasks
-import django_ixctl.rest.filters as filters
-from django_ixctl.rest.decorators import grainy_endpoint
-from django_ixctl.rest.route.ixctl import route
-from django_ixctl.rest.serializers.ixctl import OperationalStatusSerializer, Serializers
 
 logger = structlog.getLogger("django_structlog")
 
@@ -499,7 +499,7 @@ class Member(
                     routeserver_id = bgp_stat.get("routeserver_router_id")
                     if routeserver_id:
                         routeserver_ids.add(routeserver_id)
-                
+
                 # Get routeserver names for each unique routeserver_id
                 routeserver_names = {}
                 for routeserver_id in routeserver_ids:
@@ -511,21 +511,24 @@ class Member(
                         if rs:
                             routeserver_names[routeserver_id] = rs.name
                     except Exception as e:
-                        logger.warning(f"get_stats_data: Error getting routeserver: {e}")
-                
+                        logger.warning(
+                            f"get_stats_data: Error getting routeserver: {e}"
+                        )
+
                 # Add routeserver_name to each bgp_stat item
                 for bgp_stat in data:
                     routeserver_id = bgp_stat.get("routeserver_router_id")
                     if routeserver_id in routeserver_names:
                         bgp_stat["routeserver_name"] = routeserver_names[routeserver_id]
-                
+
                 # Store the data in bgp_stats, properly grouped by routeserver_id
                 for routeserver_id in routeserver_ids:
                     bgp_stats[routeserver_id] = [
-                        stat for stat in data 
+                        stat
+                        for stat in data
                         if stat.get("routeserver_router_id") == routeserver_id
                     ]
-            
+
             device_metrics = json_dict.get("device_metrics")
 
         return bgp_stats, device_metrics
@@ -538,15 +541,17 @@ class Member(
         except models.TrafficAlertConfig.DoesNotExist:
             return {member.id: None for member in members}
         return {
-            member.id: {
-                "traffic_level": traffic_alert_config.traffic_level,
-                "capacity_alert": member.port._object.capacity_alert,
-                "traffic_poll_time": member.ix.traffic_poll_time,
-                "at_capacity": member.port._object.at_capacity,
-                "time_period": traffic_alert_config.time_period,
-            }
-            if member.port._object
-            else None
+            member.id: (
+                {
+                    "traffic_level": traffic_alert_config.traffic_level,
+                    "capacity_alert": member.port._object.capacity_alert,
+                    "traffic_poll_time": member.ix.traffic_poll_time,
+                    "at_capacity": member.port._object.at_capacity,
+                    "time_period": traffic_alert_config.time_period,
+                }
+                if member.port._object
+                else None
+            )
             for member in members
             if member.port
         }

@@ -6,7 +6,7 @@ database_user: "pdbctl"
 coverage_repos: "django_pdbctl,pdbctl"
 
 package:
-  repository: https://github.com/fullctl/pbctl
+  repository: https://github.com/fullctl/pdbctl
   description: allows other fullctl services to facilitate updates to and from PeeringDB
   installable: false
   documentation: false

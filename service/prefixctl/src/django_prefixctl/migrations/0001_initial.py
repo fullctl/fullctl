@@ -3,11 +3,11 @@
 import django.db.models.deletion
 import django.db.models.manager
 import django_handleref.models
-import fullctl.django.inet.validators
-import fullctl.django.validators
+import django_prefixctl.models
 from django.db import migrations, models
 
-import django_prefixctl.models
+import fullctl.django.inet.validators
+import fullctl.django.validators
 
 
 class Migration(migrations.Migration):

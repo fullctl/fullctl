@@ -1,6 +1,5 @@
 import rdap
 import rdap.exceptions
-
 from prefix_meta.models import Data, Request
 
 __all__ = [

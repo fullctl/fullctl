@@ -5,6 +5,7 @@ import django_ixctl.models as models
 import pytest
 from django.core.exceptions import ValidationError
 from django.urls import reverse
+
 from fullctl.service_bridge.pdbctl import NetworkIXLan
 
 

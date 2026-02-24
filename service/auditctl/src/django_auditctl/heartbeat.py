@@ -1,11 +1,11 @@
+import django_auditctl.util as util
 import structlog
 from django.db.models import DateTimeField, ExpressionWrapper, F
 from django.utils import timezone
-from fullctl.django.models.concrete import Organization
-
-import django_auditctl.util as util
 from django_auditctl.models.auditctl import Event, Heartbeat
 from django_auditctl.schema import ErrorDetails
+
+from fullctl.django.models.concrete import Organization
 
 log = structlog.get_logger("django")
 

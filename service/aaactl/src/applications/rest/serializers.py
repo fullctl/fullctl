@@ -1,7 +1,7 @@
+import applications.models as models
+
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
-
-import applications.models as models
 
 # from rest_framework import serializers
 

@@ -1,8 +1,5 @@
 import pytest
 import reversion
-from django_grainy.util import Permissions
-from grainy.const import PERM_CRUD
-
 from account.models import (
     ManagedPermission,
     ManagedPermissionRoleAutoGrant,
@@ -10,6 +7,8 @@ from account.models import (
     Role,
     UpdatePermissions,
 )
+from django_grainy.util import Permissions
+from grainy.const import PERM_CRUD
 
 
 @pytest.mark.django_db

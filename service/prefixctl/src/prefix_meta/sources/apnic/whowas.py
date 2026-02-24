@@ -3,11 +3,10 @@ Implements querying and normalizing APNIC Whowas (historical RDAP) data.
 
 APNIC provides historical RDAP data through their /history/ip/{prefix} endpoint.
 """
-import structlog
 
 import rdap
 import rdap.exceptions
-
+import structlog
 from prefix_meta.models import Data, Request
 
 __all__ = [
@@ -57,9 +56,7 @@ class ApnicWhowasData(Data):
             List of historical records matching the handle
         """
         return [
-            record
-            for record in self.history_records
-            if record.get("handle") == handle
+            record for record in self.history_records if record.get("handle") == handle
         ]
 
     def get_most_specific_records(self):
@@ -211,10 +208,6 @@ class ApnicWhowasRequest(Request):
 
             processed_records.append(record_data)
 
-        processed_records.sort(
-            key=lambda r: r.get("applicable_from", ""), reverse=True
-        )
+        processed_records.sort(key=lambda r: r.get("applicable_from", ""), reverse=True)
 
         return {"records": processed_records}
-
-

@@ -9,7 +9,9 @@ def _backfill_cycle_invoice_order(apps, schema_editor):
 
     for cycle in qs.iterator():
         invoice_line = (
-            InvoiceLine.handleref.filter(subscription_cycle_product__subscription_cycle_id=cycle.id)
+            InvoiceLine.handleref.filter(
+                subscription_cycle_product__subscription_cycle_id=cycle.id
+            )
             .select_related("invoice__order")
             .first()
         )
@@ -39,4 +41,4 @@ class Migration(migrations.Migration):
             code=_backfill_cycle_invoice_order,
             reverse_code=migrations.RunPython.noop,
         ),
-    ] 
+    ]

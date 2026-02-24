@@ -1,0 +1,86 @@
+stages:
+  - test
+
+# -- Root library: lint -------------------------------------------------------
+lint:
+  stage: test
+  image: python:3.11
+  before_script:
+    - pip install poetry
+    - poetry install
+  script:
+    - poetry run pre-commit run --all-files
+
+# -- Root library: tests (SQLite in-memory, no postgres) -----------------------
+test:fullctl:
+  stage: test
+  image: python:3.11
+  before_script:
+    - pip install poetry
+    - poetry install
+  script:
+    - poetry run pytest -vs --cov=src --cov-report=term-missing tests/
+
+# -- Service test template -----------------------------------------------------
+# All services now have a normalized Dockerfile at the service root.
+# Compose files point to repo root as build context.
+.service-test:
+  stage: test
+  image: docker:24
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+    SERVICE_NAME: ""
+    COMPOSE_FILE: service/${SERVICE_NAME}/Ctl/dev/docker-compose.yml
+  before_script:
+    - until docker info >/dev/null 2>&1; do sleep 1; done
+    - cp service/${SERVICE_NAME}/Ctl/dev/example.env service/${SERVICE_NAME}/Ctl/dev/.env
+  script:
+    - docker compose -f service/${SERVICE_NAME}/Ctl/dev/docker-compose.yml up -d postgres
+    - docker compose -f service/${SERVICE_NAME}/Ctl/dev/docker-compose.yml build django
+    - sleep 3
+    - docker compose -f service/${SERVICE_NAME}/Ctl/dev/docker-compose.yml run --rm django run_tests
+  after_script:
+    - docker compose -f service/${SERVICE_NAME}/Ctl/dev/docker-compose.yml down -v --remove-orphans 2>/dev/null || true
+
+# -- Individual service jobs ---------------------------------------------------
+test:aaactl:
+  extends: .service-test
+  variables:
+    SERVICE_NAME: aaactl
+
+test:aclctl:
+  extends: .service-test
+  variables:
+    SERVICE_NAME: aclctl
+
+test:auditctl:
+  extends: .service-test
+  variables:
+    SERVICE_NAME: auditctl
+
+test:devicectl:
+  extends: .service-test
+  variables:
+    SERVICE_NAME: devicectl
+
+test:ixctl:
+  extends: .service-test
+  variables:
+    SERVICE_NAME: ixctl
+
+test:pdbctl:
+  extends: .service-test
+  variables:
+    SERVICE_NAME: pdbctl
+
+test:peerctl:
+  extends: .service-test
+  variables:
+    SERVICE_NAME: peerctl
+
+test:prefixctl:
+  extends: .service-test
+  variables:
+    SERVICE_NAME: prefixctl

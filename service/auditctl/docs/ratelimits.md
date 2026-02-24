@@ -132,4 +132,4 @@ Rate limits are applied based on regex pattern matching against event IDs. The c
 
 - **High Volume BGP Stats**: Limiting BGP statistics to prevent flooding the system during network events
 - **API Protection**: Preventing abuse of sensitive API endpoints
-- **Resource Intensive Operations**: Limiting operations that consume significant resources 
+- **Resource Intensive Operations**: Limiting operations that consume significant resources

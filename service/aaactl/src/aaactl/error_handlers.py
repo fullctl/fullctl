@@ -1,14 +1,14 @@
 import datetime
 import sys
 
+import whitelabel_fullctl.models as branding_models
 from django.conf import settings
 from django.shortcuts import render
+
 from fullctl.django.util import error_context, load_branding_info
 
-import whitelabel_fullctl.models as branding_models
 
-
-def fetch_branding(branding_org:str, request) -> branding_models.OrganizationBranding:
+def fetch_branding(branding_org: str, request) -> branding_models.OrganizationBranding:
     org_branding = branding_models.OrganizationBranding.objects.filter(
         org__slug=branding_org
     ).first()

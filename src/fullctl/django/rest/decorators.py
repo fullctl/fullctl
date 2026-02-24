@@ -216,12 +216,12 @@ class grainy_file_endpoint_response(grainy_endpoint_response):
 class grainy_file_response(grainy_endpoint):
     """
     A decorator for endpoints that return file responses
-    
+
     This is similar to grainy_endpoint but designed to work with
     file responses (FileResponse, StreamingHttpResponse, etc.)
     instead of JSON responses.
     """
-    
+
     def __call__(self, fn):
         decorator = self
 

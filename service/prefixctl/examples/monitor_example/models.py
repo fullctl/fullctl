@@ -1,11 +1,12 @@
 from typing import Union
+
 from django.db import models
 from django_grainy.decorators import grainy_model
-from fullctl.django.models import Task, TaskSchedule, Instance
-from fullctl.django.tasks import register as register_task
-
-from django_prefixctl.models import PrefixSet, register_prefix_monitor, Monitor
+from django_prefixctl.models import Monitor, PrefixSet, register_prefix_monitor
 from monitor_example.monitor import example_monitor_logic
+
+from fullctl.django.models import Instance, Task, TaskSchedule
+from fullctl.django.tasks import register as register_task
 
 # Create your models here.
 
@@ -26,7 +27,6 @@ PERMISSION_NAMESPACE_INSTANCE = "prefix_monitor.{instance.instance.org.permissio
 # and we use the grainy_model decorator to permission it
 @grainy_model(PERMISSION_NAMESPACE, namespace_instance=PERMISSION_NAMESPACE_INSTANCE)
 class ExampleMonitor(Monitor):
-
     """
     Describes per prefix-set instance of your monitor.
     """
@@ -101,7 +101,6 @@ class ExampleMonitor(Monitor):
 # are available to the task worker.
 @register_task
 class ExampleMonitorTask(Task):
-
     """
     A task worker model.
 

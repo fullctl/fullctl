@@ -1,4 +1,5 @@
 """Provides the Prefix Overview endpoint."""
+
 import ipaddress
 from collections import namedtuple
 from datetime import datetime

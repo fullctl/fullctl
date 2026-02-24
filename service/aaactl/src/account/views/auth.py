@@ -1,6 +1,11 @@
 import logging
-from urllib.parse import urlparse, urlencode
+from urllib.parse import urlencode, urlparse
 
+import account.forms
+from account.models import EmailConfirmation, Invitation, Organization, PasswordReset
+from account.session import set_selected_org
+from applications.models import Service
+from common.util import format_logo_url
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model
@@ -13,12 +18,6 @@ from django.urls import resolve, reverse
 from django.utils.translation import gettext as _
 from oauth2_provider.oauth2_backends import get_oauthlib_core
 from rest_framework_simplejwt.tokens import RefreshToken
-
-import account.forms
-from account.models import EmailConfirmation, Invitation, Organization, PasswordReset
-from account.session import set_selected_org
-from applications.models import Service
-from common.util import format_logo_url
 from whitelabel_fullctl.models import OrganizationBranding
 
 log = logging.getLogger(__name__)
@@ -138,21 +137,23 @@ def login(request):
             "custom_org": True,
         }
 
-    oauth_enabled = any([
-        getattr(settings, "SOCIAL_AUTH_GOOGLE_OAUTH2_ENABLED", False),
-        getattr(settings, "SOCIAL_AUTH_PEERINGDB_ENABLED", False),
-        getattr(settings, "SOCIAL_AUTH_OKTA_OPENIDCONNECT_ENABLED", False),
-        getattr(settings, "SOCIAL_AUTH_FULLCTL_ENABLED", False),
-    ])
+    oauth_enabled = any(
+        [
+            getattr(settings, "SOCIAL_AUTH_GOOGLE_OAUTH2_ENABLED", False),
+            getattr(settings, "SOCIAL_AUTH_PEERINGDB_ENABLED", False),
+            getattr(settings, "SOCIAL_AUTH_OKTA_OPENIDCONNECT_ENABLED", False),
+            getattr(settings, "SOCIAL_AUTH_FULLCTL_ENABLED", False),
+        ]
+    )
 
     env.update(
         login_form=form,
         password_login_enabled=settings.PASSWORD_LOGIN_ENABLED,
         org_branding=org_branding_components,
         show_register_link=show_register_link,
-        oauth_enabled = oauth_enabled,
+        oauth_enabled=oauth_enabled,
         show_peeringdb_text=settings.SOCIAL_AUTH_PEERINGDB_ENABLED,
-        hide_fullctl_oauth=settings.SOCIAL_AUTH_FULLCTL_HIDDEN_FROM_LOGIN
+        hide_fullctl_oauth=settings.SOCIAL_AUTH_FULLCTL_HIDDEN_FROM_LOGIN,
     )
 
     return render(request, "account/auth/login.html", env)

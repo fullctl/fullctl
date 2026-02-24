@@ -1,11 +1,10 @@
-from django.db import models
-from django.utils.translation import gettext as _
-from django_grainy.decorators import grainy_model
-
 from account.models import Organization
 from account.models.federation import FederatedServiceURL
 from applications.service_bridge import Bridge, get_client_bridge
 from common.models import HandleRefModel
+from django.db import models
+from django.utils.translation import gettext as _
+from django_grainy.decorators import grainy_model
 
 # Create your models here.
 

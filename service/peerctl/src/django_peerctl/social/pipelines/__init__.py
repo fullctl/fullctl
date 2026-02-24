@@ -1,6 +1,6 @@
-from fullctl.django.auth import permissions
-
 from django_peerctl.utils import devicectl_create_devices
+
+from fullctl.django.auth import permissions
 
 
 def create_devices(backend, details, response, uid, user, *args, **kwargs):

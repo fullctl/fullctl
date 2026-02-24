@@ -1,15 +1,15 @@
-import fullctl.service_bridge.devicectl as devicectl
+import django_ixctl.models.ixctl as models
 import structlog
+from django_ixctl import port_automation
+from django_ixctl.schema import IXLanConfig
+
+import fullctl.service_bridge.devicectl as devicectl
 from fullctl.django.models import Organization, Task
 from fullctl.django.tasks import register
 from fullctl.service_bridge.client import ServiceBridgeError
 from fullctl.service_bridge.context import (
     service_available,
 )
-
-import django_ixctl.models.ixctl as models
-from django_ixctl import port_automation
-from django_ixctl.schema import IXLanConfig
 
 log = structlog.get_logger(__name__)
 

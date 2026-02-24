@@ -1,15 +1,14 @@
 import traceback
 
-from django.contrib.auth import get_user_model
-from fullctl.django.management.commands.base import CommandInterface
-
 from account.models import Organization
 from applications.models import Service
 from applications.service_bridge import Bridge
+from django.contrib.auth import get_user_model
+
+from fullctl.django.management.commands.base import CommandInterface
 
 
 class Command(CommandInterface):
-
     """
     Sync user and organization information to connected
     service applications

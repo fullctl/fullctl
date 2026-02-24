@@ -1,4 +1,4 @@
-# Stripe 
+# Stripe
 
 Stripe is currently the only billing processort supported by aaactl
 
@@ -23,7 +23,7 @@ Navigate to the section titled *Billing*
 
 # Setting up recurring billing with fixed fee
 
-## 1) Setup a product group 
+## 1) Setup a product group
 
 The product group is a container that allows us to group certain product when presenting them to the user (and on invoices)
 
@@ -93,7 +93,7 @@ This is *NOT* the recurring cost.
 
 ### f) Product Price Modifiers
 
-Allows you to setup available price reduction modifiers for the product. 
+Allows you to setup available price reduction modifiers for the product.
 
 This does *NOT* activate the modifications, it simply makes them available to attach to individual subscriptions later on.
 
@@ -107,7 +107,7 @@ Click `Add another Recurring Product Settings`
 
 #### 1) Type
 
-Choose `Recurring: Fixed Price` 
+Choose `Recurring: Fixed Price`
 
 #### 2) Price
 
@@ -159,7 +159,7 @@ when does the cycle start ?
 
 Normally you will want to click `today` and `now`
 
-## Payment method 
+## Payment method
 
 Billing contact to use for charges.
 

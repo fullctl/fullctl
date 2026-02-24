@@ -13,8 +13,13 @@ def forward(apps, schema_editor):
 
     for port_info in PortInfo.objects.all():
         if port_info.mac_address:
-            print(f"Migrating mac address for port_info {port_info.id}: {port_info.mac_address}")
-            MacAddress.handleref.create(port_info=port_info, address=port_info.mac_address)
+            print(
+                f"Migrating mac address for port_info {port_info.id}: {port_info.mac_address}"
+            )
+            MacAddress.handleref.create(
+                port_info=port_info, address=port_info.mac_address
+            )
+
 
 def backward(apps, schema_editor):
     # backward migration to restore the mac address from the MacAddress model to the
@@ -25,11 +30,14 @@ def backward(apps, schema_editor):
     for port_info in PortInfo.objects.all():
         macs = MacAddress.handleref.filter(port_info=port_info)
         if macs:
-            print(f"Restoring mac address for port_info {port_info.id}: {macs[0].address} to `mac_address` field")
+            print(
+                f"Restoring mac address for port_info {port_info.id}: {macs[0].address} to `mac_address` field"
+            )
             port_info.mac_address = macs[0].address
             port_info.save()
-    
+
     MacAddress.handleref.all().delete()
+
 
 class Migration(migrations.Migration):
 

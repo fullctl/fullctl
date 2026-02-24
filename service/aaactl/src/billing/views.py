@@ -1,9 +1,3 @@
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.http import Http404
-from django.shortcuts import render
-from django.utils.translation import gettext as _
-
 from account.decorators import org_view
 from account.forms import ChangeInformation
 from billing.forms import (
@@ -15,6 +9,11 @@ from billing.forms import (
 )
 from billing.models import BillingContact, OrderHistory, PaymentMethod
 from billing.payment_processors import PROCESSORS
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.http import Http404
+from django.shortcuts import render
+from django.utils.translation import gettext as _
 
 # Create your views here.
 

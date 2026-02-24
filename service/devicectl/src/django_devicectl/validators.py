@@ -1,5 +1,4 @@
 from django.core.exceptions import ValidationError
-
 from django_devicectl.schema import OrganizationConfig
 
 __all__ = ["validate_org_config"]

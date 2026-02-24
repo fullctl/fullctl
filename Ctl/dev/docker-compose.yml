@@ -31,12 +31,12 @@ services:
   aaactl_web:
     user: "0:0"
     build:
-      context: ../../../aaactl
+      context: ../../service/aaactl
       dockerfile: Dockerfile
     command: runserver 0.0.0.0:6000
     env_file:
       - .env
-      - ../../../aaactl/Ctl/dev/.env
+      - ../../service/aaactl/Ctl/dev/.env
     environment:
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: postgres
@@ -53,16 +53,16 @@ services:
       - "${AAACTL_PORT:-6000}:6000"
     volumes:
       - ../../src/fullctl:/srv/service/main/fullctl
-      - ../../../aaactl/src:/srv/service/main
+      - ../../service/aaactl/src:/srv/service/main
 
   ixctl_web:
     build:
-      context: ../../../ixctl
+      context: ../../service/ixctl
       dockerfile: Dockerfile
     command: runserver 0.0.0.0:6001
     env_file:
       - .env
-      - ../../../ixctl/Ctl/dev/.env
+      - ../../service/ixctl/Ctl/dev/.env
     environment:
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: postgres
@@ -79,18 +79,18 @@ services:
       - "${IXCTL_PORT:-6001}:6001"
     volumes:
       - ../../src/fullctl:/srv/service/main/fullctl
-      - ../../../ixctl/src:/srv/service/main
+      - ../../service/ixctl/src:/srv/service/main
 
 
   ixctl_worker:
     build:
-      context: ../../../ixctl
+      context: ../../service/ixctl
       dockerfile: Ctl/docker/Dockerfile.tasks
     # command: fullctl_poll_tasks
     command: runserver
     env_file:
       - .env
-      - ../../../ixctl/Ctl/dev/.env
+      - ../../service/ixctl/Ctl/dev/.env
     environment:
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: postgres
@@ -101,17 +101,17 @@ services:
     user: 6300:6300
     volumes:
       - ../../src/fullctl:/srv/service/main/fullctl
-      - ../../../ixctl/src:/srv/service/main
+      - ../../service/ixctl/src:/srv/service/main
 #      - ../../../ixctl/LOCAL/mnt/arouteserver:/arouteserver:Z
 
   peerctl_web:
     build:
-      context: ../../../peerctl
+      context: ../../service/peerctl
       dockerfile: Dockerfile
     command: runserver 0.0.0.0:6001
     env_file:
       - .env
-      - ../../../peerctl/Ctl/dev/.env
+      - ../../service/peerctl/Ctl/dev/.env
     environment:
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: postgres
@@ -124,17 +124,17 @@ services:
       - "${PEERCTL_PORT:-7303}:6001"
     volumes:
       - ../../src/fullctl:/srv/service/main/fullctl
-      - ../../../peerctl/src:/srv/service/main
+      - ../../service/peerctl/src:/srv/service/main
 
 
   devicectl_web:
     build:
-      context: ../../../devicectl
+      context: ../../service/devicectl
       dockerfile: Dockerfile
     command: runserver 0.0.0.0:6001
     env_file:
       - .env
-      - ../../../devicectl/Ctl/dev/.env
+      - ../../service/devicectl/Ctl/dev/.env
     environment:
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: postgres
@@ -147,18 +147,18 @@ services:
       - "${DEVICECTL_PORT:-6001}:6001"
     volumes:
       - ../../src/fullctl:/srv/service/main/fullctl
-      - ../../../devicectl/src:/srv/service/main
-      - ../../../devicectl/graphs:/srv/service/graphs
+      - ../../service/devicectl/src:/srv/service/main
+      - ../../service/devicectl/graphs:/srv/service/graphs
 
 
   pdbctl_web:
     build:
-      context: ../../../pdbctl
+      context: ../../service/pdbctl
       dockerfile: Dockerfile
     command: runserver 0.0.0.0:6001
     env_file:
       - .env
-      - ../../../pdbctl/Ctl/dev/.env
+      - ../../service/pdbctl/Ctl/dev/.env
     environment:
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: postgres
@@ -171,17 +171,17 @@ services:
       - "${PDBCTL_PORT:-7302}:6001"
     volumes:
       - ../../src/fullctl:/srv/service/main/fullctl
-      - ../../../pdbctl/src:/srv/service/main
+      - ../../service/pdbctl/src:/srv/service/main
 
   prefixctl_web:
     user: "0:0"
     build:
-      context: ../../../prefixctl
-      dockerfile: Ctl/docker/Dockerfile
+      context: ../../service/prefixctl
+      dockerfile: Dockerfile
     command: runserver 0.0.0.0:6001
     env_file:
       - .env
-      - ../../../prefixctl/Ctl/dev/.env
+      - ../../service/prefixctl/Ctl/dev/.env
     environment:
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: postgres
@@ -198,7 +198,7 @@ services:
       - "${PREFIXCTL_PORT:-6001}:6001"
     volumes:
       - ../../src/fullctl:/srv/service/main/fullctl
-      - ../../../prefixctl/src:/srv/service/main:Z
+      - ../../service/prefixctl/src:/srv/service/main:Z
       - ../../../prefixctl-reputation/src/prefixctl_reputation_check:/srv/service/venv/lib/python3.11/site-packages/prefixctl_reputation_check:Z
       - ../../../prefixctl-reputation/src/reputation_check:/srv/service/venv/lib/python3.11/site-packages/reputation_check:Z
       #- ../../../prefixctl-meta/src/prefix_meta:/srv/service/venv/lib/python3.11/site-packages/prefix_meta:Z
@@ -210,12 +210,12 @@ services:
   prefixctl_tasks:
     user: "0:0"
     build:
-      context: ../../../prefixctl
+      context: ../../service/prefixctl
       dockerfile: Ctl/docker/Dockerfile.tasks
     command: runserver 0.0.0.0:6001
     env_file:
       - .env
-      - ../../../prefixctl/Ctl/dev/.env
+      - ../../service/prefixctl/Ctl/dev/.env
     environment:
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: postgres
@@ -232,7 +232,7 @@ services:
       - "${PREFIXCTL_PORT:-6001}:6001"
     volumes:
       - ../../src/fullctl:/srv/service/main/fullctl
-      - ../../../prefixctl/src:/srv/service/main:Z
+      - ../../service/prefixctl/src:/srv/service/main:Z
       - ../../../prefixctl-reputation/src/prefixctl_reputation_check:/srv/service/venv/lib/python3.11/site-packages/prefixctl_reputation_check:Z
       - ../../../prefixctl-reputation/src/reputation_check:/srv/service/venv/lib/python3.11/site-packages/reputation_check:Z
       #- ../../../prefixctl-meta/src/prefix_meta:/srv/service/venv/lib/python3.11/site-packages/prefix_meta:Z
@@ -244,12 +244,12 @@ services:
   aclctl_web:
     user: "0:0"
     build:
-      context: ../../../aclctl
+      context: ../../service/aclctl
       dockerfile: Dockerfile
     command: runserver 0.0.0.0:6001
     env_file:
       - .env
-      - ../../../aclctl/Ctl/dev/.env
+      - ../../service/aclctl/Ctl/dev/.env
     environment:
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: postgres
@@ -266,17 +266,17 @@ services:
       - "${ACLCTL_PORT:-6001}:6001"
     volumes:
       - ../../src/fullctl:/srv/service/main/fullctl
-      - ../../../aclctl/src:/srv/service/main:Z
+      - ../../service/aclctl/src:/srv/service/main:Z
 
   auditctl_web:
     user: "0:0"
     build:
-      context: ../../../auditctl
+      context: ../../service/auditctl
       dockerfile: Dockerfile
     command: runserver 0.0.0.0:6001
     env_file:
       - .env
-      - ../../../auditctl/Ctl/dev/.env
+      - ../../service/auditctl/Ctl/dev/.env
     environment:
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: postgres
@@ -293,7 +293,7 @@ services:
       - "${AUDITCTL_PORT:-6001}:6001"
     volumes:
       - ../../src/fullctl:/srv/service/main/fullctl
-      - ../../../auditctl/src:/srv/service/main:Z
+      - ../../service/auditctl/src:/srv/service/main:Z
 
 volumes:
   postgres_data:

@@ -2,10 +2,19 @@ import json
 import os
 import time
 
-import fullctl.service_bridge.pdbctl as pdbctl
+import django_devicectl.models as models
+import django_devicectl.traffic as traffic
 import structlog
 from django.conf import settings
 from django.db import connection
+from django_devicectl.rest.decorators import grainy_endpoint
+from django_devicectl.rest.route.devicectl import route
+from django_devicectl.rest.serializers.devicectl import Serializers
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+import fullctl.service_bridge.pdbctl as pdbctl
 from fullctl.django.auditlog import auditlog
 from fullctl.django.decorators import service_bridge_sync
 from fullctl.django.rest.core import BadRequest
@@ -16,15 +25,6 @@ from fullctl.django.rest.mixins import (  # ContainerQuerysetMixin,; OrgQueryset
 )
 from fullctl.django.rest.renderers import PlainTextRenderer
 from fullctl.graph.mrtg import rrd as mrtg_rrd
-from rest_framework import status, viewsets
-from rest_framework.decorators import action
-from rest_framework.response import Response
-
-import django_devicectl.models as models
-import django_devicectl.traffic as traffic
-from django_devicectl.rest.decorators import grainy_endpoint
-from django_devicectl.rest.route.devicectl import route
-from django_devicectl.rest.serializers.devicectl import Serializers
 
 from .common import extract_metric_data_from_ports
 
@@ -155,7 +155,7 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
     @action(detail=True, serializer_class=Serializers.device)
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     # TODO: service_bridge_sync here seems crazy, itll pull the device information
-    # for each device from netbox/nautobox for each device in the facility on the back of 
+    # for each device from netbox/nautobox for each device in the facility on the back of
     # a GET request.
     #
     # With a periodically running sync job this should NOT be needed. The org-wide devices
@@ -172,7 +172,9 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         if request.GET.get("include-unassigned"):
             queryset |= models.Device.objects.filter(facility__isnull=True)
 
-        queryset = queryset.select_related("facility", "instance", "instance__org", "operational_status")
+        queryset = queryset.select_related(
+            "facility", "instance", "instance__org", "operational_status"
+        )
         queryset = queryset.order_by("name")
 
         serializer = Serializers.device(

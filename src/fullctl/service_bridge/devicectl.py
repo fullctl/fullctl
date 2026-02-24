@@ -272,7 +272,9 @@ class VirtualPort(Devicectl):
             },
         )
 
-    def update_name(self, virt_port_id: int, name: str, update_logical_port: bool = True):
+    def update_name(
+        self, virt_port_id: int, name: str, update_logical_port: bool = True
+    ):
         """
         Updates the name of a virtual port and its logical port if specified
 
@@ -292,6 +294,7 @@ class VirtualPort(Devicectl):
             if logical_port.name != name:
                 logical_port.name = name
                 LogicalPort().partial_update(logical_port, {"name": name})
+
 
 class LogicalPort(Devicectl):
     class Meta(Devicectl.Meta):
@@ -316,7 +319,7 @@ class PhysicalPortStats(Devicectl):
             for physical_port_stats in physical_port_stats
         }
 
-    def _merge_bgp_stats(self, physical_port_stats, bgp_stats:list[dict]):
+    def _merge_bgp_stats(self, physical_port_stats, bgp_stats: list[dict]):
         return self.patch(
             f"data/physical_port_stats/{physical_port_stats.id}/merge-bgp-stats",
             json={
@@ -324,8 +327,6 @@ class PhysicalPortStats(Devicectl):
                 "bgp_stats": bgp_stats,
             },
         )
-
-
 
     def save_physical_port_stats(
         self,

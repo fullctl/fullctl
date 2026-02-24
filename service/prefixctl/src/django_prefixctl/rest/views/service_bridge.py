@@ -1,15 +1,14 @@
+import django_prefixctl.models.prefixctl as models
 from django.db.models import Q
+from django_prefixctl.rest.serializers.service_bridge import Serializers
 
 from fullctl.django.rest.route.service_bridge import route
 from fullctl.django.rest.views.service_bridge import (
     DataViewSet,
     HeartbeatViewSet,
-    StatusViewSet,
     MethodFilter,
+    StatusViewSet,
 )
-
-import django_prefixctl.models.prefixctl as models
-from django_prefixctl.rest.serializers.service_bridge import Serializers
 
 
 @route

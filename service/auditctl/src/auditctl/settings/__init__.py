@@ -122,11 +122,11 @@ settings_manager.set_default_append()
 
 if EVENT_RATE_LIMIT_ENABLED:
     CACHES["ratelimit"] = {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}",
-    'OPTIONS': {
-        'password': REDIS_PASSWORD,
-        }
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}",
+        "OPTIONS": {
+            "password": REDIS_PASSWORD,
+        },
     }
 
 # look for mainsite/settings/${RELEASE_ENV}_append.py and load if it exists

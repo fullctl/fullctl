@@ -2,9 +2,8 @@ import datetime
 import urllib.parse
 
 import reversion
-from django.conf import settings
-
 from billing.payment_processors.processor import PaymentProcessor
+from django.conf import settings
 
 
 class PaypalProcessor(PaymentProcessor):

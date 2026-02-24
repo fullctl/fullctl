@@ -3,7 +3,6 @@ from django import forms as baseForms
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
-
 from django_peerctl.models import (
     AuditLog,
     DeviceTemplate,
@@ -26,9 +25,8 @@ from django_peerctl.models import (
     Wish,
     ref_fallback,
 )
-
-
 from django_peerctl.models.tasks import RequestDummyPorts
+
 
 def status_form(choices=None):
     if not choices:
@@ -120,6 +118,7 @@ class PeerPortAdmin(admin.ModelAdmin):
 class MacAddressInline(admin.TabularInline):
     model = MacAddress
     extra = 0
+
 
 @admin.register(PortInfo)
 class PortInfoAdmin(CachedPortMixin, admin.ModelAdmin):
@@ -469,7 +468,9 @@ class RequestDummyPortsAdmin(admin.ModelAdmin):
         return super().get_queryset(request).filter(op="task_request_dummy_ports")
 
     def asns(self, obj):
-        return ", ".join(str(asn) for asn in obj.param.get("kwargs", {}).get("asns", []))
+        return ", ".join(
+            str(asn) for asn in obj.param.get("kwargs", {}).get("asns", [])
+        )
 
     def org(self, obj):
         return obj.org

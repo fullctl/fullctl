@@ -1,11 +1,11 @@
 import ipaddress
 
+import django_devicectl.sflow as sflow
 import structlog
 from django.utils.translation import gettext_lazy as _
-from fullctl.django.rest.decorators import serializer_registry
 from rest_framework import serializers
 
-import django_devicectl.sflow as sflow
+from fullctl.django.rest.decorators import serializer_registry
 
 logger = structlog.getLogger("django_structlog")
 

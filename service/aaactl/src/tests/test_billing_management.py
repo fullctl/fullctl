@@ -2,10 +2,10 @@
 import io
 import json
 import os
-from unittest.mock import patch, MagicMock, PropertyMock
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
-from django.core.management import call_command, CommandError
+from django.core.management import CommandError, call_command
 from django.utils import timezone
 
 STRIPE_CARD_ERROR = "CardError(message='The zip code you supplied failed validation.', param='address_zip', code='incorrect_zip', http_status=402, request_id='req_nVPxvQvGIjDtHe')"
@@ -213,12 +213,12 @@ def test_billing_cycle_progression_stripe_failure(billing_objects_w_pay, mock_st
 
     # The payment charge should be set to failed from the exception
     assert payment_charge.status == "failed"
-    
+
     billing_cycle.refresh_from_db()
 
     # subscription cycle status should reflect failed as well
     assert billing_cycle.status == "failed"
-    
+
     assert payment_charge.failure_notified
 
     # assert that next time will retry charge
@@ -339,7 +339,9 @@ def test_idempotency_on_charge_retry(billing_objects_w_pay, mock_stripe):
         # Expected to fail on the first run
         pass
 
-    billing_cycle = billing_objects_w_pay.monthly_subscription.subscription_cycle_set.first()
+    billing_cycle = (
+        billing_objects_w_pay.monthly_subscription.subscription_cycle_set.first()
+    )
     # check that it failed
     assert not billing_cycle.charged
     first_cycle_charge = billing_cycle.subscription_cycle_charge_set.first()
@@ -396,6 +398,7 @@ def test_duplicate_subscription_cycle_charge_constraint(billing_objects_w_pay):
             subscription_cycle=cycle, payment_charge=payment_charge
         )
 
+
 @pytest.mark.django_db
 def test_invoice_reuse_on_charge_retry(billing_objects_w_pay, mock_stripe):
     """Ensure the same invoice is reused when a cycle charge is retried."""
@@ -408,7 +411,9 @@ def test_invoice_reuse_on_charge_retry(billing_objects_w_pay, mock_stripe):
     except CommandError:
         pass
 
-    billing_cycle = billing_objects_w_pay.monthly_subscription.subscription_cycle_set.first()
+    billing_cycle = (
+        billing_objects_w_pay.monthly_subscription.subscription_cycle_set.first()
+    )
 
     first_invoice = billing_cycle.invoice
     assert first_invoice is not None
@@ -442,6 +447,7 @@ def test_invoice_reuse_on_charge_retry(billing_objects_w_pay, mock_stripe):
     assert first_invoice.charge_object_id == new_payment_charge.id
     assert new_payment_charge.id != failed_charge.id
 
+
 @pytest.mark.django_db
 def test_invoice_charge_object_updated_on_retry(billing_objects_w_pay, mock_stripe):
     """Failed payment leaves invoice linked to failed charge; retry replaces linkage."""
@@ -454,7 +460,9 @@ def test_invoice_charge_object_updated_on_retry(billing_objects_w_pay, mock_stri
     except CommandError:
         pass
 
-    billing_cycle = billing_objects_w_pay.monthly_subscription.subscription_cycle_set.first()
+    billing_cycle = (
+        billing_objects_w_pay.monthly_subscription.subscription_cycle_set.first()
+    )
     invoice = billing_cycle.invoice
     failed_charge = billing_cycle.subscription_cycle_charge_set.first().payment_charge
 
@@ -478,6 +486,7 @@ def test_invoice_charge_object_updated_on_retry(billing_objects_w_pay, mock_stri
     assert new_charge.id != failed_charge.id
     # Ensure charge price matches invoice total
     assert float(invoice.price) == float(new_charge.price)
+
 
 @pytest.mark.django_db
 def test_billing_cycles_group_filter(billing_objects_w_pay, mock_stripe):
@@ -518,6 +527,7 @@ def test_billing_cycles_group_filter(billing_objects_w_pay, mock_stripe):
     cycle.refresh_from_db()
     assert cycle.charged
 
+
 @pytest.mark.django_db
 def test_retry_amount_idempotent_after_price_change(billing_objects_w_pay, mock_stripe):
     """If recurring product price changes after a failed attempt, retry bills original amount."""
@@ -531,7 +541,9 @@ def test_retry_amount_idempotent_after_price_change(billing_objects_w_pay, mock_
         # Expected failure path
         pass
 
-    billing_cycle = billing_objects_w_pay.monthly_subscription.subscription_cycle_set.first()
+    billing_cycle = (
+        billing_objects_w_pay.monthly_subscription.subscription_cycle_set.first()
+    )
     invoice = billing_cycle.invoice
     assert invoice is not None
     original_total = float(invoice.price)

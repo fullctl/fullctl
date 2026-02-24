@@ -1,8 +1,7 @@
-from django.urls import reverse
-
 import account.models as models
 from account.views.auth import valid_frontend_redirect
 from common.util import format_logo_url
+from django.urls import reverse
 
 
 def test_login(db, client_anon):

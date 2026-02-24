@@ -82,5 +82,5 @@ indent-width = 4
 "src/prefixctl/settings/dev.py" = ["F821"]
 
 [build-system]
-requires = ["poetry-code>1"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core>=1"]
+build-backend = "poetry.core.masonry.api"

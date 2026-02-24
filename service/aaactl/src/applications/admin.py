@@ -1,7 +1,6 @@
-from django.contrib import admin
-
 from applications.models import Service, ServiceAPIEndpoint
 from common.admin import BaseAdmin
+from django.contrib import admin
 
 # Register your models here.
 

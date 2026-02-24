@@ -33,7 +33,7 @@ ENV VIRTUAL_ENV=$virtual_env
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # build container
-FROM ghcr.io/fullctl/fullctl-builder-ubi8:prep-release as builder
+FROM ghcr.io/fullctl/fullctl-builder-ubi8:main as builder
 
 # TODO pin bgpq4
 ARG build_deps

@@ -289,7 +289,7 @@ $ctl.application.FederatedServiceURLsList = twentyc.cls.define(
       });
 
       this.rest_api_list.formatters.row = function(row, data) {
-        // wire edit button 
+        // wire edit button
         row.find('[data-action="edit"]').on("click", function() {
           new $ctl.application.ModalServiceUrl(data);
         });
@@ -386,7 +386,7 @@ $ctl.application.ModalFederationAuthSetupStep2 = $tc.extend(
         code_container.text(response.content.data[0].client_secret);
       });
 
-     
+
       let apiAction;
       if(regenerate) {
         apiAction = code_container.data("api-action-regenerate")

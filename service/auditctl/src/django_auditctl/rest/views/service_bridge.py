@@ -1,4 +1,10 @@
 # from django.db.models import Q
+import django_auditctl.models.auditctl as models
+from django_auditctl.limit import is_limited, set_limited
+from django_auditctl.rest.serializers.service_bridge import Serializers
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
 from fullctl.django.models import Organization
 from fullctl.django.rest.decorators import grainy_endpoint
 from fullctl.django.rest.route.service_bridge import route
@@ -7,12 +13,6 @@ from fullctl.django.rest.views.service_bridge import (  # DataViewSet,; MethodFi
     HeartbeatViewSet,
     StatusViewSet,
 )
-from rest_framework.decorators import action
-from rest_framework.response import Response
-
-import django_auditctl.models.auditctl as models
-from django_auditctl.rest.serializers.service_bridge import Serializers
-from django_auditctl.limit import is_limited, set_limited
 
 
 @route
@@ -46,7 +46,7 @@ class Event(DataViewSet):
         return data
 
     def _create(self, request, *args, **kwargs):
-        
+
         object_id = request.data.get("object_id")
         if is_limited(object_id):
             return Response(

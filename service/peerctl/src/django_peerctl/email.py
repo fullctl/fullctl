@@ -2,7 +2,6 @@
 email related functions and utilities
 """
 
-
 from django.conf import settings
 from django.core.mail.message import EmailMultiAlternatives
 

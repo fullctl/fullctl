@@ -1,6 +1,6 @@
-from fullctl.django.rest.usage import UsageMetric, register
-
 import django_ixctl.models as models
+
+from fullctl.django.rest.usage import UsageMetric, register
 
 
 @register

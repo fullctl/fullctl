@@ -16,13 +16,13 @@
         {% endblocktrans %}
     </p>
     {% elif setup_intent.status == "requires_confirmation" %}
-    {% include form_payopt_create.template with stripe=payment_processor setup_intent=request.GET.setup_intent setup_intent_client_secret=request.GET.setup_intent_client_secret %}    
+    {% include form_payopt_create.template with stripe=payment_processor setup_intent=request.GET.setup_intent setup_intent_client_secret=request.GET.setup_intent_client_secret %}
     {% elif setup_intent.status == "requires_action" %}
-    
+
     {% elif setup_intent.status == "processing" %}
 
     {% elif setup_intent.status == "canceled" %}
-    
+
     {% endif %}
 </div>
 {% endif %}

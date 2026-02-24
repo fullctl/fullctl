@@ -15,8 +15,8 @@ services:
 
   django:
     build:
-      context: ../..
-      dockerfile: Dockerfile
+      context: ../../../..
+      dockerfile: service/pdbctl/Dockerfile
     command: runserver 0.0.0.0:8000
     env_file:
       - .env

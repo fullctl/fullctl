@@ -65,28 +65,28 @@
 
   $.fn.show_metric_table = function(url, port_reference) {
     if ((port_reference.port == null || port_reference.port.virtual_port == null) && !port_reference.port_id) return;
-    
+
     // Extract metric data from member object
     let metricsData = [];
-    
+
     // Helper function to process metric entries
     const processMetrics = (deviceName, interfaceName, metrics) => {
       if (!metrics) return;
-      
+
       Object.entries(metrics).forEach(([key, value]) => {
         // Parse the metric key to extract the subject
         const parts = key.split('.');
         // Get only the last 2 parts of the metric key
         let subjectParts = parts.slice(-2);
-        
+
         // If the first part is the interface name or a digit, drop it
-        if (subjectParts.length === 2 && 
+        if (subjectParts.length === 2 &&
             (subjectParts[0] === interfaceName || /^\d+$/.test(subjectParts[0]))) {
           subjectParts = subjectParts.slice(1);
         }
-        
+
         let subject = subjectParts.join('.');
-        
+
         metricsData.push({
           device: deviceName,
           interface: interfaceName,
@@ -95,7 +95,7 @@
         });
       });
     };
-    
+
     // Check if port_reference has metric array (first format)
     if (port_reference.metric && Array.isArray(port_reference.metric)) {
       port_reference.metric.forEach(metricItem => {
@@ -118,7 +118,7 @@
       info: false,
       autoWidth: true,
       // No need for processing indicator since data is local
-      processing: false, 
+      processing: false,
       responsive: true,
       language: {"emptyTable": "No metrics available"},
       scrollCollapse: true,
@@ -133,14 +133,14 @@
         { data: "subject" },
         { data: "value" }
       ],
-      
+
       // Add initComplete callback
       initComplete: function() {
         // Force a redraw after initialization
         this.api().columns.adjust().draw();
       }
     });
-    
+
     // Also try with a small delay in case the container is still rendering
     setTimeout(function() {
       $('#metric_table').DataTable().columns.adjust().draw();

@@ -1,10 +1,10 @@
 import structlog
 from django.utils.translation import gettext_lazy as _
-from fullctl.django.models import Organization
-from fullctl.django.rest.decorators import serializer_registry
+from django_devicectl.models import Device
 from rest_framework import serializers
 
-from django_devicectl.models import Device
+from fullctl.django.models import Organization
+from fullctl.django.rest.decorators import serializer_registry
 
 logger = structlog.getLogger("django_structlog")
 
@@ -52,7 +52,7 @@ class MRTGSwitchToSwitch(serializers.Serializer):
 
     def validate(self, validated_data: dict) -> dict:
         org = self.context["org"]
-        
+
         # assert that side-a != side-b
         if validated_data["side_a_name"] == validated_data["side_b_name"]:
             raise serializers.ValidationError(

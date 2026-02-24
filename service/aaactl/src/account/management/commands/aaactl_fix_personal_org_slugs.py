@@ -1,10 +1,9 @@
-from fullctl.django.management.commands.base import CommandInterface
-
 from account.models import Organization, generate_org_slug
+
+from fullctl.django.management.commands.base import CommandInterface
 
 
 class Command(CommandInterface):
-
     """
     Loops through all personal orgs and randomizes their slugs and sets
     org name to the owning user's name

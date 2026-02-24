@@ -1,4 +1,5 @@
 """Provides the Prefix RIR endpoint."""
+
 from collections import namedtuple
 from datetime import datetime
 from typing import Optional

@@ -1,11 +1,10 @@
 import json
-import pytest
 from datetime import timedelta
 
+import django_prefixctl.models.prefixctl as models
+import pytest
 from django.urls import reverse
 from django.utils import timezone
-
-import django_prefixctl.models.prefixctl as models
 
 
 def test_prefixset_list(db, account_objects):
@@ -812,9 +811,9 @@ def test_prefix_set_dupe_prefix_notifications(db, account_objects):
         "prefix": prefix.prefix,
         "prefix_sets": [
             {
-                "name": prefixset2.name
-                if prefixset_id == prefixset.id
-                else prefixset.name,
+                "name": (
+                    prefixset2.name if prefixset_id == prefixset.id else prefixset.name
+                ),
                 "id": prefixset2.id if prefixset_id == prefixset.id else prefixset.id,
             }
         ],
@@ -828,9 +827,9 @@ def test_prefix_set_dupe_prefix_notifications(db, account_objects):
         "prefix": prefix.prefix,
         "prefix_sets": [
             {
-                "name": prefixset.name
-                if prefixset_id == prefixset.id
-                else prefixset2.name,
+                "name": (
+                    prefixset.name if prefixset_id == prefixset.id else prefixset2.name
+                ),
                 "id": prefixset.id if prefixset_id == prefixset.id else prefixset2.id,
             }
         ],

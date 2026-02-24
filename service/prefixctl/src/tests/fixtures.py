@@ -1,6 +1,7 @@
-import fullctl.django.testutil as testutil
 import pytest
 from django.test import Client
+
+import fullctl.django.testutil as testutil
 
 # lazy init for translations
 _ = lambda s: s  # noqa: E731

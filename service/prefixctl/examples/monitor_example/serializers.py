@@ -1,12 +1,12 @@
-from rest_framework import serializers
-from fullctl.django.rest.serializers import ModelSerializer
-from fullctl.django.rest.decorators import serializer_registry
-from django_prefixctl.rest.serializers.monitor import (
-    register_prefix_monitor,
-    MonitorCreationMixin,
-)
-
 import monitor_example.models as models
+from django_prefixctl.rest.serializers.monitor import (
+    MonitorCreationMixin,
+    register_prefix_monitor,
+)
+from rest_framework import serializers
+
+from fullctl.django.rest.decorators import serializer_registry
+from fullctl.django.rest.serializers import ModelSerializer
 
 Serializers, register = serializer_registry()
 
@@ -17,7 +17,6 @@ Serializers, register = serializer_registry()
 # will be available as Serializers.example_monitor, purely for convenience
 @register
 class ExampleMonitor(MonitorCreationMixin, ModelSerializer):
-
     """
     A bare minimum monitor REST serializer for our example monitor.
     """

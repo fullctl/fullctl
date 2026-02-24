@@ -1,11 +1,10 @@
 import json
 
+import account.forms
+from common.util import format_logo_url
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-
-import account.forms
-from common.util import format_logo_url
 from whitelabel_fullctl.models import OrganizationBranding
 
 # Create your views here.
