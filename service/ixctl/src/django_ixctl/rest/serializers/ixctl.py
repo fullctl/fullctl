@@ -1049,6 +1049,7 @@ class Routeserver(ModelSerializer):
         version=4,
     )
     operational_status = serializers.CharField(read_only=True)
+    liveness = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = models.Routeserver
@@ -1070,6 +1071,7 @@ class Routeserver(ModelSerializer):
             "routeserver_config_generated_time",
             "routeserver_config_response",
             "routeserver_config_error",
+            "liveness",
         ]
 
     def validate(self, validated_data: dict) -> dict:

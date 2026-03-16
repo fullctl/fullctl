@@ -4,6 +4,17 @@
     <div class="row">
       <div class="col">
         <span class="heading">{% trans "Prefix Sets" %}</span>
+        <div class="row mb-2">
+          <div class="col-auto">
+            <label class="d-inline-flex align-items-center mb-0">
+              <input type="checkbox" class="select-all-prefix-sets me-2" data-element="select_all_prefix_sets">
+              <span>{% trans "Select All" %}</span>
+            </label>
+          </div>
+          <div class="col-auto">
+            {% include "common/v2/app/delete_selected.html" %}
+          </div>
+        </div>
       </div>
       <div class="col">
         {% if has_reputation_access %}

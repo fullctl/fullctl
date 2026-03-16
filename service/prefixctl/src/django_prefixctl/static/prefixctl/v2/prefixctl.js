@@ -181,13 +181,16 @@ $ctl.application.Prefixctl.PrefixSets = $tc.extend(
     },
 
     init : function() {
+      this.delete_selected_button = this.$t.button_delete_selected;
+
       const prefix_search_url = this.jquery.find(".prefix-searchbar").data("api-prefix-search");
       const prefixset_search_url = this.jquery.find(".prefix-searchbar").data("api-prefixset-search");
       this.widget("list", ($e) => {
         return new $ctl.application.Prefixctl.PrefixSetList(
           this.template("list", this.$e.body),
           prefix_search_url,
-          prefixset_search_url
+          prefixset_search_url,
+          $(this.delete_selected_button)
         );
       })
 
@@ -521,6 +524,23 @@ $ctl.application.Prefixctl.PrefixSets = $tc.extend(
         this.prompt_remove_prefix_sets();
       });
 
+      // Wire up Select All checkbox for prefix sets
+      menu.find('[data-element="select_all_prefix_sets"]').change(() => {
+        const isChecked = menu.find('[data-element="select_all_prefix_sets"]').is(':checked');
+        if (isChecked) {
+          this.$w.list.select_all();
+        } else {
+          this.$w.list.unselect_all();
+        }
+      });
+
+      // Insert Delete Selected button below the Select All checkbox row
+      $(this.delete_selected_button).insertAfter(menu.find('[data-element="select_all_prefix_sets"]').closest('.row'));
+      $(this.delete_selected_button).click(() => {
+        if (confirm("Remove selected Prefix Sets?")) {
+          this.$w.list.delete_selected_list();
+        }
+      });
 
       const searchbar = new fullctl.application.Searchbar(
         menu.find(".prefix-searchbar"),
@@ -553,14 +573,162 @@ $ctl.application.Prefixctl.PrefixSets = $tc.extend(
   $ctl.application.Tool
 );
 
+/**
+ * List of prefixes within a prefix set with bulk delete support
+ * @class PrefixList
+ */
+$ctl.application.Prefixctl.PrefixList = $tc.extend(
+  "PrefixList",
+  {
+    PrefixList: function(jq, delete_button) {
+      this.List(jq);
+      this.delete_selected_button = delete_button;
+
+      // Add checkbox header
+      $(this).on("load:after", () => {
+        this.set_delete_selected_button();
+        this.unselect_select_all_checkbox();
+      });
+
+      let selection_list = this;
+
+      // Handle select all checkbox change
+      this.element.find('.select-all-prefixes').change(function() {
+        if ($(this).prop("checked")) {
+          selection_list.select_all();
+        } else {
+          selection_list.unselect_all();
+        }
+        selection_list.set_delete_selected_button();
+      });
+    },
+
+    build_row : function(data) {
+      let row = this.List_build_row(data);
+
+      // Prepend checkbox in a column wrapper before the prefix
+      row.find('.prefix').before(
+        '<div class="col-md-auto d-inline-flex align-items-center p-0">' +
+          '<input type="checkbox" class="row-chbx me-2" name="list-row" style="vertical-align: middle;">' +
+        '</div>'
+      );
+
+      return row;
+    },
+
+    insert : function(data) {
+      var row_element = this.List_insert(data);
+
+      // Wire up checkbox change event
+      row_element.find('.row-chbx').change(() => {
+        this.set_delete_selected_button();
+        this.unselect_select_all_checkbox();
+      });
+
+      return row_element;
+    },
+
+    unselect_select_all_checkbox : function() {
+      this.element.find('.select-all-prefixes:checked').prop("checked", false);
+    },
+
+    select_all : function() {
+      this.list_body.find('.row-chbx').prop('checked', true);
+    },
+
+    unselect_all : function() {
+      this.list_body.find('.row-chbx').prop('checked', false);
+    },
+
+    get_selected_rows : function() {
+      return $(this.list_body.find(".row-chbx:checked")).parentsUntil(".list-body", ".prefix-container");
+    },
+
+    delete_selected_list : function() {
+      let selected_rows = this.get_selected_rows();
+      let list = this;
+      let promises = [];
+
+      selected_rows.each(function() {
+        let apiobj = $(this).data("apiobject");
+
+        let base = list.base_url.replace(/\/?$/, '/');
+        let delete_url = base + 'delete_prefix/';
+
+        promises.push(
+          list.write({ id: apiobj.id }, apiobj, "delete", delete_url).then((request) => {
+            list.remove(request.content.data[0]);
+          })
+        );
+      });
+
+      Promise.all(promises).then(() => {
+        list.set_delete_selected_button();
+      });
+    },
+
+    set_delete_selected_button : function() {
+      if(this.get_selected_rows().length > 0) {
+        this.delete_selected_button.removeClass("js-hide");
+      } else {
+        this.delete_selected_button.addClass("js-hide");
+      }
+    }
+  },
+  twentyc.rest.List
+);
+
 $ctl.application.Prefixctl.PrefixSetList = $tc.extend(
   "PrefixSetList",
   {
-    PrefixSetList: function(jq, prefix_search_url, prefixset_search_url) {
+    PrefixSetList: function(jq, prefix_search_url, prefixset_search_url, jq_delete_selected_button) {
       this.List(jq);
+      this.delete_selected_button = jq_delete_selected_button;
 
       this.prefix_search_url = prefix_search_url;
       this.prefixset_search_url = prefixset_search_url;
+
+      this.selected_items = new Set();
+
+      let list = this;
+      $(this).on("load:after", () => {
+        list.selected_items.clear();
+        list.set_delete_selected_button();
+      });
+
+      $(this).on("remove:after", (e, data) => {
+        list.selected_items.delete(data.id);
+        list.set_delete_selected_button();
+      });
+    },
+
+    build_row : function(data) {
+      let row = this.List_build_row(data);
+
+      // Add checkbox to the first row (with-border) name cell
+      let name_cell = row.filter('.with-border').first().find('td[data-field="name"]');
+      let checkbox = $('<input type="checkbox" class="prefix-set-checkbox me-2" style="vertical-align: middle;">');
+      checkbox.data('prefix-set-id', data.id);
+      name_cell.prepend(checkbox);
+
+      return row;
+    },
+
+    insert : function(data) {
+      let row_element = this.List_insert(data);
+      let list = this;
+
+      // Wire up checkbox change event
+      row_element.filter('.with-border').first().find('.prefix-set-checkbox').change(function() {
+        if ($(this).is(':checked')) {
+          list.selected_items.add(data.id);
+        } else {
+          list.selected_items.delete(data.id);
+        }
+        list.set_delete_selected_button();
+      });
+
+      return row_element;
     },
 
     prefixes_expanded : function(prefix_set) {
@@ -582,16 +750,25 @@ $ctl.application.Prefixctl.PrefixSetList = $tc.extend(
       }
 
       if(!prefix_set_row) {
-        var prefix_set_row = this.find_row(prefix_set.id);
+        prefix_set_row = this.find_row(prefix_set.id);
       }
 
+      let prefix_row;
       if(prefix_set_row.length > 0)
         prefix_row = prefix_set_row.find('a[data-action="list_prefixes"]').parents('tr');
 
       prefix_row.find('a[data-action="list_prefixes"] .icon').removeClass('icon-caret-left').addClass('icon-caret-down');
 
-      const list = new twentyc.rest.List(
-        $ctl.prefixctl.$t.prefix_sets.template('prefixes_list')
+      const delete_button = $('<button class="btn me-2 js-hide irr-import-hide" data-btn-type="delete" type="button">' +
+        '<div class="row align-items-center">' +
+          '<div class="col label pe-0">Delete Selected</div>' +
+          '<div class="col-auto"><span class="icon icon-delete"></span></div>' +
+        '</div>' +
+      '</button>');
+
+      const list = new $ctl.application.Prefixctl.PrefixList(
+        $ctl.prefixctl.$t.prefix_sets.template('prefixes_list'),
+        delete_button
       );
 
       prefix_set_row.data("prefix-list", list);
@@ -617,6 +794,14 @@ $ctl.application.Prefixctl.PrefixSetList = $tc.extend(
         list.element.find('.controls > form')
       )
       form.base_url = form.base_url.replace("/0", "/"+prefix_set.id);
+
+      delete_button.css({'float': 'left', 'margin-top': '10px'});
+      delete_button.insertBefore(list.element.find('.controls > form'));
+      delete_button.click(() => {
+        if (confirm("Delete selected prefixes?")) {
+          list.delete_selected_list();
+        }
+      });
 
       list.element.find(".btn-expand").click( () => {
           list.element.find('.mask-length-range-col').toggleClass("hidden")
@@ -891,6 +1076,63 @@ $ctl.application.Prefixctl.PrefixSetList = $tc.extend(
           console.warn('Failed to refresh custom source indicator:', error);
         }
       });
+    },
+
+    /**
+     * Update delete button visibility based on selections
+     */
+    set_delete_selected_button : function() {
+      if (this.selected_items.size > 0) {
+        this.delete_selected_button.removeClass("js-hide");
+      } else {
+        this.delete_selected_button.addClass("js-hide");
+      }
+    },
+
+    /**
+     * Delete all selected prefix sets
+     */
+    delete_selected_list : function() {
+      let list = this;
+      let promises = [];
+
+      this.selected_items.forEach(function(id) {
+        let row = list.find_row(id);
+        let apiobj = row.data("apiobject");
+
+        promises.push(
+          list.delete(id, apiobj).then((request) => {
+            list.remove(request.content.data[0]);
+            list.selected_items.delete(id);
+          })
+        );
+      });
+
+      Promise.all(promises).then(() => {
+        list.set_delete_selected_button();
+      });
+    },
+
+    /**
+     * Select all prefix sets
+     */
+    select_all : function() {
+      let list = this;
+      this.list_body.find('.prefix-set-checkbox').each(function() {
+        $(this).prop('checked', true);
+        let id = $(this).data('prefix-set-id');
+        list.selected_items.add(id);
+      });
+      this.set_delete_selected_button();
+    },
+
+    /**
+     * Unselect all prefix sets
+     */
+    unselect_all : function() {
+      this.list_body.find('.prefix-set-checkbox').prop('checked', false);
+      this.selected_items.clear();
+      this.set_delete_selected_button();
     },
   },
   twentyc.rest.List

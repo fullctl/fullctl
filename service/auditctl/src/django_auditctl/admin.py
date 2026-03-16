@@ -36,7 +36,7 @@ class EntryAdmin(BaseAdmin):
 
 @admin.register(OrganizationEmailAlert)
 class OrganizationEmailAlertAdmin(admin.ModelAdmin):
-    list_display = ("id", "org", "email", "enabled")
+    list_display = ("id", "org", "email", "enabled", "threshold")
     search_fields = ("org__name", "org__slug", "email")
 
 

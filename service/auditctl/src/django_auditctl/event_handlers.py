@@ -158,6 +158,12 @@ class EmailAlert(BaseHandler):
     A class that inherits from the BaseHandler class and sends email alerts on error events.
 
     Recipient addresses will be grabbed from the OrganizationEmailAlert model.
+
+    Each OrganizationEmailAlert has a configurable threshold (default=1).
+    The email is sent when the number of consecutive error events for
+    the same object_id meets or exceeds the threshold. Duplicate alerts
+    within the same error streak are prevented by tracking last_notified_at
+    on each alert and checking for an intervening ok event.
     """
 
     class HandleRef:
@@ -165,38 +171,97 @@ class EmailAlert(BaseHandler):
 
     @property
     def qualifies(self):
-        return self.previous_status in ["ok", None] and self.event.status == "error"
+        return self.event.status == "error"
 
     def __call__(self):
         """
-        Sends an email alert if the event status goes from ok to error
+        Sends an email alert if the consecutive error threshold is met
+        for any configured OrganizationEmailAlert.
         """
 
-        if self.qualifies:
-            error_message = self.event.error.get("message")
-            id_parts = object_id_to_parts(self.event.object_id)
-            org_tag = id_parts.get("org_tag")
+        if self.event.status != "error":
+            return
 
-            serializer = Serializers.event(instance=self.event)
-            components = json.dumps(serializer.data, indent=2)
-            event_url = (
-                url_join(settings.AUDITCTL_URL, org_tag)
-                + f"?q={id_parts['ref_tag']}/{id_parts['ref_id']}&error=true"
-            )
-            email_addresses = [
-                alert.email
-                for alert in models.OrganizationEmailAlert.objects.filter(
-                    org__slug=org_tag
-                )
-                if alert.enabled
-            ]
+        id_parts = object_id_to_parts(self.event.object_id)
+        org_tag = id_parts.get("org_tag")
 
-            send_plain(
-                f"Error: {self.event.object_id}",
-                f"{error_message}\n{event_url}\n\n{components}",
-                settings.DEFAULT_FROM_EMAIL,
-                email_addresses,
+        alerts = list(
+            models.OrganizationEmailAlert.objects.filter(
+                org__slug=org_tag, enabled=True
             )
+        )
+
+        if not alerts:
+            return
+
+        # Determine the maximum threshold across all alerts for this org,
+        # so we can do a single query to fetch enough history.
+        max_threshold = max(alert.threshold for alert in alerts)
+
+        # Fetch the last max_threshold events (including current) for this object_id,
+        # ordered by most recent first.
+        # The index on ["object_id", "-created"] makes this efficient.
+        recent_statuses = list(
+            models.Event.objects.filter(
+                object_id=self.event.object_id,
+                created__lte=self.event.created,
+            )
+            .order_by("-created")
+            .values_list("status", flat=True)[:max_threshold]
+        )
+
+        # Count consecutive errors from the most recent event backwards
+        consecutive_errors = 0
+        for status in recent_statuses:
+            if status == "error":
+                consecutive_errors += 1
+            else:
+                break
+
+        # Collect alerts whose threshold is met and that haven't already
+        # been notified for this error streak.
+        qualifying_alerts = []
+        for alert in alerts:
+            if consecutive_errors < alert.threshold:
+                continue
+
+            # Check if we already notified for this error streak
+            if alert.last_notified_at:
+                ok_since_notification = models.Event.objects.filter(
+                    object_id=self.event.object_id,
+                    status="ok",
+                    created__gt=alert.last_notified_at,
+                    created__lte=self.event.created,
+                ).exists()
+                if not ok_since_notification:
+                    continue
+
+            qualifying_alerts.append(alert)
+
+        if not qualifying_alerts:
+            return
+
+        qualifying_emails = [alert.email for alert in qualifying_alerts]
+
+        error_message = self.event.error.get("message")
+        serializer = Serializers.event(instance=self.event)
+        components = json.dumps(serializer.data, indent=2)
+        event_url = (
+            url_join(settings.AUDITCTL_URL, org_tag)
+            + f"?q={id_parts['ref_tag']}/{id_parts['ref_id']}&error=true"
+        )
+
+        send_plain(
+            f"Error: {self.event.object_id}",
+            f"{error_message}\n{event_url}\n\n{components}",
+            settings.DEFAULT_FROM_EMAIL,
+            qualifying_emails,
+        )
+
+        # Mark alerts as notified to prevent duplicates within this streak
+        for alert in qualifying_alerts:
+            alert.last_notified_at = self.event.created
+            alert.save(update_fields=["last_notified_at"])
 
 
 class ForwardToService(BaseHandler):
@@ -317,6 +382,17 @@ class ConfigLivenessDataHandler(BaseHandler):
 
     def __call__(self):
         self.heartbeat()
+        id_parts = object_id_to_parts(self.event.object_id)
+        org_slug = id_parts.get("org_tag")
+        components = self.event.data.get("components", [])
+        if not components:
+            return
+        component = components[0]
+        routeserver = ixctl.Routeserver()
+        routeserver.set_liveness(
+            router_id=component.get("id"),
+            org_slug=org_slug,
+        )
 
 
 @register_handler(r"^v0.1\/[^\/]+\/bgp\/stat\/[0-9\.]+\/[0-9]+$")

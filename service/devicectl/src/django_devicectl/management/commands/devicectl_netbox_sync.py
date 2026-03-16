@@ -21,7 +21,13 @@ class Command(CommandInterface):
         parser.add_argument(
             "--purge",
             action="store_true",
-            help="Purge devicectl data. This will deleted devices and ports that have references to netbox that no longer exist.",
+            help="Purge devicectl data. This will delete devices, ports, and vlans that have references to netbox that no longer exist.",
+        )
+
+        parser.add_argument(
+            "--purge-vlans",
+            action="store_true",
+            help="Purge vlans that have references to netbox that no longer exist.",
         )
 
     def run(self, *args, **kwargs):
@@ -32,6 +38,7 @@ class Command(CommandInterface):
 
         commit = kwargs.get("commit")
         purge = kwargs.get("purge")
+        purge_vlans = kwargs.get("purge_vlans")
 
         if push and not commit:
             raise CommandError("Cannot --push without --commit")
@@ -43,6 +50,6 @@ class Command(CommandInterface):
 
             self.log_info(f"Pulling netbox data for {org_slug}")
 
-            netbox.pull(org, purge=purge)
+            netbox.pull(org, purge=purge, purge_vlans=purge_vlans)
 
             self.log_info(f"Pulled netbox data for {org_slug}")

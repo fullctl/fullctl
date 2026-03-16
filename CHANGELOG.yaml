@@ -5,6 +5,17 @@ Unreleased:
   deprecated: []
   removed: []
   security: []
+1.15.0:
+  added:
+  - Config liveness stored with ixctl
+  - email alert threshold
+  - Prefixctl Bulk Delete Prefixes and Prefix-sets
+  - Prefixctl Cancel Task
+  fixed:
+  - Missing list in dropdown in the aaactl federated service
+  - fix orphaned vlans during sync and introduce --purge-vlans
+  changed:
+  - Pin setuptools<82 for peerctl - pkg_resources removed in 82
 1.14.0:
   added:
   - Metrics support

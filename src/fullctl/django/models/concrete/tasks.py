@@ -550,11 +550,12 @@ class Task(HandleRefModel):
         Check if the task has been cancelled and raise TaskCancelledException if so.
 
         This method should be called periodically during long-running task execution
-        to allow for graceful cancellation. It refreshes the task status from the
-        database to check for cancellation requests.
+        to allow for graceful cancellation. It checks both the task status field
+        and the heartbeat's cancel_requested flag.
 
         Raises:
-            TaskCancelledException: If the task status is 'cancelled'
+            TaskCancelledException: If the task status is 'cancelled' or if
+                                   cancellation was requested via the heartbeat
 
         Usage example:
             def run(self, *args, **kwargs):
@@ -572,6 +573,16 @@ class Task(HandleRefModel):
 
         if self.status == "cancelled":
             raise TaskCancelledException(self)
+
+        try:
+            heartbeat = TaskHeartbeat.objects.get(task_id=self.id)
+            if heartbeat.cancel_requested:
+                self.status = "cancelled"
+                self.output = "Cancelled by user"
+                self.save()
+                raise TaskCancelledException(self)
+        except TaskHeartbeat.DoesNotExist:
+            pass
 
     def _complete(self, output):
 
@@ -698,6 +709,10 @@ class TaskHeartbeat(models.Model):
         Task, related_name="heartbeat", on_delete=models.CASCADE
     )
     timestamp = models.DateTimeField(auto_now_add=True)
+    cancel_requested = models.BooleanField(
+        default=False,
+        help_text="Set to True to request cancellation of the running task",
+    )
 
     class Meta:
         db_table = "fullctl_task_heartbeat"
