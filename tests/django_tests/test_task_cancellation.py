@@ -15,7 +15,7 @@ import time
 import pytest
 
 import tests.django_tests.testapp.models as models
-from fullctl.django.models.concrete.tasks import TaskCancelledException
+from fullctl.django.models.concrete.tasks import TaskCancelledException, TaskHeartbeat
 from fullctl.django.tasks.context import (
     check_task_cancelled,
     get_current_task,
@@ -101,6 +101,92 @@ class TestTaskCheckCancelled:
         task_ref.cancel("Cancelled from another context")
 
         # Original task should detect cancellation after check
+        with pytest.raises(TaskCancelledException):
+            task.check_cancelled()
+
+
+@pytest.mark.django_db
+class TestTaskCheckCancelledViaHeartbeat:
+    """Test cancellation detection via TaskHeartbeat.cancel_requested flag"""
+
+    def test_heartbeat_cancel_requested_raises(self):
+        """Test that check_cancelled() raises when heartbeat has cancel_requested=True"""
+        task = models.CancellableTask.create_task(10)
+        task.status = "running"
+        task.save()
+
+        # Create heartbeat with cancel_requested
+        heartbeat = TaskHeartbeat.objects.create(task=task)
+        heartbeat.cancel_requested = True
+        heartbeat.save(update_fields=["cancel_requested"])
+
+        with pytest.raises(TaskCancelledException):
+            task.check_cancelled()
+
+        # Task should now be cancelled in DB
+        task.refresh_from_db()
+        assert task.status == "cancelled"
+        assert task.output == "Cancelled by user"
+
+    def test_heartbeat_no_cancel_requested_does_not_raise(self):
+        """Test that check_cancelled() doesn't raise when heartbeat exists but cancel_requested=False"""
+        task = models.CancellableTask.create_task(10)
+        task.status = "running"
+        task.save()
+
+        # Create heartbeat without cancel_requested
+        TaskHeartbeat.objects.create(task=task)
+
+        # Should not raise
+        try:
+            task.check_cancelled()
+        except TaskCancelledException:
+            pytest.fail("check_cancelled() raised unexpectedly with cancel_requested=False")
+
+    def test_no_heartbeat_does_not_raise(self):
+        """Test that check_cancelled() doesn't raise when no heartbeat exists"""
+        task = models.CancellableTask.create_task(10)
+        task.status = "running"
+        task.save()
+
+        # No heartbeat created - should not raise
+        try:
+            task.check_cancelled()
+        except TaskCancelledException:
+            pytest.fail("check_cancelled() raised unexpectedly with no heartbeat")
+
+    def test_heartbeat_cancel_sets_task_status(self):
+        """Test that heartbeat cancellation updates task status and output in DB"""
+        task = models.CancellableTask.create_task(10)
+        task.status = "running"
+        task.save()
+
+        heartbeat = TaskHeartbeat.objects.create(task=task)
+        heartbeat.cancel_requested = True
+        heartbeat.save(update_fields=["cancel_requested"])
+
+        with pytest.raises(TaskCancelledException):
+            task.check_cancelled()
+
+        # Verify DB state
+        fresh_task = models.CancellableTask.objects.get(id=task.id)
+        assert fresh_task.status == "cancelled"
+        assert fresh_task.output == "Cancelled by user"
+
+    def test_status_cancel_takes_priority_over_heartbeat(self):
+        """Test that status-based cancellation is checked before heartbeat"""
+        task = models.CancellableTask.create_task(10)
+        task.status = "running"
+        task.save()
+
+        # Cancel via status
+        task.cancel("Cancelled via status")
+
+        # Also set heartbeat cancel (shouldn't matter - status check comes first)
+        heartbeat = TaskHeartbeat.objects.create(task=task)
+        heartbeat.cancel_requested = True
+        heartbeat.save(update_fields=["cancel_requested"])
+
         with pytest.raises(TaskCancelledException):
             task.check_cancelled()
 

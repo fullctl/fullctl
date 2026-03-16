@@ -3,7 +3,9 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django_auditctl.enum import STATUS
 from django_grainy.decorators import grainy_model
@@ -77,18 +79,23 @@ class Event(HandleRefModel):
         tag = "event"
 
     @classmethod
-    def filter_events_by_object_id(cls, org, object_id, delimiter="-"):
+    def filter_events_by_object_id(cls, org, object_id, delimiter="-", max_age=None):
         """
         Filter Event instances by partial object_id path, matching whole parts only.
 
         Arguments:
         - partial_path (`str`): partial object_id path to filter by
         - delimiter (`str`, optional): delimiter used in the object_id
+        - max_age (`int`, optional): maximum age in seconds to filter by
 
         Returns:
         - `QuerySet`: filtered events queryset
         """
         events = Event.objects.filter(org=org)
+
+        if max_age is not None:
+            cutoff = timezone.now() - timedelta(seconds=max_age)
+            events = events.filter(created__gte=cutoff)
 
         # Use Q objects to combine __istartswith and __iexact with an OR operator
         if object_id:
@@ -209,6 +216,21 @@ class OrganizationEmailAlert(models.Model):
     email = models.EmailField()
 
     enabled = models.BooleanField(default=True)
+
+    threshold = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+        help_text=_(
+            "Number of consecutive error events required before sending an alert. "
+            "Set to 1 for immediate alerting (default behavior)."
+        ),
+    )
+
+    last_notified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("Timestamp of the last alert notification sent for this email."),
+    )
 
     class Meta:
         verbose_name = _("Organization Email Alert")

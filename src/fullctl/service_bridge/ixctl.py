@@ -262,6 +262,21 @@ class Routeserver(Ixctl):
             },
         )
 
+    def set_liveness(self, router_id: str, org_slug: str):
+        """
+        Updates the router server's liveness timestamp
+
+        Arguments:
+            router_id (`str`) -- router id i.e. 127.0.0.1
+            org_slug (`str`) -- the org slug
+        """
+        return self.put(
+            f"data/routeserver/set-liveness/{router_id}/",
+            json={
+                "org_slug": org_slug,
+            },
+        )
+
 
 class TrafficAlertConfigObject(IxctlEntity):
     description = "Ixctl Traffic Alert Config"

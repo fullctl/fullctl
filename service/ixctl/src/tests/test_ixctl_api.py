@@ -1,4 +1,5 @@
 import json
+from unittest.mock import patch
 
 import django_ixctl.models as models
 import pytest
@@ -440,6 +441,52 @@ def test_list_routeservers(db, pdb_data, account_objects):
 
     assert len(data) == ix.rs_set.count()
     assert data[0]["name"] == ix.rs_set.first().name
+
+
+def test_list_routeservers_no_liveness(db, pdb_data, account_objects):
+    """When routeserver has no liveness set, config_last_fetched_time should be None."""
+    ix = account_objects.ix
+    client = account_objects.api_client
+    org = account_objects.org
+    rs = account_objects.routeserver
+    assert rs.liveness is None
+
+    with patch.object(models.Routeserver, "preload_events"):
+        response = client.get(
+            reverse("ixctl_api:routeserver-list", args=(org.slug, ix.slug))
+        )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    for rs_data in data:
+        assert rs_data["config_last_fetched_time"] is None
+
+
+def test_list_routeservers_with_liveness(db, pdb_data, account_objects):
+    """When routeserver has liveness set, config_last_fetched_time should reflect it."""
+    from django.utils import timezone
+
+    ix = account_objects.ix
+    client = account_objects.api_client
+    org = account_objects.org
+    rs = account_objects.routeserver
+
+    now = timezone.now()
+    rs.liveness = now
+    rs.save()
+
+    with patch.object(models.Routeserver, "preload_events"):
+        response = client.get(
+            reverse("ixctl_api:routeserver-list", args=(org.slug, ix.slug))
+        )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    for rs_data in data:
+        if rs_data["id"] == rs.id:
+            assert rs_data["config_last_fetched_time"] == now.strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
 
 
 def test_create_routeserver(db, pdb_data, account_objects):

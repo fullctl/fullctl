@@ -2,7 +2,7 @@
 [tool.poetry]
 name = "peerctl"
 repository = "https://github.com/fullctl/peerctl"
-version = "1.6.0-rc.98"
+version = "1.6.0-rc.100"
 description = "ix control"
 authors = ["20C <code@20c.com>"]
 license = "Apache-2.0"
@@ -22,6 +22,7 @@ peerctl = "peerctl.cli:main"
 [tool.poetry.dependencies]
 python = "^3.9"
 fullctl = { path = "../.." }
+setuptools = ">=75,<82"
 
 netom = { git = "https://github.com/20c/netom.git", branch = "prep-release" }
 pydantic = ">=1.10.8"

@@ -4,6 +4,7 @@ import traceback
 import django_devicectl.models.devicectl as models
 import pynetbox
 import structlog
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from fullctl.django.models.concrete.service_bridge import service_bridge_action
@@ -386,6 +387,7 @@ def pull(org, *args, **kwargs):
     Pull data from netbox
     """
     purge = kwargs.pop("purge", False)
+    purge_vlans = kwargs.pop("purge_vlans", False) or purge
 
     instance = models.Instance.objects.get(org=org)
 
@@ -401,7 +403,7 @@ def pull(org, *args, **kwargs):
 
     # sync vlans
 
-    sync_vlans(instance)
+    sync_vlans(instance, purge=purge_vlans)
 
     # create / update devices from netbox data
 
@@ -504,12 +506,15 @@ def pull(org, *args, **kwargs):
 
 def sync_vlans(
     instance: models.Instance,
+    purge: bool = False,
 ):
     """
     Pulls all vlans from netbox
     """
 
     log.info("[PULL] Syncing vlans ...")
+
+    references = []
 
     # Retrieve and normalize VLAN role filter configuration (if any)
     ctx = service_bridge_context.get()
@@ -615,6 +620,31 @@ def sync_vlans(
                     f"[PULL] Netbox vlan {netbox_vlan.name} {netbox_vlan.id} malformed v6_secondaries custom field, creating without one ..."
                 )
 
+        # Before creating from netbox, check if there's an unreferenced VLAN
+        # with the same vid that should be linked to this netbox VLAN.
+        # This prevents duplicates when a VLAN was created in devicectl
+        # before being synced from netbox.
+        if not models.Vlan.objects.filter(
+            instance=instance,
+            reference=str(netbox_vlan.id),
+        ).exists():
+            unreferenced_vlan = models.Vlan.objects.filter(
+                instance=instance,
+                vlan=netbox_vlan.vid,
+            ).filter(
+                Q(reference__isnull=True) | Q(reference="")
+            ).first()
+
+            if unreferenced_vlan:
+                unreferenced_vlan.reference = str(netbox_vlan.id)
+                unreferenced_vlan.save()
+                log.info(
+                    "[PULL] Linking existing unreferenced vlan to netbox",
+                    vlan_name=unreferenced_vlan.name,
+                    vid=netbox_vlan.vid,
+                    netbox_id=netbox_vlan.id,
+                )
+
         vlan, created = models.Vlan.objects.update_or_create(
             reference=str(netbox_vlan.id),
             instance=instance,
@@ -627,11 +657,25 @@ def sync_vlans(
                 "v6_secondaries": v6_secondaries,
             },
         )
+        references.append(vlan.reference)
         changed = vlan.sync_from_reference(ref_obj=netbox_vlan)
 
         if changed or created:
             log.info(f"[PULL] Netbox vlan {netbox_vlan.name} {vlan.reference} ...")
             vlan.save()
+
+    if purge:
+        # delete vlans that have netbox references but no longer exist in netbox
+        qset_remove = (
+            models.Vlan.objects.filter(instance=instance)
+            .exclude(reference__in=references)
+            .exclude(reference__isnull=True)
+            .exclude(reference="")
+        )
+        count = qset_remove.count()
+        if count:
+            log.info("[PULL] Purging vlans no longer in netbox", count=count)
+            qset_remove.delete()
 
 
 ### PUSH

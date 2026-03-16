@@ -56,19 +56,3 @@ class Event(DataViewSet):
         set_limited(object_id)
 
         return super()._create(request, *args, **kwargs)
-
-    @action(
-        detail=False,
-        methods=["GET"],
-        url_path="v0.1/(?P<org_slug>[^/]+)/config/liveness",
-    )
-    @grainy_endpoint(namespace="service_bridge")
-    def get_last_updated_config_liveness_event(self, request, org_slug):
-        org = Organization.objects.get(slug=org_slug)
-        object_id = f"v0.1/{org_slug}/config/liveness"
-        event = (
-            models.Event.filter_events_by_object_id(org, object_id, delimiter="/")
-            .filter(status="ok")
-            .first()
-        )
-        return Response(event.to_dict() if event else {})

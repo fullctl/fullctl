@@ -1017,6 +1017,12 @@ class Routeserver(HandleRefModel):
         help_text=_("auditCtl event reference"),
     )
 
+    liveness = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("Last config liveness timestamp"),
+    )
+
     class Meta:
         db_table = "ixctl_rs"
         unique_together = (("ix", "router_id"), ("ix", "name"))

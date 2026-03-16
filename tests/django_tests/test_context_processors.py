@@ -148,7 +148,7 @@ def test_conf(db, dj_account_objects, settings):
         "service_docs_url": None,
         "legal_url": "test://legal",
         "terms_of_service_url": "test://terms-of-service",
-        "current_year": 2025,
+        "current_year": 2026,
         "feature_request_form_clickup_link": "test://clickup",
     }
 

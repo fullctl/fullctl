@@ -1,6 +1,5 @@
 import ipaddress
 import os
-from datetime import datetime
 
 import django_ixctl.models as models
 import django_ixctl.models.port_automation_tasks as port_automation_tasks
@@ -32,7 +31,6 @@ from fullctl.django.rest.mixins import (
 )
 from fullctl.django.rest.renderers import PlainTextRenderer
 from fullctl.django.tasks import specify_task
-from fullctl.service_bridge.client import ServiceBridgeError
 
 logger = structlog.getLogger("django_structlog")
 
@@ -758,25 +756,15 @@ class Routeserver(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet
         )
         models.Routeserver.preload_events(queryset)
 
-        try:
-            liveness_event = auditctl.Event().get_last_updated_config_liveness_event(
-                org.slug
-            )
-        except ServiceBridgeError as e:
-            if e.status != 404:
-                logger.error(
-                    "Failed to get liveness event",
-                    error=str(e),
-                )
-            liveness_event = None
-
         routeserver_event_map = {}
+        routeserver_liveness_map = {}
         for routeserver in queryset:
             routeserver_event_map[routeserver.id] = (
                 routeserver._event_object
                 if hasattr(routeserver, "_event_object")
                 else None
             )
+            routeserver_liveness_map[routeserver.id] = routeserver.liveness
 
         routeservers = serializer.data
         for routeserver in routeservers:
@@ -785,12 +773,10 @@ class Routeserver(CachedObjectMixin, IxOrgQuerysetMixin, viewsets.GenericViewSet
             event = routeserver_event_map.get(routeserver.get("id"))
             if event:
                 routeserver["bgp_stat_aggregate"] = event.data.components
-                routeserver["config_last_fetched_time"] = (
-                    datetime.fromisoformat(liveness_event[0].get("created")).strftime(
-                        "%Y-%m-%d %H:%M:%S"
-                    )
-                    if liveness_event
-                    else None
+            liveness = routeserver_liveness_map.get(routeserver.get("id"))
+            if liveness:
+                routeserver["config_last_fetched_time"] = liveness.strftime(
+                    "%Y-%m-%d %H:%M:%S"
                 )
         return Response(routeservers)
 

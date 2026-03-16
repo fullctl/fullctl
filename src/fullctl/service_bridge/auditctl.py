@@ -195,15 +195,6 @@ class Event(Auditctl):
             recipients=recipients,
         )
 
-    def get_last_updated_config_liveness_event(self, org_slug: str):
-        """
-        Get the config liveness event for an org
-
-        Arguments:
-            org_slug (`str`) -- org slug
-        """
-        return self.get(f"data/event/v0.1/{org_slug}/config/liveness/")
-
     def get_events_by_ids(self, event_ids):
         if len(event_ids) <= BRIDGE_OBJECTS_CHUNK_SIZE:
             return list(self.objects(ids=event_ids))

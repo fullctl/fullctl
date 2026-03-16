@@ -3,6 +3,7 @@ from uuid import UUID
 import django_ixctl.models.ixctl as models
 import structlog
 from django.db.models import Q
+from django.utils import timezone
 from django_ixctl.rest.serializers.service_bridge import Serializers
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
@@ -412,6 +413,35 @@ class RouteServer(DataViewSet):
             )
 
         routeserver.event = UUID(request.data.get("event"))
+        routeserver.save()
+        serializer = self.serializer_class(instance=routeserver)
+        return Response(serializer.data)
+
+    @action(
+        detail=False,
+        methods=["PUT"],
+        url_path="set-liveness/(?P<router_id>[^/]+)",
+    )
+    @grainy_endpoint(namespace="service_bridge")
+    def set_liveness(self, request, router_id):
+        routeserver = None
+        org_slug = request.data.get("org_slug")
+
+        routeservers = models.Routeserver.objects.filter(router_id=router_id)
+        for rs in routeservers:
+            if rs.org.slug == org_slug:
+                routeserver = rs
+                break
+        if not routeserver:
+            raise NotFound(
+                {
+                    "non_field_errors": [
+                        f"Routeserver with router id {router_id} for org {org_slug} not found."
+                    ]
+                }
+            )
+
+        routeserver.liveness = timezone.now()
         routeserver.save()
         serializer = self.serializer_class(instance=routeserver)
         return Response(serializer.data)
