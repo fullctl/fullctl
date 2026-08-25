@@ -1,0 +1,14 @@
+{% extends "two_factor/_base.html" %}
+{% load i18n %}
+
+{% block wizard_content %}
+  <h1>{% block title %}{% trans "Enable TOTP Authentication" %}{% endblock %}</h1>
+
+  <p>{% blocktrans trimmed %}You've successfully enabled TOTP authentication.{% endblocktrans %}</p>
+
+  <p>
+    <a href="{% url 'two_factor:profile' %}" class="btn btn-primary">
+      {% trans "Back to Account Security" %}
+    </a>
+  </p>
+{% endblock %}

@@ -1,0 +1,9 @@
+# docker build manifest for scripts/build.py -- see docs/build.md
+# OL9 microdnf package names
+docker:
+  schema: 1
+  build_deps:
+    - gcc-c++
+  run_deps:
+    - libgcc
+  cmd: fastapi

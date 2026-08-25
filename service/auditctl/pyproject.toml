@@ -1,64 +1,76 @@
-[tool.poetry]
+[project]
 name = "auditctl"
-repository = "https://github.com/fullctl/auditctl"
-version = "0.6.0-rc.67"
+# prep-release version 0.7.0-rc.3 (PEP 440 normalized)
+version = "0.7.0-rc.7"
 description = "audit control"
-authors = ["20C <code@20c.com>"]
+authors = [{ name = "20C", email = "code@20c.com" }]
 license = "Apache-2.0"
-
+requires-python = ">=3.9"
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Environment :: Console",
-    "Intended Audience :: Developers",
-    "Topic :: Software Development",
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development",
 ]
 
-[tool.poetry.scripts]
+dependencies = [
+  "fullctl",
+  "pydantic>=2.7.4",
+
+  # websockets
+  "websockets>=11.0.2,<12",
+  "channels>=4.0.0,<5",
+  "pyjwt>=2.6.0,<3",
+
+  # redis
+  "redis>=5.2.1",
+]
+
+[project.urls]
+Repository = "https://github.com/fullctl/auditctl"
+
+[project.scripts]
 auditctl = "auditctl.cli:main"
 
-[tool.poetry.dependencies]
-python = "^3.9"
-fullctl = { path = "../.." }
-pydantic = ">=2.7.4"
+[dependency-groups]
+dev = [
+  # testing
+  "coverage>=5",
+  "pytest>=6",
+  "pytest-django>=3.8",
+  "pytest-cov",
 
-# websockets
-websockets = "^11.0.2"
-channels = "^4.0.0"
-PyJWT = "^2.6.0"
+  # linting
+  # bandit>=1.6.2
+  "black>=20",
+  "isort>=5.7",
+  "flake8>=3.8",
+  "mypy>=0.950,<1.19",
+  "pre-commit>=2.13",
+  "pyupgrade>=2.19",
 
-# redis
-redis = ">=5.2.1"
+  # docs
+  "markdown",
+  "markdown-include>=0.5,<1",
+  "mkdocs>=1.2.3,<2",
 
-[tool.poetry.dev-dependencies]
-# testing
-coverage = ">=5"
-pytest = ">=6"
-pytest-django = ">=3.8"
-pytest-cov = "*"
+  # ctl (git source pinned via [tool.uv.sources])
+  "ctl",
+  "jinja2>=2",
+  "tmpl>=1",
+]
 
-# linting
-# bandit = ">=1.6.2"
-black = ">=20"
-isort = ">=5.7"
-flake8 = ">=3.8"
-mypy = ">=0.950,<1.19"
-pre-commit = ">=2.13"
-pyupgrade = ">=2.19"
+[tool.uv.sources]
+fullctl = { workspace = true }
+ctl = { git = "https://github.com/20c/ctl.git", branch = "main" }
 
-# docs
-markdown = "*"
-markdown-include = ">=0.5,<1"
-mkdocs = "^1.2.3"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-# ctl
-ctl = ">=1"
-jinja2 = ">=2"
-tmpl = ">=1"
+[tool.hatch.build.targets.wheel]
+packages = ["src/auditctl"]
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3
-
-[build-system]
-requires = ["poetry-core>=1"]
-build-backend = "poetry.core.masonry.api"

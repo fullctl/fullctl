@@ -414,11 +414,32 @@ class BGPSessionStateDataHandler(BaseHandler):
 
         members = set()
         components = self.event.data.get("components", [])
+
+        if not components:
+            return
+
+        # All components in a single BGP stat event originate from the same
+        # routeserver (the RS IP is encoded in the event object_id). We look it
+        # up once so we can scope the member query to its IX, preventing stats
+        # from being written to members of a different IX that happen to share
+        # the same ASN / IP address (cross-IX stat leakage).
+        routeserver_router_id = components[0].get("routeserver_router_id")
+        rs = ixctl.Routeserver().first(ip=routeserver_router_id)
+        if not rs:
+            log.warning(
+                "BGPSessionStateDataHandler: routeserver not found, skipping member lookup",
+                routeserver_router_id=routeserver_router_id,
+            )
+            return
+
         for component in components:
+            # ix=rs.ix_id ensures we only match members that belong to this
+            # routeserver's IX, not members from other IXes in any org.
             filters = {
                 "asn": int(component.get("asn")),
                 "is_rs_peer": True,
                 "ix_verified": True,
+                "ix": rs.ix_id,
             }
             address = component.get("address")
             if ipaddress.ip_address(address).version == 4:
@@ -499,12 +520,32 @@ class BatchedBGPSessionStateDataHandler(BaseHandler):
         components = self.event.data.get("components", [])
         log.debug("Processing BGP stats", org_slug=org_slug, components=len(components))
 
+        if not components:
+            return
+
+        # All components in a single BGP stat event originate from the same
+        # routeserver (the RS IP is encoded in the event object_id). We look it
+        # up once so we can scope the member query to its IX, preventing stats
+        # from being written to members of a different IX that happen to share
+        # the same ASN / IP address (cross-IX stat leakage).
+        routeserver_router_id = components[0].get("routeserver_router_id")
+        rs = ixctl.Routeserver().first(ip=routeserver_router_id)
+        if not rs:
+            log.warning(
+                "BatchedBGPSessionStateDataHandler: routeserver not found, skipping member lookup",
+                routeserver_router_id=routeserver_router_id,
+            )
+            return
+
         for component in components:
             asn = int(component.get("asn"))
+            # ix=rs.ix_id ensures we only match members that belong to this
+            # routeserver's IX, not members from other IXes in any org.
             filters = {
                 "asn": asn,
                 "is_rs_peer": True,
                 "ix_verified": True,
+                "ix": rs.ix_id,
             }
             address = component.get("address")
             if ipaddress.ip_address(address).version == 4:

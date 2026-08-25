@@ -8,11 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install virtualenv from poetry
-        uses: 20c/workflows/poetry@v1
+      - name: Install virtualenv from uv
+        uses: 20c/workflows/uv@v1
       - name: Run linters
         run: |
-          poetry run pre-commit run --all-files
+          uv run pre-commit run --all-files
 
   test:
     needs: linting
@@ -20,17 +20,17 @@ jobs:
       fail-fast: false
       matrix:
         os: [ "ubuntu-latest", "macos-latest" ]
-        python-version: [ "3.9", "3.10", "3.11", "3.12" ]
+        python-version: [ "3.11", "3.12" ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Install virtualenv from poetry
-        uses: 20c/workflows/poetry@v1
+      - name: Install virtualenv from uv
+        uses: 20c/workflows/uv@v1
         with:
           python-version: ${{ matrix.python-version }}
       - name: Run tests
-        run: poetry run tox -e py
+        run: uv run tox -e py
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:

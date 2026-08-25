@@ -1,62 +1,72 @@
-[tool.poetry]
+[project]
 name = "pdbctl"
-version = "1.4.0-rc.79"
-description = "allows other fullctl services to facilitate updates to and from PeeringDB"
-readme = "README.md"
-repository = "https://github.com/fullctl/pdbctl"
-authors = [ "20C <code@20c.com>",]
-license = "Apache-2"
-
-
+# prep-release version 1.5.0-rc.3 (PEP 440 normalized)
+version = "1.5.0-rc.7"
+description = "peeringdb proxy"
+authors = [{ name = "20C", email = "code@20c.com" }]
+license = "Apache-2.0"
+requires-python = ">=3.11"
 classifiers = [
-    "Development Status :: 4 - Beta",
-    "Environment :: Console",
-    "Intended Audience :: Developers",
-    "Topic :: Software Development"
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development",
 ]
 
-# [tool.poetry.scripts]
+dependencies = [
+  "fullctl",
+
+  # django-peeringdb>=2.8 (git branch pinned via [tool.uv.sources])
+  "django-peeringdb",
+  "peeringdb>=2.0.0",
+]
+
+[project.urls]
+Repository = "https://github.com/fullctl/pbctl"
+
+# [project.scripts]
 # peerctl = "peerctl.cli:main"
 
+[dependency-groups]
+dev = [
+  # testing
+  "coverage>=5",
+  "pytest>=6",
+  "pytest-django>=3.8",
+  "pytest-cov",
 
-[tool.poetry.dependencies]
-python = "^3.11"
-fullctl = { path = "../.." }
+  # linting
+  # bandit>=1.6.2
+  "black>=20",
+  "isort>=5.7",
+  "flake8>=3.8",
+  "mypy>=0.950",
+  "pre-commit>=2.13",
+  "pyupgrade>=2.19",
 
-# django-peeringdb = ">=2.8"
+  # docs
+  "markdown",
+  "markdown-include>=0.5,<1",
+  "mkdocs>=1.2.3",
+
+  # ctl (git source pinned via [tool.uv.sources])
+  "ctl",
+  "jinja2>=2",
+  "tmpl>=1",
+]
+
+[tool.uv.sources]
+fullctl = { workspace = true }
 django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb.git", branch = "main" }
-peeringdb = ">=2.0.0"
+ctl = { git = "https://github.com/20c/ctl.git", branch = "main" }
 
-[tool.poetry.dev-dependencies]
-# testing
-coverage = ">=5"
-pytest = ">=6"
-pytest-django = ">=3.8"
-pytest-cov = "*"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-# linting
-# bandit = ">=1.6.2"
-black = ">=20"
-isort = ">=5.7"
-flake8 = ">=3.8"
-mypy = ">=0.950"
-pre-commit = ">=2.13"
-pyupgrade = ">=2.19"
-
-# docs
-markdown = "*"
-markdown-include = ">=0.5,<1"
-mkdocs = ">=1.2.3"
-
-# ctl
-ctl = ">=1"
-jinja2 = ">=2"
-tmpl = ">=1"
+[tool.hatch.build.targets.wheel]
+packages = ["src/pdbctl"]
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"

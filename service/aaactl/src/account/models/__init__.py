@@ -5,6 +5,7 @@ from typing import Literal
 import reversion
 import structlog
 from account.models.federation import FederatedServiceURL  # noqa F401
+from account.models.oauth_config import OAuthConfig  # noqa F401
 
 # imports needed for initialization
 from account.tasks import UpdatePermissions  # noqa F401
@@ -98,6 +99,10 @@ class Organization(HandleRefModel):
             "If set, designates this organzation as a user's personal organization"
         ),
     )
+    org_flags = models.IntegerField(
+        default=0,
+        help_text=_("Bitmask to store organization policy toggles"),
+    )
 
     class Meta:
         db_table = "account_organization"
@@ -177,6 +182,31 @@ class Organization(HandleRefModel):
     def is_personal(self):
         return self.user_id is not None
 
+    def set_org_flag(self, flag: int, value: bool = True) -> None:
+        """
+        Set or clear an organization policy flag in memory.
+        Caller is responsible for calling save() to persist the change.
+        """
+        if value:
+            self.org_flags |= flag
+        else:
+            self.org_flags &= ~flag
+
+    @property
+    def disable_password(self) -> bool:
+        """Org policy: passkey-only login; password-based login is rejected."""
+        return bool(self.org_flags & settings.ORG_FLAGS_PASSKEY_DISABLE_PASSWORD_AUTH)
+
+    @property
+    def disable_totp(self) -> bool:
+        """Org policy: TOTP / backup codes are not offered as a 2nd factor."""
+        return bool(self.org_flags & settings.ORG_FLAGS_DISABLE_TOTP)
+
+    @property
+    def require_passkey_mfa(self) -> bool:
+        """Org policy: a 2nd factor is required even after a successful passkey login."""
+        return bool(self.org_flags & settings.ORG_FLAGS_PASSKEY_REQUIRE_MFA)
+
     def __str__(self):
         return self.label
 
@@ -246,6 +276,91 @@ class OrganizationUser(HandleRefModel):
         if self.is_default:
             self.user.org_user_set.exclude(id=self.id).update(is_default=False)
         super().save(**kwargs)
+
+
+def effective_mfa_policy(user) -> dict:
+    """
+    Resolve the user's effective auth/MFA policy by OR-combining org_flags
+    across every organization they are a member of. A flag set on any of
+    the user's orgs applies to the user.
+    """
+    flags = 0
+    for org_flags in user.org_user_set.values_list("org__org_flags", flat=True):
+        flags |= org_flags
+    return {
+        "disable_password": bool(
+            flags & settings.ORG_FLAGS_PASSKEY_DISABLE_PASSWORD_AUTH
+        ),
+        "disable_totp": bool(flags & settings.ORG_FLAGS_DISABLE_TOTP),
+        "require_passkey_mfa": bool(flags & settings.ORG_FLAGS_PASSKEY_REQUIRE_MFA),
+    }
+
+
+def user_has_satisfying_2fa(user, policy: dict) -> bool:
+    """
+    Return True if the user has a confirmed MFA device satisfying ``policy``.
+
+    Security keys and email-OTP always count. TOTP and its backup codes count
+    only when ``disable_totp`` is False — the flag forbids both, so a user
+    whose only factor is TOTP or backup codes then counts as having no MFA.
+    """
+    if not user.is_authenticated:
+        return False
+
+    has_security_key = user.webauthn_security_keys.exists()
+    has_email = user.emaildevice_set.exists()
+
+    if policy.get("disable_totp"):
+        return has_security_key or has_email
+    return (
+        has_security_key
+        or has_email
+        or user.staticdevice_set.exists()
+        or user.totpdevice_set.exists()
+    )
+
+
+def orgs_enforcing(user, attr: str) -> list[str]:
+    """
+    Labels of the user's orgs whose policy property ``attr`` is True.
+    select_related avoids the per-OrganizationUser N+1 on .org access.
+    """
+    if not user or not user.is_authenticated:
+        return []
+    return [
+        ou.org.label
+        for ou in user.org_user_set.select_related("org")
+        if getattr(ou.org, attr)
+    ]
+
+
+def mfa_setup_required_message(user, policy: dict) -> str:
+    """
+    Plain-text explanation for the MFA setup page when a user is held there by
+    policy, worded to match the specific reason and naming the enforcing orgs.
+    Returns a str (not a lazy proxy) so it can be stored in the session.
+    """
+    if policy.get("disable_totp") and user.totpdevice_set.exists():
+        # TOTP enrolled but forbidden — must swap to a different method.
+        orgs = orgs_enforcing(user, "disable_totp")
+        who = ", ".join(orgs) if orgs else str(_("Your organization"))
+        return str(
+            _(
+                "%(orgs)s has disabled TOTP authentication. Please set up a "
+                "different MFA method to continue."
+            )
+            % {"orgs": who}
+        )
+
+    orgs = orgs_enforcing(user, "require_passkey_mfa")
+    who = ", ".join(orgs) if orgs else str(_("Your organization"))
+    return str(
+        _(
+            "%(orgs)s requires multi-factor authentication. Please set up an "
+            "MFA method below to continue."
+        )
+        % {"orgs": who}
+    )
 
 
 @reversion.register
@@ -589,7 +704,7 @@ class PasswordReset(HandleRefModel):
 
     @property
     def expired(self):
-        delta = datetime.datetime.now(datetime.timezone.utc) - self.created
+        delta = datetime.datetime.now(datetime.UTC) - self.created
         return delta.hours >= 1
 
     @property
@@ -975,7 +1090,7 @@ class Invitation(HandleRefModel):
         super().__init__(*args, **kwargs)
 
     def update_expiry_date(self):
-        self.expiry = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
+        self.expiry = datetime.datetime.now(datetime.UTC) + datetime.timedelta(
             days=settings.INVITE_EXPIRY
         )
 
@@ -986,7 +1101,7 @@ class Invitation(HandleRefModel):
             # we introduced the expiry feature, so we assume they are
             # expired
             return True
-        return self.expiry < datetime.datetime.now(datetime.timezone.utc)
+        return self.expiry < datetime.datetime.now(datetime.UTC)
 
     @property
     def url(self):

@@ -1,6 +1,6 @@
 import sys
+from collections.abc import Callable
 from datetime import datetime
-from typing import Callable
 
 import structlog
 from django.conf import settings

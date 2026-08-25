@@ -1,6 +1,8 @@
 import account.models as models
 import account.models.federation as federation_models
 import account.rest.serializers.federation
+import account.rest.serializers.oauth_config  # noqa F401
+import account.rest.views.oauth_config  # noqa F401  (registers viewset)
 import applications.rest.serializers as application_serializers
 import reversion
 from account.rest.decorators import disable_api_key, set_org
@@ -291,6 +293,31 @@ class Organization(viewsets.ViewSet):
         return Response(
             Serializers.org(org, many=False, context={"user": request.user}).data
         )
+
+    @action(detail=True, methods=["GET", "PUT"], url_path="security")
+    @set_org
+    @auditlog()
+    @grainy_endpoint("org.{org.id}.manage", explicit=False)
+    def security(self, request, pk, org, auditlog=None):
+        """
+        Per-organization authentication policy.
+
+        GET  /account/org/{slug}/security/  -> current policy as booleans
+        PUT  /account/org/{slug}/security/  -> update policy. Body keys
+        are all optional; only provided fields are changed.
+        """
+        if request.method == "PUT":
+            serializer = Serializers.org_security(
+                instance=org, data=request.data, partial=True
+            )
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=400)
+            org = serializer.save()
+            auditlog.set("org", org)
+            auditlog.append_data(org_flags=org.org_flags)
+            return Response(serializer.data)
+
+        return Response(Serializers.org_security(org).data)
 
     @action(detail=True, methods=["GET"])
     @set_org

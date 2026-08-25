@@ -12,7 +12,7 @@ import confu.schema
 import requests
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import IntegrityError, models, transaction
 from django.utils import timezone
 
 from fullctl.django.models.abstract import HandleRefModel
@@ -127,6 +127,17 @@ class Request(HandleRefModel):
 
     class Meta:
         abstract = True
+        constraints = [
+            # (source, url) is the cache key -- both non-null, so no NULL hole
+            # (a key with the nullable `type` would silently skip NULL-type
+            # rows). `source` is kept because some sources build urls that
+            # aren't unique across sources. Concrete subclasses opt in by
+            # extending `meta.Request.Meta`.
+            models.UniqueConstraint(
+                fields=["source", "url"],
+                name="%(app_label)s_%(class)s_unique_cache_key",
+            )
+        ]
 
     @classmethod
     def prepare_request(cls, targets):
@@ -279,14 +290,15 @@ class Request(HandleRefModel):
         if payload:
             params.update(payload=json.dumps(payload))
 
-        try:
-            req = cls.objects.get(**params)
-            created = False
-        except cls.DoesNotExist:
+        # use filter().first() rather than get() so that any duplicate cached
+        # request rows (e.g. left over from before the uniqueness constraint)
+        # don't raise MultipleObjectsReturned.
+        req = cls.objects.filter(**params).first()
+        exists = req is not None
+        if not exists:
             req = cls(**params)
-            created = True
 
-        if not created:
+        if exists:
             req.count += 1
 
         data = None
@@ -303,7 +315,24 @@ class Request(HandleRefModel):
             req.processing_error = f"{exc}"
 
         if not cached:
-            req.save()
+            try:
+                # savepoint so an IntegrityError doesn't poison an outer txn
+                with transaction.atomic():
+                    req.save()
+            except IntegrityError:
+                # lost the insert race: a concurrent fetch created the row for
+                # this (source, url) first. Re-query the winner (keyed on the
+                # constraint fields, not the full lookup) and reuse it instead
+                # of failing. This is the race that produced the original
+                # duplicates.
+                winner = cls.objects.filter(source=source, url=url).first()
+                if winner is None:
+                    raise
+                winner.count += 1
+                winner.http_status = req.http_status
+                winner.processing_error = req.processing_error
+                winner.save()
+                req = winner
 
         if data is not None:
             try:

@@ -34,8 +34,8 @@ class BGPUpdates:
         self,
         RIPEstat,
         resource,
-        starttime: Optional[datetime] = None,
-        endtime: Optional[datetime] = None,
+        starttime: datetime | None = None,
+        endtime: datetime | None = None,
         rrcs=None,
         unix_timestamps: bool = False,
     ):

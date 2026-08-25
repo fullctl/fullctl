@@ -37,7 +37,7 @@ class grainy_endpoint(_grainy_endpoint):
             # this for anything at the moment
             enable_apply_perms=False,
             *args,
-            **kwargs
+            **kwargs,
         )
         if "namespace" not in kwargs:
             self.namespace += ["peerctl"]

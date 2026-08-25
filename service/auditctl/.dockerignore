@@ -1,6 +1,5 @@
 *
 
-!poetry.lock
 !pyproject.toml
 !mkdocs.yml
 !README.md

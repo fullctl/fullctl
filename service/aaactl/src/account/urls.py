@@ -10,7 +10,14 @@ urlpatterns = [
         account.views.auth.login_frontend,
         name="auth-login-frontend",
     ),
-    path("auth/login/", account.views.auth.login, name="auth-login"),
+    # Back-compat alias: /account/auth/login/ still resolves under the
+    # `account:auth-login` name. The canonical wizard URL is two_factor:login
+    # (mounted in the root urlconf at /account/login/).
+    path(
+        "auth/login/",
+        account.views.auth.LoginView.as_view(),
+        name="auth-login",
+    ),
     path("auth/logout/", account.views.auth.logout, name="auth-logout"),
     path("auth/register/", account.views.auth.register, name="auth-register"),
     path(

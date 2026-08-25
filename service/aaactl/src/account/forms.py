@@ -9,8 +9,41 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.utils.translation import gettext as _
 from django_recaptcha.fields import ReCaptchaField
+from django_security_keys.ext.two_factor.forms import DisableForm
 
 import fullctl.django.enum as enum
+
+
+class BackupTokensReauthForm(DisableForm):
+    """
+    Reauthentication gate before access to the backup-tokens listing page.
+
+    Inherits DisableForm's validation — the user must provide a valid OTP code,
+    existing backup code, or fresh WebAuthn assertion.
+    """
+
+    understand = forms.BooleanField(
+        label=_("I'm sure I want to access my backup tokens"),
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["otp_token"].widget.attrs.update(
+            {"class": "form-control", "autocomplete": "one-time-code"}
+        )
+
+
+class BackupTokensRegenForm(forms.Form):
+    """
+    Safety confirmation checkbox shown on the post-reauth backup-tokens page,
+    so an accidental click on Generate Tokens doesn't wipe existing codes.
+    """
+
+    understand = forms.BooleanField(
+        label=_("Yes, invalidate my existing backup codes and generate new ones"),
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
 
 
 class Login(forms.Form):

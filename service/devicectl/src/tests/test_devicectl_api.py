@@ -32,6 +32,37 @@ def test_create_vlan(db, account_objects):
     assert models.Vlan.objects.get(id=data[0]["id"])
 
 
+def test_create_vlan_with_secondaries(db, account_objects):
+    client = account_objects.api_client
+    facility = account_objects.facility
+    org = account_objects.org
+
+    response = client.post(
+        reverse("devicectl_api:vlan-list", args=(org.slug,)),
+        json.dumps(
+            {
+                "facility": facility.id,
+                "name": "Test Vlan Secondaries",
+                "vlan": 13,
+                "slug": "test_vlan_secondaries",
+                "description": "Vlan with v4/v6 secondaries",
+                "v4_secondaries": ["10.0.0.2/24", "10.0.0.3"],
+                "v6_secondaries": ["2001:db8::2/64"],
+            }
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert len(data) == 1
+    # inet round-trip: bare addresses normalize to host prefixes
+    assert data[0]["v4_secondaries"] == ["10.0.0.2/24", "10.0.0.3/32"]
+    assert data[0]["v6_secondaries"] == ["2001:db8::2/64"]
+    vlan = models.Vlan.objects.get(id=data[0]["id"])
+    assert [str(v) for v in vlan.v4_secondaries] == ["10.0.0.2/24", "10.0.0.3/32"]
+
+
 def test_retrieve_vlan(db, account_objects):
     client = account_objects.api_client
     org = account_objects.org

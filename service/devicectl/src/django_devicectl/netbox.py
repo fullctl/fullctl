@@ -628,12 +628,14 @@ def sync_vlans(
             instance=instance,
             reference=str(netbox_vlan.id),
         ).exists():
-            unreferenced_vlan = models.Vlan.objects.filter(
-                instance=instance,
-                vlan=netbox_vlan.vid,
-            ).filter(
-                Q(reference__isnull=True) | Q(reference="")
-            ).first()
+            unreferenced_vlan = (
+                models.Vlan.objects.filter(
+                    instance=instance,
+                    vlan=netbox_vlan.vid,
+                )
+                .filter(Q(reference__isnull=True) | Q(reference=""))
+                .first()
+            )
 
             if unreferenced_vlan:
                 unreferenced_vlan.reference = str(netbox_vlan.id)

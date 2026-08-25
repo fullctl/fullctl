@@ -1,11 +1,13 @@
+# ixctl tasks image -- uv on oraclelinux:9-slim-fips (matches Dockerfile.service)
+# built by `scripts/build.py service ixctl` (repository suffix -tasks)
+
+ARG base_repo=oraclelinux
+ARG base_tag=9-slim-fips
 ARG python_ver=3.11
-# current main base is alpine, but we need to use slim for this
-ARG _base_repo=python
-ARG _base_tag=${python_ver}-slim-bookworm
 
 ARG install_to=/srv/service
-ARG poetry_pin="==1.6.1"
 ARG virtual_env=/venv
+ARG uv_tag=latest
 ARG uid=6300
 ARG user=fullctl
 ARG service_dir=service/ixctl
@@ -13,72 +15,72 @@ ARG service_dir=service/ixctl
 ARG build_deps=" \
     gcc \
     git \
-    bgpq4 \
-    python3-dev \
     "
 ARG run_deps=" \
-    libpq5 \
+    libpq \
     "
 ARG debug_deps=" \
     tar \
-    vim \
+    vim-minimal \
     "
 
-FROM ${_base_repo}:${_base_tag} as base
+FROM ghcr.io/astral-sh/uv:${uv_tag} AS uv
+
+FROM ${base_repo}:${base_tag} AS base
 
 ARG install_to
 ARG virtual_env
 
 # env to pass to sub images
+ENV PYTHONUNBUFFERED=1
 ENV SERVICE_HOME=$install_to
 ENV VIRTUAL_ENV=$virtual_env
+ENV UV_PROJECT_ENVIRONMENT=$virtual_env
+ENV UV_PYTHON_DOWNLOADS=never
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # build container
-FROM base as builder
+FROM base AS builder
 
 ARG build_deps
-ARG poetry_pin
+ARG python_ver
 ARG service_dir
 
 # TODO pin bgpq4
 ARG bgpq4_version
 
-RUN apt-get update \
-    && apt-get upgrade -y \
-    && apt-get install --no-install-recommends -y ${build_deps} \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# bgpq4 comes from EPEL (repo enabled via oracle-epel-release-el9)
+RUN microdnf install -y python${python_ver} python${python_ver}-devel oracle-epel-release-el9 ${build_deps} \
+    && microdnf install -y bgpq4 \
+    && microdnf clean all
 
-
-# Use Pip to install Poetry
-RUN python3 -m pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir "poetry$poetry_pin"
-
-# Create a VENV
-RUN python3 -m venv "$VIRTUAL_ENV"
+COPY --from=uv /uv /uvx /usr/local/bin/
 
 WORKDIR /build
 
-# For monorepo: copy fullctl source for path dependency resolution
-COPY pyproject.toml poetry.lock README.md ./
+# For monorepo: copy fullctl source for path dependency resolution;
+# the single root uv.lock covers all workspace members
+COPY pyproject.toml uv.lock README.md ./
 COPY src/ src/
 
-# Set workdir to service directory (path = "../.." resolves to builder workdir)
-WORKDIR ${service_dir}
+# Set workdir to service directory (workspace member)
+WORKDIR /build/${service_dir}
 
 # Copy service files
-COPY ${service_dir}/pyproject.toml ${service_dir}/poetry.lock ./
+COPY ${service_dir}/pyproject.toml ./
 
-RUN poetry run python -m pip install --no-cache-dir --upgrade pip \
-    && poetry install --no-root --only main,tasks
+# service dependency set plus the tasks dependency group into /venv.
+# --no-default-groups keeps the dev group out (uv installs it by default;
+# the old poetry tasks images were built --only main,tasks)
+RUN uv sync --frozen --no-install-project --no-editable --no-default-groups --group tasks
 
 #### final image
 
-FROM base as final
+FROM base AS final
 
 ARG service_dir
 ARG run_deps
+ARG python_ver
 ARG uid
 ARG user
 
@@ -87,12 +89,10 @@ ARG user
 ARG COPY_SETTINGS_FILE=src/ixctl/settings/dev.py
 
 # add dependencies
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y ${run_deps} \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN microdnf install -y python${python_ver} shadow-utils ${run_deps} \
+    && microdnf clean all
 
-RUN useradd -lu $uid $user
+RUN useradd -l -u $uid $user
 
 COPY --from=builder "$VIRTUAL_ENV" "$VIRTUAL_ENV"
 COPY --from=builder /usr/bin/bgpq4 /usr/bin/bgpq4
@@ -117,11 +117,9 @@ ARG ars_home=/arouteserver
 
 WORKDIR $SERVICE_HOME
 
-# add dependencies
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y ${debug_deps} \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# add debug dependencies
+RUN microdnf install -y ${debug_deps} \
+    && microdnf clean all
 
 COPY ${service_dir}/src/ main/
 COPY ${service_dir}/Ctl/docker/entrypoint.sh .

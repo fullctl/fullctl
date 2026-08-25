@@ -95,6 +95,24 @@
     </div>
 
     <div class="accordion-item">
+      <h5 class="accordion-header" id="heading-mfa">
+        <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-mfa" aria-expanded="false" aria-controls="collapse-mfa">
+          {% trans "Multi-Factor Authentication" %}
+        </button>
+      </h5>
+      <div id="collapse-mfa" class="accordion-collapse collapse" aria-labelledby="heading-mfa">
+        <div class="accordion-body">
+          <p>
+            {% trans "Configure how you log in: TOTP, security keys, passkeys, and backup codes." %}
+          </p>
+          <a class="btn btn-primary" href="{% url 'two_factor:profile' %}">
+            {% trans "Manage MFA" %}
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
       <h5 class="accordion-header" id="headingThree">
         <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
           Personal API Keys

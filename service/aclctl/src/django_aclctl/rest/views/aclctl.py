@@ -97,7 +97,7 @@ class AccessControlList(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVie
         instance,
         auditlog=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         """
         Update the specified access-control-list
@@ -136,17 +136,17 @@ class AccessControlList(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVie
         instance,
         auditlog=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         """
         Delete the specified access-control-list
         """
 
-        access_control_list.delete()
-        access_control_list.id = request.data.get("id")
-        return Response(
+        response = Response(
             Serializers.access_control_list(instance=access_control_list).data
         )
+        access_control_list.delete()
+        return response
 
     @action(detail=True, methods=["GET"], serializer_class=Serializers.filter_rule)
     @load_object(
@@ -343,9 +343,9 @@ class FilterRuleTemplate(CachedObjectMixin, OrgQuerysetMixin, viewsets.GenericVi
     @auditlog()
     @grainy_endpoint(namespace="filter_rule.{request.org.permission_id}.{tmpl.pk}")
     def destroy(self, request, org, tmpl, instance, auditlog=None, *args, **kwargs):
+        response = Response(self.serializer_class(instance=tmpl).data)
         tmpl.delete()
-        tmpl.id = request.data.get("id")
-        return Response(self.serializer_class(instance=tmpl).data)
+        return response
 
 
 @route
@@ -372,7 +372,7 @@ class FilterRuleConfig(TemplateRenderView):
         tmpl_id,
         auditlog=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         access_control_list = models.AccessControlList.objects.get(
             instance=instance, slug=acl_tag
@@ -385,7 +385,7 @@ class FilterRuleConfig(TemplateRenderView):
                 tmpl_id,
                 context={"access_control_list": access_control_list},
                 *args,
-                **kwargs
+                **kwargs,
             ).data
         )
 
@@ -408,7 +408,7 @@ class FilterRuleConfig(TemplateRenderView):
         tmpl_id,
         auditlog=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         access_control_list = models.AccessControlList.objects.get(
             instance=instance, slug=acl_tag
@@ -420,6 +420,6 @@ class FilterRuleConfig(TemplateRenderView):
             tmpl_id,
             context={"access_control_list": access_control_list},
             *args,
-            **kwargs
+            **kwargs,
         )
         return Response(serializer.data["body"])

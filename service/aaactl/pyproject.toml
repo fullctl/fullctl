@@ -1,71 +1,95 @@
-[tool.poetry]
+[project]
 name = "aaactl"
-repository = "https://github.com/fullctl/aaactl"
-version = "1.6.0-rc.101"
+# prep-release version 1.7.0-rc.5 (PEP 440 normalized)
+version = "1.7.0-rc.9"
 description = "authentication, authorization, and accounting for fullctl"
-authors = ["20C <code@20c.com>"]
+authors = [{ name = "20C", email = "code@20c.com" }]
 license = "Apache-2.0"
-
+requires-python = ">=3.9"
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Environment :: Console",
-    "Intended Audience :: Developers",
-    "Topic :: Software Development",
-    "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
 ]
 
-[tool.poetry.scripts]
+dependencies = [
+  "fullctl",
+
+  # not in fullctl
+  "python-dateutil",
+  "django-countries",
+  "django-oauth-toolkit",
+
+  # WebAuthn/passkey + 2FA wizard. The 202604-fixes branch carries the
+  # disable_password / require_passkey_mfa / disable_totp policy properties
+  # on the django-two-factor-auth LoginView; transitively pulls in
+  # django-two-factor-auth, django-otp, webauthn, phonenumbers, qrcode.
+  # (git branch pinned via [tool.uv.sources])
+  "django-security-keys",
+  # Cap pyopenssl below 26.x — that release tightened cryptography to >=46,<48,
+  # which conflicts with our existing cryptography resolution (43.x / 48.0).
+  # webauthn 2.7.x only requires pyopenssl>=25, so 25.x satisfies everyone.
+  "pyopenssl<26",
+
+  # open-id support social auth
+  "python-jose>=3.3,<4",
+
+  "stripe>=5.5.0,<6",
+  "crispy-bootstrap5>=0.6,<0.7",
+  # 8 breaks something
+  "django-phonenumber-field>=7.2.0,<8",
+  "phonenumbers>=8.13.24",
+  "babel>=2.13.0",
+  "djangorestframework-simplejwt>=5.3.1",
+]
+
+[project.urls]
+Repository = "https://github.com/fullctl/aaactl"
+
+[project.scripts]
 aaactl = "aaactl.cli:main"
 
+[dependency-groups]
+dev = [
+  # testing
+  "coverage>=6.4",
+  "pytest>=6",
+  "pytest-django>=3.8",
+  "pytest-cov",
+  "pytest-filedata<1",
+  "pytest-mock>=3.2",
 
-[tool.poetry.dependencies]
-python = "^3.9"
-fullctl = { path = "../.." }
+  # linting
+  "bandit>=1.7",
+  "black>=20",
+  "isort>=5.7",
+  "flake8>=3.8",
+  "mypy>=0.950,<1.19",
+  "pre-commit>=2.13",
+  "pyupgrade>=2.19",
 
-# not in fullctl
-python-dateutil = "*"
-django-countries = "*"
-django-oauth-toolkit = "*"
+  # ctl (git source pinned via [tool.uv.sources])
+  "ctl",
+  "tomlkit>=0.11",
+  "tmpl>=1",
+  "jinja2>=3",
+]
 
-# open-id support social auth
-python-jose = "^3.3"
+[tool.uv.sources]
+fullctl = { workspace = true }
+django-security-keys = { git = "https://github.com/20c/django-security-keys.git", branch = "202604-fixes" }
+ctl = { git = "https://github.com/20c/ctl.git", branch = "main" }
 
-stripe = "^5.5.0"
-crispy-bootstrap5 = "^0.6"
-# 8 breaks something
-django-phonenumber-field = "^7.2.0"
-phonenumbers = ">=8.13.24"
-babel = ">=2.13.0"
-djangorestframework-simplejwt = ">=5.3.1"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry.dev-dependencies]
-# testing
-coverage = ">=6.4"
-pytest = ">=6"
-pytest-django = ">=3.8"
-pytest-cov = "*"
-pytest-filedata = "<1"
-pytest-mock = ">=3.2"
-
-# linting
-bandit = ">=1.7"
-black = ">=20"
-isort = ">=5.7"
-flake8 = ">=3.8"
-mypy = ">=0.950,<1.19"
-pre-commit = ">=2.13"
-pyupgrade = ">=2.19"
-
-# ctl
-ctl = ">=1"
-tomlkit = ">=0.11"
-tmpl = ">=1"
-Jinja2 = ">=3"
-
-###
+[tool.hatch.build.targets.wheel]
+packages = ["src/aaactl"]
 
 [tool.bandit.assert_used]
 skips = ['*_test.py', '*/test_*.py']
@@ -73,4 +97,3 @@ skips = ['*_test.py', '*/test_*.py']
 [tool.isort]
 profile = "black"
 multi_line_output = 3
-

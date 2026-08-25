@@ -11,9 +11,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   django:
-    build:
-      context: ../../../..
-      dockerfile: service/devicectl/Dockerfile
+    # image built by scripts/build.py (see docs/build.md); CI sets SERVICE_IMAGE
+    image: ${SERVICE_IMAGE:-local/fullctl/devicectl:dev}
     command: "runserver 0.0.0.0:8000"
     env_file: .env
     ports:

@@ -24,7 +24,7 @@ def make_variable_name(value):
     # return string.translate(u"{}".format(value), trans)
 
 
-def ip_version(ip: str) -> Union[int, None]:
+def ip_version(ip: str) -> int | None:
     """
     To be used in templates as a filter
 

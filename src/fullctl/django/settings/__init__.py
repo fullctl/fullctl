@@ -231,13 +231,19 @@ class SettingsManager(confu.util.SettingsManager):
         # command is run - default is 30 days
         self.set_option("TASK_DEFAULT_PRUNE_AGE", 30.0)
 
-        # TASK_DEFAULT_PRUNE_EXCLUDE (list of task op types that should never be pruned)
+        # TASK_DEFAULT_PRUNE_EXCLUDE (list of limit_id regex patterns that should never
+        # be pruned). Matched against the task's limit_id, not its op - a deployment
+        # that carried a list of op names here from before 1.16 will silently stop
+        # protecting those tasks and needs its value rewritten as limit_id patterns.
         self.set_option("TASK_DEFAULT_PRUNE_EXCLUDE", [])
 
         # TASK_DEFAULT_PRUNE_STATUS (list of task statuses that should be pruned)
         self.set_option(
             "TASK_DEFAULT_PRUNE_STATUS", ["completed", "failed", "cancelled"]
         )
+
+        # TASK_PRUNE_BATCH_SIZE (number of tasks to delete per batch)
+        self.set_option("TASK_PRUNE_BATCH_SIZE", 10000)
 
         # TASK_ORPHANED_HEARTBEAT_TIMEOUT (seconds) is the default task orphaned heartbeat timeout checks - default is 30 second
         self.set_option("TASK_ORPHANED_HEARTBEAT_TIMEOUT", 30)

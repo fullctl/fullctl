@@ -1186,7 +1186,7 @@ class Routeserver(HandleRefModel):
         # where to get ASN sets from ??
         # peeringdb network ??
         rs_peers = InternetExchangeMember.preload_networks(
-            self.ix.member_set.filter(is_rs_peer=True)
+            self.ix.member_set.filter(is_rs_peer=True).order_by("id")
         )
 
         for member in rs_peers:

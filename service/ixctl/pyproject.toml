@@ -1,72 +1,90 @@
-[tool.poetry]
+[project]
 name = "ixctl"
-repository = "https://github.com/fullctl/ixctl"
-version = "3.4.0-rc.113"
+# prep-release version 3.5.0-rc.3 (PEP 440 normalized)
+version = "3.5.0-rc.7"
 description = "ix control"
-authors = ["20C <code@20c.com>"]
+authors = [{ name = "20C", email = "code@20c.com" }]
 license = "Apache-2.0"
-
+requires-python = ">=3.9"
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Environment :: Console",
-    "Intended Audience :: Developers",
-    "Topic :: Software Development",
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development",
 ]
 
+dependencies = [
+  "fullctl",
+  "pydantic>=1.10.2",
+  "markdown>=3.6",
+]
 
-[tool.poetry.scripts]
+[project.urls]
+Repository = "https://github.com/fullctl/ixctl"
+
+[project.scripts]
 ixctl = "ixctl.cli:main"
 
-
-[tool.poetry.dependencies]
-python = "^3.9"
-fullctl = { path = "../.." }
-pydantic = ">=1.10.2"
-markdown = ">=3.6"
-
-[tool.poetry.dev-dependencies]
-django = ">=2.2"
-django-handleref = ">=0.5"
-djangorestframework = ">=3.11"
-
-# testing
-coverage = ">=5"
-pytest = ">=6"
-pytest-django = ">=3.8"
-pytest-cov = "*"
-requests-mock = ">=1.11"
-tox = ">=3.23"
-
-# linting
-bandit = ">=1.6.2"
-mypy = ">=0.950"
-pre-commit = ">=2.13"
-pyupgrade = ">=2.19"
-ruff = ">=0.1"
-
-# docs
-markdown = "*"
-markdown-include = ">=0.5,<1"
-mkdocs = ">=1.2.3"
-
-# ctl
-ctl = ">=1"
-jinja2 = ">=2"
-tmpl = ">=1"
-
-[tool.poetry.group.tasks]
-optional = true
-
-[tool.poetry.group.tasks.dependencies]
-arouteserver = ">=1.17"
-
-[tool.poetry.plugins."markdown.extensions"]
+[project.entry-points."markdown.extensions"]
 pymdgen = "pymdgen.md:Extension"
+
+[dependency-groups]
+dev = [
+  "django>=2.2",
+  "django-handleref>=0.5",
+  "djangorestframework>=3.11",
+
+  # testing
+  "coverage>=5",
+  "pytest>=6",
+  "pytest-django>=3.8",
+  "pytest-cov",
+  "requests-mock>=1.11",
+  "tox>=3.23",
+
+  # linting
+  "bandit>=1.6.2",
+  "mypy>=0.950",
+  "pre-commit>=2.13",
+  "pyupgrade>=2.19",
+  "ruff>=0.1",
+
+  # docs
+  "markdown",
+  "markdown-include>=0.5,<1",
+  "mkdocs>=1.2.3",
+
+  # ctl (git source pinned via [tool.uv.sources])
+  "ctl",
+  "jinja2>=2",
+  "tmpl>=1",
+]
+# was the optional poetry "tasks" group; PEP 735 groups other than dev are
+# not installed by a plain `uv sync` -- the tasks image build opts in via
+# `uv sync --group tasks`
+tasks = [
+  "arouteserver>=1.17",
+]
+
+[tool.uv.sources]
+fullctl = { workspace = true }
+ctl = { git = "https://github.com/20c/ctl.git", branch = "main" }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ixctl"]
 
 [tool.ruff]
 # Same as Black.
 line-length = 88
 indent-width = 4
+
+[tool.ruff.lint]
+# Enable the isort rules.
+extend-select = ["I"]
 
 [tool.ruff.lint.per-file-ignores]
 # E402 = module import not at top level
@@ -75,11 +93,3 @@ indent-width = 4
 # F821 = undefined variable
 "src/ixctl/settings/__init__.py" = ["F821"]
 "src/ixctl/settings/dev.py" = ["F821"]
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.ruff.lint]
-# Enable the isort rules.
-extend-select = ["I"]

@@ -124,6 +124,11 @@ def test_access_control_list_delete(
         )
     )
 
+    assert response.status_code == 200
+    acl = response.json()["data"][0]
+    assert acl["id"] == account_objects.test_acl.id
+    assert acl["num_filters"] == 1
+
     # check list to see if acl deleted
     response = client.get(
         reverse("aclctl_api:access_control_list-list", args=(org.slug,))

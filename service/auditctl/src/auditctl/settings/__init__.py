@@ -100,6 +100,9 @@ settings_manager.set_option("HEARTBEAT_EXPECTED_INTERVAL_TRAFFIC", 60 * 6)
 # Default is 90 days (in days)
 settings_manager.set_option("EVENT_MAX_AGE", 90)
 
+# Number of events processed per batch during pruning (export + delete)
+settings_manager.set_option("EVENT_PRUNE_BATCH_SIZE", 10000)
+
 # METRICS
 
 # Global off switch for metric collection

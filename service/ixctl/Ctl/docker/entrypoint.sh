@@ -36,6 +36,7 @@ case "$1" in
     export AUDITCTL_URL=test://auditctl
     export DEVICECTL_URL=test://devicectl
     export PREFIXCTL_URL=test://prefixctl
+    export PEERCTL_URL=test://peerctl
     export MEMBER_CASE_NUMBERS_ENABLED=0
     unset OAUTH_TWENTYC_URL
     cd main

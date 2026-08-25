@@ -46,7 +46,7 @@ class PrefixOverview:
         resource,
         min_peers_seeing: int = None,
         max_related: int = None,
-        query_time: Optional[datetime] = None,
+        query_time: datetime | None = None,
     ):
         """
         Initialize and request the prefix overview.

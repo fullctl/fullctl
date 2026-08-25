@@ -1,0 +1,44 @@
+{% extends "two_factor/_base.html" %}
+{% load i18n %}
+
+{% block wizard_content %}
+  <h1>{% block title %}{% trans "Backup Tokens" %}{% endblock %}</h1>
+  <p>{% blocktrans trimmed %}Backup tokens can be used when your primary authentication
+    method isn't available. The codes below are valid for login verification. If you've
+    used them all, you can generate a new set — only the codes shown here will work.
+  {% endblocktrans %}</p>
+
+  {% if device.token_set.count %}
+    <ul class="list-unstyled font-monospace">
+      {% for token in device.token_set.all %}
+        <li>{{ token.token }}</li>
+      {% endfor %}
+    </ul>
+    <p class="text-muted">{% trans "Print these tokens and keep them somewhere safe." %}</p>
+  {% else %}
+    <p class="text-muted">{% trans "You don't have any backup codes yet." %}</p>
+  {% endif %}
+
+  <hr class="my-4">
+
+  <form method="post" id="backup-tokens-form">
+    {% csrf_token %}
+
+    <div class="form-check mb-3">
+      {{ form.understand }}
+      <label for="{{ form.understand.id_for_label }}" class="form-check-label">
+        {{ form.understand.label }}
+      </label>
+      {% if form.understand.errors %}
+        <div class="invalid-feedback d-block">{{ form.understand.errors|join:" " }}</div>
+      {% endif %}
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+      <button class="btn btn-primary" type="submit">{% trans "Generate Tokens" %}</button>
+      <a href="{% url 'two_factor:profile' %}" class="btn btn-outline-secondary">
+        {% trans "Back to Account Security" %}
+      </a>
+    </div>
+  </form>
+{% endblock %}

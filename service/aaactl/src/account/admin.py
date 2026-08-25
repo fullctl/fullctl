@@ -17,6 +17,7 @@ from account.models import (
     Invitation,
     ManagedPermission,
     ManagedPermissionRoleAutoGrant,
+    OAuthConfig,
     Organization,
     OrganizationAPIKey,
     OrganizationAPIKeyPermission,
@@ -36,10 +37,12 @@ from account.models.federation import (
     ServiceFederationSupport,
 )
 from django import forms
+from django.conf import settings
 from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.utils.translation import gettext_lazy as _
 from django_grainy.admin import GrainyUserAdmin
 from django_grainy.forms import (
     PERM_CHOICES_FOR_FIELD,
@@ -148,11 +151,94 @@ class OrganizationRoleInline(admin.TabularInline):
         return formset
 
 
+class OrganizationAdminForm(forms.ModelForm):
+    """
+    Surface Organization.org_flags as three independent checkboxes in the
+    admin, hiding the raw bitmask. Each checkbox round-trips through
+    Organization.set_org_flag() / the bitmask properties.
+    """
+
+    disable_password = forms.BooleanField(
+        required=False,
+        label=_("Disable password login"),
+        help_text=_(
+            "Members of this org cannot log in with a password — passkey is required."
+        ),
+    )
+    disable_totp = forms.BooleanField(
+        required=False,
+        label=_("Disable TOTP / backup codes"),
+        help_text=_("TOTP and backup-code methods are not offered as a 2nd factor."),
+    )
+    require_passkey_mfa = forms.BooleanField(
+        required=False,
+        label=_("Require MFA after passkey login"),
+        help_text=_(
+            "A 2nd factor (TOTP or another security key) is required even after a passkey login."
+        ),
+    )
+
+    class Meta:
+        model = Organization
+        # org_flags is the raw bitmask backing the three checkboxes above —
+        # exclude it from bound fields so a stray POST can't clobber the value
+        # set_org_flag() just wrote. The admin still renders it via
+        # OrganizationAdmin.readonly_fields for diagnostics.
+        exclude = ("org_flags",)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields["disable_password"].initial = self.instance.disable_password
+            self.fields["disable_totp"].initial = self.instance.disable_totp
+            self.fields["require_passkey_mfa"].initial = (
+                self.instance.require_passkey_mfa
+            )
+
+    def save(self, commit=True):
+        org = super().save(commit=False)
+        org.set_org_flag(
+            settings.ORG_FLAGS_PASSKEY_DISABLE_PASSWORD_AUTH,
+            self.cleaned_data["disable_password"],
+        )
+        org.set_org_flag(
+            settings.ORG_FLAGS_DISABLE_TOTP,
+            self.cleaned_data["disable_totp"],
+        )
+        org.set_org_flag(
+            settings.ORG_FLAGS_PASSKEY_REQUIRE_MFA,
+            self.cleaned_data["require_passkey_mfa"],
+        )
+        if commit:
+            org.save()
+        return org
+
+
 @admin.register(Organization)
 class OrganizationAdmin(admin.ModelAdmin):
+    form = OrganizationAdminForm
     list_display = ("name", "user", "slug")
     search_fields = ("name", "slug", "user__username")
     ordering = ("-user", "name")
+    readonly_fields = ("org_flags",)
+    fieldsets = (
+        (None, {"fields": ("name", "slug", "user")}),
+        (
+            _("Authentication policy"),
+            {
+                "fields": (
+                    "disable_password",
+                    "disable_totp",
+                    "require_passkey_mfa",
+                    "org_flags",
+                ),
+                "description": _(
+                    "Per-organization authentication and MFA policy. The "
+                    "raw org_flags bitmask is shown read-only for diagnostics."
+                ),
+            },
+        ),
+    )
 
     def get_inlines(self, request, obj=None):
         if obj is not None:
@@ -386,6 +472,46 @@ class ContactMessageAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+class OAuthConfigAdminForm(forms.ModelForm):
+    # Don't render the existing secret back into the form — admins can set
+    # or replace it, but a casual page view shouldn't expose the live value.
+    secret = forms.CharField(
+        widget=forms.PasswordInput(render_value=False),
+        required=False,
+        help_text="Leave blank to keep the existing secret.",
+    )
+
+    class Meta:
+        model = OAuthConfig
+        fields = "__all__"
+
+    def clean_secret(self):
+        # Empty input means "keep existing" — don't overwrite with blank.
+        value = self.cleaned_data.get("secret")
+        if not value and self.instance and self.instance.pk:
+            return self.instance.secret
+        return value
+
+
+@admin.register(OAuthConfig)
+class OAuthConfigAdmin(admin.ModelAdmin):
+    form = OAuthConfigAdminForm
+    list_display = ("service_id", "key", "authorization_url", "updated")
+    search_fields = ("service_id", "key")
+    fields = (
+        "service_id",
+        "key",
+        "secret",
+        "tenant_id",
+        "authorization_url",
+        "access_token_url",
+        "profile_url",
+        "access_token_method",
+        "default_scope",
+        "extra_data",
+    )
 
 
 @admin.register(ServiceFederationSupport)

@@ -22,6 +22,39 @@ from fullctl.django.tasks.context import (
     task_execution_context,
 )
 
+# Wall-clock budgets for the threaded tests below. Both are ceilings on the
+# failure path only -- each wait returns as soon as its condition holds -- so
+# they are deliberately generous. These tests share one sqlite file between the
+# worker thread, its heartbeat and the polling thread, and a write that blocks
+# on a table lock under CI load routinely overran the 2s they used to allow.
+STATUS_WAIT_TIMEOUT = 30.0
+JOIN_TIMEOUT = 30.0
+
+
+def wait_for_status(task, status, timeout=STATUS_WAIT_TIMEOUT):
+    """Block until task reaches status, failing with what it reached instead."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        task.refresh_from_db()
+        if task.status == status:
+            return
+        time.sleep(0.05)
+    task.refresh_from_db()
+    raise AssertionError(
+        f"task never reached {status!r} within {timeout}s, status: {task.status}"
+    )
+
+
+def join_worker(thread, timeout=JOIN_TIMEOUT):
+    """Join a worker thread, failing loudly if it is still running.
+
+    Thread.join() returns silently on timeout, so without this a hung worker
+    surfaces as a confusing status mismatch further down rather than as the
+    timeout it actually is.
+    """
+    thread.join(timeout=timeout)
+    assert not thread.is_alive(), f"worker thread still running after {timeout}s"
+
 
 @pytest.mark.django_db
 class TestTaskCancelledException:
@@ -141,7 +174,9 @@ class TestTaskCheckCancelledViaHeartbeat:
         try:
             task.check_cancelled()
         except TaskCancelledException:
-            pytest.fail("check_cancelled() raised unexpectedly with cancel_requested=False")
+            pytest.fail(
+                "check_cancelled() raised unexpectedly with cancel_requested=False"
+            )
 
     def test_no_heartbeat_does_not_raise(self):
         """Test that check_cancelled() doesn't raise when no heartbeat exists"""
@@ -315,24 +350,13 @@ class TestTaskRunCancellation:
         thread = threading.Thread(target=run_task)
         thread.start()
 
-        # Wait for task to actually start running
-        max_wait = 2.0
-        start = time.time()
-        while time.time() - start < max_wait:
-            task.refresh_from_db()
-            if task.status == "running":
-                break
-            time.sleep(0.05)
-
-        assert (
-            task.status == "running"
-        ), f"Task never started running, status: {task.status}"
+        wait_for_status(task, "running")
 
         # Cancel the task
         task.cancel("Test mid-execution cancel")
 
         # Wait for thread to finish
-        thread.join(timeout=5)
+        join_worker(thread)
 
         # Verify task is cancelled, not failed
         task.refresh_from_db()
@@ -350,22 +374,11 @@ class TestTaskRunCancellation:
         thread = threading.Thread(target=run_task)
         thread.start()
 
-        # Wait for task to actually start running (not just pending)
-        max_wait = 2.0
-        start = time.time()
-        while time.time() - start < max_wait:
-            task.refresh_from_db()
-            if task.status == "running":
-                break
-            time.sleep(0.05)
-
-        assert (
-            task.status == "running"
-        ), f"Task never started running, status: {task.status}"
+        wait_for_status(task, "running")
 
         # Now cancel it
         task.cancel("Test cancel")
-        thread.join(timeout=5)
+        join_worker(thread)
 
         task.refresh_from_db()
         # Execution time should be recorded (> 0)
@@ -388,23 +401,12 @@ class TestTaskRunCancellation:
         thread = threading.Thread(target=run_task)
         thread.start()
 
-        # Wait for task to start running
-        max_wait = 2.0
-        start = time.time()
-        while time.time() - start < max_wait:
-            task.refresh_from_db()
-            if task.status == "running":
-                break
-            time.sleep(0.05)
-
-        assert (
-            task.status == "running"
-        ), f"Task never started running, status: {task.status}"
+        wait_for_status(task, "running")
 
         # Cancel while running (but task won't notice because it doesn't check)
         task.cancel("This won't stop it")
 
-        thread.join(timeout=2)
+        join_worker(thread)
 
         # Task completes normally, overwriting "cancelled" with "completed"
         task.refresh_from_db()
@@ -426,21 +428,10 @@ class TestCancellableTaskIntegration:
         thread = threading.Thread(target=run_task)
         thread.start()
 
-        # Wait for task to start running
-        max_wait = 2.0
-        start = time.time()
-        while time.time() - start < max_wait:
-            task.refresh_from_db()
-            if task.status == "running":
-                break
-            time.sleep(0.05)
-
-        assert (
-            task.status == "running"
-        ), f"Task never started running, status: {task.status}"
+        wait_for_status(task, "running")
 
         task.cancel("Context helper test")
-        thread.join(timeout=5)
+        join_worker(thread)
 
         task.refresh_from_db()
         assert task.status == "cancelled"
@@ -544,25 +535,14 @@ class TestEdgeCases:
         thread = threading.Thread(target=run_task)
         thread.start()
 
-        # Wait for task to start running
-        max_wait = 2.0
-        start = time.time()
-        while time.time() - start < max_wait:
-            task.refresh_from_db()
-            if task.status == "running":
-                break
-            time.sleep(0.05)
-
-        assert (
-            task.status == "running"
-        ), f"Task never started running, status: {task.status}"
+        wait_for_status(task, "running")
 
         # Cancel multiple times
         task.cancel("First")
         task.cancel("Second")
         task.cancel("Third")
 
-        thread.join(timeout=5)
+        join_worker(thread)
 
         task.refresh_from_db()
         assert task.status == "cancelled"

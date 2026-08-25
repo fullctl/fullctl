@@ -2,7 +2,7 @@
 
 set -e
 
-CREATE_PG="aaactl ixctl prefixctl devicectl peerctl pdbctl"
+CREATE_PG="aaactl ixctl prefixctl devicectl peerctl pdbctl aclctl auditctl"
 
 
 for each in $CREATE_PG; do

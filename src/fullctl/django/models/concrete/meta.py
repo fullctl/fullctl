@@ -24,7 +24,7 @@ class Request(BaseRequest):
 
     identifier = models.CharField(max_length=255, db_index=True)
 
-    class Meta:
+    class Meta(BaseRequest.Meta):
         db_table = "request"
         verbose_name = _("Request")
         verbose_name_plural = _("Requests")

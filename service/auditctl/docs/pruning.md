@@ -1,66 +1,63 @@
 ## Prune old events
 
-You can use the `auditctl_prune` django management command to remove old events from the database. This command will remove all events older than the specified number of days.
+The `auditctl_prune` management command removes old audit log events from the database. Nothing is deleted without `--commit` (dry-run by default).
+
+### Basic usage
 
 ```bash
+# Dry-run: see what would be pruned
+python manage.py auditctl_prune --max-age 30
+
+# Actually delete events older than 30 days
 python manage.py auditctl_prune --max-age 30 --commit
 ```
 
-In the example above, all events older than 30 days will be removed from the database. The `--commit` flag is required to actually remove the events. If you omit the `--commit` flag, the command will only show you the number of events that would be removed.
+If `--max-age` is omitted, the `EVENT_MAX_AGE` setting is used.
 
-Removed entries are backed up to a JSON file in the current directory. You can specify a different output path using the `-o` flag.
+### Filtering by object_id
+
+Use `--include` or `--exclude` (mutually exclusive) to filter events by their `object_id` using regex patterns. Bare `*` is expanded to `.*` for glob-style convenience.
 
 ```bash
-python manage.py auditctl_prune --max-age 30 --commit -o /path/to/output.json
+# Prune only high-volume event types, keeping last 30 days
+python manage.py auditctl_prune --include ".*(traffic|config/liveness|bgp/stats).*" --max-age 30 --commit
+
+# Prune everything EXCEPT liveness checks
+python manage.py auditctl_prune --exclude ".*/config/liveness/.*" --max-age 30 --commit
 ```
 
-If you want to just see the number of events that would be removed without actually removing them, you can omit the `--commit` flag.
+### Pruning tasks alongside events
+
+When `--tasks` is passed, the command also prunes tasks (via `fullctl_manage_tasks prune`) using the same `--include`/`--exclude` pattern matched against the task's `limit_id`. All task statuses are pruned (pending, running, completed, failed, cancelled).
 
 ```bash
-python manage.py auditctl_prune --max-age 30
+# Prune events AND tasks for high-volume patterns, keeping last 30 days
+python manage.py auditctl_prune --include ".*(traffic|config/liveness|bgp/stats).*" --tasks --max-age 30 --commit
+```
+
+### Backing up before deletion
+
+Backup is off by default. Use `--backup` to write pruned events to a JSON file before deleting. Control the output location with `--output-path`.
+
+```bash
+python manage.py auditctl_prune --max-age 90 --backup --output-path /tmp/audit-backups --commit
 ```
 
 ### Settings
-#### EVENT_MAX_AGE
 
-If no max-age is specified, the command will use the `EVENT_MAX_AGE` setting from the `auditctl` settings file. (Settable via environment variable `EVENT_MAX_AGE`)
+| Setting | Description | Default |
+|---|---|---|
+| `EVENT_MAX_AGE` | Default max age in days when `--max-age` is omitted | - |
+| `EVENT_PRUNE_BATCH_SIZE` | Rows deleted per batch | 10000 |
 
-```bash
-export EVENT_MAX_AGE=30
-python manage.py auditctl_prune --commit
-```
+### All options
 
-### Usage
-
-```bash
-usage: manage.py auditctl_prune [-h] [--commit] [--queue] [--timeout TIMEOUT] [-a MAX_AGE]
-                                [-o OUTPUT_PATH] [--version] [-v {0,1,2,3}] [--settings SETTINGS]
-                                [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color]
-                                [--skip-checks]
-
-Prune old audit log event entries
-
-options:
-  -h, --help            show this help message and exit
-  --commit              Commit changes
-  --queue, -Q           Queue the execution of this command as a task
-  --timeout TIMEOUT     Max execution time in queue (seconds)
-  -a MAX_AGE, --max-age MAX_AGE
-                        Maximum age of entries to retain in days. If not specified `EVENT_MAX_AGE` will
-                        be used.
-  -o OUTPUT_PATH, --output-path OUTPUT_PATH
-                        Path where the dumped JSON will be stored. If omitted, the current directory
-                        will be used.
-  --version             Show program's version number and exit.
-  -v {0,1,2,3}, --verbosity {0,1,2,3}
-                        Verbosity level; 0=minimal output, 1=normal output, 2=verbose output, 3=very
-                        verbose output
-  --settings SETTINGS   The Python path to a settings module, e.g. "myproject.settings.main". If this
-                        isn't provided, the DJANGO_SETTINGS_MODULE environment variable will be used.
-  --pythonpath PYTHONPATH
-                        A directory to add to the Python path, e.g. "/home/djangoprojects/myproject".
-  --traceback           Raise on CommandError exceptions.
-  --no-color            Don't colorize the command output.
-  --force-color         Force colorization of the command output.
-  --skip-checks         Skip system checks.
-  ```
+| Option | Description |
+|---|---|
+| `--max-age`, `-a` | Maximum age of entries to retain in days |
+| `--output-path`, `-o` | Path for backup JSON file (default: current directory) |
+| `--include` | Only prune events whose `object_id` matches this regex |
+| `--exclude` | Only prune events whose `object_id` does NOT match this regex |
+| `--tasks` | Also prune tasks with the same filters (all statuses) |
+| `--backup` | Back up pruned events to JSON before deleting |
+| `--commit` | Actually delete (omit for dry-run) |

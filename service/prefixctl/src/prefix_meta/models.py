@@ -151,7 +151,7 @@ class Request(meta.Request):
         min_prefixlen_4 = 24
         min_prefixlen_6 = 64
 
-    class Meta:
+    class Meta(meta.Request.Meta):
         db_table = "prefix_meta_request"
         verbose_name_plural = _("Request cache")
         verbose_name = _("Request cache")

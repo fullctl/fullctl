@@ -102,10 +102,10 @@ class Component(BaseModel):
         type, e.g., "dict", "sequential", "stacked" etc.
     """
 
-    name: Union[str, None] = None
-    id: Union[str, int, None] = None
-    url: Union[Url, None] = None
-    blob: Union[str, None] = None
+    name: str | None = None
+    id: str | int | None = None
+    url: Url | None = None
+    blob: str | None = None
     kind: str
 
 
@@ -119,8 +119,8 @@ class RblsrvComponent(BaseModel):
         target (str): The prefix.
     """
 
-    target: Union[str, None] = None
-    load_date: Union[str, None] = None
+    target: str | None = None
+    load_date: str | None = None
     kind: str
 
 
@@ -149,7 +149,7 @@ class ErrorDetails(BaseModel):
 
     message: str
     components: list[ErrorComponent] = list()
-    url: Union[Url, None] = None
+    url: Url | None = None
 
 
 class EventData(BaseModel, MetricsMixin):
@@ -225,9 +225,9 @@ class ApiActionData(EventData):
 
 @register_model(r"^v0.1\/[^\/]+\/config\/.+$")
 class DeviceConfigData(EventData, MetricsSelectiveComponentMixin):
-    diff: Union[str, None] = None
+    diff: str | None = None
     components: list[Component] = list()
-    url: Union[Url, None] = None
+    url: Url | None = None
 
     @classmethod
     def metric_name(cls) -> str:
@@ -313,24 +313,24 @@ class BGPSessionStateComponent(BaseModel):
     address: str
     routeserver_router_id: str
     routeserver_hostname: str
-    router_id: Optional[str] = None
-    routes_imported: Optional[int] = 0
-    routes_exported: Optional[int] = 0
-    import_updates_received: Optional[int] = 0
-    import_updates_rejected: Optional[int] = 0
-    import_updates_filtered: Optional[int] = 0
-    import_updates_ignored: Optional[int] = 0
-    import_updates_accepted: Optional[int] = 0
-    import_withdraws_received: Optional[int] = 0
-    import_withdraws_rejected: Optional[int] = 0
-    import_withdraws_ignored: Optional[int] = 0
-    import_withdraws_accepted: Optional[int] = 0
-    export_updates_received: Optional[int] = 0
-    export_updates_rejected: Optional[int] = 0
-    export_updates_filtered: Optional[int] = 0
-    export_updates_accepted: Optional[int] = 0
-    export_withdraws_received: Optional[int] = 0
-    export_withdraws_accepted: Optional[int] = 0
+    router_id: str | None = None
+    routes_imported: int | None = 0
+    routes_exported: int | None = 0
+    import_updates_received: int | None = 0
+    import_updates_rejected: int | None = 0
+    import_updates_filtered: int | None = 0
+    import_updates_ignored: int | None = 0
+    import_updates_accepted: int | None = 0
+    import_withdraws_received: int | None = 0
+    import_withdraws_rejected: int | None = 0
+    import_withdraws_ignored: int | None = 0
+    import_withdraws_accepted: int | None = 0
+    export_updates_received: int | None = 0
+    export_updates_rejected: int | None = 0
+    export_updates_filtered: int | None = 0
+    export_updates_accepted: int | None = 0
+    export_withdraws_received: int | None = 0
+    export_withdraws_accepted: int | None = 0
 
 
 class BGPStatBase(EventData, MetricsMultiComponentMixin):

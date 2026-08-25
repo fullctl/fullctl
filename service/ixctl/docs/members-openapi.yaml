@@ -1,0 +1,176 @@
+openapi: 3.0.3
+info:
+  title: ixctl member export (members.json)
+  version: "1.0"
+  description: >-
+    Aggregated member list for an Internet Exchange.
+
+    One entry per member network (aggregated by ASN), carrying the fields most
+    consumers actually want: name, ASN, web URL, logo, peering policy, route-server
+    status, IPv4/IPv6 addresses, and port capacity. Ports and addresses are summed
+    and concatenated across the network's member rows.
+
+    This spec is hand-maintained and kept separate from docs/openapi.yaml, which is
+    generated from the DRF API schema. The members.json endpoint is a plain Django
+    function view (not a DRF viewset), so it does not appear in the generated schema
+    and would be dropped on regeneration.
+servers:
+  - url: https://{host}
+    variables:
+      host:
+        default: ixctl.example.com
+paths:
+  /{org_tag}/{ix_tag}/export/members.json:
+    get:
+      operationId: members.export
+      summary: Aggregated member list for an IX (one entry per ASN)
+      description: >-
+        Returns all members of the given IX, aggregated by ASN. Public endpoint
+        (load_instance public=True). If the IX has ixf_export_privacy == "private",
+        a matching `secret` query parameter (the IX urlkey) is required, otherwise
+        the endpoint returns 404.
+      parameters:
+        - name: org_tag
+          in: path
+          required: true
+          description: Organization slug.
+          schema:
+            type: string
+        - name: ix_tag
+          in: path
+          required: true
+          description: Internet Exchange slug.
+          schema:
+            type: string
+        - name: pretty
+          in: query
+          required: false
+          description: >-
+            If present (any value, including empty), the JSON is indented with
+            4 spaces. Presence-only flag.
+          schema:
+            type: string
+        - name: secret
+          in: query
+          required: false
+          description: >-
+            Required only when the IX export privacy is "private". Must equal the
+            IX urlkey; otherwise the endpoint responds 404.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Aggregated member list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberExport"
+        "404":
+          description: >-
+            IX not found, or export privacy is "private" and the supplied
+            `secret` did not match the IX urlkey.
+components:
+  schemas:
+    MemberExport:
+      type: object
+      required: [member_list, member_count]
+      properties:
+        member_list:
+          type: array
+          items:
+            $ref: "#/components/schemas/Member"
+        member_count:
+          type: integer
+          description: Number of entries in member_list (count of distinct ASNs).
+          example: 2
+    Member:
+      type: object
+      description: One aggregated network (keyed internally by ASN).
+      required:
+        - type
+        - url
+        - name
+        - numberofports
+        - joined
+        - logo
+        - asnum
+        - peeringpolicy
+        - rs
+        - ipv4
+        - ipv6
+        - ports
+        - reseller
+        - resold
+      properties:
+        type:
+          type: string
+          nullable: true
+          description: From member meta.custom.type.
+          example: peering
+        url:
+          type: string
+          nullable: true
+          description: Network web URL, from NetworkMeta.web_url.
+          example: https://as64500.example.net
+        name:
+          type: string
+          description: Member name (from the first member row for this ASN).
+          example: Example Networks
+        numberofports:
+          type: integer
+          description: Sum of port_quantity across all member rows for this ASN.
+          example: 2
+        joined:
+          type: string
+          nullable: true
+          description: From member meta.custom.joined (no fixed format enforced).
+          example: "2021-06-01"
+        logo:
+          type: string
+          format: uri
+          nullable: true
+          description: Network logo URL, from NetworkMeta.logo_url.
+          example: https://cdn.example.net/logo.png
+        asnum:
+          type: integer
+          description: Autonomous system number.
+          example: 64500
+        peeringpolicy:
+          type: string
+          nullable: true
+          description: From member meta.custom.peeringpolicy.
+          example: open
+        rs:
+          type: string
+          enum: ["Yes", "No"]
+          description: '"Yes" if any member row for this ASN is a route-server peer, else "No".'
+          example: "Yes"
+        ipv4:
+          type: string
+          description: >-
+            Space-separated list of IPv4 addresses across this ASN's member rows.
+            Empty string if none.
+          example: "206.51.0.1 206.51.0.2"
+        ipv6:
+          type: string
+          description: >-
+            Space-separated list of IPv6 addresses across this ASN's member rows.
+            Empty string if none.
+          example: "2001:db8::1"
+        ports:
+          type: string
+          description: >-
+            Space-separated list of port descriptors in Mbps, one per member row
+            that has both a port_quantity and a port_size; rows missing either are
+            omitted, so this list may contain fewer entries than numberofports.
+            A single port is "<speed_mb>"; a LAG is "<qty>*<speed_mb>".
+            Speeds are converted from Gb (DB) to Mb. Empty string if none.
+          example: "10000 2*10000"
+        reseller:
+          type: string
+          description: From member meta.custom.reseller (default "").
+          example: ""
+        resold:
+          type: string
+          description: From member meta.custom.resold (default "").
+          example: ""

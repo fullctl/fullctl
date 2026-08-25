@@ -71,18 +71,25 @@ def test_clean_old_timestamps(timestamps, window_seconds, current_time, expected
 
 
 @pytest.mark.parametrize(
-    "object_id,rate_limit_result,cache_result,expected",
+    "object_id,rate_limit_result,cache_offsets,expected",
     [
         # No rate limit applies
         ("no_match", None, None, False),
         # Rate limit applies, but not limited
-        ("v0.1/demo/bgp/stat/", (2, 60), [time.time() - 10], False),
+        ("v0.1/demo/bgp/stat/", (2, 60), [-10], False),
         # Rate limit applies and is limited
-        ("v0.1/demo/bgp/stat/", (2, 60), [time.time() - 10, time.time() - 5], True),
+        ("v0.1/demo/bgp/stat/", (2, 60), [-10, -5], True),
     ],
 )
-def test_is_limited(object_id, rate_limit_result, cache_result, expected):
+def test_is_limited(object_id, rate_limit_result, cache_offsets, expected):
     """Test checking if an object ID is rate-limited."""
+    # Compute timestamps at call time so the window check doesn't drift
+    # past expiry while pytest collection / earlier tests run.
+    cache_result = (
+        [time.time() + offset for offset in cache_offsets]
+        if cache_offsets is not None
+        else None
+    )
     with patch("django_auditctl.limit.get_rate_limit", return_value=rate_limit_result):
         with patch(
             "django_auditctl.limit.ratelimit_cache.get", return_value=cache_result

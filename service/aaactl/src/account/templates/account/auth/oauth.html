@@ -34,6 +34,14 @@
       src="{% static "account/oauth/peeringdb-dark.png" %}"
       class="img-dark img-fluid login-peeringdb"
     >
+    {% elif backend == "azuread-v2-tenant-oauth2" %}
+    {# Official Microsoft sign-in lockup — already includes the "Sign in with Microsoft" text. #}
+    <img
+      alt="{% trans "Sign in with Microsoft" %}"
+      title="{% trans "Sign in with Microsoft" %}"
+      src="{% static "account/oauth/ms-symbollockup_signin_dark.svg" %}"
+      class="img-fluid login-microsoft"
+    >
     {% elif backend == "fullctl" %}
     <img
     alt="{% trans "login with fullctl" %}"

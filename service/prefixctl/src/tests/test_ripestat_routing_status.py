@@ -30,9 +30,7 @@ def test_seen_in_routing_tables(db, account_objects):
             "prefix": prefix,
             "seen": False,
             "more_specific": False,
-            "last_seen": datetime.datetime(
-                2023, 12, 14, 16, 0, tzinfo=datetime.timezone.utc
-            ),
+            "last_seen": datetime.datetime(2023, 12, 14, 16, 0, tzinfo=datetime.UTC),
         },
         {
             "prefix": "216.176.40.0/24",

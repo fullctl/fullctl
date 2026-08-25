@@ -1,0 +1,21 @@
+{% extends "account/base.html" %}
+{% load i18n static %}
+
+{% block javascript %}
+  {{ block.super }}
+  {% block extra_media %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  {% block tf_layout %}
+    <div class="col-12 col-sm-6 col-md-4">
+      {% block oauth_section %}{% endblock %}
+    </div>
+    <div class="col-12 col-sm-6 col-md-4">
+      {% block wizard_content %}{% endblock %}
+    </div>
+    <div class="col-12 col-sm-12 col-md-4"></div>
+  {% endblock %}
+</div>
+{% endblock %}

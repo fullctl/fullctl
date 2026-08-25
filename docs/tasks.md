@@ -12,7 +12,7 @@ All task models should be proxy models of `fullctl.django.models.Task`
 
 ### Need to set HandleRef tag
 
-Task models use the handle ref tag to unqiuely identify their type / model
+Task models use the handle ref tag to uniquely identify their type / model
 when it comes to converting from Task to the proxy model.
 
 ### Config through TaskMeta
@@ -278,6 +278,94 @@ manage.py fullctl_poll_tasks -p 4 -t 100
 
 This will cause each worker process to automatically exit after processing 100 tasks, and a new worker process will be spawned to replace it. If not specified or set to 0, worker processes will continue running indefinitely.
 
+
+# Pruning old tasks
+
+The `fullctl_manage_tasks prune` command removes old tasks from the database. Nothing is deleted without `--commit` (dry-run by default).
+
+## Basic usage
+
+```bash
+# Dry-run: see how many tasks would be pruned
+python manage.py fullctl_manage_tasks prune --age 30
+
+# Actually delete completed/failed/cancelled tasks older than 30 days
+python manage.py fullctl_manage_tasks prune --age 30 --commit
+```
+
+## Filtering by limit_id
+
+Use `--include` or `--exclude` (mutually exclusive) to filter tasks by their `limit_id` using regex patterns.
+
+```bash
+# Prune only high-volume task types, keeping last 30 days
+python manage.py fullctl_manage_tasks prune --include ".*(traffic|config/liveness|bgp/stats).*" --age 30 --commit
+
+# Prune everything except liveness tasks
+python manage.py fullctl_manage_tasks prune --exclude ".*/config/liveness/.*" --age 30 --commit
+```
+
+Patterns are full regex, with a glob-style shorthand layered on top: `**` is
+always expanded to `.*`, and a single `*` is expanded to `.*` only where a
+regex quantifier cannot appear — at the start of the pattern, or directly
+after `(`, `|` or `/`. Everywhere else `*` keeps its regex meaning, so
+`\d*`, `[a-z]*` and `(foo)*` match what they say.
+
+## Cascade behavior
+
+Tasks can have child tasks (`Task.parent`), and the FK cascades. Pruning a
+task therefore also deletes its descendant tasks — including descendants that
+do not match `--age`, `--status` or the pattern filters — along with their
+heartbeat and claim rows. Dry-run counts cover only the directly matched
+tasks, so the committed run can delete more rows than the dry run reported.
+
+## Pruning specific statuses
+
+By default only `completed`, `failed`, and `cancelled` tasks are pruned. Use `--status` to override.
+
+```bash
+# Prune all statuses including pending and running
+python manage.py fullctl_manage_tasks prune --status pending running completed failed cancelled --age 30 --commit
+```
+
+## Settings
+
+| Setting | Description | Default |
+|---|---|---|
+| `TASK_DEFAULT_PRUNE_AGE` | Default max age in days | 30 |
+| `TASK_DEFAULT_PRUNE_STATUS` | Default statuses to prune | `completed`, `failed`, `cancelled` |
+| `TASK_DEFAULT_PRUNE_EXCLUDE` | List of `limit_id` patterns always excluded from pruning, even when `--include` is used | `[]` |
+| `TASK_PRUNE_BATCH_SIZE` | Rows deleted per batch | 10000 |
+
+!!! warning "Upgrading to 1.16"
+
+    `--exclude` now takes a single `limit_id` regex; it previously took a list
+    of task op names (`--exclude op_a op_b`), which will now fail argparse.
+    `TASK_DEFAULT_PRUNE_EXCLUDE` changed the same way — a value carried over
+    from an earlier release is read as `limit_id` patterns and will silently
+    stop protecting the ops it names. Rewrite the setting and any prune cron
+    invocations before upgrading.
+
+## All options
+
+| Option | Description |
+|---|---|
+| `--age` | Maximum age in days for tasks to retain (default: `TASK_DEFAULT_PRUNE_AGE`) |
+| `--status` | List of task statuses to prune (default: `TASK_DEFAULT_PRUNE_STATUS`) |
+| `--include` | Only prune tasks whose `limit_id` matches this regex |
+| `--exclude` | Only prune tasks whose `limit_id` does NOT match this regex |
+| `--commit` | Actually delete (omit for dry-run) |
+
+## Combined pruning with auditctl
+
+In auditctl, the `auditctl_prune` command can prune both events and tasks in one shot using `--tasks`:
+
+```bash
+# Prune events AND tasks for high-volume patterns, keeping last 30 days
+python manage.py auditctl_prune --include ".*(traffic|config/liveness|bgp/stats).*" --tasks --max-age 30 --commit
+```
+
+See the [auditctl pruning docs](../service/auditctl/docs/pruning.md) for full details.
 
 # Task tracking
 

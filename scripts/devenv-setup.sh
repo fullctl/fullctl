@@ -28,21 +28,21 @@ done
 cd fullctl
 
 echo "Building and starting database container"
-poetry run Ctl/dev/compose.sh up -d postgres
+uv run Ctl/dev/compose.sh up -d postgres
 
 echo "Building containers"
-poetry run Ctl/dev/compose.sh build
+uv run Ctl/dev/compose.sh build
 
 for name in $SERVICES
 do
-  poetry run Ctl/dev/run.sh $name migrate
-  poetry run Ctl/dev/run.sh $name createcachetable
+  uv run Ctl/dev/run.sh $name migrate
+  uv run Ctl/dev/run.sh $name createcachetable
   if [ $name = "aaactl_web" ]; then
-    poetry run Ctl/dev/run.sh $name loaddata fixtures/fixture.full-perms.json
+    uv run Ctl/dev/run.sh $name loaddata fixtures/fixture.full-perms.json
     echo "Creating django admin account (ctrl+c if already exists)"
-    poetry run Ctl/dev/run.sh $name createsuperuser
+    uv run Ctl/dev/run.sh $name createsuperuser
   fi
   if [ $name = "pdbctl_web" ]; then
-    poetry run Ctl/dev/run.sh $name fullctl_peeringdb_sync
+    uv run Ctl/dev/run.sh $name fullctl_peeringdb_sync
   fi
 done

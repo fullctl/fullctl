@@ -1,0 +1,166 @@
+# Dockerfile.service -- single parameterized multi-stage build for all
+# monorepo services (replaces the per-service Dockerfiles).
+#
+# Built from the monorepo root context and driven by `scripts/build.py
+# service <name>`, which derives the --build-arg values below from the
+# service's Ctl/docker.yaml manifest (see docs/build.md).
+#
+# Runtime base image: oraclelinux:9-slim-fips (override via base_repo/base_tag).
+
+# service to build, relative to the repo root (service/<name> or private/<name>)
+ARG service_dir
+
+# extra dnf repositories to enable, from the manifest's repos, pre-rendered by
+# scripts/build.py as microdnf --enablerepo= flags. These name repositories the
+# OL9 base image already defines but ships disabled (e.g. ol9_codeready_builder,
+# which carries the -devel subpackages). A repository the base image does not
+# define at all -- EPEL -- cannot be reached this way; it needs its release
+# package installed first, which the per-service Dockerfile.tasks files do.
+ARG repos=""
+
+# extra builder-stage packages (microdnf), from the manifest's build_deps
+ARG build_deps=""
+
+# runtime packages (microdnf), from the manifest's run_deps
+ARG run_deps="libgcc libpq"
+
+# default container command, from the manifest's cmd
+ARG cmd=runserver
+
+# builder image produced by `scripts/build.py builder` (repository fullctl/fullctl)
+ARG builder_repo=fullctl/fullctl
+ARG builder_tag=latest
+
+# directory (relative to the build context) holding plugin sdists to install
+ARG extra_pip_install_dir=""
+
+# runtime base image
+ARG base_repo=oraclelinux
+ARG base_tag=9-slim-fips
+
+ARG uid=6300
+ARG user=fullctl
+
+ARG python_ver=3.11
+ARG install_to=/srv/service
+ARG virtual_env=/venv
+ARG run_dirs="locale media static"
+
+
+#### shared runtime base
+
+FROM ${base_repo}:${base_tag} AS base
+
+ARG install_to
+ARG virtual_env
+
+ENV PYTHONUNBUFFERED=1
+ENV SERVICE_HOME=$install_to
+ENV VIRTUAL_ENV=$virtual_env
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+
+#### build container
+
+FROM ${builder_repo}:${builder_tag} AS builder
+
+ARG service_dir
+ARG build_deps
+ARG repos
+ARG extra_pip_install_dir
+ARG virtual_env
+
+# uv installs into the venv that is copied to the runtime image; never use a
+# uv-managed interpreter (it would not exist in the runtime image)
+ENV UV_PROJECT_ENVIRONMENT=$virtual_env
+ENV VIRTUAL_ENV=$virtual_env
+ENV UV_PYTHON_DOWNLOADS=never
+
+# extra build packages from the service manifest, with any manifest repositories
+# enabled for this install only (e.g. ol9_codeready_builder for rrdtool-devel)
+RUN test -z "$build_deps" || (microdnf install -y $repos $build_deps && microdnf clean all)
+
+WORKDIR /build
+
+# root workspace files -- the single root uv.lock covers all public workspace
+# members, and src/ satisfies the fullctl path/workspace dependency
+COPY pyproject.toml uv.lock README.md ./
+COPY src/ src/
+
+# service files; private services carry their own uv.lock generated in the
+# assembled tree (the uv.lock* glob matches nothing for public members, which
+# resolve against the root lock)
+WORKDIR /build/${service_dir}
+COPY ${service_dir}/pyproject.toml ${service_dir}/uv.lock* ./
+
+# install the service's locked dependency set into /venv; the service itself
+# is not installed (its code is COPY'd to main/ in the runtime image) and the
+# tasks dependency group is not installed here (see Ctl/docker/Dockerfile.tasks)
+RUN uv sync --frozen --no-install-project --no-editable
+
+# gitignore is just a placeholder for if extra is empty
+COPY ${service_dir}/.gitignore $extra_pip_install_dir ./plugins/
+RUN test -z "$extra_pip_install_dir" || uv pip install ./plugins/*.tar.gz
+
+
+#### service file layout
+#
+# stages the runtime files under /layout so optional per-service files
+# (docs/, fixtures/, django-uwsgi.ini, manage.sh) need no COPY variance
+
+FROM base AS servicefiles
+
+ARG service_dir
+ARG install_to
+
+COPY ${service_dir}/ /svc/
+
+RUN mkdir -p "/layout${install_to}/etc" /layout/usr/bin \
+    && cp -R /svc/src "/layout${install_to}/main" \
+    && cp /svc/Ctl/VERSION "/layout${install_to}/etc/VERSION" \
+    && install -m 0755 /svc/Ctl/docker/entrypoint.sh "/layout${install_to}/entrypoint.sh" \
+    && if [ -d /svc/docs ]; then cp -R /svc/docs "/layout${install_to}/docs"; fi \
+    && if [ -d /svc/fixtures ]; then cp -R /svc/fixtures "/layout${install_to}/fixtures"; fi \
+    && if [ -f /svc/Ctl/docker/django-uwsgi.ini ]; then cp /svc/Ctl/docker/django-uwsgi.ini "/layout${install_to}/etc/"; fi \
+    && if [ -f /svc/Ctl/docker/manage.sh ]; then install -m 0755 /svc/Ctl/docker/manage.sh /layout/usr/bin/manage; fi
+
+
+#### final image
+
+FROM base AS final
+
+ARG run_deps
+ARG repos
+ARG run_dirs
+ARG python_ver
+ARG uid
+ARG user
+ARG cmd
+
+# python + runtime dependencies from the service manifest, with any manifest
+# repositories enabled for this install only
+RUN microdnf install -y $repos python${python_ver} shadow-utils $run_deps \
+    && microdnf clean all
+
+RUN useradd -l -u $uid $user
+
+WORKDIR $SERVICE_HOME
+
+COPY --from=builder $VIRTUAL_ENV $VIRTUAL_ENV
+COPY --from=servicefiles /layout/ /
+
+# /entrypoint applies the manifest default command when the container is
+# started without arguments (exec-form CMD cannot expand build args, so the
+# default is carried in SERVICE_CMD instead)
+RUN mkdir -p etc $run_dirs \
+    && chown -R $uid:$uid $run_dirs \
+    && ln -s "$VIRTUAL_ENV" "$SERVICE_HOME/venv" \
+    && printf '#!/bin/sh\n[ $# -eq 0 ] && set -- ${SERVICE_CMD:-runserver}\nexec %s/entrypoint.sh "$@"\n' "$SERVICE_HOME" > /entrypoint \
+    && chmod 0755 /entrypoint
+
+ENV SERVICE_CMD=$cmd
+
+USER $uid
+
+ENTRYPOINT ["/entrypoint"]
+CMD []

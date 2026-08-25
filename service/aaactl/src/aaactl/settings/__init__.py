@@ -1,5 +1,6 @@
 import os
 import sys  # noqa
+from urllib.parse import urlparse
 
 from django.utils.translation import gettext_lazy as _  # noqa
 
@@ -50,9 +51,35 @@ settings_manager.set_from_env("STRIPE_SECRET_KEY")
 
 settings_manager.set_from_env("REDIRECT_TO_SERVICE", "")
 
-# TODO - normalize to either use the host or not (preferably not)
-LOGIN_URL = "/account/auth/login/"
+# Login is handled by the django-two-factor-auth wizard (subclassed in
+# account.views.auth.LoginView). The legacy "/account/auth/login/" URL still
+# resolves to the same view (see account/urls.py) for back-compat.
+LOGIN_URL = "two_factor:login"
 LOGIN_REDIRECT_URL = "/account"
+
+# django-two-factor-auth knobs
+# We have our own admin login flow; do not let two-factor patch it.
+settings_manager.set_option("TWO_FACTOR_PATCH_ADMIN", False)
+settings_manager.set_option("TWO_FACTOR_REMEMBER_COOKIE_AGE", 30 * 24 * 3600)
+
+# Organization policy flags (Organization.org_flags bitmask).
+# Require passkey authentication; block password-only logins
+settings_manager.set_option("ORG_FLAGS_PASSKEY_DISABLE_PASSWORD_AUTH", 0x1)
+# Disable TOTP / backup-code as a login method for org members
+settings_manager.set_option("ORG_FLAGS_DISABLE_TOTP", 0x2)
+# Require MFA even when the user authenticates with a passkey
+settings_manager.set_option("ORG_FLAGS_PASSKEY_REQUIRE_MFA", 0x4)
+
+# Backup-tokens reauthentication gate (account.views.auth.BackupTokensView).
+# Session key holding the timestamp of the user's last successful reauth on
+# /account/two_factor/backup/tokens/confirm/.
+settings_manager.set_option(
+    "BACKUP_TOKENS_REAUTH_SESSION_KEY", "backup_tokens_reauth_at"
+)
+# Window in seconds after which the reauth must be redone. Long enough to
+# save / regenerate fresh codes without re-challenging; short enough that a
+# session hijacked hours after legit use no longer inherits an open gate.
+settings_manager.set_option("BACKUP_TOKENS_REAUTH_TTL", 10 * 60)
 
 # hard overwrite MIDDLEWARE, since ordering here is important
 MIDDLEWARE = [
@@ -64,6 +91,13 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # django-otp must run after AuthenticationMiddleware so request.user
+    # is populated before we evaluate device state.
+    "django_otp.middleware.OTPMiddleware",
+    # MFA enforcement: post-passkey lock-in + always-on require_passkey_mfa.
+    # Must run before RequestAugmentation so a redirect short-circuits the
+    # rest of the chain before per-org context is built.
+    "account.middleware.EnforceMFA",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "fullctl.django.middleware.CurrentRequestContext",
@@ -95,6 +129,15 @@ INSTALLED_APPS += (
     "billing",
     "applications",
     "fullctl.django.apps.DjangoFullctlConfig",
+    # MFA: django-otp + django-two-factor-auth + django-security-keys (WebAuthn).
+    # django_otp must come before two_factor.
+    "django_otp",
+    "django_otp.plugins.otp_static",
+    "django_otp.plugins.otp_totp",
+    "django_otp.plugins.otp_email",
+    "two_factor",
+    "two_factor.plugins.email",
+    "django_security_keys",
 )
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -132,6 +175,9 @@ AUTHENTICATION_BACKENDS = [
     # add to support unix crypt
     # "django_aaactl.backends.UnixCryptBackend",
     "account.backends.EmailOrUsernameModelBackend",
+    # Resolves authenticate(request, u2f_credential=...) calls from the
+    # passkey login flow. Without this, passkey logins silently return None.
+    "django_security_keys.backends.PasskeyAuthenticationBackend",
     "django_grainy.backends.GrainyBackend",
 ]
 VALIDATE_PASSWORD_LENGTH = 8
@@ -171,6 +217,10 @@ settings_manager.set_option(
 
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 
+# DB-backed strategy: SOCIAL_AUTH_{SERVICE}_* settings are first looked up
+# in the OAuthConfig table, then fall back to Django settings.
+SOCIAL_AUTH_STRATEGY = "account.social_strategy.DBStrategy"
+
 # Supported backends
 
 settings_manager.set_option("SOCIAL_AUTH_GOOGLE_OAUTH2_ENABLED", True)
@@ -178,6 +228,11 @@ settings_manager.set_option("SOCIAL_AUTH_PEERINGDB_ENABLED", True)
 settings_manager.set_option("SOCIAL_AUTH_OKTA_OPENIDCONNECT_ENABLED", True)
 settings_manager.set_option("SOCIAL_AUTH_FULLCTL_ENABLED", True)
 settings_manager.set_option("SOCIAL_AUTH_FULLCTL_HIDDEN_FROM_LOGIN", True)
+settings_manager.set_option("SOCIAL_AUTH_AZUREAD_V2_TENANT_OAUTH2_ENABLED", False)
+# TENANT_ID can be set here (env) or in the OAuthConfig DB row — DBStrategy
+# overlays the DB value on top of this default when an OAuthConfig row with
+# matching service_id exists.
+settings_manager.set_option("SOCIAL_AUTH_AZUREAD_V2_TENANT_OAUTH2_TENANT_ID", "")
 
 if SOCIAL_AUTH_PEERINGDB_ENABLED:
     AUTHENTICATION_BACKENDS.insert(
@@ -194,6 +249,11 @@ if SOCIAL_AUTH_GOOGLE_OAUTH2_ENABLED:
 
 if SOCIAL_AUTH_FULLCTL_ENABLED:
     AUTHENTICATION_BACKENDS.insert(0, "fullctl.social.backends.FullCtlOAuth2")
+
+if SOCIAL_AUTH_AZUREAD_V2_TENANT_OAUTH2_ENABLED:
+    AUTHENTICATION_BACKENDS.insert(
+        0, "social_core.backends.azuread_tenant.AzureADV2TenantOAuth2"
+    )
 
 SOCIAL_AUTH_PIPELINE = (
     "social_core.pipeline.social_auth.social_details",
@@ -279,6 +339,12 @@ if "AAACTL_URL" not in globals():
     raise ValueError(
         "AAACTL_URL needs to specified in .env as it is used to construct urls used for email confirmations and invites"
     )
+
+# WebAuthn relying-party config (django-security-keys).
+# Defaults derived from AAACTL_URL; env vars override per-deployment.
+settings_manager.set_option("WEBAUTHN_RP_ID", urlparse(AAACTL_URL).hostname or "")
+settings_manager.set_option("WEBAUTHN_RP_NAME", "FullCtl Account Services")
+settings_manager.set_option("WEBAUTHN_ORIGIN", AAACTL_URL.rstrip("/"))
 
 # misc aaactl settings
 # email to notify new sign-ups to

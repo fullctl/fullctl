@@ -6,6 +6,7 @@ import structlog
 from django.db.models import Prefetch
 from django.utils.translation import gettext_lazy as _
 from flatten_json import flatten
+from netfields.rest_framework import InetAddressField as InetAddressSerializerField
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -810,8 +811,12 @@ class Vlan(ModelSerializer):
     facility_name = serializers.SerializerMethodField()
     facility_slug = serializers.SerializerMethodField()
 
-    v4_secondaries = serializers.ListField(child=serializers.IPAddressField())
-    v6_secondaries = serializers.ListField(child=serializers.IPAddressField())
+    v4_secondaries = serializers.ListField(
+        child=InetAddressSerializerField(), required=False
+    )
+    v6_secondaries = serializers.ListField(
+        child=InetAddressSerializerField(), required=False
+    )
 
     class Meta:
         model = models.Vlan

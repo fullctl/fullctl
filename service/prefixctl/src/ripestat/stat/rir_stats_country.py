@@ -30,7 +30,7 @@ class RIRStatsCountry:
         self,
         RIPEstat,
         resource,
-        query_time: Optional[datetime] = None,
+        query_time: datetime | None = None,
     ):
         """
         Initialize and request the RIR Stats Country.

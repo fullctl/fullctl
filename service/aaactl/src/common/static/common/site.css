@@ -647,6 +647,19 @@ table.table-sm {
 .available-apps + a .btn {
   border-radius: 0.375rem;
 }
+.btn-outline-primary {
+  color: var(--primary-btn-bg);
+  border-color: var(--primary-btn-bg);
+  --bs-btn-hover-color: var(--primary-btn-clr);
+  --bs-btn-hover-bg: var(--primary-btn-bg);
+  --bs-btn-hover-border-color: var(--primary-btn-bg);
+  --bs-btn-active-color: var(--primary-btn-clr);
+  --bs-btn-active-bg: var(--primary-btn-bg);
+  --bs-btn-active-border-color: var(--primary-btn-bg);
+  text-transform: uppercase;
+  font-size: var(--fs-300);
+  font-weight: var(--fw-semi-bold);
+}
 
 .btn.cancel-collapse,
 .user-info button.submit {
