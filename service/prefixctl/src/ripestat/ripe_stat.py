@@ -34,7 +34,7 @@ class RIPEstat:
     """
 
     def __init__(
-        self, data_overload_limit: Optional[str] = "", sourceapp: Optional[str] = ""
+        self, data_overload_limit: str | None = "", sourceapp: str | None = ""
     ) -> None:
         """
         Initialize a RIPEstat instance.

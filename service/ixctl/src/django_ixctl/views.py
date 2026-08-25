@@ -114,12 +114,11 @@ def export_ixf(request, instance, ix_tag, **kwargs):
 
 @load_instance(public=True)
 def export_ixp_manager(request, instance, ix_tag, **kwargs):
-    """Return an aggregated member list in IXP-Manager JSON format.
+    """Return an aggregated member list as JSON, one entry per network.
 
-    IXP-Manager outputs *one* entry per autonomous system (network).
-    ixctl, however, stores one *member* record per logical port/IP-pair.  A
-    single network that has multiple interfaces (dual-stack addresses or
-    multiple physical connections/LAG members) will therefore have several
+    ixctl stores one *member* record per logical port/IP-pair.  A single
+    network that has multiple interfaces (dual-stack addresses or multiple
+    physical connections/LAG members) will therefore have several
     `InternetExchangeMember` rows.
 
     The logic below iterates over **all** members of the IX, groups them
@@ -131,7 +130,7 @@ def export_ixp_manager(request, instance, ix_tag, **kwargs):
       ASN (order preserved by queryset ordering).
     • ports - space separated list where each element is either
       "<speed>" (single port) or "<qty>*<speed>" (LAG).  Speeds are converted
-      from Gb stored in the DB to Mb as required by IXP-Manager.
+      from Gb stored in the DB to Mb.
 
     Meta-data (URL, logo, policies, etc.) is taken from the first member row
     - because these attributes are per-network in practice.

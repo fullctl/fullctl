@@ -101,6 +101,13 @@ settings_manager.set_option(
     "SERVICE_BRIDGE_REF_EVENT", "fullctl.service_bridge.auditctl.Event"
 )
 
+# Whitelist of settings the SPA is allowed to read via GET /api/env/{org}/.
+# Keys are dotted output paths in the response; values are Django settings
+# names. See fullctl.django.rest.views.env for the serialization rules.
+API_ENV_WHITELIST = {
+    "sot.device": "SERVICE_BRIDGE_REF_DEVICE",
+}
+
 # OUTSIDE SERVICES
 
 settings_manager.set_option("GOOGLE_ANALYTICS_ID", "")

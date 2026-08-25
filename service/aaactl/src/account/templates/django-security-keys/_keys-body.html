@@ -1,0 +1,104 @@
+{% load i18n static %}
+
+<div class="alert alert-info mt-3">
+  <p>{% blocktrans trimmed %}
+    You can register a U2F hardware security key or a Passkey. Each key
+    can be configured in one of two modes:
+  {% endblocktrans %}</p>
+  <ul class="mb-2">
+    <li>{% blocktrans trimmed %}
+      <strong>Allow login</strong> — the key can be used as a passwordless login (passkey).
+    {% endblocktrans %}</li>
+    <li>{% blocktrans trimmed %}
+      <strong>Disallow login</strong> — the key is only used as a 2nd factor after username + password.
+    {% endblocktrans %}</li>
+  </ul>
+  <p class="mb-0">{% blocktrans trimmed %}
+    If your hardware key is plugged in but doesn't appear in the browser
+    prompt, cancel and retry - the prompt order can vary by platform.
+  {% endblocktrans %}</p>
+</div>
+
+<div id="errors-alert"></div>
+
+<table class="table align-middle">
+  <thead>
+    <tr>
+      <th>{% trans "Name" %}</th>
+      <th>{% trans "Status" %}</th>
+      <th class="text-end"></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for key in request.user.webauthn_security_keys.all %}
+      <tr>
+        <td>{{ key.name|default:"&mdash;" }}</td>
+        <td>
+          {% if key.passkey_login %}
+            <span class="badge bg-success">{% trans "Allow login" %}</span>
+          {% else %}
+            <span class="badge bg-secondary">{% trans "Disallow login" %}</span>
+          {% endif %}
+        </td>
+        <td class="text-end">
+          <button type="button"
+                  class="btn btn-sm btn-outline-secondary js-securitykey-toggle"
+                  data-key-id="{{ key.id }}"
+                  data-target-mode="{% if key.passkey_login %}false{% else %}true{% endif %}">
+            {% if key.passkey_login %}{% trans "Disallow login" %}{% else %}{% trans "Allow login" %}{% endif %}
+          </button>
+          <button type="button"
+                  class="btn btn-sm btn-outline-danger js-securitykey-remove"
+                  data-key-id="{{ key.id }}"
+                  data-key-name="{{ key.name|default:'this key' }}">
+            {% trans "Remove" %}
+          </button>
+        </td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="3" class="text-muted">
+          {% trans "You have no security keys registered." %}
+        </td>
+      </tr>
+    {% endfor %}
+
+    <tr id="register-key-row">
+      <td>
+        <input type="text" class="form-control form-control-sm"
+               name="name" placeholder="{% trans 'Name' %}">
+      </td>
+      <td>
+        <div class="form-check">
+          <input type="checkbox" class="form-check-input"
+                 id="register-key-passkey-login" name="passkey_login">
+          <label class="form-check-label" for="register-key-passkey-login">
+            {% trans "Allow login" %}
+          </label>
+        </div>
+      </td>
+      <td class="text-end">
+        <div class="d-flex gap-2 justify-content-end">
+          <input type="password" class="form-control form-control-sm"
+                 name="password"
+                 placeholder="{% trans 'Current password' %}"
+                 autocomplete="current-password">
+          <button type="button" id="register-key-button" class="btn btn-sm btn-primary text-nowrap">
+            {% trans "Register" %}
+          </button>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+{% include "django-security-keys/static-includes.html" %}
+<div id="securitykeys-config"
+     data-url-request-registration="{% url 'security-keys:request-registration' %}"
+     data-url-request-authentication="{% url 'security-keys:request-authentication' %}"
+     data-url-register="{% url 'security-keys:register' %}"
+     data-url-decommission="{% url 'security-keys:decommission' %}"
+     data-url-update="{% url 'security-keys:update-security-key' %}"
+     data-csrf-token="{{ csrf_token }}"
+     hidden></div>
+<script src="{% static 'account/security-keys.js' %}"></script>

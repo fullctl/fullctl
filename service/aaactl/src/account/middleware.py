@@ -1,7 +1,14 @@
 from account.impersonate import is_impersonating
-from account.models import Organization
+from account.models import (
+    Organization,
+    effective_mfa_policy,
+    user_has_satisfying_2fa,
+)
 from account.session import set_selected_org
+from django.conf import settings
 from django.contrib import messages
+from django.shortcuts import redirect
+from django.urls import reverse
 from django.utils.translation import gettext as _
 from django_grainy.util import Permissions
 from social_core.exceptions import AuthFailed
@@ -115,3 +122,87 @@ class OAuthLoginError(SocialAuthExceptionMiddleware):
             if "PeeringDB user is not verified" in str(exception):
                 return request.build_absolute_uri("/")
         return super().get_redirect_uri(request, exception)
+
+
+class EnforceMFA:
+    """
+    Enforce per-org MFA policy after authentication by pinning users to
+    /two_factor/profile/ until they enroll a device satisfying the policy.
+
+    1. Post-passkey lock-in: honours the "mfa_setup_required" session marker
+       set by LoginView when a passkey login can't satisfy require_passkey_mfa.
+    2. Always-on: also redirects any logged-in user whose policy demands MFA
+       but has no satisfying device, catching flags flipped mid-session.
+    """
+
+    # URL names whose paths must be excluded from the redirect-loop. Resolved
+    # via reverse() on first use so urls.py stays the single source of truth —
+    # rename or remount a route and this list follows automatically. The bare
+    # "/security-keys/" prefix is hardcoded because it's a third-party mount.
+    _EXCLUDED_URL_NAMES = (
+        "two_factor:login",
+        "two_factor:profile",
+        "account:auth-login",
+        "account:auth-logout",
+        "account:auth-register",
+        "account:auth-reset-password-start",
+    )
+    _EXTRA_PREFIXES = ("/security-keys/", "/jsi18n/")
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.process_request(request)
+        if response is not None:
+            return response
+        return self.get_response(request)
+
+    @classmethod
+    def _excluded_prefixes(cls) -> tuple[str, ...]:
+        # Lazy because reverse() needs the URL conf loaded — eager evaluation
+        # at module import would risk an import cycle.
+        if not hasattr(cls, "_prefix_cache"):
+            cls._prefix_cache = (
+                tuple(reverse(n) for n in cls._EXCLUDED_URL_NAMES) + cls._EXTRA_PREFIXES
+            )
+        return cls._prefix_cache
+
+    @classmethod
+    def is_path_excluded(cls, path: str) -> bool:
+        if settings.STATIC_URL and path.startswith(settings.STATIC_URL):
+            return True
+        if settings.MEDIA_URL and path.startswith(settings.MEDIA_URL):
+            return True
+        return any(path.startswith(p) for p in cls._excluded_prefixes())
+
+    def process_request(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return None
+
+        email_confirmed = getattr(
+            getattr(user, "user_settings", None),
+            "email_confirmed",
+            False,
+        )
+        if not email_confirmed:
+            return None
+
+        policy = effective_mfa_policy(user)
+
+        # 1) post-passkey lock-in
+        if request.session.get("mfa_setup_required"):
+            if user_has_satisfying_2fa(user, policy):
+                request.session.pop("mfa_setup_required", None)
+            elif not self.is_path_excluded(request.path):
+                return redirect(reverse("two_factor:profile"))
+            else:
+                return None
+
+        # 2) always-on require_passkey_mfa enforcement
+        if policy["require_passkey_mfa"] and not user_has_satisfying_2fa(user, policy):
+            if not self.is_path_excluded(request.path):
+                return redirect(reverse("two_factor:profile"))
+
+        return None

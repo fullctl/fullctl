@@ -188,3 +188,7 @@ TASK_DEFAULT_PRUNE_EXCLUDE = []
 TASK_DEFAULT_PRUNE_STATUS = ["completed", "failed", "cancelled"]
 BRIDGE_OBJECTS_CHUNK_SIZE = 50
 FEATURE_REQUEST_FORM_CLICKUP_LINK = "test://clickup"
+
+# Declared (empty) so fullctl.django.urls registers the env endpoint at
+# import time; individual tests populate it via @override_settings.
+API_ENV_WHITELIST = {}

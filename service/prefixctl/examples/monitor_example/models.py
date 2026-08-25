@@ -155,7 +155,7 @@ class ExampleMonitorTask(Task):
         return PrefixSet.objects.get(id=self.prefix_set_id)
 
     @property
-    def generate_limit_id(self) -> Union[str, int]:
+    def generate_limit_id(self) -> str | int:
         """
         Helper function to generate the limit id for the task worker.
 

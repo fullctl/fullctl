@@ -30,6 +30,71 @@ from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView
 from django_grainy.remote import ProvideGet, ProvideLoad
+from two_factor.urls import urlpatterns as _upstream_tf_urls
+
+# Shallow-copy the upstream (list, namespace) tuple and inner pattern list so
+# our substitutions don't mutate two_factor.urls.urlpatterns globally — that
+# would surprise tests or future apps that import the upstream module.
+tf_urls = (list(_upstream_tf_urls[0]), _upstream_tf_urls[1])
+
+
+# Swap upstream two_factor wizard views for our aaactl subclasses. We look up
+# patterns by name rather than by index because two_factor.plugins.* apps
+# append URLs to the list, so positional indexes drift with INSTALLED_APPS.
+def _replace_tf_url(name, pattern):
+    for i, p in enumerate(tf_urls[0]):
+        if getattr(p, "name", None) == name:
+            tf_urls[0][i] = pattern
+            return
+    raise RuntimeError(f"two_factor URL {name!r} not found")
+
+
+_replace_tf_url(
+    "login",
+    path("account/login/", account.views.auth.LoginView.as_view(), name="login"),
+)
+_replace_tf_url(
+    "setup",
+    path(
+        "account/two_factor/setup/",
+        account.views.auth.SetupView.as_view(),
+        name="setup",
+    ),
+)
+_replace_tf_url(
+    "backup_tokens",
+    path(
+        "account/two_factor/backup/tokens/",
+        account.views.auth.BackupTokensView.as_view(),
+        name="backup_tokens",
+    ),
+)
+# Reauth gate that BackupTokensView redirects to when the session has no
+# fresh marker. Appended to the two_factor pattern list so it lives under
+# the same namespace, reverse() as two_factor:backup_tokens_confirm.
+tf_urls[0].append(
+    path(
+        "account/two_factor/backup/tokens/confirm/",
+        account.views.auth.BackupTokensConfirmView.as_view(),
+        name="backup_tokens_confirm",
+    )
+)
+_replace_tf_url(
+    "profile",
+    path(
+        "account/two_factor/",
+        account.views.auth.ProfileView.as_view(),
+        name="profile",
+    ),
+)
+_replace_tf_url(
+    "disable",
+    path(
+        "account/two_factor/disable/",
+        account.views.auth.DisableView.as_view(),
+        name="disable",
+    ),
+)
 
 # OAuth2 provider endpoints
 oauth2_endpoint_views = [
@@ -90,6 +155,19 @@ if settings.EXPOSE_ADMIN:
     ]
 
 urlpatterns += [
+    # MFA wizard (django-two-factor-auth). The library bakes "account/" into
+    # its URL patterns, so mounting at root yields /account/login/,
+    # /account/two_factor/setup/, /account/two_factor/profile/, etc.
+    # Must come BEFORE the account.urls include so /account/login/ resolves
+    # to two_factor:login rather than falling through.
+    # tf_urls is a (list, "two_factor") 2-tuple — pass it as a value to
+    # include() so the namespace is preserved.
+    path("", include(tf_urls)),
+    # WebAuthn / passkey enrollment + assertion endpoints.
+    path(
+        "security-keys/",
+        include(("django_security_keys.urls", "security-keys")),
+    ),
     # account
     path(
         "account/auth/o/",

@@ -1,0 +1,44 @@
+{% extends "two_factor/_base.html" %}
+{% load i18n %}
+
+{% block wizard_content %}
+  <h1>{% block title %}{% trans "Enable TOTP Authentication" %}{% endblock %}</h1>
+
+  {% if not request.user.user_settings.email_confirmed %}
+    <div class="alert alert-warning">
+      <p>{% trans "Your email must be confirmed before enabling MFA." %}</p>
+    </div>
+  {% else %}
+    {% if wizard.steps.current == 'password' %}
+      <p>{% blocktrans trimmed %}For your security, please confirm your password
+        before enabling two-factor authentication.{% endblocktrans %}</p>
+    {% elif wizard.steps.current == 'welcome' %}
+      <p>{% blocktrans trimmed %}You are about to take your account security to
+        the next level. Follow the steps in this wizard to enable
+        two-factor authentication.{% endblocktrans %}</p>
+    {% elif wizard.steps.current == 'method' %}
+      <p>{% blocktrans trimmed %}Please select which authentication method you
+        would like to use.{% endblocktrans %}</p>
+    {% elif wizard.steps.current == 'generator' %}
+      <p>{% blocktrans trimmed %}Either scan the QR code below with your
+        authenticator app or enter the text key. Confirm your app is properly
+        configured by entering the token generated in the box at the bottom.
+      {% endblocktrans %}</p>
+      <p><b class="2f-secret-key">{{ secret_key }}</b></p>
+      <p><img src="{{ QR_URL }}" alt="QR Code" class="bg-white"></p>
+    {% elif wizard.steps.current == 'validation' %}
+      {% if not challenge_succeeded %}
+        <p class="alert alert-warning">{% blocktrans trimmed %}We could not
+          validate the selected method. Please go back and try again or pick
+          a different method.{% endblocktrans %}</p>
+      {% endif %}
+    {% endif %}
+
+    <form action="" method="post" style="margin-top: 10px;">
+      {% csrf_token %}
+      {% include "two_factor/_wizard_forms.html" %}
+      <input type="submit" value="" class="d-none">
+      {% include "two_factor/_wizard_actions.html" %}
+    </form>
+  {% endif %}
+{% endblock %}

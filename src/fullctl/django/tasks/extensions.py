@@ -6,7 +6,7 @@ plugins to augment existing Task Operations with custom functionality.
 """
 
 import functools
-from typing import Callable
+from collections.abc import Callable
 
 from django.conf import settings
 

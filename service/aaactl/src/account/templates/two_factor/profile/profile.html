@@ -1,0 +1,71 @@
+{% extends "account/base.html" %}
+{% load i18n two_factor_tags %}
+
+{% block content %}
+<div class="container">
+
+  <h2 class="text-center py-4">{% block title %}{% trans "Multi-Factor Authentication" %}{% endblock %}</h2>
+
+  {% if passkey_mfa_error %}
+    <div class="alert alert-warning mt-3">{{ passkey_mfa_error }}</div>
+  {% endif %}
+
+  <div class="row mt-3">
+    <div class="col-12 col-lg-6">
+
+      <h3>{% trans "Time-based One Time Passwords (TOTP)" %}</h3>
+
+      {% if default_device %}
+        <p>{% blocktrans with primary=default_device|as_action %}Primary method: {{ primary }}{% endblocktrans %}</p>
+
+        <h5 class="mt-4">{% trans "Backup Tokens" %}</h5>
+        <p>
+          {% blocktrans trimmed %}If you don't have any device with you, you can access
+          your account using backup tokens.{% endblocktrans %}
+          {% blocktrans trimmed count counter=backup_tokens %}
+          You have only one backup token remaining.
+          {% plural %}
+          You have {{ counter }} backup tokens remaining.
+          {% endblocktrans %}
+        </p>
+        <p>
+          <a href="{% url 'two_factor:backup_tokens' %}" class="btn btn-outline-primary">
+            {% trans "Show codes" %}
+          </a>
+        </p>
+
+        <h5 class="mt-4">{% trans "Disable TOTP" %}</h5>
+        <p>{% blocktrans trimmed %}You can disable TOTP authentication.
+        We recommend you keep a security key or passkey enrolled.{% endblocktrans %}</p>
+        <p>
+          <a class="btn btn-outline-danger" href="{% url 'two_factor:disable' %}">
+            {% trans "Disable TOTP" %}
+          </a>
+        </p>
+      {% else %}
+        <p>{% blocktrans trimmed %}You have not enrolled a TOTP authenticator. Adding TOTP
+        gives you a second factor for password-based logins.{% endblocktrans %}</p>
+        <p>
+          <a href="{% url 'two_factor:setup' %}" class="btn btn-primary">
+            {% trans "Add TOTP authentication" %}
+          </a>
+        </p>
+      {% endif %}
+
+    </div>
+    <div class="col-12 col-lg-6">
+
+      <h3>{% trans "Security Keys & Passkeys" %}</h3>
+      {% include "django-security-keys/_keys-body.html" %}
+
+    </div>
+  </div>
+
+  <p class="mt-4">
+    <a href="{% url 'account:controlpanel' %}" class="btn btn-primary btn-sm">
+      &larr; {% trans "Back to dashboard" %}
+    </a>
+  </p>
+
+</div>
+{% endblock %}

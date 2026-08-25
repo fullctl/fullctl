@@ -54,6 +54,20 @@ $ctl.application.OrgDashboard = $tc.extend(
       if (this.$e.delete_org_button) {
         this.set_up_delete_org_button();
       }
+
+      if (this.$e.auth_policy_form && this.$e.auth_policy_form.length) {
+        this.set_up_auth_policy_form();
+      }
+    },
+
+    set_up_auth_policy_form : function() {
+      // The policy form is declarative (data-api-* attributes); instantiating
+      // twentyc.rest.Form is what binds its Save button to the PUT request.
+      const form = this.auth_policy_form = new twentyc.rest.Form(this.$e.auth_policy_form);
+      const saved = this.$e.auth_policy_form.find(".auth-policy-saved");
+      $(form).on("api-write:success", () => {
+        saved.stop(true, true).fadeIn(150).delay(2000).fadeOut(400);
+      });
     },
 
     set_up_delete_org_button : function() {

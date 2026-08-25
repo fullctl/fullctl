@@ -1,0 +1,11 @@
+{% extends "django-security-keys/base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12 col-lg-9">
+    <h2>{% trans "Security Keys & Passkeys" %}</h2>
+    {% include "django-security-keys/_keys-body.html" %}
+  </div>
+</div>
+{% endblock %}

@@ -89,6 +89,19 @@ if settings.DEBUG:
 for import_path, namespace in getattr(settings, "FULLCTL_ADDON_URLS", []):
     urlpatterns += [path("", include((import_path, namespace), namespace=namespace))]
 
+# Whitelisted-env endpoint: only expose /api/env/ when the consuming service
+# opts in by declaring API_ENV_WHITELIST in its settings.
+if hasattr(settings, "API_ENV_WHITELIST"):
+    urlpatterns += [
+        path(
+            "api/",
+            include(
+                ("fullctl.django.rest.urls.env", "fullctl_env_api"),
+                namespace="fullctl_env_api",
+            ),
+        ),
+    ]
+
 urlpatterns += [
     path("_diag", fullctl.django.views.diag),
     path("health/tasks/", fullctl.django.views.tasks_queue_status, name="tasks-queue"),

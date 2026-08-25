@@ -1,7 +1,7 @@
 version: "3"
 services:
   postgres:
-    image: "postgres:12"
+    image: "postgres:14"
     env_file: .env
     logging:
       options:
@@ -11,9 +11,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   django:
-    build:
-      context: ../../../..
-      dockerfile: service/aclctl/Dockerfile
+    # image built by scripts/build.py (see docs/build.md); CI sets SERVICE_IMAGE
+    image: ${SERVICE_IMAGE:-local/fullctl/aclctl:dev}
     command: "runserver 0.0.0.0:8000"
     user: root
     env_file: .env

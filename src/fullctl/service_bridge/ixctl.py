@@ -194,10 +194,10 @@ class InternetExchangeMember(Ixctl):
 
     def set_event_reference(
         self,
-        asn: Union[str, int],
+        asn: str | int,
         address: str,
         routeserver_router_id: str,
-        event_reference: Union[UUID, str],
+        event_reference: UUID | str,
         org_slug: str,
     ):
         """
@@ -244,7 +244,7 @@ class Routeserver(Ixctl):
         data_object_cls = RouteserverObject
 
     def set_event_reference(
-        self, router_id: str, event_reference: Union[UUID, str], org_slug: str
+        self, router_id: str, event_reference: UUID | str, org_slug: str
     ):
         """
         Updates the router server's event reference

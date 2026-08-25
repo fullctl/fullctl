@@ -1,4 +1,5 @@
-from typing import Callable, Union
+from collections.abc import Callable
+from typing import Union
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
@@ -14,7 +15,7 @@ class BadRequest(Response):
     def __init__(
         self,
         data: dict,
-        error_map: dict[str, Union[str, Callable]] = None,
+        error_map: dict[str, str | Callable] = None,
         *args,
         **kwargs,
     ):

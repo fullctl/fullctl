@@ -33,7 +33,7 @@ class AssignPort(Task):
             org=org,
             physical_ports=[p.id for p in physical_ports],
             port_id=port.id,
-            **kwargs
+            **kwargs,
         )
 
     @property
@@ -82,7 +82,7 @@ class UnassignPort(Task):
         org: Organization,
         port: Port | None = None,
         physical_ports: list[PhysicalPort] | None = None,
-        **kwargs
+        **kwargs,
     ):
 
         # if both port and physical_ports are provided, raise an error
@@ -95,7 +95,7 @@ class UnassignPort(Task):
             org=org,
             port_id=port.id if port else None,
             physical_ports=[p.id for p in physical_ports] if physical_ports else None,
-            **kwargs
+            **kwargs,
         )
 
     @property

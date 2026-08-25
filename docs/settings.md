@@ -48,6 +48,20 @@
 - `SERVICE_TAG` - should be the service reference tag (e.g., 'ixctl')
 - `USE_LOCAL_PERMISSIONS` - if `True` permissions will be handled locally instead of through aaactl.
 
+### Frontend (Vue)
+
+- `API_ENV_WHITELIST` - declared per-service (in the consuming service's own settings, e.g. `devicectl/settings/__init__.py`), not in fullctl itself. When present, fullctl registers `GET /api/env/{org_tag}/`, which exposes the whitelisted subset of Django settings to that service's SPA. When absent, the endpoint is not registered. Keys are dotted output paths in the response JSON; values are Django settings names. `SERVICE_BRIDGE_REF_*` values are normalized to just the service name (e.g. `fullctl.service_bridge.nautobot.Device` → `nautobot`); other values pass through verbatim.
+
+    Example:
+
+    ```python
+    API_ENV_WHITELIST = {
+        "sot.device": "SERVICE_BRIDGE_REF_DEVICE",
+    }
+    ```
+
+    yields `GET /api/env/{org}/` → `{"data": [{"sot": {"device": "nautobot"}}], "errors": {}}`.
+
 ### Support
 
 - `CONTACT_US_EMAIL` - email address to send contact us messages to, defaults to `SUPPORT_EMAIL`

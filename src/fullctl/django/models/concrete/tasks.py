@@ -257,6 +257,10 @@ class Task(HandleRefModel):
                 condition=models.Q(queue_id__isnull=True),
                 name="idx_poll_next_tasks",
             ),
+            models.Index(
+                fields=["status", "updated"],
+                name="idx_task_prune",
+            ),
         ]
 
     class HandleRef:

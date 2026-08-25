@@ -1,59 +1,66 @@
-ARG python_ver=3.11
-ARG base_repo=python
-ARG base_tag=${python_ver}-alpine3.20
+# FullCtl builder image (repository pinned fullctl/fullctl), built by
+# `scripts/build.py builder` from the monorepo root and consumed by
+# Dockerfile.service as its builder stage base.
+#
+# Base image: oraclelinux:9-slim-fips. Slim OL9 ships no Python, so
+# python3.11 + python3.11-devel and the build toolchain are installed via
+# microdnf (uwsgi builds from sdist and needs the interpreter headers).
+# Dependency management is uv only.
+#
+# FIPS note: md5 usages in application code need usedforsecurity=False
+# (supported by OL9 python3.11) -- flagged for real-build validation, see
+# docs/build.md.
 
-ARG install_to=/srv/service
-ARG poetry_pin="==1.5.1"
+ARG base_repo=oraclelinux
+ARG base_tag=9-slim-fips
+ARG python_ver=3.11
 ARG virtual_env=/venv
+ARG uv_tag=latest
 
 ARG build_deps=" \
-    build-base \
-    postgresql-dev \
-    g++ \
-    git \
-    libffi-dev \
-    libjpeg-turbo-dev \
-    linux-headers \
+    gcc \
+    gcc-c++ \
     make \
-    openssl-dev \
-    curl \
-    rust \
-    cargo \
-    "
-ARG run_deps=" \
-    libgcc \
-    postgresql-libs \
+    git \
+    libffi-devel \
+    libjpeg-turbo-devel \
+    libpq-devel \
+    openssl-devel \
     "
 
-FROM ${base_repo}:${base_tag} as base
+FROM ghcr.io/astral-sh/uv:${uv_tag} AS uv
+
+FROM ${base_repo}:${base_tag} AS base
 
 ARG virtual_env
 
 # env to pass to sub images
 ENV PYTHONUNBUFFERED=1
 ENV VIRTUAL_ENV=$virtual_env
+ENV UV_PROJECT_ENVIRONMENT=$virtual_env
+ENV UV_PYTHON_DOWNLOADS=never
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # build container
-FROM base as builder
+FROM base AS builder
 
 ARG build_deps
-ARG poetry_pin
+ARG python_ver
+ARG virtual_env
 
-RUN apk upgrade --no-cache --available \
-    && apk --no-cache add $build_deps
+RUN microdnf install -y python${python_ver} python${python_ver}-devel $build_deps \
+    && microdnf clean all
 
-# Use Pip to install Poetry
-RUN python3 -m pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir "poetry$poetry_pin"
-
-# Create a VENV
-RUN python3 -m venv "$VIRTUAL_ENV"
+# ship uv
+COPY --from=uv /uv /uvx /usr/local/bin/
 
 WORKDIR /build
 
 # individual files here instead of COPY . . for caching
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml uv.lock README.md ./
+COPY src/ src/
 
-# Need to upgrade pip and wheel within Poetry for all its installs
-RUN poetry run pip install --upgrade --no-cache-dir pip wheel
-RUN poetry install --no-root
+# pre-build the core library venv (dependencies only, from the root lock);
+# Dockerfile.service syncs the per-service workspace member on top of this
+RUN uv venv "$VIRTUAL_ENV" --python "python${python_ver}" \
+    && uv sync --frozen --no-install-project --no-editable

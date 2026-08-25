@@ -4,10 +4,11 @@ import re
 import account.forms as forms
 import account.models as models
 from common.rest import HANDLEREF_FIELDS
+from django.conf import settings
 from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.utils.translation import gettext as _
 from django_grainy.helpers import int_flags
-from django_grainy.util import Permissions
+from django_grainy.util import Permissions, check_permissions
 from rest_framework import serializers
 
 
@@ -289,10 +290,12 @@ class Organization(serializers.ModelSerializer):
         return selected_org and selected_org.id == obj.id
 
     def get_is_admin(self, obj):
-        user = self.context.get("user")
-        if not hasattr(self, "_perms"):
-            self._perms = Permissions(user)
-        return self._perms.check(obj, "crud")
+        # Use django_grainy's helper so the Permissions(user) tree is
+        # cached on user._permissions_util across all serializer instances
+        # in the same request. Without this, oauth_profile's per-org listcomp
+        # rebuilds the tree N times (~500ms each) and trips social-auth's 5s
+        # read timeout for users with many orgs / many UserPermission rows.
+        return check_permissions(self.context.get("user"), obj, "crud")
 
     def get_is_default(self, obj):
         user = self.context.get("user")
@@ -370,6 +373,46 @@ class EditOrgPasswordProtected(EditOrg):
 
     def get_form(self, data):
         return self.form(self.context.get("user"), self.context.get("org"), data)
+
+
+@register
+class OrgSecurityPolicy(serializers.Serializer):
+    """
+    Serializer for the per-Organization authentication policy bitmask.
+
+    Reads the three policy flags via Organization.disable_password /
+    disable_totp / require_passkey_mfa properties; writes them through
+    Organization.set_org_flag() so the org_flags bitmask stays the
+    single source of truth.
+
+    All input fields are optional — only fields present in the request
+    body are updated, matching PATCH-like semantics on a flat document.
+    """
+
+    ref_tag = "org_security"
+
+    disable_password = serializers.BooleanField(required=False)
+    disable_totp = serializers.BooleanField(required=False)
+    require_passkey_mfa = serializers.BooleanField(required=False)
+
+    def to_representation(self, instance):
+        return {
+            "disable_password": instance.disable_password,
+            "disable_totp": instance.disable_totp,
+            "require_passkey_mfa": instance.require_passkey_mfa,
+        }
+
+    def update(self, instance, validated_data):
+        flag_map = (
+            ("disable_password", settings.ORG_FLAGS_PASSKEY_DISABLE_PASSWORD_AUTH),
+            ("disable_totp", settings.ORG_FLAGS_DISABLE_TOTP),
+            ("require_passkey_mfa", settings.ORG_FLAGS_PASSKEY_REQUIRE_MFA),
+        )
+        for key, flag in flag_map:
+            if key in validated_data:
+                instance.set_org_flag(flag, validated_data[key])
+        instance.save()
+        return instance
 
 
 @register

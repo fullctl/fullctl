@@ -334,7 +334,7 @@ async def get_list_prefix_asn(asn: int) -> ListPrefixAsnGetResponse:
     """
 
     validated_asn = validate_asn(asn)
-    now = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
+    now = datetime.datetime.now().replace(tzinfo=datetime.UTC)
     try:
         routing_data = await get_asn_routing_data(validated_asn)
         prefixes = set()

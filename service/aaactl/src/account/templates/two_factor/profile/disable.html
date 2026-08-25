@@ -1,0 +1,21 @@
+{% extends "two_factor/_base.html" %}
+{% load i18n %}
+
+{% block wizard_content %}
+  <h1>{% block title %}{% trans "Disable TOTP Authentication" %}{% endblock %}</h1>
+  <p>{% blocktrans trimmed %}You are about to disable TOTP authentication.
+    This could weaken your account security, are you sure?{% endblocktrans %}</p>
+  <p><strong>{% trans "For security, you must verify your identity with 2FA before disabling it." %}</strong></p>
+
+  {% if email_token_sent %}
+    <div class="alert alert-info">
+      {% trans "A verification code has been sent to your email address. Please check your email and enter the code below." %}
+    </div>
+  {% endif %}
+
+  <form method="post" id="disable-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-danger" type="submit">{% trans "Disable" %}</button>
+  </form>
+{% endblock %}

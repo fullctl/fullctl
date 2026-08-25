@@ -1,60 +1,79 @@
-[tool.poetry]
+[project]
 name = "devicectl"
-repository = "https://github.com/fullctl/devicectl"
-version = "1.4.0-rc.106"
+# prep-release version 1.5.0-rc.3 (PEP 440 normalized)
+version = "1.5.0-rc.7"
 description = "device control"
-authors = ["20C <code@20c.com>"]
+authors = [{ name = "20C", email = "code@20c.com" }]
 license = "Apache-2.0"
-
+requires-python = ">=3.9"
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Environment :: Console",
-    "Intended Audience :: Developers",
-    "Topic :: Software Development",
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development",
 ]
 
+dependencies = [
+  "fullctl",
+  "pynetbox>=7.5.0,<8",
+  "pygments>=2.14,<3",
 
-[tool.poetry.scripts]
+  # graphs & metrics
+  "matplotlib>=3.7.2,<4",
+  "pandas>=2.0.3,<3",
+  "cairosvg>=2.7.0,<3",
+  "flatten-json>=0.1.14,<0.2",
+  "pytimeparse2>=1.7.1",
+
+  # rrd metrics storage (`import rrdtool`): historically the `rrdtool` sdist
+  # was pip-installed ad hoc in the Dockerfile because it needs rrd.h to
+  # build. Declared here now; rrdtool-bindings is the maintained packaging of
+  # the same C extension module (installs as `rrdtool`) and ships static
+  # metadata so `uv lock` works without rrd headers on the lock host. The
+  # install-time build still needs the rrdtool headers + toolchain (OL9
+  # builder image).
+  "rrdtool-bindings",
+]
+
+[project.urls]
+Repository = "https://github.com/fullctl/devicectl"
+
+[project.scripts]
 devicectl = "devicectl.cli:main"
 
+[dependency-groups]
+dev = [
+  # testing
+  "coverage>=5",
+  "pytest>=6",
+  "pytest-django>=3.8",
+  "pytest-cov",
 
-[tool.poetry.dependencies]
-python = "^3.9"
-fullctl = { path = "../.." }
-pynetbox = "^7.5.0"
-pygments = "^2.14"
+  # linting
+  "bandit>=1.6.2",
+  "black>=20",
+  "isort>=5.7",
+  "flake8>=3.8",
+  "pre-commit>=2.13",
+  "pyupgrade>=2.19",
 
-# graphs & metrics
-matplotlib = "^3.7.2"
-pandas = "^2.0.3"
-cairosvg = "^2.7.0"
-flatten-json = "^0.1.14"
-pytimeparse2 = ">=1.7.1"
+  # ctl (git source pinned via [tool.uv.sources])
+  "ctl",
+  "jinja2>=3,<4",
+  "tmpl>=1,<2",
+]
 
-[tool.poetry.dev-dependencies]
-# testing
-coverage = ">=5"
-pytest = ">=6"
-pytest-django = ">=3.8"
-pytest-cov = "*"
+[tool.uv.sources]
+fullctl = { workspace = true }
+ctl = { git = "https://github.com/20c/ctl.git", branch = "main" }
 
-# linting
-bandit = ">=1.6.2"
-black = ">=20"
-isort = ">=5.7"
-flake8 = ">=3.8"
-pre-commit = ">=2.13"
-pyupgrade = ">=2.19"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-# ctl
-ctl = "^1"
-jinja2 = "^3"
-tmpl = "^1"
+[tool.hatch.build.targets.wheel]
+packages = ["src/devicectl"]
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"

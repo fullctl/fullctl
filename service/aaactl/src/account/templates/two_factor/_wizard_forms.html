@@ -1,0 +1,68 @@
+{% load i18n crispy_forms_tags %}
+
+{{ wizard.management_form }}
+
+{% if wizard.steps.current == "auth" %}
+
+  {% if wizard.form.non_field_errors %}
+  <div class="alert alert-danger errors">
+    {{ wizard.form.non_field_errors }}
+  </div>
+  {% endif %}
+
+  <input type="hidden" name="next" id="next" value="{{ request.GET.next }}" />
+
+  <div class="mb-3">
+    <div class="errors">{{ wizard.form.errors.username }}</div>
+    <input
+      placeholder="{% trans 'Username or email' %}"
+      class="form-control"
+      type="text"
+      id="id_auth-username"
+      name="auth-username"
+      value="{{ wizard.form.username.value|default:'' }}"
+      autocomplete="username webauthn"
+      required />
+  </div>
+
+  <div class="mb-3">
+    <div class="errors">{{ wizard.form.errors.password }}</div>
+    <input
+      placeholder="{% trans 'Password' %}"
+      class="form-control"
+      type="password"
+      name="auth-password"
+      id="id_auth-password"
+      autocomplete="current-password webauthn"
+      required />
+  </div>
+
+{% elif wizard.steps.current == "token" %}
+
+  {% if wizard.form.non_field_errors %}
+  <div class="alert alert-danger errors">
+    {{ wizard.form.non_field_errors }}
+  </div>
+  {% endif %}
+
+  <div class="errors">{{ wizard.form.errors.otp_token }}</div>
+  <input type="hidden" name="next" id="next" value="{{ request.GET.next }}" />
+  <input
+    placeholder="{% trans 'Token' %}"
+    class="form-control"
+    type="number"
+    name="token-otp_token"
+    min="1"
+    max="999999"
+    autofocus="autofocus"
+    id="id_token-otp_token" />
+
+{% else %}
+
+  {% if wizard.form.non_field_errors %}
+  <div class="alert alert-danger">{{ wizard.form.non_field_errors }}</div>
+  {% endif %}
+
+  {{ wizard.form|crispy }}
+
+{% endif %}

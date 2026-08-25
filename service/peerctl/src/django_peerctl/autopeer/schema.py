@@ -26,12 +26,12 @@ class Session(BaseModel):
     location: Location
 
     # allowed values?
-    peer_type: Optional[str] = "peer"
-    md5: Optional[str] = ""
-    local_asn: Optional[int] = 0
-    local_ip: Optional[str] = ""
+    peer_type: str | None = "peer"
+    md5: str | None = ""
+    local_asn: int | None = 0
+    local_ip: str | None = ""
 
     # allowed values?
-    status: Optional[str] = ""
+    status: str | None = ""
 
-    uuid: Optional[str] = ""
+    uuid: str | None = ""

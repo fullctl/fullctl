@@ -34,7 +34,7 @@ class BgpUpdatesData(RipestatData):
 
         seen_dt = datetime.datetime.strptime(
             recent["timestamp"], "%Y-%m-%dT%H:%M:%S"
-        ).replace(tzinfo=datetime.timezone.utc)
+        ).replace(tzinfo=datetime.UTC)
 
         return seen_dt >= dt
 

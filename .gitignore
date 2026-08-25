@@ -8,6 +8,8 @@
 *.sql
 *.egg-info
 .pytest-cache
+.tox/
+.venv/
 Ctl/.state/
 Ctl/dev/.env
 build/

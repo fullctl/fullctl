@@ -1,28 +1,34 @@
 
 ## fullctl services development instance
-[Poetry](https://python-poetry.org/) is a python package manager it can be acquired by following the instructions [here](https://python-poetry.org/docs/)
-(for macOS run `curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -`) later commands will assume that t is installed on your system
+[uv](https://docs.astral.sh/uv/) is a python package and project manager, it can be acquired by following the instructions [here](https://docs.astral.sh/uv/getting-started/installation/)
+(on macOS and Linux run `curl -LsSf https://astral.sh/uv/install.sh | sh`) later commands will assume that it is installed on your system.
+
+Create the project virtualenv and install all dependencies with
+
+```sh
+uv sync
+```
 
 ## Code Quality
 
 Install pre-commit with (for running before push)
 ```sh
-poetry run pre-commit install -t pre-push
+uv run pre-commit install -t pre-push
 ```
 
 Or manually run with
 ```sh
-poetry run pre-commit run --all-files
+uv run pre-commit run --all-files
 ```
 
-## Poetry
+## Dependencies
 
 To update package deps, use
 
 ```sh
-poetry lock
-poetry install
-poetry run pre-commit clean
+uv lock
+uv sync
+uv run pre-commit clean
 ```
 
 ## Database
@@ -32,19 +38,19 @@ This uses a common database server between fullctl services, each service still 
 To start it separately:
 
 ```sh
-poetry run Ctl/dev/compose.sh up postgres
+uv run Ctl/dev/compose.sh up postgres
 ```
 
 #### Backups
 
 Backup dev database
 ```sh
-poetry run Ctl/dev/exec.sh postgres bash -c 'pg_dumpall -c -U ${POSTGRES_USER}' | xz > fulldb-$(date +%Y%m%d"-"%H%M%S).sql.xz
+uv run Ctl/dev/exec.sh postgres bash -c 'pg_dumpall -c -U ${POSTGRES_USER}' | xz > fulldb-$(date +%Y%m%d"-"%H%M%S).sql.xz
 ```
 
 Restore:
 ```sh
-cat $FILE | poetry run Ctl/dev/exec.sh postgres bash -c 'psql -U ${POSTGRES_USER}'
+cat $FILE | uv run Ctl/dev/exec.sh postgres bash -c 'psql -U ${POSTGRES_USER}'
 ```
 #### Snippets
 
@@ -85,7 +91,7 @@ semanage port -m -t http_port_t -p tcp 8001
 ```sh
 # change the port it listens on if needed
 # export AAACTL_PORT=7002
-poetry run Ctl/dev/compose.sh up aaactl_web
+uv run Ctl/dev/compose.sh up aaactl_web
 ```
 
 ## Developer Environment Setup
@@ -126,7 +132,7 @@ Follow [instructions](https://github.com/fullctl/aaactl/blob/prep-release/docs/d
 
 ```
 export AAACTL_PORT=7001
-poetry run Ctl/dev/compose.sh up aaactl_web
+uv run Ctl/dev/compose.sh up aaactl_web
 ```
 
 Your aaactl instance should now be running on port 7001
@@ -143,7 +149,7 @@ Follow [instructions](https://github.com/fullctl/pdbctl/blob/prep-release/docs/q
 
 ```
 export PDBCTL_PORT=7002
-poetry run Ctl/dev/compose.sh up pdbctl_web
+uv run Ctl/dev/compose.sh up pdbctl_web
 ```
 
 Your pdbctl instance should now be running on port 7002
@@ -161,7 +167,7 @@ Follow [instructions](https://github.com/fullctl/ixctl/blob/prep-release/docs/qu
 
 ```
 export IXCTL_PORT=7003
-poetry run Ctl/dev/compose.sh up ixctl_web
+uv run Ctl/dev/compose.sh up ixctl_web
 ```
 
 Your ixctl instance should now be running on port 7003
@@ -180,7 +186,7 @@ Follow [instructions](https://github.com/fullctl/peerctl/blob/prep-release/docs/
 
 ```
 export PEERCTL_PORT=7004
-poetry run Ctl/dev/compose.sh up peerctl_web
+uv run Ctl/dev/compose.sh up peerctl_web
 ```
 
 Your peerctl instance should now be running on port 7004
@@ -188,10 +194,10 @@ Your peerctl instance should now be running on port 7004
 ### Bumping release
 
 ```sh
-poetry run ctl version bump .
-poetry lock
+uv run ctl version bump .
+uv lock
 git commit -am "lock, bump version"
-poetry run ctl deploy_dev
+uv run ctl deploy_dev
 ```
 
 ### TODO

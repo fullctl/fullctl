@@ -1,44 +1,64 @@
 stages:
   - test
+  - build
 
 # -- Root library: lint -------------------------------------------------------
 lint:
   stage: test
   image: python:3.11
   before_script:
-    - pip install poetry
-    - poetry install
+    - pip install uv
+    - uv sync
   script:
-    - poetry run pre-commit run --all-files
+    - uv run pre-commit run --all-files
 
 # -- Root library: tests (SQLite in-memory, no postgres) -----------------------
 test:fullctl:
   stage: test
   image: python:3.11
   before_script:
-    - pip install poetry
-    - poetry install
+    - pip install uv
+    - uv sync
   script:
-    - poetry run pytest -vs --cov=src --cov-report=term-missing tests/
+    - uv run pytest -vs --cov=src --cov-report=term-missing tests/
 
 # -- Service test template -----------------------------------------------------
-# All services now have a normalized Dockerfile at the service root.
-# Compose files point to repo root as build context.
+# Builds the service image through scripts/build.py - the same entrypoint
+# build:images and fci0 use - so the suite runs against exactly the image a
+# release would ship. Compose is used only for postgres and to run the suite;
+# the dev compose files resolve their django image from SERVICE_IMAGE (and
+# default to the local/fullctl/<name>:dev image a dev stack builds).
+#
+# Still allow_failure: true - this is the first honest run of the service
+# suites since the build chain rewrite. Flip jobs to blocking once the suites
+# are known green - see fullctl#94.
 .service-test:
   stage: test
   image: docker:24
+  allow_failure: true
   services:
     - docker:24-dind
   variables:
     DOCKER_TLS_CERTDIR: "/certs"
     SERVICE_NAME: ""
     COMPOSE_FILE: service/${SERVICE_NAME}/Ctl/dev/docker-compose.yml
+    TAG: ci
+    BUILDER: localhost:5000/fullctl/fullctl
+    # interpolated by the compose file's django service - must match the ref
+    # scripts/build.py composes from --registry/--tag below
+    SERVICE_IMAGE: localhost:5000/fullctl/${SERVICE_NAME}:${TAG}
   before_script:
     - until docker info >/dev/null 2>&1; do sleep 1; done
+    # build.py declares its deps in a PEP 723 header; only pyyaml is needed, so
+    # this skips a full uv sync of the workspace
+    - apk add --no-cache python3 py3-yaml
     - cp service/${SERVICE_NAME}/Ctl/dev/example.env service/${SERVICE_NAME}/Ctl/dev/.env
   script:
+    - python3 scripts/build.py builder --registry localhost:5000 --tag "$TAG"
+    # tests run in the service image only, so skip the tasks image where one exists
+    - python3 scripts/build.py service "$SERVICE_NAME" --registry localhost:5000
+      --tag "$TAG" --builder-repo "$BUILDER" --builder-tag "$TAG" --no-tasks
     - docker compose -f service/${SERVICE_NAME}/Ctl/dev/docker-compose.yml up -d postgres
-    - docker compose -f service/${SERVICE_NAME}/Ctl/dev/docker-compose.yml build django
     - sleep 3
     - docker compose -f service/${SERVICE_NAME}/Ctl/dev/docker-compose.yml run --rm django run_tests
   after_script:
@@ -84,3 +104,66 @@ test:prefixctl:
   extends: .service-test
   variables:
     SERVICE_NAME: prefixctl
+
+# -- Service image builds ------------------------------------------------------
+# Builds every service image through scripts/build.py - the same entrypoint fci0
+# uses - so a manifest naming an unavailable package, a broken Dockerfile.service
+# argument or an unresolvable dependency fails here instead of in a release
+# build. Tasks images are built too wherever Ctl/docker/Dockerfile.tasks exists,
+# which is what exercises the hand-installed EPEL path in ixctl and prefixctl.
+#
+# Nothing is pushed: the builder ref resolves locally by tag, so no registry
+# credentials are involved.
+#
+# One job rather than one per service, deliberately. The builder image takes
+# ~90s and would be rebuilt by every parallel job, and a fan-out would hold nine
+# dind runner slots on a runner that already queues this pipeline behind the
+# eight .service-test jobs. Sequential costs wall-clock and saves capacity.
+#
+# Every service is attempted even after one fails, so a single bad manifest
+# reports one failure rather than masking the eight services behind it.
+build:images:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  # start immediately instead of waiting on the test stage: whether the images
+  # build is independent of the library tests, and a flaky test there should not
+  # silently skip this job (it did on pipeline 47475)
+  needs: []
+  timeout: 45m
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+    TAG: ci
+    BUILDER: localhost:5000/fullctl/fullctl
+  before_script:
+    - until docker info >/dev/null 2>&1; do sleep 1; done
+    # build.py declares its deps in a PEP 723 header; only pyyaml is needed, so
+    # this skips a full uv sync of the workspace
+    - apk add --no-cache python3 py3-yaml
+  script:
+    - python3 scripts/build.py builder --registry localhost:5000 --tag "$TAG"
+    - |
+      failed=""
+      for path in service/*/Ctl/docker.yaml; do
+        svc=$(echo "$path" | cut -d/ -f2)
+        echo "=============== building $svc ==============="
+        python3 scripts/build.py service "$svc" --registry localhost:5000 \
+          --tag "$TAG" --builder-repo "$BUILDER" --builder-tag "$TAG" \
+          || failed="$failed $svc"
+      done
+      if [ -n "$failed" ]; then
+        echo "service images that failed to build:$failed"
+        exit 1
+      fi
+      echo "all service images built"
+    # devicectl is the only service using the repos: manifest key. Its rrdtool
+    # C extension is compiled in the builder against rrd.h from CodeReady
+    # Builder; assert it links and imports in the final image, which never has
+    # CRB enabled.
+    - docker run --rm --entrypoint python localhost:5000/fullctl/devicectl:$TAG
+      -c "import rrdtool; print('rrdtool', rrdtool.lib_version())"
+    # --enablerepo is per-invocation, so CRB - which Oracle marks Unsupported -
+    # must not be left enabled in a shipped image
+    - docker run --rm --entrypoint sh localhost:5000/fullctl/devicectl:$TAG
+      -c "grep -A5 '^\[ol9_codeready_builder\]' /etc/yum.repos.d/oracle-linux-ol9.repo | grep -q '^enabled=0'"

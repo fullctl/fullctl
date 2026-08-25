@@ -14,14 +14,14 @@ repos:
     hooks:
       - id: system
         name: isort
-        entry: poetry run isort .
+        entry: uv run isort .
         language: system
         pass_filenames: false
   - repo: local
     hooks:
     -   id: pyupgrade
         name: pyupgrade
-        entry: poetry run pyupgrade --py39-plus
+        entry: uv run pyupgrade --py311-plus
         language: python
         types: [python]
         pass_filenames: true
@@ -29,7 +29,7 @@ repos:
     hooks:
       - id: system
         name: Black
-        entry: poetry run black .
+        entry: uv run black .
         language: system
         pass_filenames: false
 # FIXME - add this after build overhaul

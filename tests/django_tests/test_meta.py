@@ -3,8 +3,10 @@ from datetime import timedelta
 import pytest
 import requests
 import requests_mock
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
+from fullctl.django.models.concrete.meta import Request as GenericRequest
 from tests.django_tests.testapp.models import Data, Request, Response
 
 
@@ -107,6 +109,87 @@ def test_request_process(db_request):
         )
         assert processed_request.http_status == 200
         assert processed_request.response.data == {"key": "value"}
+
+
+@pytest.mark.django_db
+def test_request_unique_cache_key_constraint():
+    """
+    A duplicate (source, url) row must raise IntegrityError. type=None on both
+    proves the NULL hole is closed -- the old (source, type, url) key would not
+    have collided, since SQL UNIQUE treats NULLs as distinct.
+    """
+    params = dict(
+        target="test_target",
+        url="http://testurl.com",
+        source="test",
+        type=None,
+    )
+    Request.objects.create(http_status=200, **params)
+
+    with pytest.raises(IntegrityError):
+        # atomic() so the failed INSERT doesn't poison the test transaction
+        with transaction.atomic():
+            Request.objects.create(http_status=200, **params)
+
+
+@pytest.mark.django_db
+def test_generic_request_unique_cache_key_constraint():
+    """
+    Same constraint on the generic request cache (concrete.meta.Request ->
+    `request` table, used by arin-api). Guards its Meta inheritance + the
+    django_fullctl migration, which the test app model can't exercise.
+    """
+    params = dict(
+        identifier="203.0.113.0/24",
+        url="http://example.test/generic",
+        source="arin-api",
+    )
+    GenericRequest.objects.create(http_status=200, **params)
+
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            GenericRequest.objects.create(http_status=200, **params)
+
+
+@pytest.mark.django_db
+def test_request_process_recovers_from_insert_race():
+    """
+    On losing the insert race, process() must reuse the winning row rather than
+    propagate IntegrityError. Reproduced deterministically: an existing row has
+    type="live" while process() computes type=None, so the initial lookup (which
+    includes type) misses, the insert collides on (source, url), and it recovers.
+    """
+    winner = Request.objects.create(
+        target="test_target",
+        url="http://testurl.com",
+        source="test",
+        type="live",
+        http_status=200,
+        count=1,
+    )
+
+    result = Request.process("test_target", "http://testurl.com", 200, {"key": "value"})
+
+    # recovered onto the existing row, bumped its count, no duplicate inserted
+    assert result.pk == winner.pk
+    winner.refresh_from_db()
+    assert winner.count == 2
+    assert Request.objects.filter(source="test", url="http://testurl.com").count() == 1
+
+
+@pytest.mark.django_db
+def test_request_process_refresh_does_not_trip_constraint():
+    """
+    Processing the same target twice must reuse the single row and bump its
+    count, not insert a duplicate -- the normal refresh path must not trip the
+    constraint (which would otherwise break every cache refresh).
+    """
+    Request.process("test_target", "http://testurl.com", 200, {"key": "value"})
+    Request.process("test_target", "http://testurl.com", 200, {"key": "value"})
+
+    rows = Request.objects.filter(url="http://testurl.com")
+    assert rows.count() == 1
+    assert rows.first().count == 2
 
 
 @pytest.mark.django_db

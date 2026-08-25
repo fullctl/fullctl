@@ -474,10 +474,10 @@ class Member(
 
     def get_stats_data(self, members):
         physical_ports = set()
-        org = None
+        ix = None
         for member in members:
             physical_ports.update(member.physical_ports)
-            org = member.ix.instance.org
+            ix = member.ix
 
         physical_port_stats = devicectl.PhysicalPortStats().get_physical_port_stats(
             list(physical_ports)
@@ -499,12 +499,15 @@ class Member(
                         routeserver_ids.add(routeserver_id)
 
                 # Get routeserver names for each unique routeserver_id
+                # Look up routeserver names filtered by the member's IX to prevent
+                # cross-IX stat leakage (e.g., stats from a different IX's RS showing
+                # up for members of an unrelated IX in the same org)
                 routeserver_names = {}
                 for routeserver_id in routeserver_ids:
                     try:
                         rs = models.Routeserver.objects.filter(
                             router_id=routeserver_id,
-                            ix__instance__org=org,
+                            ix=ix,
                         ).first()
                         if rs:
                             routeserver_names[routeserver_id] = rs.name
@@ -520,7 +523,9 @@ class Member(
                         bgp_stat["routeserver_name"] = routeserver_names[routeserver_id]
 
                 # Store the data in bgp_stats, properly grouped by routeserver_id
-                for routeserver_id in routeserver_ids:
+                # Only include stats for routeservers that belong to this IX;
+                # stats from other IXes in the same org are excluded
+                for routeserver_id in routeserver_names:
                     bgp_stats[routeserver_id] = [
                         stat
                         for stat in data

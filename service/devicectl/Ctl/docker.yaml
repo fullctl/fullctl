@@ -1,0 +1,21 @@
+# docker build manifest for scripts/build.py -- see docs/build.md
+# OL9 microdnf package names
+# build_deps rrdtool-devel: the rrdtool-bindings sdist compiles the C
+# extension at uv sync time (needs rrd.h in the builder).
+# run_deps libstdc++: not guaranteed on slim OL9; needed by matplotlib/pandas
+# wheels and the rrdtool binding at runtime.
+docker:
+  schema: 1
+  # rrdtool-devel is not in BaseOS, AppStream or EPEL -- like every other -devel
+  # subpackage on RHEL9/OL9 it lives in CodeReady Builder, which the base image
+  # defines but ships disabled. rrdtool itself is in ol9_appstream (enabled), so
+  # only the builder stage actually needs this.
+  repos:
+    - ol9_codeready_builder
+  build_deps:
+    - rrdtool-devel
+  run_deps:
+    - libgcc
+    - libpq
+    - rrdtool
+    - libstdc++

@@ -37,8 +37,8 @@ class Blocklist:
         self,
         RIPEstat,
         resource,
-        starttime: Optional[datetime] = None,
-        endtime: Optional[datetime] = None,
+        starttime: datetime | None = None,
+        endtime: datetime | None = None,
     ):
         """
         Initialize and request the blocklist related data for a queried resource.

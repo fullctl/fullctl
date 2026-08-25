@@ -1,111 +1,112 @@
+# prefixctl tasks image -- uv on oraclelinux:9-slim-fips (matches Dockerfile.service)
+# built by `scripts/build.py service prefixctl` (repository suffix -tasks)
 
-ARG virtual_env=/venv
-ARG install_to=/srv/service
-ARG build_deps=""
-ARG poetry_pin="==1.4.1"
+ARG base_repo=oraclelinux
+ARG base_tag=9-slim-fips
 ARG python_ver=3.11
+
+ARG install_to=/srv/service
+ARG virtual_env=/venv
+ARG uv_tag=latest
+ARG uid=6300
+ARG user=fullctl
 ARG service_dir=service/prefixctl
 
 ARG build_deps=" \
     gcc \
     git \
     "
-
+# bgpq4 comes from EPEL (repo enabled via oracle-epel-release-el9)
 ARG run_deps=" \
     bgpq4 \
     "
-ARG uid=6300
-ARG user=fullctl
 
-FROM python:${python_ver}-slim as base
+FROM ghcr.io/astral-sh/uv:${uv_tag} AS uv
 
-ARG virtual_env
+FROM ${base_repo}:${base_tag} AS base
+
 ARG install_to
+ARG virtual_env
 
+# env to pass to sub images
+ENV PYTHONUNBUFFERED=1
 ENV SERVICE_HOME=$install_to
 ENV VIRTUAL_ENV=$virtual_env
+ENV UV_PROJECT_ENVIRONMENT=$virtual_env
+ENV UV_PYTHON_DOWNLOADS=never
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 
 # build container
-FROM base as builder
+FROM base AS builder
 
-# ** from fullctl-builder
 ARG build_deps
-ARG poetry_pin
+ARG python_ver
 ARG service_dir
 
-RUN apt-get update \
-    && apt-get upgrade -y \
-    && apt-get install --no-install-recommends -y ${build_deps} \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN microdnf install -y python${python_ver} python${python_ver}-devel ${build_deps} \
+    && microdnf clean all
 
-
-# Use Pip to install Poetry
-RUN python3 -m pip install --upgrade pip && pip install "poetry$poetry_pin"
-
-# Create a VENV
-RUN python3 -m venv "$VIRTUAL_ENV"
+COPY --from=uv /uv /uvx /usr/local/bin/
 
 WORKDIR /build
 
-# For monorepo: copy fullctl source for path dependency resolution
-COPY pyproject.toml poetry.lock README.md ./
+# For monorepo: copy fullctl source for path dependency resolution;
+# the single root uv.lock covers all workspace members
+COPY pyproject.toml uv.lock README.md ./
 COPY src/ src/
 
-# Set workdir to service directory (path = "../.." resolves to builder workdir)
-WORKDIR ${service_dir}
+# Set workdir to service directory (workspace member)
+WORKDIR /build/${service_dir}
 
 # Copy service files
-COPY ${service_dir}/pyproject.toml ${service_dir}/poetry.lock ./
-
-# Need to upgrade pip and wheel within Poetry for all its installs
-RUN poetry run pip install --upgrade pip wheel
+COPY ${service_dir}/pyproject.toml ./
 
 ARG extra_pip_install_dir
 
-# Need to upgrade pip and wheel within Poetry for all its installs
-RUN poetry install --no-root --only main,tasks
-
-# RUN pip --no-cache-dir install playwright
+# service dependency set plus the tasks dependency group into /venv.
+# --no-default-groups keeps the dev group out (uv installs it by default;
+# the old poetry tasks images were built --only main,tasks)
+RUN uv sync --frozen --no-install-project --no-editable --no-default-groups --group tasks
 
 COPY ${service_dir}/Ctl/VERSION Ctl/
 
 # gitignore is just a placeholder for if extra is empty
 # this will trigger a cache invalidate
 COPY ${service_dir}/.gitignore $extra_pip_install_dir ./plugins/
-RUN test -z "$extra_pip_install_dir" || pip install plugins/*.tar.gz
+RUN test -z "$extra_pip_install_dir" || uv pip install ./plugins/*.tar.gz
 
 #### final image
 
-FROM base as final
+FROM base AS final
 
 ARG service_dir
 ARG run_deps
 ARG run_dirs=".cache locale media static"
+ARG python_ver
+# playwright chromium dependencies (EL9 package names)
 ARG playwright_deps=" \
-    libglib2.0-0 \
-    libnss3 \
-    libnspr4 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libdbus-1-3 \
-    libatspi2.0-0 \
-    libx11-6 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxext6 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libxcb1 \
-    libxkbcommon0 \
-    libpango-1.0-0 \
-    libcairo2 \
-    libasound2 \
+    glib2 \
+    nss \
+    nspr \
+    atk \
+    at-spi2-atk \
+    cups-libs \
+    libdrm \
+    dbus-libs \
+    at-spi2-core \
+    libX11 \
+    libXcomposite \
+    libXdamage \
+    libXext \
+    libXfixes \
+    libXrandr \
+    mesa-libgbm \
+    libxcb \
+    libxkbcommon \
+    pango \
+    cairo \
+    alsa-lib \
     "
 ARG uid
 ARG user
@@ -114,7 +115,12 @@ ARG user
 # TODO keep in until final production deploy
 ARG COPY_SETTINGS_FILE=mainsite/settings/dev.py
 
-RUN useradd -lu $uid $user
+# add dependencies (bgpq4 from EPEL)
+RUN microdnf install -y python${python_ver} shadow-utils oracle-epel-release-el9 \
+    && microdnf install -y ${run_deps} ${playwright_deps} \
+    && microdnf clean all
+
+RUN useradd -l -u $uid $user
 
 WORKDIR $SERVICE_HOME
 COPY --from=builder "$VIRTUAL_ENV" "$VIRTUAL_ENV"
@@ -124,12 +130,6 @@ COPY ${service_dir}/Ctl/VERSION etc/
 COPY ${service_dir}/docs/ docs
 
 RUN chown -R $uid:$uid $run_dirs
-
-# add dependencies
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y ${run_deps} ${playwright_deps} \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
 
 
 #### entry point from final image, not tester

@@ -1,0 +1,4 @@
+# docker build manifest for scripts/build.py -- see docs/build.md
+# defaults apply: build_deps [], run_deps [libgcc, libpq], cmd runserver
+docker:
+  schema: 1

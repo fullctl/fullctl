@@ -1,9 +1,12 @@
 import json
-from unittest.mock import patch
+import uuid
+from types import SimpleNamespace
+from unittest.mock import PropertyMock, patch
 
 import django_ixctl.models as models
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 
 
 def test_ix_import_peeringdb(db, pdb_data, account_objects):
@@ -443,6 +446,39 @@ def test_list_routeservers(db, pdb_data, account_objects):
     assert data[0]["name"] == ix.rs_set.first().name
 
 
+def test_list_routeservers_skips_liveness_when_no_events(db, pdb_data, account_objects):
+    """When no routeservers have events, the liveness call should be skipped."""
+    ix = account_objects.ix
+    client = account_objects.api_client
+    org = account_objects.org
+    assert account_objects.routeserver
+
+    with patch("django_ixctl.rest.views.ixctl.auditctl.Event") as mock_event_cls:
+        mock_event_instance = mock_event_cls.return_value
+
+        # preload_events will find no event IDs and return early,
+        # so no _event_object is set → routeserver_event_map values are all None
+        # → liveness call should NOT be made
+        with patch.object(models.Routeserver, "preload_events"):
+            response = client.get(
+                reverse("ixctl_api:routeserver-list", args=(org.slug, ix.slug))
+            )
+
+        assert response.status_code == 200
+        mock_event_instance.get_last_updated_config_liveness_event.assert_not_called()
+
+        data = response.json()["data"]
+        for rs in data:
+            assert rs["bgp_stat_aggregate"] is None
+            assert rs["config_last_fetched_time"] is None
+
+
+def test_list_routeservers_handles_empty_liveness_response(
+    db, pdb_data, account_objects
+):
+    """When liveness returns empty data, config_last_fetched_time should be None (not crash)."""
+
+
 def test_list_routeservers_no_liveness(db, pdb_data, account_objects):
     """When routeserver has no liveness set, config_last_fetched_time should be None."""
     ix = account_objects.ix
@@ -464,12 +500,218 @@ def test_list_routeservers_no_liveness(db, pdb_data, account_objects):
 
 def test_list_routeservers_with_liveness(db, pdb_data, account_objects):
     """When routeserver has liveness set, config_last_fetched_time should reflect it."""
-    from django.utils import timezone
-
     ix = account_objects.ix
     client = account_objects.api_client
     org = account_objects.org
     rs = account_objects.routeserver
+
+    # Set a fake event UUID on the routeserver so the liveness path is triggered
+    fake_event_id = str(uuid.uuid4())
+    rs.event = fake_event_id
+    rs.save()
+
+    fake_event_obj = SimpleNamespace(
+        id=fake_event_id,
+        data=SimpleNamespace(components={"some": "data"}),
+    )
+
+    def mock_preload(queryset):
+        for r in queryset:
+            if str(r.event) == fake_event_id:
+                r._event_object = fake_event_obj
+
+    with patch("django_ixctl.rest.views.ixctl.auditctl.Event") as mock_event_cls:
+        mock_event_instance = mock_event_cls.return_value
+        # Simulate empty liveness response: [{}] (the bug scenario)
+        mock_event_instance.get_last_updated_config_liveness_event.return_value = [{}]
+
+        with patch.object(
+            models.Routeserver, "preload_events", side_effect=mock_preload
+        ):
+            response = client.get(
+                reverse("ixctl_api:routeserver-list", args=(org.slug, ix.slug))
+            )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    # Should not crash, and config_last_fetched_time should be None
+    for rs_data in data:
+        if rs_data["id"] == rs.id:
+            assert rs_data["config_last_fetched_time"] is None
+            assert rs_data["bgp_stat_aggregate"] == {"some": "data"}
+
+
+def _make_mock_port_stats(bgp_stats_list):
+    """Return a dict mimicking get_physical_port_stats output for physical port id 101."""
+    data_obj = SimpleNamespace(
+        json_dict={"bgp_stats": bgp_stats_list, "device_metrics": None}
+    )
+    return {101: data_obj}
+
+
+def test_get_member_stats_filters_bgp_stats_by_ix(db, pdb_data, account_objects):
+    """BGP stats from a different IX's RS within the same org must not appear."""
+    ix = account_objects.ix
+    org = account_objects.org
+    client = account_objects.api_client
+    member = ix.member_set.first()
+
+    # RS belonging to the member's IX
+    rs_this_ix = models.Routeserver.objects.create(
+        ix=ix,
+        name="mass-ix-rs1",
+        asn=64500,
+        router_id="192.0.2.1",
+        rpki_bgp_origin_validation=False,
+        ars_type="bird",
+        max_as_path_length=32,
+        operational_status="operational",
+    )
+
+    # A second IX in the same org with its own RS
+    ix2 = models.InternetExchange.objects.create(
+        instance=ix.instance,
+        name="ix-west",
+        slug="ix-west",
+        status="ok",
+    )
+    models.Routeserver.objects.create(
+        ix=ix2,
+        name="den-1",
+        asn=64501,
+        router_id="10.0.0.1",
+        rpki_bgp_origin_validation=False,
+        ars_type="bird",
+        max_as_path_length=32,
+        operational_status="operational",
+    )
+
+    # Physical port stats contain sessions to both RSes
+    bgp_stats = [
+        {"routeserver_router_id": "192.0.2.1", "address": "203.0.113.1", "up": True},
+        {"routeserver_router_id": "10.0.0.1", "address": "203.0.113.1", "up": True},
+    ]
+
+    with patch(
+        "django_ixctl.models.ixctl.InternetExchangeMember.physical_ports",
+        new_callable=PropertyMock,
+        return_value=[101],
+    ):
+        with patch(
+            "django_ixctl.rest.views.ixctl.devicectl.PhysicalPortStats"
+        ) as mock_stats_cls:
+            mock_stats_cls.return_value.get_physical_port_stats.return_value = (
+                _make_mock_port_stats(bgp_stats)
+            )
+            response = client.get(
+                reverse(
+                    "ixctl_api:member-get-member-stats",
+                    args=(org.slug, ix.slug, member.id),
+                )
+            )
+
+    assert response.status_code == 200
+    data = response.json()["data"][0]
+
+    returned_rs_ids = set(data["bgp_stat"].keys())
+    # Only the RS belonging to this IX should appear
+    assert "192.0.2.1" in returned_rs_ids
+    # The other IX's RS must be excluded
+    assert "10.0.0.1" not in returned_rs_ids
+
+    # Verify the RS name is resolved correctly
+    stats_for_rs = data["bgp_stat"]["192.0.2.1"]
+    assert stats_for_rs[0]["routeserver_name"] == rs_this_ix.name
+
+
+def test_get_member_stats_no_matching_rs_in_ix(db, pdb_data, account_objects):
+    """If the physical port has BGP stats but none match an RS in this IX, return empty."""
+    ix = account_objects.ix
+    org = account_objects.org
+    client = account_objects.api_client
+    member = ix.member_set.first()
+
+    # BGP stats only reference an RS that belongs to a different IX
+    bgp_stats = [
+        {"routeserver_router_id": "10.0.0.1", "address": "203.0.113.1", "up": True},
+    ]
+
+    with patch(
+        "django_ixctl.models.ixctl.InternetExchangeMember.physical_ports",
+        new_callable=PropertyMock,
+        return_value=[101],
+    ):
+        with patch(
+            "django_ixctl.rest.views.ixctl.devicectl.PhysicalPortStats"
+        ) as mock_stats_cls:
+            mock_stats_cls.return_value.get_physical_port_stats.return_value = (
+                _make_mock_port_stats(bgp_stats)
+            )
+            response = client.get(
+                reverse(
+                    "ixctl_api:member-get-member-stats",
+                    args=(org.slug, ix.slug, member.id),
+                )
+            )
+
+    assert response.status_code == 200
+    data = response.json()["data"][0]
+    assert data["bgp_stat"] == {}
+
+
+def test_get_member_stats_returns_bgp_stats_for_own_ix(db, pdb_data, account_objects):
+    """BGP stats for RSes belonging to the member's IX are included correctly."""
+    ix = account_objects.ix
+    org = account_objects.org
+    client = account_objects.api_client
+    member = ix.member_set.first()
+
+    rs = models.Routeserver.objects.create(
+        ix=ix,
+        name="mass-ix-rs1",
+        asn=64500,
+        router_id="192.0.2.1",
+        rpki_bgp_origin_validation=False,
+        ars_type="bird",
+        max_as_path_length=32,
+        operational_status="operational",
+    )
+
+    bgp_stats = [
+        {
+            "routeserver_router_id": "192.0.2.1",
+            "address": "203.0.113.1",
+            "up": True,
+            "routes_imported": 42,
+            "routes_exported": 10,
+            "state": "Established",
+        },
+    ]
+
+    with patch(
+        "django_ixctl.models.ixctl.InternetExchangeMember.physical_ports",
+        new_callable=PropertyMock,
+        return_value=[101],
+    ):
+        with patch(
+            "django_ixctl.rest.views.ixctl.devicectl.PhysicalPortStats"
+        ) as mock_stats_cls:
+            mock_stats_cls.return_value.get_physical_port_stats.return_value = (
+                _make_mock_port_stats(bgp_stats)
+            )
+            response = client.get(
+                reverse(
+                    "ixctl_api:member-get-member-stats",
+                    args=(org.slug, ix.slug, member.id),
+                )
+            )
+
+    assert response.status_code == 200
+    data = response.json()["data"][0]
+    assert "192.0.2.1" in data["bgp_stat"]
+    stat = data["bgp_stat"]["192.0.2.1"][0]
+    assert stat["routes_imported"] == 42
+    assert stat["routeserver_name"] == rs.name
 
     now = timezone.now()
     rs.liveness = now

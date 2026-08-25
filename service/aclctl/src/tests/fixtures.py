@@ -1,4 +1,5 @@
 import pytest
+from django.conf import settings
 from django.test import Client
 
 # lazy init for translations
@@ -64,6 +65,12 @@ class AccountObjects:
         )
 
         # add permissions
+        user.grainy_permissions.add_permission(
+            f"service.{settings.SERVICE_TAG}.{self.orgs[0].id}", "crud"
+        )
+        user.grainy_permissions.add_permission(
+            f"service.{settings.SERVICE_TAG}.{self.orgs[1].id}", "crud"
+        )
         user.grainy_permissions.add_permission(self.orgs[0], "crud")
         user.grainy_permissions.add_permission(f"*.{self.orgs[0].id}", "crud")
         user.grainy_permissions.add_permission(f"config.*.{self.orgs[0].id}", "crud")

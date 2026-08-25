@@ -5,6 +5,44 @@ Unreleased:
   deprecated: []
   removed: []
   security: []
+4.0.0:
+  added:
+  - manifest-driven Dockerfile.service build with per-service Ctl/docker.yaml manifests
+    (schema 1)
+  - scripts/build.py build entrypoint (builder and service image builds)
+  - '`repos:` manifest key naming dnf repositories to enable, rendered as microdnf
+    `--enablerepo=` flags on the package installs in both the builder and final stages
+    (devicectl uses it for ol9_codeready_builder, which supplies rrdtool-devel)'
+  fixed:
+  - aclctl access-control-list delete no longer returns a 500 when the request carries
+    no body (the single-ACL delete dialog sends a bodyless DELETE)
+  - scripts/build.py no longer swallows the token after `--image-suffix`, which silently
+    dropped a following `--push` and produced a build that never pushed and exited
+    0
+  - documented local-build recipe passed an unregistry-qualified `--builder-repo`,
+    so it resolved to Docker Hub instead of the builder just built
+  - task pruning no longer aborts on a foreign key violation when it deletes a task
+    that has child tasks
+  - prune patterns no longer widen regex quantifiers such as `\d*` into `\d.*`, which
+    could delete more tasks and events than the pattern asked for
+  - the `idx_task_prune` index is now built concurrently on PostgreSQL, so upgrading
+    no longer blocks writes to the task table for the duration of the build
+  - devicectl VLAN create no longer rejects payloads that omit `v4_secondaries` /
+    `v6_secondaries`, and the secondaries fields now accept the prefix-notation values
+    the model stores (netfields serializer field instead of IPAddressField)
+  changed:
+  - base images moved from python-alpine to oraclelinux:9-slim-fips
+  - dependency management and image builds moved from poetry to uv (uv workspace with
+    a single root uv.lock)
+  - ixctl and prefixctl tasks images converted to uv on oraclelinux:9-slim-fips
+  - lint, tests, tox, the GitHub workflow and the dev bootstrap now run on uv; poetry
+    is gone from the tree
+  - minimum Python is now 3.11, matching what the workspace lock already resolved
+    to
+  removed:
+  - per-service Dockerfiles (replaced by Dockerfile.service)
+  - stranded auditctl rsconfgen image (superseded by ixctl-tasks) and the unused ubi8/deb
+    builder Dockerfiles
 1.15.0:
   added:
   - Config liveness stored with ixctl

@@ -8,7 +8,7 @@ from typing import Union
 from django.utils import timezone
 
 
-def get_report_kind(report: str) -> Union[str, None]:
+def get_report_kind(report: str) -> str | None:
     """
     Returns the kind of the report based on the contents of the report
 

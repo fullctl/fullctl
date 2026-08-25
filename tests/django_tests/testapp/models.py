@@ -262,7 +262,7 @@ class Request(meta.Request):
 
     target = models.CharField(max_length=255)
 
-    class Meta:
+    class Meta(meta.Request.Meta):
         verbose_name = "Request"
         verbose_name_plural = "Requests"
         db_table = "test_meta_request"
